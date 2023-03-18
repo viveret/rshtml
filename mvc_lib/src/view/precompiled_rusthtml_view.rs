@@ -1,0 +1,38 @@
+use std::any::{Any, TypeId};
+use std::error::Error;
+use std::result::Result;
+use std::rc::Rc;
+use std::sync::{Arc, RwLock};
+
+use rusthtml::html_string::HtmlString;
+
+use crate::contexts::view_context::IViewContext;
+
+use crate::services::service_collection::IServiceCollection;
+
+
+pub struct precompiled_rusthtml_view {
+    model_type_name: Option<String>,
+    render_fn: Box<dyn Fn() -> Result<Box<HtmlString>, Box<dyn Error + 'static>>>,
+    // might add section renderers, the layout name, and "IsBeingRendered" flag
+}
+
+impl IView for precompiled_rusthtml_view {
+    pub fn get_path(self: &Self) -> String {
+        panic!("Path not available for precompiled views");
+    }
+
+    pub fn get_raw(self: &Self) -> String {
+        panic!("Raw not available for precompiled views");
+    }
+
+    // if the view defines a model type, this returns the type id
+    pub fn get_model_type_name(self: &Self) -> Option<String> {
+        return self.model_type_name;
+    }
+
+    // using template, render the view given the current data
+    pub fn render(self: &Self, ctx: Arc<RwLock<dyn IViewContext>>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Box<HtmlString>, Box<dyn Error + 'static>> {
+        self.render_fn()
+    }
+}

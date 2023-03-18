@@ -1,0 +1,22 @@
+[package]
+name = "mvc_lib"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+as-any = "0.3.0"
+bytestream = "0.4"
+eval = "0.4.3"
+glob = "0.3.1"
+http = "0.2.9"
+httparse = "1.8.0"
+http-bytes = "0.1.0"
+html-escape = "0.2.13"
+mime = "0.3.16"
+proc-macro2 = "1.0.51"
+regex = "1.7.1"
+rustc_lexer = "0.1.0"
+rusthtml = { path = "../rusthtml" }
+rusthtml-macro = { path = "../rusthtml-macro" }

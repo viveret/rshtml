@@ -1,0 +1,39 @@
+[package]
+name = "rshtml"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+as-any = "0.3.0"
+bytestream = "0.4"
+eval = "0.4.3"
+glob = "0.3.1"
+http = "0.2.9"
+httparse = "1.8.0"
+http-bytes = "0.1.0"
+html-escape = "0.2.13"
+mime = "0.3.16"
+regex = "1.7.1"
+rustc_lexer = "0.1.0"
+
+[dependencies.mvc_lib]
+path = "mvc_lib"
+
+[dependencies.macro-lib]
+path = "macro-lib"
+
+[dependencies.rusthtml]
+path = "rusthtml"
+
+[dependencies.rusthtml-macro]
+path = "rusthtml-macro"
+
+[workspace]
+members = [
+  "macro-lib",
+  "mvc_lib",
+  "rusthtml",
+  "rusthtml-macro",
+]

@@ -12,7 +12,7 @@ use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
 pub fn rusthtml_macro(input: TokenStream) -> TokenStream {
     let input = proc_macro2::TokenStream::from(input);
     let parser = RustHtmlParser::new();
-    let result = parser.parse_to_tokenstream(input);
+    let result = parser.expand_tokenstream(input);
     TokenStream::from(match result {
         Ok(tokens) => tokens,
         Err(err) => {
@@ -22,12 +22,12 @@ pub fn rusthtml_macro(input: TokenStream) -> TokenStream {
     })
 }
 
-// puts render FN into a structure with additional debugging information
+// puts render function into a structure with additional functionality and information
 #[proc_macro]
 pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
     let input = proc_macro2::TokenStream::from(input);
     let parser = RustHtmlParser::new();
-    let result = parser.parse_to_tokenstream(input);
+    let result = parser.expand_tokenstream(input);
     TokenStream::from(match result {
         Ok(html_render_fn) => {
             let view_name = parser.get_param_string("name");
@@ -35,6 +35,7 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
             let view_functions = parser.get_functions_section();
             let model_type_name = parser.get_model_type_name();
             let model_type = proc_macro2::TokenStream::from_iter(parser.get_model_type().iter().cloned());
+            let raw = parser.raw.borrow().clone();
             // println!("view_name_ident: {}", view_name_ident);
             //println!("html_render_fn: {:?}", html_render_fn);
             quote! {
@@ -56,6 +57,7 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                     html_buffer: RefCell<String>,
                     ViewData: RefCell<HashMap<&'static str, &'static str>>,
                     ViewPath: &'static str,
+                    raw: &'static str,
                     model: Option<#model_type>,
                 }
                 impl #view_name_ident {
@@ -66,6 +68,7 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                             ViewData: RefCell::new(HashMap::new()),
                             ViewPath: file!(),
                             model: None,
+                            raw: #raw
                         }
                     }
 
@@ -102,7 +105,7 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                     }
                 
                     fn get_raw(self: &Self) -> String {
-                        panic!("Raw not available for precompiled views");
+                        self.raw.to_string()
                     }
                 
                     // if the view defines a model type, this returns the type id

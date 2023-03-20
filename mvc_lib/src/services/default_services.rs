@@ -24,8 +24,6 @@ use crate::controllers::file_provider_controller::FileProviderController;
 use crate::controllers::home_controller::HomeController;
 use crate::controllers::dev_controller::DevController;
 
-
-
 pub struct DefaultServices {
 }
 
@@ -54,16 +52,6 @@ impl DefaultServices {
 
     pub fn add_file_provider(services: &mut ServiceCollection) {
         services.add(ServiceDescriptor::new(TypeInfo::box_of::<dyn IFileProviderService>(), FileProviderService::new_service, ServiceScope::Singleton));
-    }
-
-    pub fn add_views(services: &mut ServiceCollection) {
-        fn new_dev_views_service(services: &dyn IServiceCollection) -> Vec<Rc<dyn Any>> {
-            vec![
-                Rc::new(Box::new(dev_index_view::new() as Box<dyn IView>) as Rc<dyn Any>),
-                Rc::new(Box::new(dev_views_view::new() as Box<dyn IView>) as Rc<dyn Any>),
-            ]
-        }
-        services.add(ServiceDescriptor::new(TypeInfo::box_of::<dyn IView>(), new_dev_views_service, ServiceScope::Singleton));
     }
 
     pub fn add_controllers(services: &mut ServiceCollection) {

@@ -44,6 +44,10 @@ impl HtmlString {
         Self { content: html }
     }
 
+    pub fn new_from_html_str(html: &'static str) -> Self {
+        Self { content: html.to_string() }
+    }
+
     pub fn empty() -> Self {
         Self { content: "".to_string() }
     }

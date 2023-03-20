@@ -11,7 +11,7 @@ use crate::contexts::view_context::IViewContext;
 use crate::services::service_collection::IServiceCollection;
 
 
-pub struct precompiled_rusthtml_view {
+pub struct PrecompiledRustHtmlView {
     model_type_name: Option<String>,
     render_fn: Box<dyn Fn() -> Result<Box<HtmlString>, Box<dyn Error + 'static>>>,
     // might add section renderers, the layout name, and "IsBeingRendered" flag

@@ -1,22 +1,22 @@
-rusthtml_macro::rusthtml_view_macro! {
+mvc_macro_lib::rusthtml_view_macro! {
     @name "home_index"
-@{
-    // Layout = "_Layout_Home_Index";
-    ViewData.insert("Title", "Home");
-}
+    @{
+        // Layout = "_Layout_Home_Index";
+        self.ViewData.borrow_mut().insert("Title", "Home");
+    }
 
 <div class="answercell post-layout--right">
     
     <div class="s-prose js-post-body" itemprop="text">
-<p><em><a href="https://blog.rust-lang.org/2017/04/27/Rust-1.17.html" rel="noreferrer">2017</a> stabilization update (in 2020).</em></p>
+<p><em><a href="https://blog.rust-lang.org/2017/04/27/Rust-1.17.html" rel="noreferrer">2017</a>" stabilization update (in 2020)."</em></p>
 
-<p>In Rust 1.17 and forward, you can use <a href="https://doc.rust-lang.org/stable/std/rc/struct.Rc.html#method.ptr_eq" rel="noreferrer"><code>Rc::ptr_eq</code></a>. It does the same as <a href="https://doc.rust-lang.org/stable/std/ptr/fn.eq.html" rel="noreferrer"><code>ptr::eq</code></a>, without the need of converting the <code>Rc</code> to a reference or pointer.</p>
+<p>"In Rust 1.17 and forward, you can use "<a href="https://doc.rust-lang.org/stable/std/rc/struct.Rc.html#method.ptr_eq" rel="noreferrer"><code>"Rc::ptr_eq"</code></a>". It does the same as "<a href="https://doc.rust-lang.org/stable/std/ptr/fn.eq.html" rel="noreferrer"><code>"ptr::eq"</code></a>", without the need of converting the "<code>"Rc"</code>" to a reference or pointer."</p>
 
-<h3>Reference Equality</h3>
+<h3>"Reference Equality"</h3>
 
-<p>As the other answers mention <code>Rc::ptr_eq</code> (and <code>ptr::eq</code>) checks for reference equality, i.e. whether the two references "point" to the same address.</p>
+<p>"As the other answers mention "<code>"Rc::ptr_eq"</code>" (and "<code>"ptr::eq"</code>") checks for reference equality, i.e. whether the two references \"point\" to the same address."</p>
 
-<pre class="lang-rust s-code-block"><code class="hljs language-rust"><span class="hljs-keyword">let</span> <span class="hljs-variable">five</span> = Rc::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">5</span>);
+<pre class="lang-rust s-code-block"><code class="hljs language-rust"><span class="hljs-keyword">"let"</span> <span class="hljs-variable">"five"</span>" = Rc::"<span class="hljs-title function_ invoke__">"new"</span>"("<span class="hljs-number">"5"</span>")";
 <span class="hljs-keyword">let</span> <span class="hljs-variable">same_five</span> = Rc::<span class="hljs-title function_ invoke__">clone</span>(&amp;five);
 <span class="hljs-keyword">let</span> <span class="hljs-variable">other_five</span> = Rc::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">5</span>);
 
@@ -93,7 +93,7 @@ rusthtml_macro::rusthtml_view_macro! {
     <div class="user-details" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
         <a href="/users/2470818/vallentin">vallentin</a><span class="d-none" itemprop="name">vallentin</span>
         <div class="-flair">
-            <span class="reputation-score" title="reputation score 22,772" dir="ltr">22.8k</span><span title="6 gold badges" aria-hidden="true"><span class="badge1"></span><span class="badgecount">6</span></span><span class="v-visible-sr">6 gold badges</span><span title="58 silver badges" aria-hidden="true"><span class="badge2"></span><span class="badgecount">58</span></span><span class="v-visible-sr">58 silver badges</span><span title="80 bronze badges" aria-hidden="true"><span class="badge3"></span><span class="badgecount">80</span></span><span class="v-visible-sr">80 bronze badges</span>
+            <span class="reputation-score" title="reputation score 22,772" dir="ltr">"22.8k"</span><span title="6 gold badges" aria-hidden="true"><span class="badge1"></span><span class="badgecount">6</span></span><span class="v-visible-sr">6 gold badges</span><span title="58 silver badges" aria-hidden="true"><span class="badge2"></span><span class="badgecount">58</span></span><span class="v-visible-sr">58 silver badges</span><span title="80 bronze badges" aria-hidden="true"><span class="badge3"></span><span class="badgecount">80</span></span><span class="v-visible-sr">80 bronze badges</span>
         </div>
     </div>
 </div>

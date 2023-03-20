@@ -14,9 +14,11 @@ http = "0.2.9"
 httparse = "1.8.0"
 http-bytes = "0.1.0"
 html-escape = "0.2.13"
+htmlnode = { path = "../htmlnode" }
 mime = "0.3.16"
 proc-macro2 = "1.0.51"
+quote = "1.0.23"
 regex = "1.7.1"
 rustc_lexer = "0.1.0"
-rusthtml = { path = "../rusthtml" }
-rusthtml-macro = { path = "../rusthtml-macro" }
+serde_json = "1.0.94"
+syn = { version = "1.0.109", features = ["full"] }

@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 
 use crate::contexts::view_context::IViewContext;
-use rusthtml::html_string::HtmlString;
+use crate::view::rusthtml::html_string::HtmlString;
 
 use crate::services::service_collection::IServiceCollection;
 

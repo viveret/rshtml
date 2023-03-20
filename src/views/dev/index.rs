@@ -1,26 +1,20 @@
-rusthtml_macro::rusthtml_view_macro! {
+mvc_macro_lib::rusthtml_view_macro! {
     @name "dev_index"
-    @model String // same as @arguments (<model type> model)
+    @model mvc_lib::view_models::dev::IndexViewModel
     @let x = 3;
     // can also do @arguments (<arguments>)
     @{
         // Layout = "_Layout_Dev_Index";
-        view_data.insert("Title", "Compiled Views - Dev");
+        self.ViewData.borrow_mut().insert("Title", "Compiled Views - Dev");
         
-        pub fn custom_html() -> HtmlString {
-            HtmlString::new_from_html("<b>raw html</b>")
-        }
+        // pub fn custom_html() -> HtmlString {
+        //     HtmlString::new_from_html_str("<b>raw html</b>")
+        // }
 
         // this is also allowed
         let y = 0;
     }
-    <ul>
-    @{
-        for compiled_view in model.compiled_views {
-            <li></li>
-        }
-    }
-    </ul>
+    <p>Dev index page</p>
 }
 
 // should generate:

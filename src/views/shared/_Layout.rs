@@ -1,10 +1,17 @@
-rusthtml_macro::rusthtml_view_macro! {
+mvc_macro_lib::rusthtml_view_macro! {
+    @name "shared__layout"
+    @{
+        let has_title = (&self.ViewData.borrow()).contains_key("Title");
+        if !has_title {
+            self.ViewData.borrow_mut().insert("Title", "untitled");
+        }
+    }
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - WebApplication1</title>
+    <title>@get_ViewData("Title") - WebApplication1</title>
 
     <environment include="Development">
         <link rel="stylesheet" href="/lib/bootstrap/css/bootstrap.css" />
@@ -40,7 +47,9 @@ rusthtml_macro::rusthtml_view_macro! {
         </div>
     </nav>
 
-    <partial name="_CookieConsentPartial" />
+    <div>
+        <partial name="_CookieConsentPartial" />
+    </div>
 
     <div class="container body-content">
         @RenderBody()

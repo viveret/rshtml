@@ -1,8 +1,3 @@
-extern crate proc_macro;
-extern crate proc_macro2;
-extern crate syn;
-
-
 pub mod html_string;
 pub mod rusthtml_error;
 pub mod rusthtml_node;

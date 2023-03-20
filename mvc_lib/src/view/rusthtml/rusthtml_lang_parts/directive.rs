@@ -1,6 +1,6 @@
-use crate::rusthtml_error::RustHtmlError;
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
-use crate::rusthtml_lang_part::RustHtmlLangPart;
+use crate::view::rusthtml::rusthtml_lang_part::RustHtmlLangPart;
 
 pub struct Directive {
     

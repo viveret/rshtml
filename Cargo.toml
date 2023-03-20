@@ -21,19 +21,11 @@ rustc_lexer = "0.1.0"
 [dependencies.mvc_lib]
 path = "mvc_lib"
 
-[dependencies.macro-lib]
-path = "macro-lib"
-
-[dependencies.rusthtml]
-path = "rusthtml"
-
-[dependencies.rusthtml-macro]
-path = "rusthtml-macro"
+[dependencies.mvc_macro_lib]
+path = "mvc_macro_lib"
 
 [workspace]
 members = [
-  "macro-lib",
+  "mvc_macro_lib",
   "mvc_lib",
-  "rusthtml",
-  "rusthtml-macro",
 ]

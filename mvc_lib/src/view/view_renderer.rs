@@ -16,7 +16,7 @@ use crate::contexts::request_context::RequestContext;
 use crate::contexts::view_context::IViewContext;
 use crate::contexts::view_context::ViewContext;
 
-use rusthtml::html_string::HtmlString;
+use crate::view::rusthtml::html_string::HtmlString;
 use crate::view::iview::IView;
 
 use crate::services::service_collection::IServiceCollection;
@@ -128,7 +128,7 @@ impl IViewRenderer for ViewRenderer {
             )
             .clone()
             .iter()
-            .filter(|x| &x.get_path() == path)
+            .filter(|x| x.get_path().ends_with(path) || x.get_path().ends_with(format!("{}.rs", path).as_str()))
             .map(|x| x.clone())
             .collect()
     }

@@ -1,4 +1,4 @@
-use crate::rusthtml_error::RustHtmlError;
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 pub trait RustHtmlLangPart {
     fn convert_tokenstream_to_rusthtmltokens(self: &Self) -> Result<bool, RustHtmlError<'static>>;

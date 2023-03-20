@@ -13,9 +13,9 @@ use std::vec::Vec;
 
 use glob::glob;
 
-use rusthtml::html_string::HtmlString;
-use rusthtml::rusthtml_error::RustHtmlError;
-use rusthtml::rusthtml_parser::RustHtmlParser;
+use crate::view::rusthtml::html_string::HtmlString;
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
+use crate::view::rusthtml::rusthtml_parser::RustHtmlParser;
 
 use crate::view::iview::IView;
 use crate::view::rust_html_parser::{*};

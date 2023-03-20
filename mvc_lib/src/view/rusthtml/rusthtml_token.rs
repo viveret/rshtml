@@ -18,11 +18,14 @@ pub enum RustHtmlToken {
     HtmlTagEnd(String),
 
     // rust
+    AppendToHtml(Vec<RustHtmlToken>),
+
     Literal(Literal),
     Identifier(Ident),
     ReservedChar(char, Punct),
     ReservedIndent(String, Ident),
     Group(Delimiter, Group),
+    GroupParsed(Delimiter, Vec<RustHtmlToken>),
     GroupOpen(Delimiter, Span),
     GroupClose(Delimiter, Span),
 

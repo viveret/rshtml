@@ -42,14 +42,14 @@ impl IController for DevController {
     fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
         match request_ctx.path.as_str() {
             "/dev" => {
-                controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rshtml")));
-                Ok(Some(Box::new(ViewResult::new("views/dev/Index.rshtml".to_string(), Rc::new(Box::new(""))))))
+                controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rs")));
+                Ok(Some(Box::new(ViewResult::new("views/dev/index.rs".to_string(), Rc::new(Box::new(""))))))
             },
             "/dev/views" => {
                 let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services.clone().read().unwrap().deref());
                 let viewModel = Rc::new(Box::new(ViewsViewModel::new(view_renderer.get_all_views(services))));
-                controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rshtml")));
-                Ok(Some(Box::new(ViewResult::new("views/dev/Views.rshtml".to_string(), Rc::new(Box::new(""))))))
+                controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rs")));
+                Ok(Some(Box::new(ViewResult::new("views/dev/views.rs".to_string(), Rc::new(Box::new(""))))))
             },
             _ => Ok(None),
         }

@@ -8,7 +8,7 @@ use crate::contexts::controller_context::ControllerContext;
 use crate::contexts::response_context::ResponseContext;
 use crate::contexts::request_context::RequestContext;
 
-use rusthtml::html_string::HtmlString;
+use crate::view::rusthtml::html_string::HtmlString;
 use crate::view::iview::IView;
 use crate::view::view_renderer::IViewRenderer;
 

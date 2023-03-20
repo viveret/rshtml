@@ -11,6 +11,5 @@ pub mod options;
 pub mod services;
 pub mod view;
 pub mod view_models;
-pub mod views;
 
 pub mod errors;

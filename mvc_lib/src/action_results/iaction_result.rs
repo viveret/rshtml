@@ -24,5 +24,5 @@ impl<T: 'static> IActionResultToAny for T {
 pub trait IActionResult: IActionResultToAny {
     fn get_statuscode(self: &Self) -> StatusCode;
 
-    fn configure_response(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: Arc<RwLock<dyn IServiceCollection>>);
+    fn configure_response(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection);
 }

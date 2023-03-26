@@ -13,7 +13,8 @@ use crate::services::service_collection::IServiceCollection;
 
 pub struct PrecompiledRustHtmlView {
     model_type_name: Option<String>,
-    render_fn: Box<dyn Fn() -> Result<Box<HtmlString>, Box<dyn Error + 'static>>>,
+    render_fn: Box<dyn Fn() -> Result<Rc<HtmlString>, Rc<RustHtmlError>>>,
+    when_compiled: chrono::prelude::Local::now()
     // might add section renderers, the layout name, and "IsBeingRendered" flag
 }
 
@@ -32,7 +33,7 @@ impl IView for precompiled_rusthtml_view {
     }
 
     // using template, render the view given the current data
-    pub fn render(self: &Self, ctx: Arc<RwLock<dyn IViewContext>>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Box<HtmlString>, Box<dyn Error + 'static>> {
+    pub fn render(self: &Self, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
         self.render_fn()
     }
 }

@@ -17,25 +17,41 @@ use crate::contexts::view_context::ViewContext;
 
 use crate::action_results::iaction_result::IActionResult;
 use crate::view::view_renderer::IViewRenderer;
+use crate::view::rusthtml::html_string::HtmlString;
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions};
 
 pub struct ViewResult {
     pub path: String,
-    pub model: Option<Rc<Box<dyn Any>>>,
+    pub model: Rc<Option<Box<dyn Any>>>,
 }
 
 impl ViewResult {
-    pub fn new(path: String, model: Rc<Box<dyn Any>>) -> Self {
-        Self { path: path, model: Some(model) }
+    pub fn new(path: String, model: Box<dyn Any>) -> Self {
+        Self { path: path, model: Rc::new(Some(model)) }
     }
 
     pub fn new_no_model(path: String) -> Self {
-        Self { path: path, model: None }
+        Self { path: path, model: Rc::new(None) }
     }
 
-    pub fn new_default_path(model: Rc<Box<dyn Any>>) -> Self {
-        Self { path: "".to_string(), model: Some(model) }
+    pub fn new_default_path(model: Box<dyn Any>) -> Self {
+        Self { path: "".to_string(), model: Rc::new(Some(model)) }
+    }
+
+    pub fn write_response(self: &Self, view_render_result: Result<HtmlString, RustHtmlError>, view_ctx: &dyn IViewContext, response_ctx: Rc<RefCell<ResponseContext>>) {
+        let mut response = response_ctx.as_ref().borrow_mut();
+        response.add_header_str("Content-Type", "text/html");
+        match view_render_result {
+            Ok(ok_view_result) => {
+                response.body.extend_from_slice(view_ctx.collect_html().content.as_bytes());
+                response.body.extend_from_slice(ok_view_result.content.as_bytes());
+            },
+            Err(err) => {
+                response.body.extend_from_slice(format!("Error: {}", err).as_bytes());
+            }
+        }
     }
 }
 
@@ -44,37 +60,25 @@ impl IActionResult for ViewResult {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: Arc<RwLock<dyn IServiceCollection>>) {
-        let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services.clone().read().unwrap().deref());
-        let layout_view_option = view_renderer.get_layout_view_from_context(controller_ctx.clone(), services.clone());
+    fn configure_response(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) {
+        let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
+        let layout_view_option = view_renderer.get_layout_view_from_context(controller_ctx.clone(), services);
 
-
-        // need to fix this to not return response and render directly to vector of bytes, or figure out way to correctly render parts in right order
-        // problem is body can only return string to eval statement, and that is escaped for rendering as HTML safely.
-        // have to bypass eval return aka render directly to buffer, skipping the delay of rendering the whole view before writing to body response
-        let view_render_result = match layout_view_option {
-            Some(layout_view) => {
-                let body_view = view_renderer.get_view(&self.path, services.clone());
-                // println!("Asked for {}, received {}", self.path, body_view.get_path());
+        match layout_view_option {
+            Some(ref layout_view) => {
+                let body_view = view_renderer.get_view(&self.path, services);
                 controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Body".to_string(), Rc::new(Box::new(body_view.clone())));
 
-                let ctx = Arc::new(RwLock::new(ViewContext::new(layout_view.clone(), self.model.clone(), view_renderer.clone(), controller_ctx.clone(), response_ctx.clone(), request_ctx.clone())));
-                view_renderer.render_view(ctx, services)
+                let view_ctx = ViewContext::new(layout_view.clone(), self.model.clone(), view_renderer.clone(), controller_ctx.clone(), response_ctx.clone(), request_ctx.clone());
+                let r = layout_view.render(&view_ctx, services);
+                self.write_response(r, &view_ctx, response_ctx);
             },
             None => {
-                view_renderer.render_partial(self.path.clone(), self.model.clone(), view_renderer.clone(), controller_ctx.clone(), response_ctx.clone(), request_ctx.clone(), services.clone())
+                let view_to_render = view_renderer.get_view(&self.path, services);
+                let view_ctx = ViewContext::new(view_to_render.clone(), self.model.clone(), view_renderer, controller_ctx.clone(), response_ctx.clone(), request_ctx.clone());
+                let r = view_to_render.render(&view_ctx, services);
+                self.write_response(r, &view_ctx, response_ctx);
             }
         };
-
-        let mut response = response_ctx.as_ref().borrow_mut();
-        response.add_header_str("Content-Type", "text/html");
-        match view_render_result {
-            Ok(ok_view_result) => {
-                response.body.extend_from_slice(ok_view_result.content.as_bytes());
-            },
-            Err(err) => {
-                response.body.extend_from_slice(format!("Error: {}", err).as_bytes());
-            }
-        }
     }
 }

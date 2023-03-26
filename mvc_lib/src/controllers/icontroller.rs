@@ -12,7 +12,7 @@ use crate::services::service_collection::IServiceCollection;
 
 
 pub trait IController {
-    fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>>;
+    fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>>;
 
     fn get_route_area(self: &Self) -> Option<String>;
 }

@@ -6,26 +6,26 @@ pub trait IFileProviderControllerOptions {
     fn get_file(self: &Self, path: String) -> Option<String>;
 }
 
-
+#[derive(Clone)]
 pub struct FileProviderControllerOptions {
-    pub serving_paths: Vec<String>,
+    pub serving_paths: &'static [&'static str],
 }
 
 impl FileProviderControllerOptions {
-    pub fn new(serving_paths: Vec<String>) -> Self {
+    pub fn new(serving_paths: &'static [&'static str]) -> Self {
         Self { serving_paths: serving_paths }
     }
 
     pub fn new_defaults() -> Self {
-        Self { serving_paths: vec!["wwwroot/".to_string()] }
+        Self { serving_paths: &["wwwroot/"] }
     }
 
-    pub fn new_service(serving_paths: Vec<String>) -> Rc<dyn Any> {
-        Rc::new(Box::new(Self::new(serving_paths)) as Box<dyn IFileProviderControllerOptions>)
+    pub fn new_service(serving_paths: &'static [&'static str]) -> Box<dyn Any> {
+        Box::new(Rc::new(Self::new(serving_paths)) as Rc<dyn IFileProviderControllerOptions>)
     }
 
-    pub fn new_service_defaults() -> Rc<dyn Any> {
-        Rc::new(Box::new(Self::new_defaults()) as Box<dyn IFileProviderControllerOptions>)
+    pub fn new_service_defaults() -> Box<dyn Any> {
+        Box::new(Rc::new(Self::new_defaults()) as Rc<dyn IFileProviderControllerOptions>)
     }
 }
 

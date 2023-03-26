@@ -5,7 +5,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     // can also do @arguments (<arguments>)
     @{
         // Layout = "_Layout_Dev_Index";
-        self.ViewData.borrow_mut().insert("Title", "Compiled Views - Dev");
+        ViewData.insert("Title", "Compiled Views - Dev");
         
         // pub fn custom_html() -> HtmlString {
         //     HtmlString::new_from_html_str("<b>raw html</b>")

@@ -10,17 +10,17 @@ pub trait IControllerContext {
     fn get_context_data(self: &Self) -> Rc<RefCell<HashMap<String, Rc<Box<dyn Any>>>>>;
     fn get_view_data(self: &Self) -> Rc<RefCell<HashMap<String, Rc<Box<dyn Any>>>>>;
     fn get_view_data_value(self: &Self, key: &str) -> Option<Rc<Box<dyn Any>>>;
-    fn get_controller(self: &Self) -> Rc<Box<dyn IController>>;
+    fn get_controller(self: &Self) -> Rc<dyn IController>;
 }
 
 pub struct ControllerContext {
     pub context_data: Rc<RefCell<HashMap<String, Rc<Box<dyn Any>>>>>,
     pub view_data: Rc<RefCell<HashMap<String, Rc<Box<dyn Any>>>>>,
-    pub controller: Option<Rc<Box<dyn IController>>>,
+    pub controller: Option<Rc<dyn IController>>,
 }
 
 impl ControllerContext {
-    pub fn new(controller: Option<Rc<Box<dyn IController>>>) -> Self {
+    pub fn new(controller: Option<Rc<dyn IController>>) -> Self {
         Self {
             context_data: Rc::new(RefCell::new(HashMap::new())),
             view_data: Rc::new(RefCell::new(HashMap::new())),
@@ -46,7 +46,7 @@ impl IControllerContext for ControllerContext {
         }
     }
 
-    fn get_controller(self: &Self) -> Rc<Box<dyn IController>> {
+    fn get_controller(self: &Self) -> Rc<dyn IController> {
         self.controller.as_ref().expect("no controllers").clone()
     }
 }

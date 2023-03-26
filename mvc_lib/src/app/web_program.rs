@@ -79,10 +79,9 @@ impl WebProgram {
         let request_bytes = Vec::<u8>::new();
         let request_bytes_boxed = Box::new(request_bytes);
 
-        let request_pipeline_service = self.services.get_required(TypeInfo::rc_of::<dyn IHttpRequestPipeline>());
-        let request_pipeline = request_pipeline_service.first().expect("Request pipeline not found").clone().downcast::<Box<dyn IHttpRequestPipeline>>().expect("could not downcast to Box<dyn IHttpRequestPipeline>");
+        let request_pipeline = ServiceCollectionExtensions::get_required_single::<dyn IHttpRequestPipeline>(&self.services);
 
-        let response = request_pipeline.process_request(http_header, request_headers, request_bytes_boxed, Arc::new(RwLock::new(self.services.clone()))).expect("could not process request");
+        let response = request_pipeline.process_request(http_header, request_headers, request_bytes_boxed, &self.services).expect("could not process request");
         stream.write_all(&response).expect("could not write response");
     }
 }

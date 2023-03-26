@@ -1,6 +1,7 @@
 use std::any::{Any, TypeId};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 
@@ -14,14 +15,17 @@ use crate::view::view_renderer::IViewRenderer;
 
 
 pub trait IViewContext: Send + Sync {
-    fn recurse_into_new_context(self: &Self, view: Rc<Box<dyn IView>>) -> Arc<RwLock<dyn IViewContext>>;
+    fn recurse_into_new_context(self: &Self, view: Rc<dyn IView>) -> Box<dyn IViewContext>;
 
-    fn write_html(self: &Self, html: &HtmlString);
-    fn write_content(self: &Self, content: &String);
+    fn write_html(self: &Self, html: HtmlString);
+    fn write_html_str(self: &Self, html: &str);
+    fn write_content(self: &Self, content: String);
+    fn collect_html(self: &Self) -> HtmlString;
 
-    fn get_view_renderer(self: &Self) -> Rc<Box<dyn IViewRenderer>>;
+    fn get_view_renderer(self: &Self) -> Rc<dyn IViewRenderer>;
     fn get_viewdata(self: &Self) -> Rc<HashMap<String, String>>;
-    fn get_view(self: &Self) -> Rc<Box<dyn IView>>;
+    fn get_viewmodel(self: &Self) -> Rc<Option<Box<dyn Any>>>;
+    fn get_view(self: &Self) -> Rc<dyn IView>;
 
     fn get_controller_ctx(self: &Self) -> Rc<RefCell<ControllerContext>>;
     fn get_response_ctx(self: &Self) -> Rc<RefCell<ResponseContext>>;
@@ -29,13 +33,14 @@ pub trait IViewContext: Send + Sync {
 }
 
 pub struct ViewContext {
-    view: Rc<Box<dyn IView>>,
+    view: Rc<dyn IView>,
     viewdata: Rc<HashMap<String, String>>,
-    viewmodel: Option<Rc<Box<dyn Any>>>,
-    view_renderer: Rc<Box<dyn IViewRenderer>>,
+    viewmodel: Rc<Option<Box<dyn Any>>>,
+    view_renderer: Rc<dyn IViewRenderer>,
     controller_ctx: Rc<RefCell<ControllerContext>>,
     response_ctx: Rc<RefCell<ResponseContext>>,
     request_ctx: Rc<RequestContext>,
+    html_buffer: RefCell<String>,
 }
 unsafe impl Send for ViewContext {}
 unsafe impl Sync for ViewContext {}
@@ -43,9 +48,9 @@ unsafe impl Sync for ViewContext {}
 
 impl ViewContext {
     pub fn new(
-                view: Rc<Box<dyn IView>>,
-                viewmodel: Option<Rc<Box<dyn Any>>>,
-                view_renderer: Rc<Box<dyn IViewRenderer>>,
+                view: Rc<dyn IView>,
+                viewmodel: Rc<Option<Box<dyn Any>>>,
+                view_renderer: Rc<dyn IViewRenderer>,
                 controller_ctx: Rc<RefCell<ControllerContext>>,
                 response_ctx: Rc<RefCell<ResponseContext>>,
                 request_ctx: Rc<RequestContext>) -> Self {
@@ -57,35 +62,40 @@ impl ViewContext {
             controller_ctx: controller_ctx,
             response_ctx: response_ctx,
             request_ctx: request_ctx,
+            html_buffer: RefCell::new(String::new()),
         }
     }
-
-    // pub fn as_box(self: Self) -> Box<dyn IViewContext> {
-    //     Box::new(self)
-    // }
 }
 
 impl IViewContext for ViewContext {
-    fn recurse_into_new_context(self: &Self, view: Rc<Box<dyn IView>>) -> Arc<RwLock<dyn IViewContext>> {
-        Arc::new(RwLock::new(Self::new(
+    fn recurse_into_new_context(self: &Self, view: Rc<dyn IView>) -> Box<dyn IViewContext> {
+        Box::new(Self::new(
             view,
             self.viewmodel.clone(),
             self.view_renderer.clone(),
             self.controller_ctx.clone(),
             self.response_ctx.clone(),
             self.request_ctx.clone()
-        )))
+        ))
     }
 
-    fn write_html(self: &Self, _html: &HtmlString) {
-
+    fn write_html(self: &Self, html: HtmlString) {
+        self.write_html_str(html.content.as_str());
     }
 
-    fn write_content(self: &Self, _content: &String) {
-
+    fn write_html_str(self: &Self, html: &str) {
+        self.html_buffer.borrow_mut().push_str(html);
     }
 
-    fn get_view_renderer(self: &Self) -> Rc<Box<dyn IViewRenderer>> {
+    fn write_content(self: &Self, content: String) {
+        self.write_html(HtmlString::new_data_string(content))
+    }
+
+    fn collect_html(self: &Self) -> HtmlString {
+        HtmlString::new_from_html(self.html_buffer.borrow().clone())
+    }
+
+    fn get_view_renderer(self: &Self) -> Rc<dyn IViewRenderer> {
         self.view_renderer.clone()
     }
 
@@ -93,7 +103,11 @@ impl IViewContext for ViewContext {
         self.viewdata.clone()
     }
 
-    fn get_view(self: &Self) -> Rc<Box<dyn IView>> {
+    fn get_viewmodel(self: &Self) -> Rc<Option<Box<dyn Any>>> {
+        self.viewmodel.clone()
+    }
+
+    fn get_view(self: &Self) -> Rc<dyn IView> {
         self.view.clone()
     }
 

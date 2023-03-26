@@ -1,23 +1,27 @@
+
 extern crate proc_macro;
 extern crate proc_macro2;
 extern crate mvc_lib;
 
+use std::rc::Rc;
 use proc_macro::TokenStream;
 use quote::{quote, quote_spanned};
 
+use mvc_lib::view::iview::IView;
+use mvc_lib::view::rusthtml::html_string::HtmlString;
 use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
-
+use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
 
 #[proc_macro]
 pub fn rusthtml_macro(input: TokenStream) -> TokenStream {
-    let input = proc_macro2::TokenStream::from(input);
+    // let input = proc_macro2::TokenStream::from(input);
     let parser = RustHtmlParser::new();
     let result = parser.expand_tokenstream(input);
     TokenStream::from(match result {
         Ok(tokens) => tokens,
         Err(err) => {
             let err_str = format!("could not compile rust html: {:?}", err);
-            quote! { compile_error!(#err_str); }
+            TokenStream::from(quote! { compile_error!(#err_str); })
         },
     })
 }
@@ -25,80 +29,76 @@ pub fn rusthtml_macro(input: TokenStream) -> TokenStream {
 // puts render function into a structure with additional functionality and information
 #[proc_macro]
 pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
-    let input = proc_macro2::TokenStream::from(input);
+    // let input = proc_macro2::TokenStream::from(input);
     let parser = RustHtmlParser::new();
     let result = parser.expand_tokenstream(input);
     TokenStream::from(match result {
-        Ok(html_render_fn) => {
+        Ok(html_render_fn2) => {
+            let html_render_fn = proc_macro2::TokenStream::from(html_render_fn2);
             let view_name = parser.get_param_string("name");
             let view_name_ident = quote::format_ident!("view_{}", view_name);
-            let view_functions = parser.get_functions_section();
+            let view_name_context_ident = quote::format_ident!("view_{}_context", view_name);
+            let view_functions = match parser.get_functions_section() {
+                Some(functions_section) => proc_macro2::TokenStream::from(functions_section),
+                None => quote! {},
+            };
             let model_type_name = parser.get_model_type_name();
-            let model_type = proc_macro2::TokenStream::from_iter(parser.get_model_type().iter().cloned());
+            println!("model_type_name: {}", model_type_name);
+            let model_type = proc_macro2::TokenStream::from(TokenStream::from_iter(parser.get_model_type().iter().cloned()));
             let raw = parser.raw.borrow().clone();
-            // println!("view_name_ident: {}", view_name_ident);
-            //println!("html_render_fn: {:?}", html_render_fn);
+
+            let view_model_tokens = if model_type_name.len() > 0 {
+                quote! {
+                    let vm = view_context.get_viewmodel();
+                    let model: Rc<#model_type> = match vm.deref() {
+                        Some(m) => m.as_ref().downcast_ref::<Rc<#model_type>>().expect(format!("could not downcast model from Box<dyn Any> to Rc<{}>", std::any::type_name::<#model_type>()).as_str()).clone(),
+                        None => panic!("No model set")
+                    };
+                }
+            } else {
+                quote! {}
+            };
+
+            let when_compiled = chrono::prelude::Utc::now().to_rfc2822();
+
             quote! {
                 use std::any::Any;
                 use std::error::Error;
                 use std::cell::RefCell;
                 use std::collections::HashMap;
                 use std::rc::Rc;
+                use std::ops::Deref;
                 use std::sync::{Arc, RwLock};
 
+                use chrono::{DateTime, TimeZone, Utc};
+
                 extern crate mvc_lib;
+                use mvc_lib::contexts::controller_context::IControllerContext;
                 use mvc_lib::contexts::view_context::IViewContext;
                 use mvc_lib::services::service_collection::IServiceCollection;
                 use mvc_lib::view::rusthtml::html_string::HtmlString;
+                use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
+                use mvc_lib::view::rusthtml::rusthtml_view_macros::RustHtmlViewMacros;
                 use mvc_lib::view::iview::IView;
 
                 pub struct #view_name_ident {
                     model_type_name: &'static str,
-                    html_buffer: RefCell<String>,
-                    ViewData: RefCell<HashMap<&'static str, &'static str>>,
                     ViewPath: &'static str,
                     raw: &'static str,
-                    model: Option<#model_type>,
+                    when_compiled: DateTime<Utc>,
                 }
+
                 impl #view_name_ident {
                     pub fn new() -> Self {
                         Self {
                             model_type_name: #model_type_name,
-                            html_buffer: RefCell::new(String::new()),
-                            ViewData: RefCell::new(HashMap::new()),
                             ViewPath: file!(),
-                            model: None,
-                            raw: #raw
+                            raw: #raw,
+                            when_compiled: DateTime::parse_from_rfc2822(#when_compiled).unwrap().into()
                         }
                     }
-
-                    #view_functions
-
-                    pub fn get_ViewData(self: &Self, key: &'static str) -> &'static str {
-                        self.ViewData.borrow().get(key).unwrap_or(&"")
-                    }
-
-                    pub fn append_html(self: &Self, html: &str) {
-                        // println!("append_html: {}", html);
-                        self.html_buffer.borrow_mut().push_str(html);
-                    }
-
-                    pub fn RenderSection(self: &Self, section_name: &str) {
-                        println!("RenderSection: {}", section_name);
-                    }
-
-                    pub fn RenderSectionOptional(self: &Self, section_name: &str) {
-                        println!("RenderSectionOptional: {}", section_name);
-                    }
-
-                    pub fn RenderBody(self: &Self) {
-                        println!("RenderBody");
-                    }
-
-                    pub fn collect_html(self: &Self) -> Result<Box<HtmlString>, Box<dyn Error + 'static>> {
-                        Ok(Box::new(HtmlString::new_from_html(self.html_buffer.borrow().clone())))
-                    }
                 }
+
                 impl IView for #view_name_ident {
                     fn get_path(self: &Self) -> String {
                         self.ViewPath.to_string()
@@ -114,10 +114,35 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                     }
                 
                     // using template, render the view given the current data
-                    fn render(self: &Self, ctx: Arc<RwLock<dyn IViewContext>>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Box<HtmlString>, Box<dyn Error + 'static>> {
-                        //Ok(Box::new(HtmlString::new_from_html(String::new())))
+                    fn render(self: &Self, view_context: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
+                        let mut ViewData = HashMap::<&str, &str>::new();
+                        #view_model_tokens
+
+                        let RenderSection = |section_name: &str| -> Result<HtmlString, RustHtmlError> {
+                            RustHtmlViewMacros::RenderSection(section_name, self, view_context, services)
+                        };
+
+                        let RenderSectionOptional = |section_name: &str| -> Result<HtmlString, RustHtmlError> {
+                            RustHtmlViewMacros::RenderSectionOptional(section_name, self, view_context, services)
+                        };
+
+                        let TryRenderBody = || -> Result<HtmlString, RustHtmlError> {
+                            RustHtmlViewMacros::RenderBody(self, view_context, services)
+                        };
+
+                        let RenderBody = || -> HtmlString {
+                            match RustHtmlViewMacros::RenderBody(self, view_context, services) {
+                                Ok(html) => html,
+                                Err(e) => panic!("{}", e),
+                            }
+                        };
+
+                        #view_functions
+                        
                         #html_render_fn
-                        self.collect_html()
+                        
+                        // should all be written to view_context html_buffer
+                        Ok(HtmlString::empty())
                     }
                 }
             }

@@ -18,36 +18,36 @@ use crate::contexts::response_context::ResponseContext;
 
 
 pub trait IHttpRequestPipeline {
-    fn process_request(self: &Self, http_header: String, headers: Vec<String>, request_bytes: Box<Vec<u8>>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Vec<u8>, Box<dyn Error>>;
+    fn process_request(self: &Self, http_header: String, headers: Vec<String>, request_bytes: Box<Vec<u8>>, services: &dyn IServiceCollection) -> Result<Vec<u8>, Box<dyn Error>>;
 }
 
 pub struct HttpRequestPipeline {
-    request_handlers: Vec<Rc<Box<dyn IRequestHandlerService>>>,
+    request_handlers: Vec<Rc<dyn IRequestHandlerService>>,
     #[allow(dead_code)]
-    options: Rc<Box<dyn IHttpOptions>>,
+    options: Rc<dyn IHttpOptions>,
 }
 
 impl HttpRequestPipeline {
     pub fn new(
-        request_handlers: Vec<Rc<Box<dyn IRequestHandlerService>>>,
-        options: Rc<Box<dyn IHttpOptions>>) -> Self {
+        request_handlers: Vec<Rc<dyn IRequestHandlerService>>,
+        options: Rc<dyn IHttpOptions>) -> Self {
         Self { request_handlers: request_handlers, options: options }
     }
 
-    pub fn new_service(services: &dyn IServiceCollection) -> Vec<Rc<dyn Any>> {
-        vec![Rc::new(Box::new(Self::new(
+    pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+        vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_multiple::<dyn IRequestHandlerService>(services),
             ServiceCollectionExtensions::get_required_single::<dyn IHttpOptions>(services)
-        )) as Box<dyn IHttpRequestPipeline>)]
+        )) as Rc<dyn IHttpRequestPipeline>)]
     }
 
     fn parse_request(self: &Self, http_header: String, headers: Vec<String>, request_bytes: Box<Vec<u8>>) -> Rc<RequestContext> {
         return RequestContext::parse(http_header, headers, request_bytes);
     }
 
-    fn build_response(self: &Self, request_ctx: Rc<RequestContext>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Rc<RefCell<ResponseContext>>, Box<dyn Error>> {
+    fn build_response(self: &Self, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<Rc<RefCell<ResponseContext>>, Box<dyn Error>> {
         for request_handler in self.request_handlers.iter() {
-            let response = request_handler.handle_request(request_ctx.clone(), services.clone())?;
+            let response = request_handler.handle_request(request_ctx.clone(), services)?;
             match response {
                 Some(response_ctx) => {
                     return Ok(response_ctx)
@@ -79,9 +79,9 @@ impl HttpRequestPipeline {
 }
 
 impl IHttpRequestPipeline for HttpRequestPipeline {
-    fn process_request(self: &Self, http_header: String, headers: Vec<String>, request_bytes: Box<Vec<u8>>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Vec<u8>, Box<dyn Error>> {
+    fn process_request(self: &Self, http_header: String, headers: Vec<String>, request_bytes: Box<Vec<u8>>, services: &dyn IServiceCollection) -> Result<Vec<u8>, Box<dyn Error>> {
         let request_ctx = self.parse_request(http_header, headers, request_bytes);
-        let response_ctx = self.build_response(request_ctx.clone(), services.clone())?;
+        let response_ctx = self.build_response(request_ctx.clone(), services)?;
         println!("{} -> {}", request_ctx.path, response_ctx.borrow().status_code);
         
         let mut response_bytes = Vec::new();

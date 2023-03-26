@@ -49,7 +49,7 @@ impl IActionResult for FileResult {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, _controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, _request_ctx: Rc<RequestContext>, _services: Arc<RwLock<dyn IServiceCollection>>) {
+    fn configure_response(self: &Self, _controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, _request_ctx: Rc<RequestContext>, _services: &dyn IServiceCollection) {
         let mut response = response_ctx.as_ref().borrow_mut();
         match File::open(self.path.clone()) {
             Ok(f) => {

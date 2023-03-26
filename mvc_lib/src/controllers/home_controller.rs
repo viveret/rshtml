@@ -25,8 +25,8 @@ impl HomeController {
         Self { }
     }
 
-    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Rc<dyn Any>> {
-        vec![Rc::new(Box::new(Self::new()) as Box<dyn IController>)]
+    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+        vec![Box::new(Rc::new(Self::new()) as Rc<dyn IController>)]
     }
 }
 
@@ -35,11 +35,11 @@ impl IController for HomeController {
         None
     }
 
-    fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
+    fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
         match request_ctx.path.as_str() {
             "/" => {
                 controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rs")));
-                Ok(Some(Box::new(ViewResult::new("views/home/index.rs".to_string(), Rc::new(Box::new(""))))))
+                Ok(Some(Box::new(ViewResult::new("views/home/index.rs".to_string(), Box::new(Rc::new(""))))))
             },
             _ => Ok(None),
         }

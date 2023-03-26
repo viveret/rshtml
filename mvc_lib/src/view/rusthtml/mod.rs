@@ -5,3 +5,4 @@ pub mod rusthtml_lang_parts;
 pub mod rusthtml_lang_part;
 pub mod rusthtml_parser;
 pub mod rusthtml_token;
+pub mod rusthtml_view_macros;

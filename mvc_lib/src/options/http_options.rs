@@ -30,11 +30,11 @@ impl HttpOptions {
         Self::new(None, None, None)
     }
 
-    pub fn new_service(ip: Option<Cow<'static, str>>, port: Option<u16>, port_https: Option<u16>) -> Rc<dyn Any> {
-        Rc::new(Box::new(Self::new(ip, port, port_https)) as Box<dyn IHttpOptions>)
+    pub fn new_service(ip: Option<Cow<'static, str>>, port: Option<u16>, port_https: Option<u16>) -> Box<dyn Any> {
+        Box::new(Rc::new(Self::new(ip, port, port_https)) as Rc<dyn IHttpOptions>)
     }
 
-    pub fn new_service_default() -> Rc<dyn Any> {
+    pub fn new_service_default() -> Box<dyn Any> {
         Self::new_service(None, None, None)
     }
 }

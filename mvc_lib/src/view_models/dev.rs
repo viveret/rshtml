@@ -15,11 +15,11 @@ impl IndexViewModel {
 
 
 pub struct ViewsViewModel {
-    pub views: Vec<Rc<Box<dyn IView>>>,
+    pub views: Vec<Rc<dyn IView>>,
 }
 
 impl ViewsViewModel {
-    pub fn new(views: Vec<Rc<Box<dyn IView>>>) -> Self {
+    pub fn new(views: Vec<Rc<dyn IView>>) -> Self {
         Self { views: views }
     }
 }

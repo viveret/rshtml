@@ -35,8 +35,8 @@ impl PrintLnLogger {
     pub fn new() -> Self {
         Self { lines_written: 0 }
     }
-    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Rc<dyn Any>> {
-        vec![Rc::new(Box::new(PrintLnLogger::new()))]
+    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+        vec![Box::new(Rc::new(PrintLnLogger::new()))]
     }
     #[allow(dead_code)]
     pub fn info(self: &mut Self, message: String) {
@@ -47,32 +47,32 @@ impl PrintLnLogger {
 
 impl DefaultServices {
     pub fn add_logging(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::box_of::<PrintLnLogger>(), PrintLnLogger::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<PrintLnLogger>(), PrintLnLogger::new_service, ServiceScope::Singleton));
     }
 
     pub fn add_file_provider(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::box_of::<dyn IFileProviderService>(), FileProviderService::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IFileProviderService>(), FileProviderService::new_service, ServiceScope::Singleton));
     }
 
     pub fn add_controllers(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::box_of::<dyn IController>(), HomeController::new_service, ServiceScope::Singleton));
-        services.add(ServiceDescriptor::new(TypeInfo::box_of::<dyn IController>(), DevController::new_service, ServiceScope::Singleton));
-        services.add(ServiceDescriptor::new(TypeInfo::box_of::<dyn IController>(), FileProviderController::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), HomeController::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), DevController::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), FileProviderController::new_service, ServiceScope::Singleton));
     }
 
     pub fn add_request_handlers(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::box_of::<dyn IRequestHandlerService>(), ControllerRequestHandlerService::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IRequestHandlerService>(), ControllerRequestHandlerService::new_service, ServiceScope::Singleton));
     }
 
     pub fn add_request_decoders(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::box_of::<PrintLnLogger>(), PrintLnLogger::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<PrintLnLogger>(), PrintLnLogger::new_service, ServiceScope::Singleton));
     }
 
     pub fn add_response_encoders(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::box_of::<dyn IViewRenderer>(), ViewRenderer::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IViewRenderer>(), ViewRenderer::new_service, ServiceScope::Singleton));
     }
 
     pub fn add_http_request_pipeline(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::box_of::<dyn IHttpRequestPipeline>(), HttpRequestPipeline::new_service, ServiceScope::Request));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IHttpRequestPipeline>(), HttpRequestPipeline::new_service, ServiceScope::Request));
     }
 }

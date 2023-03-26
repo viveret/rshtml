@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
+
 // used in order to automatically escape strings, but leave HTML strings as is
 #[derive(Clone, Debug)]
 pub struct HtmlString {
@@ -56,5 +58,50 @@ impl HtmlString {
 impl fmt::Display for HtmlString {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.content)
+    }
+}
+
+impl From<&HtmlString> for HtmlString {
+    fn from(item: &HtmlString) -> Self {
+        HtmlString::new_from_html(item.content.clone())
+    }
+}
+
+impl From<String> for HtmlString {
+    fn from(item: String) -> Self {
+        HtmlString::new_data_string(item)
+    }
+}
+
+impl From<&str> for HtmlString {
+    fn from(item: &str) -> Self {
+        HtmlString::new_data_string(item.to_string())
+    }
+}
+
+impl From<Option<String>> for HtmlString {
+    fn from(item: Option<String>) -> Self {
+        match item {
+            Some(x) => HtmlString::new_data_string(x),
+            None => HtmlString::empty(),
+        }
+    }
+}
+
+impl From<Option<&&str>> for HtmlString {
+    fn from(item: Option<&&str>) -> Self {
+        match item {
+            Some(x) => HtmlString::new_data_string(x.to_string()),
+            None => HtmlString::empty(),
+        }
+    }
+}
+
+impl <'a> From<Result<HtmlString, RustHtmlError<'a>>> for HtmlString {
+    fn from(item: Result<HtmlString, RustHtmlError>) -> Self {
+        match item {
+            Ok(HtmlString { content }) => HtmlString::new_from_html(content),
+            Err(RustHtmlError(e)) => HtmlString::new_data_string(e.to_string()),
+        }
     }
 }

@@ -6,6 +6,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::contexts::view_context::IViewContext;
 use crate::view::rusthtml::html_string::HtmlString;
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use crate::services::service_collection::IServiceCollection;
 
@@ -21,7 +22,9 @@ pub trait IView {
     fn get_model_type_name(self: &Self) -> Option<String>;
 
     // using template, render the view given the current data
-    fn render(self: &Self, ctx: Arc<RwLock<dyn IViewContext>>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Box<HtmlString>, Box<dyn Error + 'static>>;
+    fn render(self: &Self, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
+    
+    // fn render_borrowed(self: &Self, ctx: Rc<dyn IViewContext>, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
 
     // might add section renderers, the layout name, and "IsBeingRendered" flag
 }

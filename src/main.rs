@@ -1,5 +1,9 @@
 use std::any::Any;
+use std::borrow::Cow;
 use std::rc::Rc;
+use std::sync::Arc;
+use std::sync::RwLock;
+use std::pin::Pin;
 use std::env;
 
 extern crate mvc_lib;
@@ -28,21 +32,27 @@ use views::shared::_Layout::view_shared__layout;
 
 
 pub fn add_views(services: &mut ServiceCollection) {
-    fn new_dev_views_service(services: &dyn IServiceCollection) -> Vec<Rc<dyn Any>> {
+    fn new_dev_views_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![
-            Rc::new(Box::new(view_dev_index::new()) as Box<dyn IView>) as Rc<dyn Any>,
-            Rc::new(Box::new(view_dev_views::new()) as Box<dyn IView>) as Rc<dyn Any>,
-            Rc::new(Box::new(view_home_index::new()) as Box<dyn IView>) as Rc<dyn Any>,
-            Rc::new(Box::new(view_shared__layout::new()) as Box<dyn IView>) as Rc<dyn Any>,
+            Box::new(Rc::new(view_dev_index::new()) as Rc<dyn IView>) as Box<dyn Any>,
+            Box::new(Rc::new(view_dev_views::new()) as Rc<dyn IView>) as Box<dyn Any>,
+            Box::new(Rc::new(view_home_index::new()) as Rc<dyn IView>) as Box<dyn Any>,
+            Box::new(Rc::new(view_shared__layout::new()) as Rc<dyn IView>) as Box<dyn Any>,
         ]
     }
-    services.add(ServiceDescriptor::new(TypeInfo::box_of::<dyn IView>(), new_dev_views_service, ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IView>(), new_dev_views_service, ServiceScope::Singleton));
 }
 
+static HTTP_OPTIONS: HttpOptions = HttpOptions { ip: Cow::Borrowed("127.0.0.1"), port: 8080, port_https: 8181 };
+const SERVING_PATHS: [&'static str; 1] = ["wwwroot/"];
+static FILE_PROVIDER_OPTIONS: FileProviderControllerOptions = FileProviderControllerOptions { serving_paths: &SERVING_PATHS };
 
 fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) -> () {
-    services.add_instance(TypeInfo::box_of::<dyn IHttpOptions>(), HttpOptions::new_service(None, Some(8080), Some(8181)));
-    services.add_instance(TypeInfo::box_of::<dyn IFileProviderControllerOptions>(), FileProviderControllerOptions::new_service_defaults());
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IHttpOptions>(), |x| vec![Box::new(Rc::new(HTTP_OPTIONS.clone()) as Rc<dyn IHttpOptions>)], ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), |x| vec![Box::new(Rc::new(FILE_PROVIDER_OPTIONS.clone()) as Rc<dyn IFileProviderControllerOptions>)], ServiceScope::Singleton));
+
+    // services.add_instance::<HttpOptions, dyn IHttpOptions>(TypeInfo::rc_of::<dyn IHttpOptions>(), &HTTP_OPTIONS);
+    // services.add_instance::<FileProviderControllerOptions, dyn IFileProviderControllerOptions>(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), &FILE_PROVIDER_OPTIONS);
 }
 
 fn on_configure_services(services: &mut ServiceCollection) -> () {

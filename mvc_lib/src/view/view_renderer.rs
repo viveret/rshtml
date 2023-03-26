@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::error::Error;
 use std::result::Result;
@@ -17,24 +18,26 @@ use crate::contexts::view_context::IViewContext;
 use crate::contexts::view_context::ViewContext;
 
 use crate::view::rusthtml::html_string::HtmlString;
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::iview::IView;
 
 use crate::services::service_collection::IServiceCollection;
+use crate::services::service_collection::ServiceCollectionExtensions;
 
 pub trait IViewRenderer {
-    fn render_view(self: &Self, view_ctx: Arc<RwLock<dyn IViewContext>>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Box<HtmlString>, Box<dyn Error>>;
+    // fn render_view(self: &Self, view_ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
     // fn render_page(self: &Self, view_ctx: &dyn IViewContext, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<String, Box<dyn Error>>;
-    fn render_partial(self: &Self, view_path: String, view_model: Option<Rc<Box<dyn Any>>>, view_renderer: Rc<Box<dyn IViewRenderer>>, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Box<HtmlString>, Box<dyn Error>>;
+    //fn render_partial(self: &Self, view_path: String, view_model: Option<Rc<dyn Any>>, view_renderer: Rc<dyn IViewRenderer>, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
     
-    fn get_layout_view_from_context(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, services: Arc<RwLock<dyn IServiceCollection>>) -> Option<Rc<Box<dyn IView>>>;
+    fn get_layout_view_from_context(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>>;
 
-    fn get_all_views(self: &Self, services: Arc<RwLock<dyn IServiceCollection>>) -> Vec<Rc<Box<dyn IView>>>;
-    fn get_views(self: &Self, path: &String, services: Arc<RwLock<dyn IServiceCollection>>) -> Vec<Rc<Box<dyn IView>>>;
-    fn get_view(self: &Self, path: &String, services: Arc<RwLock<dyn IServiceCollection>>) -> Rc<Box<dyn IView>>;
+    fn get_all_views(self: &Self, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>>;
+    fn get_views(self: &Self, path: &String, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>>;
+    fn get_view(self: &Self, path: &String, services: &dyn IServiceCollection) -> Rc<dyn IView>;
 }
 
 pub struct ViewRenderer {
-    cached_views: RefCell<Option<Vec<Rc<Box<dyn IView>>>>>,
+    cached_views: RefCell<Option<Vec<Rc<dyn IView>>>>,
 }
 
 impl ViewRenderer  {
@@ -44,8 +47,8 @@ impl ViewRenderer  {
         }
     }
 
-    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Rc<dyn Any>> {
-        vec![Rc::new(Box::new(ViewRenderer::new()) as Box<dyn IViewRenderer>)]
+    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+        vec![Box::new(Rc::new(ViewRenderer::new()) as Rc<dyn IViewRenderer>)]
     }
 }
 
@@ -71,7 +74,7 @@ impl IViewRenderer for ViewRenderer {
     //     }
     // }
 
-    fn get_layout_view_from_context(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, services: Arc<RwLock<dyn IServiceCollection>>) -> Option<Rc<Box<dyn IView>>> {
+    fn get_layout_view_from_context(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>> {
         let my_view_data = controller_ctx.as_ref().borrow_mut().get_view_data();
         let my_view_data_value = my_view_data.as_ref().borrow_mut();
         let layout_view_path_option = my_view_data_value.get("Layout");
@@ -84,29 +87,27 @@ impl IViewRenderer for ViewRenderer {
         }
     }
 
-    fn render_partial(self: &Self, view_path: String, view_model: Option<Rc<Box<dyn Any>>>, view_renderer: Rc<Box<dyn IViewRenderer>>, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Box<HtmlString>, Box<dyn Error>> {
-        let view_to_render = self.get_view(&view_path, services.clone());
-        let ctx = Arc::new(RwLock::new(ViewContext::new(view_to_render.clone(), view_model, view_renderer, controller_ctx.clone(), response_ctx.clone(), request_ctx.clone())));
-        self.render_view(ctx, services)
-    }
+    // fn render_partial(self: &Self, view_path: String, view_model: Option<Rc<dyn Any>>, view_renderer: Rc<dyn IViewRenderer>, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
+    //     let view_to_render = self.get_view(&view_path, services);
+    //     let view_ctx = ViewContext::new(view_to_render.clone(), view_model, view_renderer, controller_ctx.clone(), response_ctx.clone(), request_ctx.clone());
+    //     // self.render_view(&view_ctx, services)
+    //     view_ctx.get_view().render(&view_ctx, services)
+    // }
 
-    fn render_view(self: &Self, view_ctx: Arc<RwLock<dyn IViewContext>>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Box<HtmlString>, Box<dyn Error>> {
-        let view = view_ctx.clone().read().unwrap().get_view();
-        println!("Rendering {}", view.get_path());
-        view.render(view_ctx.clone(), services.clone())
-    }
+    // fn render_view(self: &Self, view_ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
+    // }
 
-    fn get_all_views(self: &Self, services: Arc<RwLock<dyn IServiceCollection>>) -> Vec<Rc<Box<dyn IView>>> {
+    fn get_all_views(self: &Self, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>> {
         self.cached_views
             .borrow_mut()
             .get_or_insert_with(|| 
-                services
-                    .read()
-                    .unwrap()
-                    .get_required(TypeInfo::rc_of::<dyn IView>())
-                    .iter()
-                    .map(|x| x.clone().downcast::<Box<dyn IView>>().expect("could not downcast Any to Box<dyn IView>"))
-                    .collect()
+                ServiceCollectionExtensions::get_required_multiple::<dyn IView>(services)
+                // services
+                //     .get_required(TypeInfo::rc_of::<dyn IView>())
+                //     .iter()
+                //     .map(|x| x.downcast::<Rc<dyn IView>>().expect("could not downcast Any to Rc<dyn IView>"))
+                //     .map(|x| *x)
+                //     .collect()
             )
             .clone()
             .iter()
@@ -114,17 +115,11 @@ impl IViewRenderer for ViewRenderer {
             .collect()
     }
 
-    fn get_views(self: &Self, path: &String, services: Arc<RwLock<dyn IServiceCollection>>) -> Vec<Rc<Box<dyn IView>>> {
+    fn get_views(self: &Self, path: &String, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>> {
         self.cached_views
             .borrow_mut()
             .get_or_insert_with(|| 
-                services
-                    .read()
-                    .unwrap()
-                    .get_required(TypeInfo::rc_of::<dyn IView>())
-                    .iter()
-                    .map(|x| x.clone().downcast::<Box<dyn IView>>().expect("could not downcast Any to Box<dyn IView>"))
-                    .collect()
+                ServiceCollectionExtensions::get_required_multiple::<dyn IView>(services)
             )
             .clone()
             .iter()
@@ -133,7 +128,7 @@ impl IViewRenderer for ViewRenderer {
             .collect()
     }
 
-    fn get_view(self: &Self, path: &String, services: Arc<RwLock<dyn IServiceCollection>>) -> Rc<Box<dyn IView>> {
+    fn get_view(self: &Self, path: &String, services: &dyn IServiceCollection) -> Rc<dyn IView> {
         self.get_views(path, services)
             .first()
             .expect(&format!("No views found at '{}'", path.as_str()).to_string()).clone()

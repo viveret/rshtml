@@ -18,12 +18,8 @@ impl TypeInfo {
         Self::new(TypeId::of::<T>(), Cow::Borrowed(std::any::type_name::<T>()))
     }
 
-    pub fn box_of<T: 'static + ?Sized>() -> Box<Self> {
-        Box::new(Self::of::<T>())
-    }
-
-    pub fn rc_of<T: 'static + ?Sized>() -> Rc<Self> {
-        Rc::new(Self::of::<T>())
+    pub fn rc_of<T: 'static + ?Sized>() -> Box<Self> {
+        Box::new(Self::of::<Rc<T>>())
     }
 }
 

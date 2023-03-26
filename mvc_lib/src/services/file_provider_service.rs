@@ -23,8 +23,8 @@ impl FileProviderService {
         Self {}
     }
 
-    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Rc<dyn Any>> {
-        vec![Rc::new(Self::new())]
+    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+        vec![Box::new(Rc::new(Self::new()))]
     }
 }
 

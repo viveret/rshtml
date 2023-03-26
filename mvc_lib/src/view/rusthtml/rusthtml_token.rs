@@ -1,7 +1,7 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
 use std::collections::HashMap;
 
-use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, Span, TokenStream, TokenTree};
+use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Span, Spacing, TokenStream, TokenTree};
 
 #[derive(Clone, Debug)]
 pub enum RustHtmlToken {
@@ -9,7 +9,7 @@ pub enum RustHtmlToken {
     Space(char),
 
     // html
-    HtmlTextNode(String),
+    HtmlTextNode(String, Span),
     HtmlTagStart {
         tag: String,
         attributes: HashMap<String, Option<RustHtmlToken>>,
@@ -18,6 +18,8 @@ pub enum RustHtmlToken {
     HtmlTagEnd(String),
 
     // rust
+    ExternalRustHtml(String, Span),
+    ExternalHtml(String, Span),
     AppendToHtml(Vec<RustHtmlToken>),
 
     Literal(Literal),

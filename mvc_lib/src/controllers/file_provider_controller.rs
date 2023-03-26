@@ -19,21 +19,21 @@ use crate::options::file_provider_controller_options::IFileProviderControllerOpt
 
 
 pub struct FileProviderController {
-    pub options: Rc<Box<dyn IFileProviderControllerOptions>>,
+    pub options: Rc<dyn IFileProviderControllerOptions>,
 }
 
 impl FileProviderController {
-    pub fn new(options: Rc<Box<dyn IFileProviderControllerOptions>>) -> Self {
+    pub fn new(options: Rc<dyn IFileProviderControllerOptions>) -> Self {
         Self
         { 
             options: options
         }
     }
 
-    pub fn new_service(services: &dyn IServiceCollection) -> Vec<Rc<dyn Any>> {
-        vec![Rc::new(Box::new(Self::new(
+    pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+        vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_single::<dyn IFileProviderControllerOptions>(services)
-        )) as Box<dyn IController>)]
+        )) as Rc<dyn IController>)]
     }
 }
 
@@ -42,7 +42,7 @@ impl IController for FileProviderController {
         None
     }
 
-    fn process_request(self: &Self, _controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, services: Arc<RwLock<dyn IServiceCollection>>) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
+    fn process_request(self: &Self, _controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
         let find_path = self.options.get_file(*request_ctx.path.clone());
         match find_path {
             Some(path) => Ok(Some(Box::new(FileResult::new(path, None)))),

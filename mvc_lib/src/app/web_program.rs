@@ -3,9 +3,6 @@ use std::net::{TcpStream, TcpListener};
 use std::io::{Write, BufReader, BufRead};
 use std::option::Option;
 use std::vec::Vec;
-use std::sync::{Arc, RwLock};
-
-use crate::core::type_info::TypeInfo;
 
 use crate::app::http_request_pipeline::IHttpRequestPipeline;
 

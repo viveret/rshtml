@@ -1,7 +1,18 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
-use std::collections::HashMap;
 
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Span, Spacing, TokenStream, TokenTree};
+
+#[derive(Clone, Debug)]
+pub enum RustHtmlIdentOrPunct {
+    Ident(Ident),
+    Punct(Punct),
+}
+
+#[derive(Clone, Debug)]
+pub enum RustHtmlIdentAndPunctOrLiteral {
+    Literal(Literal),
+    IdentAndPunct(Vec<RustHtmlIdentOrPunct>)
+}
 
 #[derive(Clone, Debug)]
 pub enum RustHtmlToken {
@@ -10,12 +21,16 @@ pub enum RustHtmlToken {
 
     // html
     HtmlTextNode(String, Span),
-    HtmlTagStart {
-        tag: String,
-        attributes: HashMap<String, Option<RustHtmlToken>>,
-        is_self_contained_tag: bool,
-    },
-    HtmlTagEnd(String),
+    HtmlTagVoid(String, Vec<RustHtmlIdentOrPunct>),
+    HtmlTagStart(String, Vec<RustHtmlIdentOrPunct>),
+    HtmlTagEnd(String, Vec<RustHtmlIdentOrPunct>),
+    HtmlTagAttributeName(String, RustHtmlIdentAndPunctOrLiteral),
+    HtmlTagAttributeEquals(Punct),
+    HtmlTagAttributeValueString(String),
+    HtmlTagAttributeValue(Vec<RustHtmlToken>),
+    HtmlTagCloseVoidPunct(Punct),
+    HtmlTagCloseSelfContainedPunct(Punct),
+    HtmlTagCloseStartChildrenPunct(Punct),
 
     // rust
     ExternalRustHtml(String, Span),

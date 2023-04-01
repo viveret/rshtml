@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::any::{Any, TypeId};
 use std::rc::Rc;
-use std::ops::Deref;
 
 use crate::core::type_info::TypeInfo;
 
@@ -234,7 +233,7 @@ impl ServiceCollectionExtensions {
 
     pub fn format_error_could_not_downcast<T: ?Sized + 'static>(services: &dyn IServiceCollection, x: TypeId) -> String {
         let type_info = TypeInfo::rc_of::<T>();
-        let expected_descriptor = services.find_descriptor(type_info.clone());
+        let _expected_descriptor = services.find_descriptor(type_info.clone());
         let found_descriptor = &services.try_find_descriptor_by_id(x);
         let found_name = match found_descriptor { Some(d) => &d.get(0).unwrap().type_info.type_name, None => "" };
 

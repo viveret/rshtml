@@ -3,7 +3,6 @@ use std::cell::RefCell;
 use std::error::Error;
 use std::result::Result;
 use std::rc::Rc;
-use std::sync::{Arc, RwLock};
 
 use crate::errors::RequestError;
 

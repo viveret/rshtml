@@ -1,5 +1,6 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @name "shared__layout"
+    @use std::fmt::format
     @{
         let has_title = ViewData.contains_key("Title");
         if !has_title {
@@ -11,7 +12,7 @@ mvc_macro_lib::rusthtml_view_macro! {
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData.get("Title") - WebApplication1</title>
+    <title>@format!("{} - WebApplication1", ViewData.get("Title").unwrap_or(&"Untitled"))</title>
 
     <environment include="Development">
         <link rel="stylesheet" href="https://unpkg.com/@stackoverflow/stacks/dist/css/stacks.min.css" />
@@ -22,17 +23,19 @@ mvc_macro_lib::rusthtml_view_macro! {
         <link rel="stylesheet" href="/css/site.min.css" asp-append-version="true" />
     </environment>
 </head>
-<body>
+<body class="theme-system">
     <header class="s-topbar stacks-topbar ps-fixed h64 js-stacks-topbar print:d-none">
         <div class="s-topbar--container px8">
             <a href="#" class="s-topbar--menu-btn d-none md:d-flex js-hamburger-btn"><span></span></a>
             <a class="s-topbar--logo" href="/">
-                <span class="v-visible-sr">Stacks home</span>
+                <span class="v-visible-sr">Site home</span>
                 @html "src/views/shared/_icon_svg.html"
+
+                <environment include="Development"><i>Beta</i></environment>
             </a>
 
             <ul class="s-navigation ml8 fw-nowrap sm:d-none">
-                <li><a class="s-navigation--item is-selected" href="/product/guidelines/using-stacks/">Home</a></li>
+                <li><a class="s-navigation--item is-selected" href="/product/guidelines/using-stacks/">@"Your Profile"</a></li>
                 <li><a class="s-navigation--item" href="/email/guidelines/getting-started/">Documentation</a></li>
                 <li><a class="s-navigation--item" href="/content/guidelines/principles/">Community</a></li>
                 <li><a class="s-navigation--item" href="/brand/principles/">@self.ViewPath</a></li>
@@ -59,9 +62,8 @@ mvc_macro_lib::rusthtml_view_macro! {
         <footer>
             <p>&copy; @"2018 - Example Rust Html Web Application"</p>
             @let compile_timestamp = format!("Page compiled at {}", self.when_compiled.format("%Y-%m-%d   %H:%M:%S"));
-            <p>@compile_timestamp</p>
-            @let view_timestamp = format!("Page viewed at {}", chrono::prelude::Local::now().format("%Y-%m-%d   %H:%M:%S"));
-            <p>@view_timestamp</p>
+            @let view_timestamp = format!("Page viewed at {}", chrono::prelude::Utc::now().format("%Y-%m-%d   %H:%M:%S"));
+            <p>@format!("{} — {}", compile_timestamp, view_timestamp)</p>
         </footer>
     </div>
 

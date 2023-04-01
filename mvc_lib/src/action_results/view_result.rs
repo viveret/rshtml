@@ -1,12 +1,8 @@
 use std::any::Any;
 use std::cell::RefCell;
-use std::ops::Deref;
 use std::rc::Rc;
-use std::sync::{Arc, RwLock};
 
 use http::StatusCode;
-
-use crate::core::type_info::TypeInfo;
 
 use crate::contexts::request_context::RequestContext;
 use crate::contexts::response_context::ResponseContext;

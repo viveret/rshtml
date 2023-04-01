@@ -5,17 +5,14 @@ extern crate mvc_lib;
 
 use std::rc::Rc;
 use proc_macro::TokenStream;
-use quote::{quote, quote_spanned};
+use quote::quote;
 
-use mvc_lib::view::iview::IView;
-use mvc_lib::view::rusthtml::html_string::HtmlString;
 use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
-use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
 
 #[proc_macro]
 pub fn rusthtml_macro(input: TokenStream) -> TokenStream {
     // let input = proc_macro2::TokenStream::from(input);
-    let parser = RustHtmlParser::new();
+    let parser = RustHtmlParser::new(false, "Development".to_string());
     let result = parser.expand_tokenstream(input);
     TokenStream::from(match result {
         Ok(tokens) => tokens,
@@ -29,8 +26,7 @@ pub fn rusthtml_macro(input: TokenStream) -> TokenStream {
 // puts render function into a structure with additional functionality and information
 #[proc_macro]
 pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
-    // let input = proc_macro2::TokenStream::from(input);
-    let parser = RustHtmlParser::new();
+    let parser = RustHtmlParser::new(false, "Development".to_string());
     let result = parser.expand_tokenstream(input);
     TokenStream::from(match result {
         Ok(html_render_fn2) => {
@@ -43,7 +39,6 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                 None => quote! {},
             };
             let model_type_name = parser.get_model_type_name();
-            println!("model_type_name: {}", model_type_name);
             let model_type = proc_macro2::TokenStream::from(TokenStream::from_iter(parser.get_model_type().iter().cloned()));
             let raw = parser.raw.borrow().clone();
 
@@ -58,6 +53,8 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
             } else {
                 quote! {}
             };
+
+            let use_statements = proc_macro2::TokenStream::from(TokenStream::from_iter(parser.use_statements.borrow().iter().cloned().map(|s| s.into_iter()).flatten()));
 
             let when_compiled = chrono::prelude::Utc::now().to_rfc2822();
 
@@ -80,6 +77,8 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                 use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
                 use mvc_lib::view::rusthtml::rusthtml_view_macros::RustHtmlViewMacros;
                 use mvc_lib::view::iview::IView;
+
+                #use_statements
 
                 pub struct #view_name_ident {
                     model_type_name: &'static str,

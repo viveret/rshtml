@@ -3,7 +3,6 @@ use std::cell::RefCell;
 use std::error::Error;
 use std::result::Result;
 use std::rc::Rc;
-use std::sync::{Arc, RwLock};
 
 use crate::services::service_collection::IServiceCollection;
 
@@ -35,7 +34,7 @@ impl IController for HomeController {
         None
     }
 
-    fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
+    fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, _services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
         match request_ctx.path.as_str() {
             "/" => {
                 controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rs")));

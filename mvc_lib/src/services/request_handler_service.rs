@@ -3,9 +3,6 @@ use std::cell::RefCell;
 use std::error::Error;
 use std::rc::Rc;
 use std::result::Result;
-use std::sync::{Arc, RwLock};
-
-use crate::core::type_info::TypeInfo;
 
 use crate::contexts::request_context::RequestContext;
 use crate::contexts::response_context::ResponseContext;

@@ -3,7 +3,6 @@ use std::cell::RefCell;
 use std::error::Error;
 use std::result::Result;
 use std::rc::Rc;
-use std::sync::{Arc, RwLock};
 
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
@@ -42,7 +41,7 @@ impl IController for FileProviderController {
         None
     }
 
-    fn process_request(self: &Self, _controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
+    fn process_request(self: &Self, _controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, _services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
         let find_path = self.options.get_file(*request_ctx.path.clone());
         match find_path {
             Some(path) => Ok(Some(Box::new(FileResult::new(path, None)))),

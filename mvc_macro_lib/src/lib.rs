@@ -3,7 +3,6 @@ extern crate proc_macro;
 extern crate proc_macro2;
 extern crate mvc_lib;
 
-use std::rc::Rc;
 use proc_macro::TokenStream;
 use quote::quote;
 
@@ -125,12 +124,12 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                             RustHtmlViewMacros::RenderSectionOptional(section_name, self, view_context, services)
                         };
 
-                        let TryRenderBody = || -> Result<HtmlString, RustHtmlError> {
-                            RustHtmlViewMacros::RenderBody(self, view_context, services)
+                        let try_render_body = || -> Result<HtmlString, RustHtmlError> {
+                            RustHtmlViewMacros::render_body(self, view_context, services)
                         };
 
-                        let RenderBody = || -> HtmlString {
-                            match RustHtmlViewMacros::RenderBody(self, view_context, services) {
+                        let render_body = || -> HtmlString {
+                            match RustHtmlViewMacros::render_body(self, view_context, services) {
                                 Ok(html) => html,
                                 Err(e) => panic!("{}", e),
                             }

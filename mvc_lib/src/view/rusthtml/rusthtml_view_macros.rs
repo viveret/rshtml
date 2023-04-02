@@ -22,7 +22,7 @@ impl RustHtmlViewMacros {
         Ok(HtmlString::new_from_html("".to_string()))
     }
 
-    pub fn RenderBody<'a>(view: &dyn IView, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'a>> {
+    pub fn render_body<'a>(view: &dyn IView, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'a>> {
         let body_view_option = ctx.get_controller_ctx().borrow().get_view_data_value("Body");
         match body_view_option {
             Some(body_view_any) => {

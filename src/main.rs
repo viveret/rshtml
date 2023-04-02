@@ -1,9 +1,6 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::rc::Rc;
-use std::sync::Arc;
-use std::sync::RwLock;
-use std::pin::Pin;
 use std::env;
 
 extern crate mvc_lib;
@@ -49,7 +46,7 @@ static FILE_PROVIDER_OPTIONS: FileProviderControllerOptions = FileProviderContro
 
 fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) -> () {
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IHttpOptions>(), |x| vec![Box::new(Rc::new(HTTP_OPTIONS.clone()) as Rc<dyn IHttpOptions>)], ServiceScope::Singleton));
-    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), |x| vec![Box::new(Rc::new(FILE_PROVIDER_OPTIONS.clone()) as Rc<dyn IFileProviderControllerOptions>)], ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), |_| vec![Box::new(Rc::new(FILE_PROVIDER_OPTIONS.clone()) as Rc<dyn IFileProviderControllerOptions>)], ServiceScope::Singleton));
 
     // services.add_instance::<HttpOptions, dyn IHttpOptions>(TypeInfo::rc_of::<dyn IHttpOptions>(), &HTTP_OPTIONS);
     // services.add_instance::<FileProviderControllerOptions, dyn IFileProviderControllerOptions>(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), &FILE_PROVIDER_OPTIONS);

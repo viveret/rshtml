@@ -1,41 +1,51 @@
-<div class="answercell post-layout--right">
-    <div class="s-prose js-post-body" itemprop="text">
-        <h3>Reference Equality</h3>
+<h3>@"Rust HTML Templates"</h3>
+<p>
+    @"The HTML rendering / templating system is similar to Razor / Blazor in C#. There are 
+    enough similarities and differences that they should be mentioned here."
 
-        <div align="left">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-            labore et dolore magna aliqua.
-        </div>
-        <div align="right">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-            labore et dolore magna aliqua.
-        </div>
-        <div align="center">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-            labore et dolore magna aliqua.
-        </div>
-        <div align="justify">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-            labore et dolore magna aliqua.
-        </div>
+    <h4>Similarities</h4>
+    <ul>
+        <li>@"Use the '@' symbol to escape HTML and use a directive or rust code."</li>
+        <li>@"keywords / directives like '@model', '@functions', '@use' are used to extend the templating language."</li>
+        <li>@"Extendable through dependency injection at many different layers."</li>
+        <li>@"Can define a layout view for views that require an outer template that calls render_body()."</li>
+        <li>@"Can render partial views in a template or on own from action in controller, or by using view renderer."</li>
+        <li>@"View paths are search by closest first, with the Shared folder being last."</li>
+        <li>@"Default list of imports required to support the view template."</li>
+    </ul>
 
-        <h3>Value Equality</h3>
-        
-        <div align="left">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-            labore et dolore magna aliqua.
-        </div>
-        <div align="right">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-            labore et dolore magna aliqua.
-        </div>
-        <div align="center">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-            labore et dolore magna aliqua.
-        </div>
-        <div align="justify">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-            labore et dolore magna aliqua.
-        </div>
-    </div>
-</div>
+    <h4>Differences</h4>
+    <ul>
+        <li>@"The entry point for Rust HTML is in a macro within a rust file, so the rust parser
+                has precedent in certain cases for tokenization and validation."</li>
+        <li>@"Currently no support for hot reloading or runtime compilation of views."</li>
+        <li>@"Some variable names and method names are lower case (instead of LikeThis, it is like_this)."</li>
+        <li>@"Can directly import HTML or Rust HTML files with @html and @rshtml."</li>
+    </ul>
+
+    <h4>@"Not Yet Implemented"</h4>
+    <ul>
+        <li>@"@attributes"</li>
+        <li>@"@inherits"</li>
+        <li>@"@inject"</li>
+        <li>@"@implements"</li>
+        <li>@"@namespace"</li>
+        <li>@"@section"</li>
+        <li>@"@typeparam"</li>
+        <li>@"@addTagHelper"</li>
+        <li>@"@removeTagHelper"</li>
+        <li>@"@tagHelperPrefix"</li>
+        <li>@"Tag helpers in general"</li>
+        <li>@"Display and editor templates"</li>
+        <li>@"Sessions or state management"</li>
+        <li>@"Automatic _ViewStart.rshtml prepend or similar functionality"</li>
+        <li>@"Explicit HTML mode by using @:"</li>
+        <li>@"Any kind of reflection"</li>
+        <li>@"Automatic controller / action route mapping (might be able to use https://stackoverflow.com/a/74573771/11765486)"</li>
+        <li>@"Model binding / validation"</li>
+        <li>@"General configuration"</li>
+        <li>@"Localization"</li>
+        <li>@"Background tasks / hosted services"</li>
+        <li>@"Entity framework?"</li>
+    </ul>
+</p>

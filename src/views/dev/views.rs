@@ -8,7 +8,6 @@ mvc_macro_lib::rusthtml_view_macro! {
     <ul>
     @{
         for compiled_view in model.views.iter() {
-            <li></li>
         }
     }
     </ul>

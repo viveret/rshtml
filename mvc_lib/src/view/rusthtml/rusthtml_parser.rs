@@ -18,14 +18,14 @@ pub struct HtmlTagParseContext {
     pub tag_name: Vec<RustHtmlIdentOrPunct>,
     pub html_attrs: HashMap<String, Option<RustHtmlToken>>,
     pub html_attr_key: String,
-    pub html_attr_val: String,
+    pub html_attr_key_literal: Option<Literal>,
+    pub html_attr_key_ident: Vec<RustHtmlIdentOrPunct>,
+    pub html_attr_val: Vec<RustHtmlToken>,
     pub parse_attrs: bool,
     pub parse_attr_val: bool,
     pub is_self_contained_tag: bool,
     pub is_opening_tag: bool,
     pub equals_punct: Option<Punct>,
-    pub html_attr_key_literal: Option<Literal>,
-    pub html_attr_key_ident: Vec<RustHtmlIdentOrPunct>,
 }
 impl HtmlTagParseContext {
     pub fn new() -> Self {
@@ -33,14 +33,14 @@ impl HtmlTagParseContext {
             tag_name: vec![],
             html_attrs: HashMap::new(),
             html_attr_key: String::new(),
-            html_attr_val: String::new(),
+            html_attr_key_literal: None,
+            html_attr_key_ident: vec![],
+            html_attr_val: vec![],
             parse_attrs: false,
             parse_attr_val: false,
             is_self_contained_tag: false,
             is_opening_tag: true,
             equals_punct: None,
-            html_attr_key_literal: None,
-            html_attr_key_ident: vec![],
         }
     }
 
@@ -53,11 +53,14 @@ impl HtmlTagParseContext {
 
     pub fn clear_attr_kvp(self: &mut Self) {
         self.parse_attr_val = false;
+
+        self.html_attr_val = vec![];
+
         self.html_attr_key = String::new();
-        self.html_attr_val = String::new();
-        self.equals_punct = None;
         self.html_attr_key_literal = None;
         self.html_attr_key_ident = vec![];
+
+        self.equals_punct = None;
     }
 
     pub fn tag_name_as_str(self: &Self) -> String {
@@ -311,9 +314,41 @@ impl RustHtmlParser {
         }
         Ok(false) // continue
     }
+
+    pub fn is_start_of_current_expression(self: &Self, output: &mut Vec<RustHtmlToken>) -> bool {
+        if output.len() == 0 {
+            println!("is_start_of_current_expression output.len() == 0, returning true");
+            true
+        } else {
+            let last = output.last().unwrap();
+            match last {
+                RustHtmlToken::ReservedChar(c, punct) => {
+                    match c {
+                        ';' => {
+                            println!("is_start_of_current_expression output.last() == ';', returning true");
+                            true
+                        },
+                        _ => {
+                            println!("is_start_of_current_expression output.last() != ';', returning false");
+                            false
+                        }
+                    }
+                },
+                RustHtmlToken::Group(..) => {
+                    println!("is_start_of_current_expression output.last() == group, returning true");
+                    true
+                },
+                _ => {
+                    println!("is_start_of_current_expression output.last() == {:?}, returning false", last);
+                    false
+                },
+            }
+        }
+    }
     
     pub fn convert_punct_to_rusthtmltoken(self: &Self, punct: Punct, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError> {
         let c = punct.as_char();
+        // println!("c: {}", c);
         match c {
             '@' => {
                 if is_in_html_mode {
@@ -325,12 +360,12 @@ impl RustHtmlParser {
                 }
             },
             '<' => {
-                if is_in_html_mode {
+                if is_in_html_mode || self.is_start_of_current_expression(output) {
                     let mut ctx = HtmlTagParseContext::new();
                     let mut output_inner = vec![];
                     loop {
                         let token_option = it.next();
-                        if self.next_and_parse_html_tag(token_option, &mut ctx, &mut output_inner, it)? {
+                        if self.next_and_parse_html_tag(token_option, &mut ctx, &mut output_inner, it, is_raw_tokenstream)? {
                             break;
                         }
                     }
@@ -509,44 +544,58 @@ impl RustHtmlParser {
 
                 match parse_ctx.html_attrs.get("include") {
                     Some(token) => {
-                        match token.clone() {
-                            Some(RustHtmlToken::Literal(literal)) => {
-                                let literal_as_str = self.unescape_literal_string_no_quotes(&literal);
+                        match token.clone().unwrap() {
+                            RustHtmlToken::HtmlTagAttributeValue(v_parts) => {
+                                for v in v_parts {
+                                    match v {
+                                        RustHtmlToken::Literal(literal) => {
+                                            let literal_as_str = snailquote::unescape(&literal.to_string()).unwrap();
+                                            println!("literal_as_str: {}", literal_as_str);
 
-                                if self.environment_name == literal_as_str {
-                                    keep_or_remove = Some(true);
-                                } else {
-                                    println!("self.environment_name ({}) does not match literal_as_str ({})", self.environment_name, literal_as_str);
-                                    keep_or_remove = Some(false);
+                                            if self.environment_name == literal_as_str {
+                                                keep_or_remove = Some(true);
+                                            } else {
+                                                println!("self.environment_name ({}) does not match literal_as_str ({})", self.environment_name, literal_as_str);
+                                                keep_or_remove = Some(false);
+                                            }
+                                        },
+                                        _ => panic!("Unexpected token for environment tag value: {:?}", token),
+                                    }
                                 }
-                            },
-                            _ => panic!("Unexpected token for environment tag"),
+                            }
+                            _ => panic!("Unexpected token for environment tag: {:?}", token),
                         }
                     },
                     None => {
-                        println!("environment tag does not have include field");
+                        // println!("environment tag does not have include field");
                     }
                 }
                 
                 match parse_ctx.html_attrs.get("exclude") {
                     Some(token) => {
-                        match token.clone() {
-                            Some(RustHtmlToken::Literal(literal)) => {
-                                let literal_as_str = self.unescape_literal_string_no_quotes(&literal);
-
-                                if self.environment_name == literal_as_str {
-                                    keep_or_remove = Some(false);
-                                } else if keep_or_remove == None {
-                                    keep_or_remove = Some(true);
+                        match token.clone().unwrap() {
+                            RustHtmlToken::HtmlTagAttributeValue(v_parts) => {
+                                for v in v_parts {
+                                    match v {
+                                        RustHtmlToken::Literal(literal) => {
+                                            let literal_as_str = snailquote::unescape(&literal.to_string()).unwrap();
+                                            println!("literal_as_str: {}", literal_as_str);
+                                            if self.environment_name == literal_as_str {
+                                                keep_or_remove = Some(true);
+                                            } else {
+                                                println!("self.environment_name ({}) does not match literal_as_str ({})", self.environment_name, literal_as_str);
+                                                keep_or_remove = Some(false);
+                                            }
+                                        },
+                                        _ => panic!("Unexpected token for environment tag value: {:?}", token),
+                                    }
                                 }
-                            },
-                            _ => {
-                                panic!("Unexpected token for environment tag");
-                            },
+                            }
+                            _ => panic!("Unexpected token for environment tag: {:?}", token),
                         }
                     },
                     None => {
-                        println!("environment tag does not have exclude field");
+                        // println!("environment tag does not have exclude field");
                     }
                 }
                 
@@ -601,7 +650,8 @@ impl RustHtmlParser {
         token_option: Option<TokenTree>,
         parse_ctx: &mut HtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>,
-        it: &mut Peekable<impl Iterator<Item = TokenTree>>
+        it: &mut Peekable<impl Iterator<Item = TokenTree>>,
+        is_raw_tokenstream: bool,
     ) -> Result<bool, RustHtmlError> {
         match token_option {
             Some(token) => {
@@ -613,7 +663,7 @@ impl RustHtmlParser {
                         self.convert_html_literal_to_rusthtmltoken(&literal, parse_ctx, output, it)?;
                     },
                     TokenTree::Punct(punct) => {
-                        if self.convert_html_punct_to_rusthtmltoken(&punct, parse_ctx, output, it)? {
+                        if self.convert_html_punct_to_rusthtmltoken(&punct, parse_ctx, output, it, is_raw_tokenstream)? {
                             return Ok(true); // break
                         }
                     },
@@ -635,7 +685,7 @@ impl RustHtmlParser {
         parse_ctx: &mut HtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>,
     ) {
-        // println!("{}={}", parse_ctx.html_attr_key, parse_ctx.html_attr_val);
+        // println!("{}={:?}", parse_ctx.html_attr_key, parse_ctx.html_attr_val);
 
         if let Some(is_literal) = &parse_ctx.html_attr_key_literal {
             output.push(RustHtmlToken::HtmlTagAttributeName(is_literal.to_string(), RustHtmlIdentAndPunctOrLiteral::Literal(is_literal.clone())));
@@ -645,8 +695,8 @@ impl RustHtmlParser {
 
         if parse_ctx.html_attr_val.len() > 0 {
             output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.equals_punct.as_ref().unwrap().clone()));
-            output.push(RustHtmlToken::HtmlTagAttributeValueString(parse_ctx.html_attr_val.clone()));
-            parse_ctx.html_attrs.insert(parse_ctx.html_attr_key.clone(), Some(RustHtmlToken::Literal(Literal::string(&parse_ctx.html_attr_val.clone()))));
+            output.push(RustHtmlToken::HtmlTagAttributeValue(parse_ctx.html_attr_val.clone()));
+            parse_ctx.html_attrs.insert(parse_ctx.html_attr_key.clone(), Some(RustHtmlToken::HtmlTagAttributeValue(parse_ctx.html_attr_val.clone())));
         } else {
             parse_ctx.html_attrs.insert(parse_ctx.html_attr_key.clone(), None);
         }
@@ -663,7 +713,7 @@ impl RustHtmlParser {
     ) -> Result<(), RustHtmlError> {
         if parse_ctx.parse_attrs {
             if parse_ctx.parse_attr_val {
-                parse_ctx.html_attr_val.push_str(&ident.to_string());
+                parse_ctx.html_attr_val.push(RustHtmlToken::Identifier(ident.clone()));
                 parse_ctx.parse_attr_val = false;
             } else {
                 parse_ctx.html_attr_key_ident.push(RustHtmlIdentOrPunct::Ident(ident.clone()));
@@ -706,7 +756,7 @@ impl RustHtmlParser {
         if parse_ctx.parse_attrs {
             // println!("literal.to_string(): {}", literal.to_string());
             if parse_ctx.parse_attr_val {
-                parse_ctx.html_attr_val.push_str(&literal.to_string());
+                parse_ctx.html_attr_val.push(RustHtmlToken::Literal(literal.clone()));
                 self.on_kvp_defined(parse_ctx, output);
             } else {
                 parse_ctx.html_attr_key_literal = Some(literal.clone());
@@ -725,7 +775,8 @@ impl RustHtmlParser {
         punct: &Punct,
         parse_ctx: &mut HtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>, 
-        it: &mut Peekable<impl Iterator<Item = TokenTree>>
+        it: &mut Peekable<impl Iterator<Item = TokenTree>>,
+        is_raw_tokenstream: bool,
     ) -> Result<bool, RustHtmlError> {
         let c = punct.as_char();
         // println!("c: {}", c);
@@ -763,16 +814,33 @@ impl RustHtmlParser {
                 },
                 '-' => {
                     if parse_ctx.parse_attr_val {
-                        parse_ctx.html_attr_val.push_str(format!("{}", c).as_str());
+                        parse_ctx.html_attr_val.push(RustHtmlToken::ReservedChar(c, punct.clone()));
                     } else {
                         parse_ctx.html_attr_key_ident.push(RustHtmlIdentOrPunct::Punct(punct.clone()));
                         parse_ctx.html_attr_key.push_str(format!("{}", c).as_str());
                     }
                 },
+                '@' => {
+                    // escaping the html to insert value
+                    let directive_ident = it.next().unwrap();
+                    match directive_ident {
+                        TokenTree::Ident(ident) => {
+                            self.parse_identifier_expression(ident, &mut parse_ctx.html_attr_val, it)?;
+                        },
+                        TokenTree::Literal(literal) => {
+                            parse_ctx.html_attr_val.push(RustHtmlToken::Literal(literal.clone()));
+                        },
+                        _ => {
+                            return self.panic_or_return_error(format!("Unexpected directive token after '@' in html attribute val parse: {:?}", directive_ident))?;
+                        }
+                    }
+                    println!("parse_ctx.html_attr_val: {:?}", parse_ctx.html_attr_val);
+                    self.on_kvp_defined(parse_ctx, output);
+                }
                 _ => {
                     return self.panic_or_return_error(format!(
                         "Unexpected punct '{}' while parsing HTML tag '{}' attributes \
-                        (read {:?}, current key: {}, current val: {})", c, parse_ctx.tag_name_as_str(),
+                        (read {:?}, current key: {}, current val: {:?})", c, parse_ctx.tag_name_as_str(),
                         parse_ctx.html_attrs, parse_ctx.html_attr_key, parse_ctx.html_attr_val));
                 }
             }
@@ -817,7 +885,7 @@ impl RustHtmlParser {
         match token {
             TokenTree::Ident(ident) => {
                 // println!("ident: {}", ident.to_string());
-                self.convert_rusthtml_directive_identifier_to_rusthtmltoken(ident, output, it)?;
+                self.convert_rusthtml_directive_identifier_to_rusthtmltoken(ident, output, it, is_raw_tokenstream)?;
             },
             TokenTree::Group(group) => {
                 self.convert_rusthtml_directive_group_to_rusthtmltoken(group, output, it, is_raw_tokenstream)?;
@@ -865,7 +933,7 @@ impl RustHtmlParser {
         Ok(())
     }
 
-    pub fn convert_rusthtml_directive_identifier_to_rusthtmltoken(self: &Self, identifier: Ident, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<(), RustHtmlError> {
+    pub fn convert_rusthtml_directive_identifier_to_rusthtmltoken(self: &Self, identifier: Ident, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
         // println!("convert_rusthtml_directive_identifier_to_rusthtmltoken: {}", identifier);
         match identifier.to_string().as_str() {
             "use" => {
@@ -878,7 +946,14 @@ impl RustHtmlParser {
                 self.model_type.replace(Some(type_ident));
             },
             "for" => {
-                return self.panic_or_return_error(format!("For not implemented"));
+                output.push(RustHtmlToken::Identifier(identifier));
+                // read until we reach the loop body {}
+                self.parse_for_or_while_loop_preamble(output, it, is_raw_tokenstream)?;
+            },
+            "while" => {
+                output.push(RustHtmlToken::Identifier(identifier));
+                // read until we reach the loop body {}
+                self.parse_for_or_while_loop_preamble(output, it, is_raw_tokenstream)?;
             },
             "if" => {
                 return self.panic_or_return_error(format!("If not implemented"));
@@ -929,7 +1004,7 @@ impl RustHtmlParser {
         path.push(cwd);
         let relative_path = self.parse_string_with_quotes(identifier.clone(), it)?;
         path.push(relative_path.clone());
-        println!("convert_path_str: {:?} -> {}", identifier, relative_path);
+        // println!("convert_path_str: {:?} -> {}", identifier, relative_path);
 
         Ok(path.to_str().unwrap().to_string())
     }
@@ -1005,10 +1080,60 @@ impl RustHtmlParser {
         }
     }
 
-    pub fn unescape_literal_string_no_quotes(self: &Self, literal: &Literal) -> String {
-        let literal_as_str = snailquote::unescape(&literal.to_string()).unwrap();
-        return literal_as_str[1..literal_as_str.len()-1].to_string();
+    pub fn parse_for_or_while_loop_preamble(self: &Self, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
+        // already parsed and added first ident (for or while)
+        // only allow parsing ident, literal, and punct if punct != '{'
+        loop {
+            let token_option = it.next();
+            match token_option {
+                Some(token) => {
+                    match token {
+                        TokenTree::Ident(ident) => {
+                            output.push(RustHtmlToken::Identifier(ident.clone()));
+                        },
+                        TokenTree::Literal(literal) => {
+                            output.push(RustHtmlToken::Literal(literal.clone()));
+                        },
+                        TokenTree::Punct(punct) => {
+                            let c = punct.as_char();
+                            match c {
+                                '{' => {
+                                    panic!("unexpected {{");
+                                },
+                                _ => {
+                                    output.push(RustHtmlToken::ReservedChar(c, punct.clone()));
+                                }
+                            }
+                        },
+                        TokenTree::Group(group) => {
+                            let delimiter = group.delimiter();
+                            match delimiter {
+                                Delimiter::Brace => {
+                                    self.convert_group_to_rusthtmltoken(group, false, output, is_raw_tokenstream)?;
+                                    break;
+                                },
+                                _ => {
+                                    output.push(RustHtmlToken::Group(delimiter, group.clone()));
+                                },
+                            }
+                        },
+                        _ => {
+                            return self.panic_or_return_error(format!("Unexpected token while parsing for loop: {:?}", token))?;
+                        }
+                    }
+                },
+                None => {
+                    break;
+                }
+            }
+        }
+        Ok(())
     }
+
+    // pub fn unescape_literal_string_no_quotes(self: &Self, literal: &Literal) -> String {
+    //     let literal_as_str = snailquote::unescape(&literal.to_string()).unwrap();
+    //     return literal_as_str[1..literal_as_str.len()-1].to_string();
+    // }
 
     pub fn parse_identifier_expression(self: &Self, identifier: Ident, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<(), RustHtmlError> {
         output.push(RustHtmlToken::Identifier(identifier.clone()));
@@ -1156,12 +1281,12 @@ impl RustHtmlParser {
                 self.convert_rusthtmltagattributename_to_tokentree(tag_tokens, output, it)?,
             RustHtmlToken::HtmlTagAttributeValue(v) =>
                 self.convert_rusthtmltagattributevalue_to_tokentree(v.clone(), output, it)?,
-            RustHtmlToken::HtmlTagAttributeValueString(s) =>
-                self.convert_rusthtmltagattributevaluestring_to_tokentree(s, output, it)?,
+            // RustHtmlToken::HtmlTagAttributeValueString(s) =>
+            //     self.convert_rusthtmltagattributevaluestring_to_tokentree(s, output, it)?,
             RustHtmlToken::HtmlTextNode(text, span) => 
                 self.convert_rusthtmltextnode_to_tokentree(text, span, output, it)?,
             RustHtmlToken::AppendToHtml(inner) =>
-                self.convert_rusthtmlappendhtml_to_tokentree(inner, output, it)?,
+                self.convert_rusthtmlappendhtml_to_tokentree(inner, output)?,
             RustHtmlToken::ExternalHtml(path, span) =>
                 self.convert_htmlexternal_to_tokentree(path, span.clone(), output, it)?,
             _ => { return Err(RustHtmlError::from_string(format!("Could not handle token {:?}", token))); }
@@ -1226,6 +1351,7 @@ impl RustHtmlParser {
     pub fn convert_rusthtmltagattributevalue_to_tokentree<'a>(self: &Self, v: Vec<RustHtmlToken>, output: &mut Vec<TokenTree>, it: &mut Peekable<impl Iterator<Item = &'a RustHtmlToken>>) -> Result<(), RustHtmlError> {
         self.convert_appendhtmlstring_to_tokentree("\"".to_string(), output, it)?;
         // inner tokens
+        self.convert_rusthtmlappendhtml_to_tokentree(&v, output);
         self.convert_appendhtmlstring_to_tokentree("\"".to_string(), output, it)?;
         Ok(())
     }
@@ -1261,7 +1387,7 @@ impl RustHtmlParser {
         Ok(())
     }
 
-    pub fn convert_rusthtmlappendhtml_to_tokentree<'a>(self: &Self, inner: &Vec<RustHtmlToken>, output: &mut Vec<TokenTree>, it: &mut Peekable<impl Iterator<Item = &'a RustHtmlToken>>) -> Result<(), RustHtmlError> {
+    pub fn convert_rusthtmlappendhtml_to_tokentree<'a>(self: &Self, inner: &Vec<RustHtmlToken>, output: &mut Vec<TokenTree>) -> Result<(), RustHtmlError> {
         let mut inner_tokens = vec![];
         let mut inner_it = inner.iter().peekable();
         self.convert_rusthtmltokens_to_plain_rust(&mut inner_tokens, &mut inner_it)?;

@@ -1,6 +1,5 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @name "shared__layout"
-    @use std::fmt::format
     @{
         let has_title = ViewData.contains_key("Title");
         if !has_title {
@@ -38,7 +37,9 @@ mvc_macro_lib::rusthtml_view_macro! {
                 <li><a class="s-navigation--item is-selected" href="/product/guidelines/using-stacks/">@"Your Profile"</a></li>
                 <li><a class="s-navigation--item" href="/email/guidelines/getting-started/">Documentation</a></li>
                 <li><a class="s-navigation--item" href="/content/guidelines/principles/">Community</a></li>
-                <li><a class="s-navigation--item" href="/brand/principles/">@self.ViewPath</a></li>
+                <environment include="Development">
+                    <li><a class="s-navigation--item" href="/dev/views/">@"(Dev) Views"</a></li>
+                </environment>
             </ul>
 
             <ol class="s-topbar--content sm:ml0 overflow-hidden"></ol>
@@ -78,7 +79,7 @@ mvc_macro_lib::rusthtml_view_macro! {
         <script src="/js/site.min.js" asp-append-version="true"></script>
     </environment>
 
-    @RenderSectionOptional("Scripts")
+    @render_section_optional("Scripts")
 </body>
 </html>
 }

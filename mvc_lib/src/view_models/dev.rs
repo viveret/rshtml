@@ -23,3 +23,13 @@ impl ViewsViewModel {
         Self { views: views }
     }
 }
+
+pub struct ViewDetailsViewModel {
+    pub view: Rc<dyn IView>,
+}
+
+impl ViewDetailsViewModel {
+    pub fn new(view: Rc<dyn IView>) -> Self {
+        Self { view: view }
+    }
+}

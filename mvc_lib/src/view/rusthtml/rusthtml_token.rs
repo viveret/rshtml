@@ -26,7 +26,6 @@ pub enum RustHtmlToken {
     HtmlTagEnd(String, Vec<RustHtmlIdentOrPunct>),
     HtmlTagAttributeName(String, RustHtmlIdentAndPunctOrLiteral),
     HtmlTagAttributeEquals(Punct),
-    HtmlTagAttributeValueString(String),
     HtmlTagAttributeValue(Vec<RustHtmlToken>),
     HtmlTagCloseVoidPunct(Punct),
     HtmlTagCloseSelfContainedPunct(Punct),

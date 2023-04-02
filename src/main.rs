@@ -23,6 +23,7 @@ pub mod views;
 
 use views::dev::index::view_dev_index;
 use views::dev::views::view_dev_views;
+use views::dev::view_details::view_dev_view_details;
 use views::home::index::view_home_index;
 use views::shared::_Layout::view_shared__layout;
 
@@ -33,6 +34,7 @@ pub fn add_views(services: &mut ServiceCollection) {
         vec![
             Box::new(Rc::new(view_dev_index::new()) as Rc<dyn IView>) as Box<dyn Any>,
             Box::new(Rc::new(view_dev_views::new()) as Rc<dyn IView>) as Box<dyn Any>,
+            Box::new(Rc::new(view_dev_view_details::new()) as Rc<dyn IView>) as Box<dyn Any>,
             Box::new(Rc::new(view_home_index::new()) as Rc<dyn IView>) as Box<dyn Any>,
             Box::new(Rc::new(view_shared__layout::new()) as Rc<dyn IView>) as Box<dyn Any>,
         ]

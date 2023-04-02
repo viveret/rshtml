@@ -116,12 +116,12 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                         let mut ViewData = HashMap::<&str, &str>::new();
                         #view_model_tokens
 
-                        let RenderSection = |section_name: &str| -> Result<HtmlString, RustHtmlError> {
-                            RustHtmlViewMacros::RenderSection(section_name, self, view_context, services)
+                        let render_section = |section_name: &str| -> Result<HtmlString, RustHtmlError> {
+                            RustHtmlViewMacros::render_section(section_name, self, view_context, services)
                         };
 
-                        let RenderSectionOptional = |section_name: &str| -> Result<HtmlString, RustHtmlError> {
-                            RustHtmlViewMacros::RenderSectionOptional(section_name, self, view_context, services)
+                        let render_section_optional = |section_name: &str| -> Result<HtmlString, RustHtmlError> {
+                            RustHtmlViewMacros::render_section_optional(section_name, self, view_context, services)
                         };
 
                         let try_render_body = || -> Result<HtmlString, RustHtmlError> {

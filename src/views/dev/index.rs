@@ -14,6 +14,8 @@ mvc_macro_lib::rusthtml_view_macro! {
         // this is also allowed
         let y = 0;
     }
+    
+    <h1>@ViewData.get("Title")</h1>
     <p>Dev index page</p>
 }
 

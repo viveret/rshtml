@@ -58,10 +58,12 @@ mvc_macro_lib::rusthtml_view_macro! {
 
     <div class="container body-content ps-relative py24 t64 mx-auto w100 wmx12">
         @render_body()
-        <footer class="pt64">
+        <footer class="pt32">
             <hr />
 
-            <p>&copy; @"2018 - Example Rust Html Web Application"</p>
+            @let current_year = chrono::prelude::Utc::now().format("%Y");
+            <p>&copy; @format!("{} - Example Rust Html Web Application", current_year)</p>
+
             @let compile_timestamp = format!("Page compiled at {}", self.when_compiled.format("%Y-%m-%d   %H:%M:%S"));
             @let view_timestamp = format!("Page viewed at {}", chrono::prelude::Utc::now().format("%Y-%m-%d   %H:%M:%S"));
             <p>@format!("{} — {}", compile_timestamp, view_timestamp)</p>

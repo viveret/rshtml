@@ -15,7 +15,6 @@ http = "0.2.9"
 httparse = "1.8.0"
 http-bytes = "0.1.0"
 html-escape = "0.2.13"
-htmlnode = { path = "../htmlnode" }
 mime = "0.3.16"
 proc-macro2 = "1.0.51"
 quote = "1.0.23"

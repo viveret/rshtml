@@ -7,12 +7,19 @@ use std::rc::Rc;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
-use crate::contexts::request_context::RequestContext;
+use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
 
 use crate::action_results::file_result::FileResult;
 use crate::action_results::iaction_result::IActionResult;
+
 use crate::controllers::icontroller::IController;
+use crate::controllers::icontroller_extensions::IControllerExtensions;
+use crate::controllers::controller_actions_map::IControllerAction;
+use crate::controllers::controller_actions_map::IControllerActionsMap;
+use crate::controllers::controller_actions_map::ControllerActionsMap;
+
+use crate::routing::route_data::RouteData;
 
 use crate::options::file_provider_controller_options::IFileProviderControllerOptions;
 
@@ -41,11 +48,19 @@ impl IController for FileProviderController {
         None
     }
 
-    fn process_request(self: &Self, _controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, _services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
-        let find_path = self.options.get_file(*request_ctx.path.clone());
+    fn get_name(self: &Self) -> Option<String> {
+        Some("FileProvider".to_string())
+    }
+
+    fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, _services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
+        let find_path = self.options.get_file(*controller_ctx.borrow().get_request_context().path.clone());
         match find_path {
             Some(path) => Ok(Some(Box::new(FileResult::new(path, None)))),
             None => Ok(None),
         }
+    }
+
+    fn get_actions(self: &Self) -> Vec<Box<dyn IControllerAction>> {
+        vec![]
     }
 }

@@ -4,14 +4,22 @@ use std::result::Result;
 use std::rc::Rc;
 
 use crate::action_results::iaction_result::IActionResult;
-use crate::contexts::request_context::RequestContext;
 use crate::contexts::controller_context::ControllerContext;
+
+use crate::routing::route_data::RouteData;
 
 use crate::services::service_collection::IServiceCollection;
 
+use crate::controllers::controller_actions_map::IControllerActionsMap;
+use crate::controllers::controller_actions_map::IControllerAction;
+
 
 pub trait IController {
-    fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>>;
+    fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>>;
 
     fn get_route_area(self: &Self) -> Option<String>;
+    
+    fn get_name(self: &Self) -> Option<String>;
+
+    fn get_actions(self: &Self) -> Vec<Box<dyn IControllerAction>>;
 }

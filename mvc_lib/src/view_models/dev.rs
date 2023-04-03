@@ -4,12 +4,11 @@ use crate::view::iview::IView;
 
 
 pub struct IndexViewModel {
-    pub views: Vec<Rc<Box<dyn IView>>>,
 }
 
 impl IndexViewModel {
-    pub fn new(views: Vec<Rc<Box<dyn IView>>>) -> Self {
-        Self { views: views }
+    pub fn new() -> Self {
+        Self { }
     }
 }
 

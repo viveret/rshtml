@@ -38,7 +38,7 @@ mvc_macro_lib::rusthtml_view_macro! {
                 <li><a class="s-navigation--item" href="/email/guidelines/getting-started/">Documentation</a></li>
                 <li><a class="s-navigation--item" href="/content/guidelines/principles/">Community</a></li>
                 <environment include="Development">
-                    <li><a class="s-navigation--item" href="/dev/views/">@"(Dev) Views"</a></li>
+                    <li><a class="s-navigation--item" href="/dev/views">@"(Dev) Views"</a></li>
                 </environment>
             </ul>
 

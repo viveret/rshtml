@@ -6,9 +6,10 @@ use std::result::Result;
 
 use crate::contexts::request_context::RequestContext;
 use crate::contexts::response_context::ResponseContext;
-use crate::contexts::controller_context::ControllerContext;
 
 use crate::controllers::icontroller::IController;
+use crate::controllers::icontroller_extensions::IControllerExtensions;
+
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
@@ -63,21 +64,20 @@ impl ControllerRequestHandlerService {
 }
 
 impl IRequestHandlerService for ControllerRequestHandlerService {
-    fn handle_request(self: &Self, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<Option<Rc<RefCell<ResponseContext>>>, Box<dyn Error>> {
-        let response_ctx = Rc::new(RefCell::new(ResponseContext::new(http::version::Version::HTTP_11, http::StatusCode::NOT_FOUND)));
-        let controller_ctx = Rc::new(RefCell::new(ControllerContext::new(None)));
+    fn handle_request(self: &Self, request_context: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<Option<Rc<RefCell<ResponseContext>>>, Box<dyn Error>> {
+        let response_context = Rc::new(RefCell::new(ResponseContext::new(http::version::Version::HTTP_11, http::StatusCode::NOT_FOUND)));
         for controller in self.controllers.iter() {
-            controller_ctx.as_ref().borrow_mut().controller = Some(controller.clone());
-            let has_result = controller.process_request(controller_ctx.clone(), request_ctx.clone(), services)?;
+            let controller_ctx = IControllerExtensions::create_context(controller.clone(), request_context.clone());
+            let has_result = controller.process_request(controller_ctx.clone(), services)?;
             match has_result {
                 Some(has_some) => {
-                    response_ctx.as_ref().borrow_mut().status_code = has_some.get_statuscode();
-                    has_some.configure_response(controller_ctx.clone(), response_ctx.clone(), request_ctx.clone(), services);
-                    return Ok(Some(response_ctx))
+                    response_context.as_ref().borrow_mut().status_code = has_some.get_statuscode();
+                    has_some.configure_response(controller_ctx.clone(), response_context.clone(), request_context.clone(), services);
+                    return Ok(Some(response_context))
                 },
                 None => { }
             }
         }
-        return Ok(Some(response_ctx))
+        return Ok(Some(response_context))
     }
 }

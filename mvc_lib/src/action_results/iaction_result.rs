@@ -10,6 +10,7 @@ use crate::contexts::controller_context::ControllerContext;
 
 use crate::services::service_collection::IServiceCollection;
 
+
 pub trait IActionResultToAny: 'static {
     fn as_any(&self) -> &dyn Any;
 }

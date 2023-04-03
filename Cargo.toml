@@ -18,6 +18,7 @@ html-escape = "0.2.13"
 mime = "0.3.16"
 regex = "1.7.1"
 rustc_lexer = "0.1.0"
+sysinfo = "0.28.4"
 
 [dependencies.mvc_lib]
 path = "mvc_lib"

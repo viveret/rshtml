@@ -38,3 +38,5 @@ impl IActionResult for HttpRedirectResult {
         response.add_header_string("Location".to_string(), self.redirect_target.clone());
     }
 }
+
+// todo: redirect to action

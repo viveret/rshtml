@@ -18,6 +18,7 @@ use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions};
 
+
 pub struct ViewResult {
     pub path: String,
     pub model: Rc<Option<Box<dyn Any>>>,

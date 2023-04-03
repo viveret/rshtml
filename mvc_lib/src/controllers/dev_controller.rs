@@ -27,6 +27,7 @@ use crate::view::view_renderer::IViewRenderer;
 use crate::view_models::dev::IndexViewModel;
 use crate::view_models::dev::ViewsViewModel;
 use crate::view_models::dev::ViewDetailsViewModel;
+use crate::view_models::dev::SysInfoViewModel;
 
 use crate::routing::route_data::RouteData;
 
@@ -85,6 +86,12 @@ impl IController for DevController {
                 let viewModel = Box::new(Rc::new(ViewDetailsViewModel::new(view_renderer.get_view(&path.to_string(), services))));
                 controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rs")));
                 return Ok(Some(Box::new(ViewResult::new("views/dev/view_details.rs".to_string(), viewModel))));
+            })),
+            Box::new(ControllerActionClosure::new("/dev/sysinfo", "SysInfo", |controller_ctx, services| {
+                let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
+                let viewModel = Box::new(Rc::new(SysInfoViewModel::new()));
+                controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rs")));
+                Ok(Some(Box::new(ViewResult::new("views/dev/sysinfo.rs".to_string(), viewModel))))
             })),
         ]
     }

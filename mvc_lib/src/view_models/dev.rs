@@ -32,3 +32,13 @@ impl ViewDetailsViewModel {
         Self { view: view }
     }
 }
+
+
+pub struct SysInfoViewModel {
+}
+
+impl SysInfoViewModel {
+    pub fn new() -> Self {
+        Self {  }
+    }
+}

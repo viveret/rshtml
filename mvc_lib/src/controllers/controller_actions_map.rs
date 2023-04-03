@@ -13,6 +13,7 @@ use crate::routing::route_data::RouteData;
 
 use crate::services::service_collection::IServiceCollection;
 
+
 pub trait IControllerAction {
     fn get_name(self: &Self) -> String;
     fn get_route_pattern(self: &Self) -> String;
@@ -48,14 +49,14 @@ impl<T> IControllerAction for ControllerActionClosure<T> where T: Fn(Rc<RefCell<
     fn is_route_match(self: &Self, controller_context: Rc<RefCell<ControllerContext>>) -> Result<bool, Box<dyn Error>> {
         let request_context = controller_context.borrow().get_request_context();
         let path = request_context.path.as_str().trim();
-        let expected_pattern = self.get_route_pattern();
+        let route_pattern = self.get_route_pattern();
 
-        // println!("Testing path {} against pattern {}", path, expected_pattern);
+        // println!("Testing path {} against pattern {}", path, route_pattern);
 
-        if expected_pattern.ends_with("..") {
-            Ok(path.starts_with(&expected_pattern[..expected_pattern.len() - 2]))
+        if route_pattern.ends_with("..") {
+            Ok(path.starts_with(&route_pattern[..route_pattern.len() - 2]))
         } else {
-            Ok(path == expected_pattern)
+            Ok(path == route_pattern)
         }
     }
 
@@ -66,7 +67,6 @@ impl<T> IControllerAction for ControllerActionClosure<T> where T: Fn(Rc<RefCell<
     fn get_route_pattern(self: &Self) -> String {
         self.route_pattern.clone()
     }
-
 }
 
 pub trait IControllerActionsMap {

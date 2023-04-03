@@ -34,11 +34,11 @@ mvc_macro_lib::rusthtml_view_macro! {
             </a>
 
             <ul class="s-navigation ml8 fw-nowrap sm:d-none">
-                <li><a class="s-navigation--item is-selected" href="/product/guidelines/using-stacks/">@"Your Profile"</a></li>
+                <li><a class="s-navigation--item is-selected" href="/product/guidelines/using-stacks/">Home</a></li>
                 <li><a class="s-navigation--item" href="/email/guidelines/getting-started/">Documentation</a></li>
                 <li><a class="s-navigation--item" href="/content/guidelines/principles/">Community</a></li>
                 <environment include="Development">
-                    <li><a class="s-navigation--item" href="/dev/views">@"(Dev) Views"</a></li>
+                    <li><a class="s-navigation--item" href="/dev">@"Dev Tools"</a></li>
                 </environment>
             </ul>
 

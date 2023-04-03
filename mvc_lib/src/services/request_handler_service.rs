@@ -20,22 +20,10 @@ pub trait IRequestHandlerService {
 
 pub struct ControllerRequestHandlerService {
     controllers: Vec<Rc<dyn IController>>,
-    // areas: Vec<String>,
 }
 
 impl ControllerRequestHandlerService {
     pub fn new(controllers: Vec<Rc<dyn IController>>) -> Self {
-        // let knownAreas = controllers
-        //                     .iter()
-        //                     .map(|x| x.get_route_area())
-        //                     .filter(|x| {
-        //                         match x.get_route_area() {
-        //                             Some(route_area) => true,
-        //                             None => false,
-        //                         }
-        //                     })
-        //                     .map(|x| x.clone())
-        //                     .collect();
         Self { controllers: controllers }
     }
 

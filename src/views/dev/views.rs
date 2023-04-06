@@ -1,12 +1,12 @@
 mvc_macro_lib::rusthtml_view_macro! {
+    @viewstart "src/views/dev/_view_start.rshtml"
     @name "dev_views"
     @model mvc_lib::view_models::dev::ViewsViewModel
     @{
-        // Layout = "_Layout_Dev_Index";
-        ViewData.insert("Title", "Compiled Views - Dev");
+        view_context.insert_str("Title", "Compiled Views - Dev".to_string());
     }
     
-    <h1>@ViewData.get("Title")</h1>
+    <h1>@view_context.get_str("Title")</h1>
     <p>@format!("In total there are {} views:", model.views.len())</p>
     <ul>
     @for compiled_view in model.views.iter() {

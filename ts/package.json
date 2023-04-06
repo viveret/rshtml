@@ -1,0 +1,22 @@
+{
+  "name": "rshtml-ts",
+  "version": "1.0.0",
+  "description": "Example typescript project for Rust HTML",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/viveret/rshtml.git"
+  },
+  "author": "Viveret Steele",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/viveret/rshtml/issues"
+  },
+  "homepage": "https://github.com/viveret/rshtml#readme",
+  "dependencies": {
+    "@stackoverflow/stacks": "^1.9.0"
+  }
+}

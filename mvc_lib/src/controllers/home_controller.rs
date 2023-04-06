@@ -59,7 +59,6 @@ impl IController for HomeController {
             Box::new(ControllerActionClosure::new("/", "Index", |controller_ctx, services| {
                 let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
                 let viewModel = Box::new(Rc::new(IndexViewModel::new()));
-                controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rs")));
                 Ok(Some(Box::new(ViewResult::new("views/home/index.rs".to_string(), viewModel))))
             })),
         ]

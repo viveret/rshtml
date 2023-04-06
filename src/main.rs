@@ -3,6 +3,8 @@ use std::borrow::Cow;
 use std::rc::Rc;
 use std::env;
 
+use phf::phf_map;
+
 extern crate mvc_lib;
 
 use mvc_lib::core::type_info::TypeInfo;
@@ -46,7 +48,11 @@ pub fn add_views(services: &mut ServiceCollection) {
 
 static HTTP_OPTIONS: HttpOptions = HttpOptions { ip: Cow::Borrowed("127.0.0.1"), port: 8080, port_https: 8181 };
 const SERVING_PATHS: [&'static str; 1] = ["wwwroot/"];
-static FILE_PROVIDER_OPTIONS: FileProviderControllerOptions = FileProviderControllerOptions { serving_paths: &SERVING_PATHS };
+static SERVING_FILES: phf::Map<&'static str, &'static str> = phf_map! {
+    "/stacks.min.css" => "ts/node_modules/@stackoverflow/stacks/dist/css/stacks.min.css",
+    "/stacks.css" => "ts/node_modules/@stackoverflow/stacks/dist/css/stacks.css",
+};
+static FILE_PROVIDER_OPTIONS: FileProviderControllerOptions = FileProviderControllerOptions { serving_directories: &SERVING_PATHS, serving_files: &SERVING_FILES };
 
 fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) -> () {
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IHttpOptions>(), |x| vec![Box::new(Rc::new(HTTP_OPTIONS.clone()) as Rc<dyn IHttpOptions>)], ServiceScope::Singleton));

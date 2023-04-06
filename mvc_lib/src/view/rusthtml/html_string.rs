@@ -88,6 +88,15 @@ impl From<Option<String>> for HtmlString {
     }
 }
 
+impl From<Option<&String>> for HtmlString {
+    fn from(item: Option<&String>) -> Self {
+        match item {
+            Some(x) => HtmlString::new_data_string(x.clone()),
+            None => HtmlString::empty(),
+        }
+    }
+}
+
 impl From<Option<&&str>> for HtmlString {
     fn from(item: Option<&&str>) -> Self {
         match item {

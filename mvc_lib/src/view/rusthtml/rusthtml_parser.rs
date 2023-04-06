@@ -109,6 +109,8 @@ pub struct RustHtmlParser {
 
     pub raw: RefCell<String>,
 
+    pub has_included_view_start: RefCell<bool>,
+
     pub environment_name: String,
 }
 impl RustHtmlParser {
@@ -127,7 +129,8 @@ impl RustHtmlParser {
             model_type: RefCell::new(None),
             use_statements: RefCell::new(vec![]),
             raw: RefCell::new(String::new()),
-            environment_name: environment_name
+            has_included_view_start: RefCell::new(false),
+            environment_name: environment_name,
         }
     }
 
@@ -143,7 +146,19 @@ impl RustHtmlParser {
         self.model_type.borrow().clone().unwrap_or(vec![])
     }
 
-    pub fn try_get_param_string(self: &Self, key: &str) -> Result<String, RustHtmlError> {
+    pub fn try_get_param_string(self: &Self, key: &str) -> Option<String> {
+        match self.params.borrow().get(&key.to_string()) {
+            Some(str_val) => {
+                let s = snailquote::unescape(str_val).unwrap();
+                Some(s)
+            },
+            None => {
+                None
+            }
+        }
+    }
+
+    pub fn get_param_string(self: &Self, key: &str) -> Result<String, RustHtmlError> {
         match self.params.borrow().get(&key.to_string()) {
             Some(str_val) => {
                 let s = snailquote::unescape(str_val).unwrap();
@@ -153,10 +168,6 @@ impl RustHtmlParser {
                 return self.panic_or_return_error(format!("missing param '@{}' in rusthtml", key));
             }
         }
-    }
-
-    pub fn get_param_string(self: &Self, key: &str) -> String {
-        self.try_get_param_string(key).unwrap()
     }
 
     pub fn get_functions_section(self: &Self) -> Option<TokenStream> {
@@ -178,7 +189,14 @@ impl RustHtmlParser {
     pub fn expand_tokenstream(self: &Self, input: TokenStream) -> Result<TokenStream, RustHtmlError> {
         let mut it = input.into_iter().peekable();
 
-        let rusthtml_tokens = self.parse_tokenstream_to_rusthtmltokens(true, it.by_ref(), false)?;
+        let rusthtml_tokens_for_view = self.parse_tokenstream_to_rusthtmltokens(true, it.by_ref(), false)?;
+
+        // prefix with _view_start
+        let view_start_path = self.get_param_string("viewstart").unwrap_or("src/views/home/_view_start.rshtml".to_string());
+        let mut view_start_tokens = vec![];
+        self.expand_external_tokenstream(&view_start_path, &mut view_start_tokens);
+
+        let rusthtml_tokens = view_start_tokens.iter().chain(rusthtml_tokens_for_view.iter()).cloned().collect();
         let rust_output = self.parse_rusthtmltokens_to_plain_rust(rusthtml_tokens)?;
 
         self.raw.replace(self.display_as_code(&mut rust_output.iter().cloned().peekable()));
@@ -550,7 +568,7 @@ impl RustHtmlParser {
                                     match v {
                                         RustHtmlToken::Literal(literal) => {
                                             let literal_as_str = snailquote::unescape(&literal.to_string()).unwrap();
-                                            println!("literal_as_str: {}", literal_as_str);
+                                            // println!("literal_as_str: {}", literal_as_str);
 
                                             if self.environment_name == literal_as_str {
                                                 keep_or_remove = Some(true);
@@ -579,11 +597,11 @@ impl RustHtmlParser {
                                     match v {
                                         RustHtmlToken::Literal(literal) => {
                                             let literal_as_str = snailquote::unescape(&literal.to_string()).unwrap();
-                                            println!("literal_as_str: {}", literal_as_str);
-                                            if self.environment_name == literal_as_str {
+                                            // println!("literal_as_str: {}", literal_as_str);
+                                            if self.environment_name != literal_as_str {
                                                 keep_or_remove = Some(true);
                                             } else {
-                                                println!("self.environment_name ({}) does not match literal_as_str ({})", self.environment_name, literal_as_str);
+                                                println!("self.environment_name ({}) DOES match literal_as_str ({})", self.environment_name, literal_as_str);
                                                 keep_or_remove = Some(false);
                                             }
                                         },
@@ -936,6 +954,11 @@ impl RustHtmlParser {
     pub fn convert_rusthtml_directive_identifier_to_rusthtmltoken(self: &Self, identifier: Ident, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
         // println!("convert_rusthtml_directive_identifier_to_rusthtmltoken: {}", identifier);
         match identifier.to_string().as_str() {
+            "name" | "viewstart" => {
+                let param_value = self.parse_string_with_quotes(identifier.clone(), it)?;
+                println!("ident {} val: {}", identifier.to_string().clone(), param_value);
+                self.params.borrow_mut().insert(identifier.to_string().clone(), param_value);
+            },
             "use" => {
                 let type_ident_tokens = self.parse_type_identifier(it)?; // expecting type identifier
                 let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_tokens));
@@ -973,11 +996,6 @@ impl RustHtmlParser {
                         return self.panic_or_return_error(format!("unexpected token after functions directive: {:?}", group_token));
                     }
                 }
-            },
-            "name" => {
-                let param_value = self.parse_string_with_quotes(identifier.clone(), it)?;
-                // println!("name: {}", param_value);
-                self.params.borrow_mut().insert(identifier.to_string().clone(), param_value);
             },
             "rshtml" => {
                 self.convert_externalrusthtml_directive(identifier, output, it)?;

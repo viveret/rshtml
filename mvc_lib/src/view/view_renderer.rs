@@ -1,11 +1,21 @@
 use std::any::Any;
+use std::borrow::Cow;
 use std::cell::RefCell;
+use std::error::Error;
 use std::rc::Rc;
+use std::ops::Deref;
+
+use crate::core::string_extensions::string_ends_with_any;
 
 use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
+use crate::contexts::view_context::IViewContext;
+use crate::contexts::view_context::ViewContext;
+use crate::contexts::response_context::ResponseContext;
 
 use crate::view::iview::IView;
+use crate::view::rusthtml::html_string::HtmlString;
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
@@ -15,7 +25,16 @@ pub trait IViewRenderer {
     // fn render_page(self: &Self, view_ctx: &dyn IViewContext, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<String, Box<dyn Error>>;
     //fn render_partial(self: &Self, view_path: String, view_model: Option<Rc<dyn Any>>, view_renderer: Rc<dyn IViewRenderer>, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
     
-    fn get_layout_view_from_context(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>>;
+    fn render_with_layout_if_specified(
+        self: &Self,
+        view_path: &String,
+        view_model: Rc<Option<Box<dyn Any>>>,
+        controller_ctx: Rc<RefCell<ControllerContext>>,
+        response_ctx: Rc<RefCell<ResponseContext>>,
+        services: &dyn IServiceCollection
+    ) -> Result<HtmlString, RustHtmlError>;
+
+    fn get_layout_view_from_context(self: &Self, view_ctx: &mut ViewContext, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>>;
 
     fn get_all_views(self: &Self, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>>;
     fn get_views(self: &Self, path: &String, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>>;
@@ -39,37 +58,57 @@ impl ViewRenderer  {
 }
 
 impl IViewRenderer for ViewRenderer {
-    // fn render_page(self: &Self, view_result: &ViewResult, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<String, Box<dyn Error>> {
-    //     let layout_view_option = self.get_layout_view_from_context(controller_ctx.clone(), services);
-    //     match layout_view_option {
-    //         Some(layout_view) => {
-    //             let body_view = self.get_view(&view_result.path, services);
-    //             controller_ctx.as_ref().borrow_mut().view_data.insert("Body".to_string(), Rc::new(Box::new(body_view.clone())));
+    fn render_with_layout_if_specified(
+        self: &Self,
+        view_path: &String,
+        view_model: Rc<Option<Box<dyn Any>>>,
+        controller_ctx: Rc<RefCell<ControllerContext>>,
+        response_ctx: Rc<RefCell<ResponseContext>>,
+        services: &dyn IServiceCollection
+    ) -> Result<HtmlString, RustHtmlError> {
+        let view_renderer_service_instance = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
+        let mut body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model.clone(), view_renderer_service_instance.clone(), controller_ctx.clone(), response_ctx.clone(), controller_ctx.borrow().request_context.clone());
+        match body_view_ctx.get_view_as_ref().render(&body_view_ctx, services) {
+            Ok(body_html) => {
+                let mut combined_body_html_str = String::new();
+                combined_body_html_str.push_str(&body_view_ctx.collect_html().content);
+                combined_body_html_str.push_str(&body_html.content);
+                let combined_body_html = HtmlString::new_from_html(combined_body_html_str);
 
-    //             let ctx = ViewContext::new(layout_view.clone(), view_result.model, Rc::new(Box::new(self) as Box<dyn IViewRenderer>), controller_ctx.clone(), response_ctx.clone(), request_ctx.clone());
-    //             let render_result = layout_view.render(&ctx, services);
-    //             Ok(
-    //                 render_result
-    //                 .expect(&format!("Could not render layout view {}", layout_view.get_path()))
-    //                 .content
-    //             )
-    //         },
-    //         None => {
-    //             self.render_partial(view_result, controller_ctx, response_ctx, request_ctx, services)
-    //         }
-    //     }
-    // }
+                let layout_view_option = self.get_layout_view_from_context(&mut body_view_ctx, services);
+                match layout_view_option {
+                    Some(ref layout_view) => {
+                        // println!("layout_view_option: found");
+                        let layout_view_ctx = body_view_ctx.clone_for_layout(layout_view.clone());
+                        layout_view_ctx.insert_str("BodyHtml", combined_body_html.content);
 
-    fn get_layout_view_from_context(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>> {
-        let my_view_data = controller_ctx.as_ref().borrow_mut().get_view_data();
-        let my_view_data_value = my_view_data.as_ref().borrow_mut();
-        let layout_view_path_option = my_view_data_value.get("Layout");
-        match layout_view_path_option {
-            Some(layout_view_path_any) => {
-                let layout_view_path = layout_view_path_any.downcast_ref::<&str>().expect("could not downcast Any to Box<String>");
-                Some(self.get_view(&layout_view_path.to_string(), services))
+                        match layout_view_ctx.get_view_as_ref().render(layout_view_ctx.deref(), services) {
+                            Ok(layout_html) => {
+                                let mut combined_layout_html_str = String::new();
+                                combined_layout_html_str.push_str(&layout_view_ctx.collect_html().content);
+                                combined_layout_html_str.push_str(&layout_html.content);
+
+                                Ok(HtmlString::new_from_html(combined_layout_html_str))
+                            },
+                            Err(e) => Err(RustHtmlError(Cow::Owned(format!("Could not render layout for view: {}", e)))),
+                        }
+                    },
+                    None => {
+                        println!("layout_view_option: NOT found");
+                        Ok(combined_body_html)
+                    },
+                }
             },
-            None => None
+            Err(e) => Err(RustHtmlError(Cow::Owned(format!("Could not render view: {}", e)))),
+        }
+    }
+
+    fn get_layout_view_from_context(self: &Self, view_context: &mut ViewContext, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>> {
+        let layout_view_path_option = view_context.get_str("Layout");
+        if layout_view_path_option.len() > 0 {
+            Some(self.get_view(&layout_view_path_option, services))
+        } else {
+            None
         }
     }
 
@@ -109,7 +148,7 @@ impl IViewRenderer for ViewRenderer {
             )
             .clone()
             .iter()
-            .filter(|x| x.get_path().ends_with(path) || x.get_path().ends_with(format!("{}.rs", path).as_str()))
+            .filter(|x| string_ends_with_any(x.get_path(), &[path, format!("{}.rs", path).as_str(), format!("{}.rshtml", path).as_str()]))
             .map(|x| x.clone())
             .collect()
     }

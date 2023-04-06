@@ -23,7 +23,9 @@ impl RustHtmlViewMacros {
     }
 
     pub fn render_body<'a>(view: &dyn IView, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'a>> {
-        let body_view_option = ctx.get_controller_ctx().borrow().get_view_data_value("Body");
+        let ctxdata_rc = ctx.get_ctx_data();
+        let ctxdata = ctxdata_rc.as_ref().borrow();
+        let body_view_option = ctxdata.get("BodyView");
         match body_view_option {
             Some(body_view_any) => {
                 let body_view = body_view_any.downcast_ref::<Rc<dyn IView>>().expect("could not downcast Any to Box<dyn IView>").clone();
@@ -38,7 +40,15 @@ impl RustHtmlViewMacros {
                 }
                 
             },
-            None => panic!("Body view not found")
+            None => {
+                let body_html = ctx.get_str("BodyHtml");
+                if body_html.len() > 0 {
+                    ctx.write_html_str(&body_html);
+                    Ok(HtmlString::empty())
+                } else {
+                    panic!("BodyView and BodyHtml not found for call to render_body()")
+                }
+            },
         }
     }
 }

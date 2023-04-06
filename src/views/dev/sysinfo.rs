@@ -1,17 +1,18 @@
 mvc_macro_lib::rusthtml_view_macro! {
+    @viewstart "src/views/dev/_view_start.rshtml"
     @name "dev_sysinfo"
     @use sysinfo::SystemExt
     @use sysinfo::NetworkExt
     @use sysinfo::ProcessExt
     @model mvc_lib::view_models::dev::SysInfoViewModel
     @{
-        ViewData.insert("Title", "Sys Info - Dev");
+        view_context.insert_str("Title", "Sys Info - Dev".to_string());
 
         let mut sys = sysinfo::System::new_all();
         sys.refresh_all();
     }
     
-    <h1>@ViewData.get("Title")</h1>
+    <h1>@view_context.get_str("Title")</h1>
 
     <h3>disks:</h3>
     <ul>

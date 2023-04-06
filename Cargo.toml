@@ -16,6 +16,7 @@ httparse = "1.8.0"
 http-bytes = "0.1.0"
 html-escape = "0.2.13"
 mime = "0.3.16"
+phf = { version = "0.11", features = ["macros"] }
 regex = "1.7.1"
 rustc_lexer = "0.1.0"
 sysinfo = "0.28.4"

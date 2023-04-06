@@ -30,7 +30,7 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
     TokenStream::from(match result {
         Ok(html_render_fn2) => {
             let html_render_fn = proc_macro2::TokenStream::from(html_render_fn2);
-            let view_name = parser.get_param_string("name");
+            let view_name = parser.get_param_string("name").unwrap();
             let view_name_ident = quote::format_ident!("view_{}", view_name);
             let view_name_context_ident = quote::format_ident!("view_{}_context", view_name);
             let view_functions = match parser.get_functions_section() {
@@ -113,7 +113,6 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                 
                     // using template, render the view given the current data
                     fn render(self: &Self, view_context: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
-                        let mut ViewData = HashMap::<&str, &str>::new();
                         #view_model_tokens
 
                         let render_section = |section_name: &str| -> Result<HtmlString, RustHtmlError> {

@@ -1,9 +1,10 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @name "shared__layout"
     @{
-        let has_title = ViewData.contains_key("Title");
-        if !has_title {
-            ViewData.insert("Title", "Untitled");
+        let untitled = "Untitled".to_string();
+        let mut page_title = view_context.get_str("Title");
+        if page_title.len() == 0 {
+            page_title = untitled;
         }
     }
 <!DOCTYPE html>
@@ -11,14 +12,14 @@ mvc_macro_lib::rusthtml_view_macro! {
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@format!("{} - WebApplication1", ViewData.get("Title").unwrap_or(&"Untitled"))</title>
+    <title>@format!("{} - WebApplication1", page_title)</title>
 
     <environment include="Development">
-        <link rel="stylesheet" href="https://unpkg.com/@stackoverflow/stacks/dist/css/stacks.min.css" />
+        <link rel="stylesheet" href="/stacks.css" />
         <link rel="stylesheet" href="/css/site.css" />
     </environment>
     <environment exclude="Development">
-        <link rel="stylesheet" href="https://unpkg.com/@stackoverflow/stacks/dist/css/stacks.min.css" />
+        <link rel="stylesheet" href="/stacks.min.css" />
         <link rel="stylesheet" href="/css/site.min.css" asp-append-version="true" />
     </environment>
 </head>
@@ -34,8 +35,8 @@ mvc_macro_lib::rusthtml_view_macro! {
             </a>
 
             <ul class="s-navigation ml8 fw-nowrap sm:d-none">
-                <li><a class="s-navigation--item is-selected" href="/product/guidelines/using-stacks/">Home</a></li>
-                <li><a class="s-navigation--item" href="/email/guidelines/getting-started/">Documentation</a></li>
+                <li><a class="s-navigation--item is-selected" href="/">Home</a></li>
+                <li><a class="s-navigation--item" href="https://github.com/viveret/rshtml">Documentation</a></li>
                 <li><a class="s-navigation--item" href="/content/guidelines/principles/">Community</a></li>
                 <environment include="Development">
                     <li><a class="s-navigation--item" href="/dev">@"Dev Tools"</a></li>

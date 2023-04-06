@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
 use crate::contexts::response_context::ResponseContext;
 use crate::contexts::request_context::RequestContext;
@@ -21,18 +22,29 @@ pub trait IViewContext: Send + Sync {
     fn collect_html(self: &Self) -> HtmlString;
 
     fn get_view_renderer(self: &Self) -> Rc<dyn IViewRenderer>;
-    fn get_viewdata(self: &Self) -> Rc<HashMap<String, String>>;
+    fn get_ctx_data(self: &Self) -> Rc<RefCell<HashMap<String, Box<dyn Any>>>>;
+    fn get_view_data(self: &Self) -> Rc<RefCell<HashMap<String, String>>>;
     fn get_viewmodel(self: &Self) -> Rc<Option<Box<dyn Any>>>;
     fn get_view(self: &Self) -> Rc<dyn IView>;
+    fn get_view_as_ref(self: &Self) -> &dyn IView;
 
     fn get_controller_ctx(self: &Self) -> Rc<RefCell<ControllerContext>>;
     fn get_response_ctx(self: &Self) -> Rc<RefCell<ResponseContext>>;
     fn get_request_ctx(self: &Self) -> Rc<RequestContext>;
+
+    fn get_string(self: &Self, key: String) -> String;
+    fn get_str(self: &Self, key: &str) -> String;
+    
+    fn insert_string(self: &Self, key: String, value: String) -> String;
+    fn insert_str(self: &Self, key: &str, value: String) -> String;
+
+    fn clone_for_layout(self: &Self, layout_view: Rc<dyn IView>) -> Box<dyn IViewContext>;
 }
 
 pub struct ViewContext {
     view: Rc<dyn IView>,
-    viewdata: Rc<HashMap<String, String>>,
+    ctxdata: Rc<RefCell<HashMap<String, Box<dyn Any>>>>,
+    viewdata: Rc<RefCell<HashMap<String, String>>>,
     viewmodel: Rc<Option<Box<dyn Any>>>,
     view_renderer: Rc<dyn IViewRenderer>,
     controller_ctx: Rc<RefCell<ControllerContext>>,
@@ -53,7 +65,8 @@ impl ViewContext {
                 response_ctx: Rc<RefCell<ResponseContext>>,
                 request_ctx: Rc<RequestContext>) -> Self {
         Self {
-            viewdata: Rc::new(HashMap::new()),
+            viewdata: Rc::new(RefCell::new(HashMap::new())),
+            ctxdata: Rc::new(RefCell::new(HashMap::new())),
             view: view,
             viewmodel: viewmodel,
             view_renderer: view_renderer,
@@ -97,8 +110,12 @@ impl IViewContext for ViewContext {
         self.view_renderer.clone()
     }
 
-    fn get_viewdata(self: &Self) -> Rc<HashMap<String, String>> {
+    fn get_view_data(self: &Self) -> Rc<RefCell<HashMap<String, String>>> {
         self.viewdata.clone()
+    }
+
+    fn get_ctx_data(self: &Self) -> Rc<RefCell<HashMap<String, Box<dyn Any>>>> {
+        self.ctxdata.clone()
     }
 
     fn get_viewmodel(self: &Self) -> Rc<Option<Box<dyn Any>>> {
@@ -107,6 +124,10 @@ impl IViewContext for ViewContext {
 
     fn get_view(self: &Self) -> Rc<dyn IView> {
         self.view.clone()
+    }
+
+    fn get_view_as_ref(self: &Self) -> &dyn IView {
+        self.view.as_ref()
     }
 
     fn get_controller_ctx(self: &Self) -> Rc<RefCell<ControllerContext>> {
@@ -119,5 +140,38 @@ impl IViewContext for ViewContext {
 
     fn get_request_ctx(self: &Self) -> Rc<RequestContext> {
         self.request_ctx.clone()
+    }
+
+    fn get_string(self: &Self, key: String) -> String {
+        match self.get_view_data().as_ref().borrow().get(&key) {
+            Some(s) => s.clone(),
+            None => {
+                let my_view_data_rc = self.controller_ctx.as_ref().borrow_mut().get_view_data();
+                let my_view_data = my_view_data_rc.as_ref().borrow_mut();
+                match my_view_data.get(&key) {
+                    Some(s) => s.clone(),
+                    None => String::new(),
+                }
+            },
+        }
+    }
+
+    fn get_str(self: &Self, key: &str) -> String {
+        self.get_string(key.to_string())
+    }
+    
+    fn insert_string(self: &Self, key: String, value: String) -> String {
+        self.get_view_data().as_ref().borrow_mut().insert(key, value.clone());
+        value
+    }
+
+    fn insert_str(self: &Self, key: &str, value: String) -> String {
+        self.insert_string(key.to_string(), value)
+    }
+
+    fn clone_for_layout(self: &Self, layout_view: Rc<dyn IView>) -> Box<dyn IViewContext> {
+        let copy = Self::new(layout_view.clone(), self.viewmodel.clone(), self.view_renderer.clone(), self.controller_ctx.clone(), self.response_ctx.clone(), self.controller_ctx.borrow().request_context.clone());
+        copy.viewdata.as_ref().replace(self.viewdata.as_ref().borrow().clone());
+        Box::new(copy)
     }
 }

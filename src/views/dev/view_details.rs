@@ -1,10 +1,11 @@
 mvc_macro_lib::rusthtml_view_macro! {
+    @viewstart "src/views/dev/_view_start.rshtml"
     @name "dev_view_details"
     @model mvc_lib::view_models::dev::ViewDetailsViewModel
     @{
         // Layout = "_Layout_Dev_Index";
         let title = format!("Compiled Rust HTML View at {}", model.view.get_path());
-        ViewData.insert("Title", &title);
+        view_context.insert_str("Title", title.clone());
         let raw = model.view.get_raw();
         let statements = raw.split([';', '{', '}',]);
 

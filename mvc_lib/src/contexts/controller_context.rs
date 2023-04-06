@@ -15,8 +15,7 @@ use crate::routing::route_data::RouteData;
 pub trait IControllerContext {
     fn get_request_context(self: &Self) -> Rc<RequestContext>;
     fn get_context_data(self: &Self) -> Rc<RefCell<HashMap<String, Rc<Box<dyn Any>>>>>;
-    fn get_view_data(self: &Self) -> Rc<RefCell<HashMap<String, Rc<Box<dyn Any>>>>>;
-    fn get_view_data_value(self: &Self, key: &str) -> Option<Rc<Box<dyn Any>>>;
+    fn get_view_data(self: &Self) -> Rc<RefCell<HashMap<String, String>>>;
     fn get_controller(self: &Self) -> Rc<dyn IController>;
     fn get_route_data_result(self: &Self) -> Result<Box<RouteData>, Box<dyn Error>>;
 }
@@ -24,7 +23,7 @@ pub trait IControllerContext {
 pub struct ControllerContext {
     pub request_context: Rc<RequestContext>,
     pub context_data: Rc<RefCell<HashMap<String, Rc<Box<dyn Any>>>>>,
-    pub view_data: Rc<RefCell<HashMap<String, Rc<Box<dyn Any>>>>>,
+    pub view_data: Rc<RefCell<HashMap<String, String>>>,
     pub controller: Rc<dyn IController>,
 }
 
@@ -71,16 +70,8 @@ impl IControllerContext for ControllerContext {
         self.context_data.clone()
     }
 
-    fn get_view_data(self: &Self) -> Rc<RefCell<HashMap<String, Rc<Box<dyn Any>>>>> {
+    fn get_view_data(self: &Self) -> Rc<RefCell<HashMap<String, String>>> {
         self.view_data.clone()
-    }
-    
-    fn get_view_data_value(self: &Self, key: &str) -> Option<Rc<Box<dyn Any>>> {
-        if self.view_data.as_ref().borrow().contains_key(key) {
-            Some(self.view_data.as_ref().borrow().get(key).expect("oops").clone())
-        } else {
-            None
-        }
     }
 
     fn get_controller(self: &Self) -> Rc<dyn IController> {

@@ -21,10 +21,6 @@ use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
 pub trait IViewRenderer {
-    // fn render_view(self: &Self, view_ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
-    // fn render_page(self: &Self, view_ctx: &dyn IViewContext, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<String, Box<dyn Error>>;
-    //fn render_partial(self: &Self, view_path: String, view_model: Option<Rc<dyn Any>>, view_renderer: Rc<dyn IViewRenderer>, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
-    
     fn render_with_layout_if_specified(
         self: &Self,
         view_path: &String,
@@ -112,27 +108,11 @@ impl IViewRenderer for ViewRenderer {
         }
     }
 
-    // fn render_partial(self: &Self, view_path: String, view_model: Option<Rc<dyn Any>>, view_renderer: Rc<dyn IViewRenderer>, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
-    //     let view_to_render = self.get_view(&view_path, services);
-    //     let view_ctx = ViewContext::new(view_to_render.clone(), view_model, view_renderer, controller_ctx.clone(), response_ctx.clone(), request_ctx.clone());
-    //     // self.render_view(&view_ctx, services)
-    //     view_ctx.get_view().render(&view_ctx, services)
-    // }
-
-    // fn render_view(self: &Self, view_ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
-    // }
-
     fn get_all_views(self: &Self, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>> {
         self.cached_views
             .borrow_mut()
             .get_or_insert_with(|| 
                 ServiceCollectionExtensions::get_required_multiple::<dyn IView>(services)
-                // services
-                //     .get_required(TypeInfo::rc_of::<dyn IView>())
-                //     .iter()
-                //     .map(|x| x.downcast::<Rc<dyn IView>>().expect("could not downcast Any to Rc<dyn IView>"))
-                //     .map(|x| *x)
-                //     .collect()
             )
             .clone()
             .iter()

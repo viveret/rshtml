@@ -16,6 +16,8 @@ use crate::services::service_collection::IServiceCollection;
 
 pub trait IControllerAction {
     fn get_name(self: &Self) -> String;
+    fn get_controller_name(self: &Self) -> String;
+    fn get_area_name(self: &Self) -> String;
     fn get_route_pattern(self: &Self) -> String;
 
     fn is_route_match(self: &Self, controller_context: Rc<RefCell<ControllerContext>>) -> Result<bool, Box<dyn Error>>;
@@ -25,16 +27,36 @@ pub trait IControllerAction {
 pub struct ControllerActionClosure<T> where T: Fn(Rc<RefCell<ControllerContext>>, &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
     pub closure_fn: T,
     pub name: String,
+    pub controller_name: String,
+    pub area_name: String,
     pub route_pattern: String,
 }
 
 impl<T> ControllerActionClosure<T> where T: Fn(Rc<RefCell<ControllerContext>>, &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
     pub fn new(
-        route_pattern: &str,
-        name: &str,
+        route_pattern: &'static str,
+        name: &'static str,
+        controller_name: &'static str,
+        area_name: &'static str,
         closure_fn: T) -> Self {
         Self {
             name: name.to_string(),
+            controller_name: controller_name.to_string(),
+            area_name: area_name.to_string(),
+            route_pattern: route_pattern.to_string(),
+            closure_fn: closure_fn
+        }
+    }
+    
+    pub fn new_default_area(
+        route_pattern: &'static str,
+        name: &'static str,
+        controller_name: &'static str,
+        closure_fn: T) -> Self {
+        Self {
+            name: name.to_string(),
+            controller_name: controller_name.to_string(),
+            area_name: "".to_string(),
             route_pattern: route_pattern.to_string(),
             closure_fn: closure_fn
         }
@@ -62,6 +84,14 @@ impl<T> IControllerAction for ControllerActionClosure<T> where T: Fn(Rc<RefCell<
 
     fn get_name(self: &Self) -> String {
         self.name.clone()
+    }
+
+    fn get_controller_name(self: &Self) -> String {
+        self.controller_name.clone()
+    }
+
+    fn get_area_name(self: &Self) -> String {
+        self.area_name.clone()
     }
 
     fn get_route_pattern(self: &Self) -> String {

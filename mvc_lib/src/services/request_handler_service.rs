@@ -36,12 +36,7 @@ impl ControllerRequestHandlerService {
     pub fn get_controllers_in_area(self: &Self, request: Rc<RequestContext>) -> Vec<Rc<dyn IController>> {
         self.controllers
             .iter()
-            .filter(|x| {
-                match x.get_route_area() {
-                    Some(route_area) => request.path.starts_with(&route_area),
-                    None => false,
-                }
-            })
+            .filter(|x| request.path.starts_with(&x.get_route_area()))
             .map(|x| x.clone())
             .collect()
     }

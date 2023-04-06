@@ -18,6 +18,12 @@ pub trait IControllerContext {
     fn get_view_data(self: &Self) -> Rc<RefCell<HashMap<String, String>>>;
     fn get_controller(self: &Self) -> Rc<dyn IController>;
     fn get_route_data_result(self: &Self) -> Result<Box<RouteData>, Box<dyn Error>>;
+
+    fn get_string(self: &Self, key: String) -> String;
+    fn get_str(self: &Self, key: &str) -> String;
+    
+    fn insert_string(self: &Self, key: String, value: String) -> String;
+    fn insert_str(self: &Self, key: &str, value: String) -> String;
 }
 
 pub struct ControllerContext {
@@ -41,17 +47,28 @@ impl ControllerContext {
     }
 
     pub fn parse_route_data(
-        controller: Rc<dyn IController>,
-        request_context: Rc<RequestContext>
+        self: &Self,
     ) -> Result<Box<RouteData>, Box<dyn Error>> {
         let mut route_data = RouteData::new();
-        if let Some(route_area) = controller.get_route_area() {
-            route_data.map.insert("area".to_string(), route_area);
-        }
         
-        if let Some(controller_name) = controller.get_name() {
-            route_data.map.insert("controller".to_string(), controller_name);
+        let mut area_name = self.get_str("AreaName");
+        if area_name.len() == 0 {
+            area_name = self.controller.get_route_area().to_string();
         }
+        route_data.map.insert("area".to_string(), area_name);
+        
+        let mut controller_name = self.get_str("ControllerName");
+        if controller_name.len() == 0 {
+            controller_name = self.controller.get_name().to_string();
+        }
+        route_data.map.insert("controller".to_string(), controller_name);
+
+
+        let mut action_name = self.get_str("ActionName");
+        // if action_name.len() == 0 {
+        //     action_name = action.get_name();
+        // }
+        route_data.map.insert("action".to_string(), action_name);
 
         // todo: search actions for applicable patterns
 
@@ -79,6 +96,26 @@ impl IControllerContext for ControllerContext {
     }
 
     fn get_route_data_result(self: &Self) -> Result<Box<RouteData>, Box<dyn Error>> {
-        Self::parse_route_data(self.controller.clone(), self.request_context.clone())
+        self.parse_route_data()
+    }
+
+    fn get_string(self: &Self, key: String) -> String {
+        match self.get_view_data().as_ref().borrow().get(&key) {
+            Some(s) => s.clone(),
+            None => String::new(),
+        }
+    }
+
+    fn get_str(self: &Self, key: &str) -> String {
+        self.get_string(key.to_string())
+    }
+    
+    fn insert_string(self: &Self, key: String, value: String) -> String {
+        self.get_view_data().as_ref().borrow_mut().insert(key, value.clone());
+        value
+    }
+
+    fn insert_str(self: &Self, key: &str, value: String) -> String {
+        self.insert_string(key.to_string(), value)
     }
 }

@@ -703,7 +703,7 @@ impl RustHtmlParser {
         parse_ctx: &mut HtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>,
     ) {
-        // println!("{}={:?}", parse_ctx.html_attr_key, parse_ctx.html_attr_val);
+        println!("{}={:?}", parse_ctx.html_attr_key, parse_ctx.html_attr_val);
 
         if let Some(is_literal) = &parse_ctx.html_attr_key_literal {
             output.push(RustHtmlToken::HtmlTagAttributeName(is_literal.to_string(), RustHtmlIdentAndPunctOrLiteral::Literal(is_literal.clone())));
@@ -1155,6 +1155,7 @@ impl RustHtmlParser {
 
     pub fn parse_identifier_expression(self: &Self, identifier: Ident, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<(), RustHtmlError> {
         output.push(RustHtmlToken::Identifier(identifier.clone()));
+        let mut last_token_was_ident = true;
         loop {
             let param_value_token_option = it.peek();
             if let Some(param_value_token) = param_value_token_option {
@@ -1164,8 +1165,14 @@ impl RustHtmlParser {
                         it.next();
                     },
                     TokenTree::Ident(ident) => {
-                        output.push(RustHtmlToken::Identifier(ident.clone()));
-                        it.next();
+                        if last_token_was_ident {
+                            break;
+                        } else {
+                            output.push(RustHtmlToken::Identifier(ident.clone()));
+                            it.next();
+                            last_token_was_ident = true;
+                            continue;
+                        }
                     },
                     TokenTree::Group(group) => {
                         let delimeter = group.delimiter();
@@ -1191,6 +1198,8 @@ impl RustHtmlParser {
             } else {
                 break;
             }
+            
+            last_token_was_ident = false;
         }
         Ok(())
     }

@@ -47,12 +47,12 @@ impl DevController {
 }
 
 impl IController for DevController {
-    fn get_route_area(self: &Self) -> Option<String> {
-        None
+    fn get_route_area(self: &Self) -> &'static str {
+        ""
     }
 
-    fn get_name(self: &Self) -> Option<String> {
-        Some("Dev".to_string())
+    fn get_name(self: &Self) -> &'static str {
+        "Dev"
     }
 
     fn process_request(self: &Self, controller_context: Rc<RefCell<ControllerContext>>, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
@@ -61,19 +61,19 @@ impl IController for DevController {
     
     fn get_actions(self: &Self) -> Vec<Box<dyn IControllerAction>> {
         vec![
-            Box::new(ControllerActionClosure::new("/dev", "Index", |controller_ctx, services| {
+            Box::new(ControllerActionClosure::new("/dev", "Index", self.get_name(), self.get_route_area(), |controller_ctx, services| {
                 let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
                 let viewModel = Box::new(Rc::new(IndexViewModel::new()));
                 // controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rs")));
                 Ok(Some(Box::new(ViewResult::new("views/dev/index.rs".to_string(), viewModel))))
             })),
-            Box::new(ControllerActionClosure::new("/dev/views", "Views", |controller_ctx, services| {
+            Box::new(ControllerActionClosure::new("/dev/views", "Views", self.get_name(), self.get_route_area(), |controller_ctx, services| {
                 let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
                 let viewModel = Box::new(Rc::new(ViewsViewModel::new(view_renderer.get_all_views(services))));
                 // controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rs")));
                 Ok(Some(Box::new(ViewResult::new("views/dev/views.rs".to_string(), viewModel))))
             })),
-            Box::new(ControllerActionClosure::new("/dev/views/..", "ViewDetails", |controller_ctx, services| {
+            Box::new(ControllerActionClosure::new("/dev/views/..", "ViewDetails", self.get_name(), self.get_route_area(), |controller_ctx, services| {
                 let request_context = controller_ctx.borrow().get_request_context();
                 let path = &request_context.path.as_str()["/dev/views/".len()..];
 
@@ -87,7 +87,7 @@ impl IController for DevController {
                 // controller_ctx.as_ref().borrow_mut().get_view_data().as_ref().borrow_mut().insert("Layout".to_string(), Rc::new(Box::new("views/shared/_Layout.rs")));
                 return Ok(Some(Box::new(ViewResult::new("views/dev/view_details.rs".to_string(), viewModel))));
             })),
-            Box::new(ControllerActionClosure::new("/dev/sysinfo", "SysInfo", |controller_ctx, services| {
+            Box::new(ControllerActionClosure::new("/dev/sysinfo", "SysInfo", self.get_name(), self.get_route_area(), |controller_ctx, services| {
                 let viewModel = Box::new(Rc::new(SysInfoViewModel::new()));
                 Ok(Some(Box::new(ViewResult::new("views/dev/sysinfo.rs".to_string(), viewModel))))
             })),

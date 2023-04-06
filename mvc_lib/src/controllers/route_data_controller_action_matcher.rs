@@ -46,6 +46,10 @@ impl RouteDataControllerActionMatcher {
             match result {
                 Some(action_result) => {
                     // println!("Returning result");
+                    // todo: make this a part of context_data so we can pass action and have access to the action during rendering
+                    self.controller_context.borrow().insert_str("ActionName", action.get_name());
+                    self.controller_context.borrow().insert_str("ControllerName", action.get_controller_name());
+                    self.controller_context.borrow().insert_str("AreaName", action.get_area_name());
                     return Ok(Some(action_result));
                 },
                 None => {

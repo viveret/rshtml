@@ -42,12 +42,12 @@ impl HomeController {
 }
 
 impl IController for HomeController {
-    fn get_route_area(self: &Self) -> Option<String> {
-        None
+    fn get_route_area(self: &Self) -> &'static str {
+        ""
     }
 
-    fn get_name(self: &Self) -> Option<String> {
-        Some("Home".to_string())
+    fn get_name(self: &Self) -> &'static str {
+        "Home"
     }
 
     fn process_request(self: &Self, controller_context: Rc<RefCell<ControllerContext>>, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
@@ -56,7 +56,7 @@ impl IController for HomeController {
     
     fn get_actions(self: &Self) -> Vec<Box<dyn IControllerAction>> {
         vec![
-            Box::new(ControllerActionClosure::new("/", "Index", |controller_ctx, services| {
+            Box::new(ControllerActionClosure::new_default_area("/", "Index", self.get_name(), |controller_ctx, services| {
                 let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
                 let viewModel = Box::new(Rc::new(IndexViewModel::new()));
                 Ok(Some(Box::new(ViewResult::new("views/home/index.rs".to_string(), viewModel))))

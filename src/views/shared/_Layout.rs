@@ -6,6 +6,27 @@ mvc_macro_lib::rusthtml_view_macro! {
         if page_title.len() == 0 {
             page_title = untitled;
         }
+
+        let page_action = view_context.get_str("ActionName");
+        let page_controller = view_context.get_str("ControllerName");
+        let page_area = view_context.get_str("AreaName");
+
+    }
+    @functions {
+        pub fn is_same_action(
+            a_action: &'static str, a_controller: &'static str, a_area: &'static str,
+            b_action: &String, b_controller: &String, b_area: &String) -> bool {
+                a_action == b_action.as_str() && a_controller == b_controller.as_str() && a_area == b_area.as_str()
+            }
+        pub fn is_same_action_is_selected(
+            a_action: &'static str, a_controller: &'static str, a_area: &'static str,
+            b_action: &String, b_controller: &String, b_area: &String) -> &'static str {
+                if is_same_action(a_action, a_controller, a_area, b_action, b_controller, b_area) {
+                    "is-selected"
+                } else {
+                    ""
+                }
+            }
     }
 <!DOCTYPE html>
 <html>
@@ -35,11 +56,13 @@ mvc_macro_lib::rusthtml_view_macro! {
             </a>
 
             <ul class="s-navigation ml8 fw-nowrap sm:d-none">
-                <li><a class="s-navigation--item is-selected" href="/">Home</a></li>
+                @let home_class = format!("s-navigation--item {}", is_same_action_is_selected("Index", "Home", "", &page_action, &page_controller, &page_area));
+                <li><a class=@home_class href="/">Home</a></li>
                 <li><a class="s-navigation--item" href="https://github.com/viveret/rshtml">Documentation</a></li>
                 <li><a class="s-navigation--item" href="/content/guidelines/principles/">Community</a></li>
                 <environment include="Development">
-                    <li><a class="s-navigation--item" href="/dev">@"Dev Tools"</a></li>
+                    @let dev_class = format!("s-navigation--item {}", is_same_action_is_selected("Index", "Dev", "", &page_action, &page_controller, &page_area));
+                    <li><a class=@dev_class href="/dev">@"Dev Tools"</a></li>
                 </environment>
             </ul>
 
@@ -69,7 +92,7 @@ mvc_macro_lib::rusthtml_view_macro! {
             @let compile_timestamp = format!("Page compiled at {}", self.when_compiled.format("%Y-%m-%d   %H:%M:%S"));
             @let view_timestamp = format!("Page viewed at {}", chrono::prelude::Utc::now().format("%Y-%m-%d   %H:%M:%S"));
             <p>@format!("{} — {}", compile_timestamp, view_timestamp)</p>
-            <p>@format!("Layout path: {}", self.ViewPath)</p>
+            <p>@format!("Layout path: {}, action: {}, controller: {}, area: {}", self.ViewPath, view_context.get_str("ActionName"), view_context.get_str("ControllerName"), view_context.get_str("AreaName"))</p>
         </footer>
     </div>
 

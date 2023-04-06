@@ -44,12 +44,12 @@ impl FileProviderController {
 }
 
 impl IController for FileProviderController {
-    fn get_route_area(self: &Self) -> Option<String> {
-        None
+    fn get_route_area(self: &Self) -> &'static str {
+        ""
     }
 
-    fn get_name(self: &Self) -> Option<String> {
-        Some("FileProvider".to_string())
+    fn get_name(self: &Self) -> &'static str {
+        "FileProvider"
     }
 
     fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, _services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {

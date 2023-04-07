@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::collections::HashMap;
 use std::path::Path;
 use std::rc::Rc;
 
@@ -25,8 +24,8 @@ impl FileProviderControllerOptions {
     }
 
     pub fn new_defaults() -> Self {
-        static _empty: phf::Map<&'static str, &'static str> = phf::Map::new();
-        Self { serving_directories: &["wwwroot/"], serving_files: &_empty }
+        static _EMPTY: phf::Map<&'static str, &'static str> = phf::Map::new();
+        Self { serving_directories: &["wwwroot/"], serving_files: &_EMPTY }
     }
 
     pub fn new_service(

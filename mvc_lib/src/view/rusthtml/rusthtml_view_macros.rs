@@ -2,7 +2,6 @@
 use std::rc::Rc;
 
 use crate::contexts::view_context::IViewContext;
-use crate::contexts::controller_context::IControllerContext;
 use crate::services::service_collection::IServiceCollection;
 use crate::view::iview::IView;
 use crate::view::rusthtml::html_string::HtmlString;
@@ -12,17 +11,17 @@ pub struct RustHtmlViewMacros {
 }
 
 impl RustHtmlViewMacros {
-    pub fn render_section<'a, 'b, 'c>(section_name: &'a str, view: &'b dyn IView, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'c>> {
+    pub fn render_section<'a, 'b, 'c>(section_name: &'a str, _view: &'b dyn IView, _ctx: &dyn IViewContext, _services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'c>> {
         println!("render_section: {}", section_name);
         Ok(HtmlString::new_from_html("".to_string()))
     }
 
-    pub fn render_section_optional<'a, 'b, 'c>(section_name: &'a str, view: &'b dyn IView, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'c>> {
+    pub fn render_section_optional<'a, 'b, 'c>(section_name: &'a str, _view: &'b dyn IView, _ctx: &dyn IViewContext, _services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'c>> {
         println!("render_section_optional: {}", section_name);
         Ok(HtmlString::new_from_html("".to_string()))
     }
 
-    pub fn render_body<'a>(view: &dyn IView, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'a>> {
+    pub fn render_body<'a>(_view: &dyn IView, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'a>> {
         let ctxdata_rc = ctx.get_ctx_data();
         let ctxdata = ctxdata_rc.as_ref().borrow();
         let body_view_option = ctxdata.get("BodyView");

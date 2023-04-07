@@ -1,6 +1,6 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
 
-use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Span, Spacing, TokenStream, TokenTree};
+use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Span};
 
 #[derive(Clone, Debug)]
 pub enum RustHtmlIdentOrPunct {
@@ -12,6 +12,19 @@ pub enum RustHtmlIdentOrPunct {
 pub enum RustHtmlIdentAndPunctOrLiteral {
     Literal(Literal),
     IdentAndPunct(Vec<RustHtmlIdentOrPunct>)
+}
+
+#[derive(Clone, Debug)]
+pub enum RustHtmlIdentOrPunctOrGroup {
+    Ident(Ident),
+    Punct(Punct),
+    Group(Group),
+}
+
+#[derive(Clone, Debug)]
+pub enum RustHtmlIdentAndPunctAndGroupOrLiteral {
+    Literal(Literal),
+    IdentAndPunctAndGroup(Vec<RustHtmlIdentOrPunctOrGroup>)
 }
 
 #[derive(Clone, Debug)]

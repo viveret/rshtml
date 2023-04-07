@@ -16,7 +16,9 @@ mvc_macro_lib::rusthtml_view_macro! {
         pub fn is_same_action(
             a_action: &'static str, a_controller: &'static str, a_area: &'static str,
             b_action: &String, b_controller: &String, b_area: &String) -> bool {
-                a_action == b_action.as_str() && a_controller == b_controller.as_str() && a_area == b_area.as_str()
+                (a_action == b_action.as_str() || a_action == "*" || b_action == "*") && 
+                (a_controller == b_controller.as_str() || a_controller == "*" || b_controller == "*") && 
+                (a_area == b_area.as_str() || a_area == "*" || b_area == "*")
             }
         pub fn is_same_action_is_selected(
             a_action: &'static str, a_controller: &'static str, a_area: &'static str,
@@ -56,12 +58,13 @@ mvc_macro_lib::rusthtml_view_macro! {
             </a>
 
             <ul class="s-navigation ml8 fw-nowrap sm:d-none">
-                @let home_class = format!("s-navigation--item {}", is_same_action_is_selected("Index", "Home", "", &page_action, &page_controller, &page_area));
+                @let home_class = format!("s-navigation--item {}", is_same_action_is_selected("*", "Home", "", &page_action, &page_controller, &page_area));
+                @let learn_class = format!("s-navigation--item {}", is_same_action_is_selected("*", "Learn", "", &page_action, &page_controller, &page_area));
                 <li><a class=@home_class href="/">Home</a></li>
-                <li><a class="s-navigation--item" href="https://github.com/viveret/rshtml">Documentation</a></li>
-                <li><a class="s-navigation--item" href="/content/guidelines/principles/">Community</a></li>
+                <li><a class=@learn_class href="/learn">Learn</a></li>
+                <li><a class="s-navigation--item" href="https://github.com/viveret/rshtml">GitHub</a></li>
                 <environment include="Development">
-                    @let dev_class = format!("s-navigation--item {}", is_same_action_is_selected("Index", "Dev", "", &page_action, &page_controller, &page_area));
+                    @let dev_class = format!("s-navigation--item {}", is_same_action_is_selected("*", "Dev", "", &page_action, &page_controller, &page_area));
                     <li><a class=@dev_class href="/dev">@"Dev Tools"</a></li>
                 </environment>
             </ul>

@@ -6,7 +6,6 @@ use crate::action_results::iaction_result::IActionResult;
 
 use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
-use crate::contexts::request_context::RequestContext;
 
 use crate::controllers::controller_actions_map::IControllerActionsMap;
 
@@ -32,7 +31,7 @@ impl RouteDataControllerActionMatcher {
     pub fn process_request(self: &Self, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
         // Some(self.controller_context.borrow().route_data_result.as_ref().unwrap().clone())
         let actions = self.actions_map.get_actions();
-        let route_data = self.controller_context.borrow().get_route_data_result();
+        // let route_data = self.controller_context.borrow().get_route_data_result();
 
         for action in actions {
             // println!("Testing {}", action.get_name());

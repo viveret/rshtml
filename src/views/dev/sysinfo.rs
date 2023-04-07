@@ -4,7 +4,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     @use sysinfo::SystemExt
     @use sysinfo::NetworkExt
     @use sysinfo::ProcessExt
-    @model mvc_lib::view_models::dev::SysInfoViewModel
+    @model crate::view_models::dev::SysInfoViewModel
     @{
         view_context.insert_str("Title", "Sys Info - Dev".to_string());
 

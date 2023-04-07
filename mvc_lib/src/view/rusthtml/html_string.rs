@@ -73,6 +73,12 @@ impl From<String> for HtmlString {
     }
 }
 
+impl From<&String> for HtmlString {
+    fn from(item: &String) -> Self {
+        HtmlString::new_data_string(item.clone())
+    }
+}
+
 impl From<&str> for HtmlString {
     fn from(item: &str) -> Self {
         HtmlString::new_data_string(item.to_string())

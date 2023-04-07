@@ -6,10 +6,7 @@ use http::StatusCode;
 
 use crate::contexts::request_context::RequestContext;
 use crate::contexts::response_context::ResponseContext;
-use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
-use crate::contexts::view_context::IViewContext;
-use crate::contexts::view_context::ViewContext;
 
 use crate::action_results::iaction_result::IActionResult;
 use crate::view::view_renderer::IViewRenderer;
@@ -55,7 +52,7 @@ impl IActionResult for ViewResult {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, _request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) {
         let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
         let html = view_renderer.render_with_layout_if_specified(&self.path, self.model.clone(), controller_ctx.clone(), response_ctx.clone(), services);
         self.write_response(html, response_ctx)

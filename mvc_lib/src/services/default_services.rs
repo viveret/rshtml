@@ -20,8 +20,6 @@ use crate::view::view_renderer::ViewRenderer;
 
 use crate::controllers::icontroller::IController;
 use crate::controllers::file_provider_controller::FileProviderController;
-use crate::controllers::home_controller::HomeController;
-use crate::controllers::dev_controller::DevController;
 
 pub struct DefaultServices {
 }
@@ -54,8 +52,6 @@ impl DefaultServices {
     }
 
     pub fn add_controllers(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), HomeController::new_service, ServiceScope::Singleton));
-        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), DevController::new_service, ServiceScope::Singleton));
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), FileProviderController::new_service, ServiceScope::Singleton));
     }
 

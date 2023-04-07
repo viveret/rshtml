@@ -32,9 +32,17 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
             let html_render_fn = proc_macro2::TokenStream::from(html_render_fn2);
             let view_name = parser.get_param_string("name").unwrap();
             let view_name_ident = quote::format_ident!("view_{}", view_name);
-            let view_name_context_ident = quote::format_ident!("view_{}_context", view_name);
+            let _view_name_context_ident = quote::format_ident!("view_{}_context", view_name);
             let view_functions = match parser.get_functions_section() {
                 Some(functions_section) => proc_macro2::TokenStream::from(functions_section),
+                None => quote! {},
+            };
+            let view_impl = match parser.get_impl_section() {
+                Some(impl_section) => proc_macro2::TokenStream::from(impl_section),
+                None => quote! {},
+            };
+            let view_struct = match parser.get_struct_section() {
+                Some(struct_section) => proc_macro2::TokenStream::from(struct_section),
                 None => quote! {},
             };
             let model_type_name = parser.get_model_type_name();
@@ -59,10 +67,12 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
 
             quote! {
                 use std::any::Any;
-                use std::error::Error;
+                use std::borrow::Cow;
                 use std::cell::RefCell;
                 use std::collections::HashMap;
+                use std::error::Error;
                 use std::rc::Rc;
+                use std::io::Read;
                 use std::ops::Deref;
                 use std::sync::{Arc, RwLock};
 
@@ -84,6 +94,7 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                     ViewPath: &'static str,
                     raw: &'static str,
                     when_compiled: DateTime<Utc>,
+                    #view_struct
                 }
 
                 impl #view_name_ident {
@@ -95,6 +106,12 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                             when_compiled: DateTime::parse_from_rfc2822(#when_compiled).unwrap().into()
                         }
                     }
+
+                    pub fn new_service() -> Box<dyn Any> {
+                        Box::new(Rc::new(Self::new()) as Rc<dyn IView>) as Box<dyn Any>
+                    }
+
+                    #view_impl
                 }
 
                 impl IView for #view_name_ident {

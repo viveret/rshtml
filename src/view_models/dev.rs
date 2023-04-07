@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::view::iview::IView;
+use mvc_lib::view::iview::IView;
 
 
 pub struct IndexViewModel {

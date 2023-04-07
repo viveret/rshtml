@@ -3,7 +3,6 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::error::Error;
 use std::rc::Rc;
-use std::ops::Deref;
 
 use crate::contexts::request_context::RequestContext;
 
@@ -64,7 +63,7 @@ impl ControllerContext {
         route_data.map.insert("controller".to_string(), controller_name);
 
 
-        let mut action_name = self.get_str("ActionName");
+        let action_name = self.get_str("ActionName");
         // if action_name.len() == 0 {
         //     action_name = action.get_name();
         // }

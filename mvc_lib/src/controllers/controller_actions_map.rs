@@ -7,10 +7,6 @@ use crate::action_results::iaction_result::IActionResult;
 use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
 
-use crate::controllers::icontroller::IController;
-
-use crate::routing::route_data::RouteData;
-
 use crate::services::service_collection::IServiceCollection;
 
 
@@ -108,7 +104,7 @@ pub struct ControllerActionsMap {
 }
 
 impl ControllerActionsMap {
-    pub fn new(controller_context: Rc<RefCell<ControllerContext>>, services: &dyn IServiceCollection) -> Self {
+    pub fn new(controller_context: Rc<RefCell<ControllerContext>>, _services: &dyn IServiceCollection) -> Self {
         Self {
             controller_context: controller_context
         }

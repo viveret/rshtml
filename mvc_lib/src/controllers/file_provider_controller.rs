@@ -34,8 +34,8 @@ impl IController for FileProviderController {
         String::new()
     }
 
-    fn get_name(self: &Self) -> String {
-        "FileProvider".to_string()
+    fn get_type_name(self: &Self) -> &'static str {
+        nameof::name_of_type!(FileProviderController)
     }
 
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
@@ -44,7 +44,7 @@ impl IController for FileProviderController {
             .iter()
             .map(|x|
                 Rc::new(ControllerActionFileResult::new(
-                    x.1.clone(), x.0.clone(), String::new(), self.get_name(), self.get_route_area(),
+                    x.1.clone(), x.0.clone(), String::new(), self.get_type_name(), self.get_route_area(),
                 )) as Rc<dyn IControllerAction>
             )
             .collect()

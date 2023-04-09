@@ -17,4 +17,9 @@ impl IControllerExtensions {
     ) -> Rc<ControllerContext> {
         Rc::new(ControllerContext::new(controller, request_context))
     }
+
+    pub fn get_name(controller: Rc<dyn IController>) -> String {
+        let type_name = controller.get_type_name();
+        type_name[..type_name.len() - "Controller".len()].to_string()
+    }
 }

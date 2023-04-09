@@ -83,30 +83,33 @@ impl IRequestMiddlewareService for LocalHostOnlyControllerActionFeatureMiddlewar
 
     fn handle_request(self: &Self, request_context: Rc<RequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         let controller_name = request_context.get_str("ControllerName");
-        let controller = self.mapper_service.get_mapper().get_controller(controller_name.clone());
 
-        let action_features = request_context.controller_action.borrow().as_ref().unwrap().get_features();
-        let controller_features = controller.get_features();
+        if controller_name.len() > 0 {
+            let controller = self.mapper_service.get_mapper().get_controller(controller_name.clone());
 
-        let find_my_feature: Vec<Rc<dyn IControllerActionFeature>> = controller_features
-            .iter()
-            .chain(
-                action_features.iter()
-            )
-            .filter(|x| x.get_name() == name_of_type!(LocalHostOnlyControllerActionFeature).to_string())
-            .take(1)
-            .cloned()
-            .collect();
+            let action_features = request_context.controller_action.borrow().as_ref().unwrap().get_features();
+            let controller_features = controller.get_features();
 
-        if find_my_feature.len() > 0 {
-            // let my_feature = find_my_feature.first().unwrap();
-            // let feature = my_feature.as_ref() as LocalHostOnlyControllerActionFeature;
-            let remote_addr_str = format!("{:?}", request_context.connection_context.get_remote_addr());
+            let find_my_feature: Vec<Rc<dyn IControllerActionFeature>> = controller_features
+                .iter()
+                .chain(
+                    action_features.iter()
+                )
+                .filter(|x| x.get_name() == name_of_type!(LocalHostOnlyControllerActionFeature).to_string())
+                .take(1)
+                .cloned()
+                .collect();
 
-            println!("connected IP address: {}", remote_addr_str);
-            if !remote_addr_str.starts_with("127.0.0.1:") {
-                // short circuit, this is a local host only action
-                return Ok(MiddlewareResult::OkBreak);
+            if find_my_feature.len() > 0 {
+                // let my_feature = find_my_feature.first().unwrap();
+                // let feature = my_feature.as_ref() as LocalHostOnlyControllerActionFeature;
+                let remote_addr_str = format!("{:?}", request_context.connection_context.get_remote_addr());
+
+                // println!("connected IP address: {}", remote_addr_str);
+                if !remote_addr_str.starts_with("127.0.0.1:") {
+                    // short circuit, this is a local host only action
+                    return Ok(MiddlewareResult::OkBreak);
+                }
             }
         }
         

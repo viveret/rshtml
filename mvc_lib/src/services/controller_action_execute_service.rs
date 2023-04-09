@@ -41,7 +41,7 @@ impl IRequestMiddlewareService for ControllerActionExecuteService {
 
     fn handle_request(self: &Self, request_context: Rc<RequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         if let Some(action) = request_context.controller_action.borrow().as_ref() {
-            let controller = self.mapper_service.get_mapper().get_controller(action.get_controller_name());
+            let controller = self.mapper_service.get_mapper().get_controller(action.get_controller_name().to_string());
             let controller_context = IControllerExtensions::create_context(controller.clone(), request_context.clone());
             action.invoke(controller_context.clone(), services)?;
             let result = controller_context.get_action_result();

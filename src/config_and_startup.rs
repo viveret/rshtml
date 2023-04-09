@@ -71,16 +71,18 @@ pub fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) ->
     // services.add_instance::<FileProviderControllerOptions, dyn IFileProviderControllerOptions>(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), &FILE_PROVIDER_OPTIONS);
 
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILogHttpRequestsOptions>(), |_| vec![Box::new(Rc::new(LogHttpRequestsOptions {
-        log_request: true,
-        log_response: true,
-        log_request_headers: true,
-        log_response_headers: true,
-        log_request_cookies: true,
-        log_response_cookies: true,
-        // log_request_headers: false,
-        // log_response_headers: false,
-        // log_request_cookies: false,
-        // log_response_cookies: false,
+        // log_request: true,
+        // log_response: true,
+        log_request: false,
+        log_response: false,
+        // log_request_headers: true,
+        // log_response_headers: true,
+        // log_request_cookies: true,
+        // log_response_cookies: true,
+        log_request_headers: false,
+        log_response_headers: false,
+        log_request_cookies: false,
+        log_response_cookies: false,
     }) as Rc<dyn ILogHttpRequestsOptions>)], ServiceScope::Singleton));
 }
 

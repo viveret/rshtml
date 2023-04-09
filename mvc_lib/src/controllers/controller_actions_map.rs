@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 use crate::controllers::icontroller::IController;
+use crate::controllers::icontroller_extensions::IControllerExtensions;
 use crate::controllers::controller_action::IControllerAction;
-
 
 pub trait IControllerActionsMap {
     fn to_string(self: &Self) -> String;
@@ -52,7 +52,19 @@ impl IControllerActionsMap for ControllerActionsMap  {
     }
     
     fn get_controller(self: &Self, name: String) -> Rc<dyn IController> {
-        self.controllers.iter().filter(|x| x.get_name() == name).take(1).cloned().collect::<Vec<Rc<dyn IController>>>().get(0).unwrap().clone()
+        if name.len() == 0 {
+            panic!("name.len() == 0");
+        }
+
+        self.controllers
+            .iter()
+            .filter(|x| x.get_type_name() == name || IControllerExtensions::get_name(x.clone().clone()) == name)
+            .take(1)
+            .cloned()
+            .collect::<Vec<Rc<dyn IController>>>()
+            .first()
+            .expect(format!("Could not find controller {}", name).as_str())
+            .clone()
     }
     
     fn get_action_at_area_controller_action_path(self: &Self, path: String) -> Rc<dyn IControllerAction> {
@@ -63,7 +75,7 @@ impl IControllerActionsMap for ControllerActionsMap  {
             .cloned()
             .collect::<Vec<Rc<dyn IControllerAction>>>()
             .first()
-            .unwrap()
+            .expect(format!("Could not find controller action at path {}", path).as_str())
             .clone()
     }
 

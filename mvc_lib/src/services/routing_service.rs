@@ -40,8 +40,13 @@ impl IRequestMiddlewareService for RoutingService {
         let action_option = route_matcher.get_action_for_request(request_context.clone(), response_context.clone(), services)?;
 
         if let Some(action) = action_option {
+            let mut controller_name = action.get_controller_name().to_string();
+            if controller_name.ends_with("Controller") {
+                controller_name = controller_name[..controller_name.len() - "Controller".len()].to_string();
+            }
+            
             request_context.route_data.borrow_mut().map.insert("ActionName".to_string(), action.get_name());
-            request_context.route_data.borrow_mut().map.insert("ControllerName".to_string(), action.get_controller_name());
+            request_context.route_data.borrow_mut().map.insert("ControllerName".to_string(), controller_name);
             request_context.route_data.borrow_mut().map.insert("AreaName".to_string(), action.get_area_name());
             request_context.controller_action.replace(Some(action.clone()));
         } else {

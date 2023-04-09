@@ -105,7 +105,7 @@ pub trait IControllerAction {
     fn get_path(self: &Self) -> String;
 
     fn get_name(self: &Self) -> String;
-    fn get_controller_name(self: &Self) -> String;
+    fn get_controller_name(self: &Self) -> &'static str;
     fn get_area_name(self: &Self) -> String;
     fn get_route_pattern(self: &Self) -> Rc<ControllerActionRoutePattern>;
 
@@ -121,7 +121,7 @@ pub trait IControllerAction {
 pub struct ControllerActionClosure<T> where T: Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
     pub closure_fn: T,
     pub name: String,
-    pub controller_name: String,
+    pub controller_name: &'static str,
     pub area_name: String,
     pub route_pattern: Rc<ControllerActionRoutePattern>,
     pub http_methods_allowed: Vec<Method>,
@@ -134,7 +134,7 @@ impl<T> ControllerActionClosure<T> where T: Fn(Rc<ControllerContext>, &dyn IServ
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
         route_pattern: String,
         name: String,
-        controller_name: String,
+        controller_name: &'static str,
         area_name: String,
         closure_fn: T) -> Self {
         Self {
@@ -153,7 +153,7 @@ impl<T> ControllerActionClosure<T> where T: Fn(Rc<ControllerContext>, &dyn IServ
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
         route_pattern: String,
         name: String,
-        controller_name: String,
+        controller_name: &'static str,
         closure_fn: T) -> Self {
         Self {
             name: name,
@@ -196,8 +196,8 @@ impl<T> IControllerAction for ControllerActionClosure<T> where T: Fn(Rc<Controll
         self.name.clone()
     }
 
-    fn get_controller_name(self: &Self) -> String {
-        self.controller_name.clone()
+    fn get_controller_name(self: &Self) -> &'static str {
+        self.controller_name
     }
 
     fn get_area_name(self: &Self) -> String {
@@ -237,7 +237,7 @@ impl<T> IControllerAction for ControllerActionClosure<T> where T: Fn(Rc<Controll
 pub struct ControllerActionFileResult {
     pub file_path: String,
     pub name: String,
-    pub controller_name: String,
+    pub controller_name: &'static str,
     pub area_name: String,
     pub route_pattern: Rc<ControllerActionRoutePattern>,
 }
@@ -247,7 +247,7 @@ impl ControllerActionFileResult {
         file_path: String,
         route_pattern: String,
         name: String,
-        controller_name: String,
+        controller_name: &'static str,
         area_name: String,
         ) -> Self {
         Self {
@@ -263,7 +263,7 @@ impl ControllerActionFileResult {
         file_path: String,
         route_pattern: String,
         name: String,
-        controller_name: String,
+        controller_name: &'static str,
         ) -> Self {
         Self {
             file_path: file_path,
@@ -304,8 +304,8 @@ impl IControllerAction for ControllerActionFileResult {
         self.name.clone()
     }
 
-    fn get_controller_name(self: &Self) -> String {
-        self.controller_name.clone()
+    fn get_controller_name(self: &Self) -> &'static str {
+        self.controller_name
     }
 
     fn get_area_name(self: &Self) -> String {

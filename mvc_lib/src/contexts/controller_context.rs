@@ -9,6 +9,7 @@ use crate::action_results::iaction_result::IActionResult;
 use crate::contexts::request_context::RequestContext;
 
 use crate::controllers::icontroller::IController;
+use crate::controllers::icontroller_extensions::IControllerExtensions;
 
 use crate::routing::route_data::RouteData;
 
@@ -65,7 +66,7 @@ impl ControllerContext {
         
         let mut controller_name = self.get_str("ControllerName");
         if controller_name.len() == 0 {
-            controller_name = self.controller.get_name().to_string();
+            controller_name = IControllerExtensions::get_name(self.controller.clone());
         }
         route_data.map.insert("controller".to_string(), controller_name);
 

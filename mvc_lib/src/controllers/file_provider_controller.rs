@@ -5,7 +5,8 @@ use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
 use crate::controllers::icontroller::IController;
-use crate::controllers::controller_action::{ IControllerAction, ControllerActionFileResult, IControllerActionFeature };
+use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
+use crate::controllers::controller_action::{ IControllerAction, ControllerActionFileResult };
 
 use crate::options::file_provider_controller_options::IFileProviderControllerOptions;
 

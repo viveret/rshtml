@@ -10,7 +10,7 @@ use crate::core::type_info::TypeInfo;
 use crate::contexts::request_context::RequestContext;
 use crate::contexts::response_context::ResponseContext;
 
-use crate::controllers::controller_action::IControllerActionFeature;
+use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controllers::controller_actions_map::IControllerActionsMap;
 
 use crate::services::request_middleware_service::IRequestMiddlewareService;
@@ -52,6 +52,11 @@ impl IControllerActionFeature for AuthorizeControllerActionFeature {
 
     fn to_string(self: &Self) -> String {
         format!("{}", self.get_name())
+    }
+
+    fn invoke(self: &Self, request_context: Rc<RequestContext>, _response_ctx: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+        println!("Authorizing {:?}", request_context.connection_context.get_remote_addr());
+        Ok(MiddlewareResult::OkContinue)
     }
 }
 
@@ -95,20 +100,23 @@ impl IRequestMiddlewareService for AuthorizeControllerActionFeatureMiddleware {
                 .chain(
                     action_features.iter()
                 )
-                .filter(|x| x.get_name() == name_of_type!(LocalHostOnlyControllerActionFeature).to_string())
+                .filter(|x| x.get_name() == name_of_type!(AuthorizeControllerActionFeature).to_string())
                 .take(1)
                 .cloned()
                 .collect();
 
             if find_my_feature.len() > 0 {
-                // let my_feature = find_my_feature.first().unwrap();
-                // let feature = my_feature.as_ref() as LocalHostOnlyControllerActionFeature;
-                let remote_addr_str = format!("{:?}", request_context.connection_context.get_remote_addr());
+                let my_feature_rc = find_my_feature.first().unwrap();
+                let my_feature_dyn = my_feature_rc.as_ref();
 
-                // println!("connected IP address: {}", remote_addr_str);
-                if !remote_addr_str.starts_with("127.0.0.1:") {
-                    // short circuit, this is a local host only action
-                    return Ok(MiddlewareResult::OkBreak);
+                match my_feature_dyn.invoke(request_context.clone(), response_ctx.clone(), services)? {
+                    MiddlewareResult::OkBreak => {
+                        // short circuit, this is a local host only action
+                        return Ok(MiddlewareResult::OkBreak);
+                    },
+                    MiddlewareResult::OkContinue => {
+                        // continue;
+                    }
                 }
             }
         }

@@ -1,4 +1,3 @@
-use std::any::Any;
 use std::collections::HashMap;
 use std::error::Error;
 use std::result::Result;
@@ -9,7 +8,7 @@ use http::method::Method;
 use crate::action_results::iaction_result::IActionResult;
 use crate::action_results::file_result::FileResult;
 
-use crate::core::type_info::TypeInfo;
+use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 
 use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
@@ -92,12 +91,6 @@ impl ControllerActionRoutePattern {
         }
         Self { raw: s.clone(), parts: parts, captures: captures }
     }
-}
-
-pub trait IControllerActionFeature {
-    fn get_type_info(self: &Self) -> TypeInfo;
-    fn get_name(self: &Self) -> String;
-    fn to_string(self: &Self) -> String;
 }
 
 pub trait IControllerAction {

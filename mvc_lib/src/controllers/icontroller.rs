@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
+use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controllers::controller_action::IControllerAction;
-use crate::controllers::controller_action::IControllerActionFeature;
 
 pub trait IController {
     fn get_route_area(self: &Self) -> String;

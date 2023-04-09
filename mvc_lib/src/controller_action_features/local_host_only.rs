@@ -10,7 +10,7 @@ use crate::core::type_info::TypeInfo;
 use crate::contexts::request_context::RequestContext;
 use crate::contexts::response_context::ResponseContext;
 
-use crate::controllers::controller_action::IControllerActionFeature;
+use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controllers::controller_actions_map::IControllerActionsMap;
 
 use crate::services::request_middleware_service::IRequestMiddlewareService;
@@ -52,6 +52,10 @@ impl IControllerActionFeature for LocalHostOnlyControllerActionFeature {
 
     fn to_string(self: &Self) -> String {
         format!("{}", self.get_name())
+    }
+
+    fn invoke(self: &Self, _request_context: Rc<RequestContext>, _response_ctx: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+        Ok(MiddlewareResult::OkContinue)
     }
 }
 

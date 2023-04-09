@@ -9,6 +9,7 @@ use mvc_lib::core::type_info::TypeInfo;
 use mvc_lib::controllers::icontroller::IController;
 
 use mvc_lib::controller_action_features::local_host_only::LocalHostOnlyControllerActionFeatureMiddleware;
+use mvc_lib::controller_action_features::authorize::AuthorizeControllerActionFeatureMiddleware;
 
 use mvc_lib::services::service_collection::{IServiceCollection, ServiceCollection};
 use mvc_lib::services::service_scope::ServiceScope;
@@ -103,6 +104,7 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::add_default_request_middleware(services);
     DefaultServices::add_routing(services);
 
+    AuthorizeControllerActionFeatureMiddleware::add_to_services(services);
     LocalHostOnlyControllerActionFeatureMiddleware::add_to_services(services);
 
     DefaultServices::add_execute_controller_action(services);

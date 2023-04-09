@@ -70,16 +70,8 @@ impl ControllerContext {
         }
         route_data.map.insert("controller".to_string(), controller_name);
 
-
         let action_name = self.get_str("ActionName");
-        // if action_name.len() == 0 {
-        //     action_name = action.get_name();
-        // }
         route_data.map.insert("action".to_string(), action_name);
-
-        // todo: search actions for applicable patterns
-
-        // todo: insert query params or route params
 
         Ok(Box::new(route_data))
     }

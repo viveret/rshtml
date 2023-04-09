@@ -141,7 +141,7 @@ impl RustHtmlParser {
     pub fn get_model_type_name(self: &Self) -> String {
         let mut s = String::new();
         for type_part in self.get_model_type() {
-            s.push_str(&type_part.span().source_text().unwrap_or(String::new()));
+            s.push_str(&type_part.to_string());
         }
         s
     }

@@ -23,8 +23,8 @@ pub trait IViewRenderer {
         self: &Self,
         view_path: &String,
         view_model: Rc<Option<Box<dyn Any>>>,
-        controller_ctx: Rc<RefCell<ControllerContext>>,
-        response_ctx: Rc<RefCell<ResponseContext>>,
+        controller_ctx: Rc<ControllerContext>,
+        response_ctx: Rc<ResponseContext>,
         services: &dyn IServiceCollection
     ) -> Result<HtmlString, RustHtmlError>;
 
@@ -56,12 +56,12 @@ impl IViewRenderer for ViewRenderer {
         self: &Self,
         view_path: &String,
         view_model: Rc<Option<Box<dyn Any>>>,
-        controller_ctx: Rc<RefCell<ControllerContext>>,
-        response_ctx: Rc<RefCell<ResponseContext>>,
+        controller_ctx: Rc<ControllerContext>,
+        response_ctx: Rc<ResponseContext>,
         services: &dyn IServiceCollection
     ) -> Result<HtmlString, RustHtmlError> {
         let view_renderer_service_instance = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
-        let mut body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model.clone(), view_renderer_service_instance.clone(), controller_ctx.clone(), response_ctx.clone(), controller_ctx.borrow().request_context.clone());
+        let mut body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model.clone(), view_renderer_service_instance.clone(), controller_ctx.clone(), response_ctx.clone());
         match body_view_ctx.get_view_as_ref().render(&body_view_ctx, services) {
             Ok(body_html) => {
                 let mut combined_body_html_str = String::new();

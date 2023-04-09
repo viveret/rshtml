@@ -1,9 +1,14 @@
 use std::any::Any;
+use std::collections::HashMap;
 use std::path::Path;
 use std::rc::Rc;
 
+use glob::glob;
+
+
 pub trait IFileProviderControllerOptions {
     fn get_file(self: &Self, path: String) -> Option<String>;
+    fn get_mapped_paths(self: &Self, recursive: bool) -> HashMap<String, String>;
 }
 
 #[derive(Debug, Clone)]
@@ -65,5 +70,32 @@ impl IFileProviderControllerOptions for FileProviderControllerOptions {
         }
 
         return None;
+    }
+
+    fn get_mapped_paths(self: &Self, recursive: bool) -> HashMap<String, String> {
+        let all_paths = self.serving_directories
+            .iter()
+            .map(|path| {
+                let cwd = std::env::current_dir().unwrap();
+                let parent_dir = format!("{}/{}", cwd.to_str().unwrap(), path);
+                let mut glob_path = String::new();
+                glob_path.push_str(&parent_dir);
+                glob_path.push_str(if recursive { "**/*" } else { "*" });
+
+                // println!("glob_path: {}", glob_path);
+
+                glob(&glob_path)
+                    .expect("Failed to read glob pattern")
+                    .map(|x| x.unwrap().to_str().unwrap().to_string())
+                    .map(|x| (x[parent_dir.len() - 1..].to_string(), x))
+                    .collect::<Vec<(String, String)>>()
+            })
+            .flatten()
+            .chain(
+                self.serving_files.entries().map(|x| (x.0.to_string(), x.1.to_string()))
+            )
+            .collect();
+
+        all_paths
     }
 }

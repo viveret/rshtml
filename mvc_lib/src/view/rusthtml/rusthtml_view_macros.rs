@@ -12,12 +12,12 @@ pub struct RustHtmlViewMacros {
 
 impl RustHtmlViewMacros {
     pub fn render_section<'a, 'b, 'c>(section_name: &'a str, _view: &'b dyn IView, _ctx: &dyn IViewContext, _services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'c>> {
-        println!("render_section: {}", section_name);
+        // println!("render_section: {}", section_name);
         Ok(HtmlString::new_from_html("".to_string()))
     }
 
     pub fn render_section_optional<'a, 'b, 'c>(section_name: &'a str, _view: &'b dyn IView, _ctx: &dyn IViewContext, _services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'c>> {
-        println!("render_section_optional: {}", section_name);
+        // println!("render_section_optional: {}", section_name);
         Ok(HtmlString::new_from_html("".to_string()))
     }
 

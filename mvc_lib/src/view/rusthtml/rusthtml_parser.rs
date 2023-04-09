@@ -1514,7 +1514,7 @@ impl RustHtmlParser {
     pub fn convert_rusthtmltagattributevalue_to_tokentree<'a>(self: &Self, v: Vec<RustHtmlToken>, output: &mut Vec<TokenTree>, it: &mut Peekable<impl Iterator<Item = &'a RustHtmlToken>>) -> Result<(), RustHtmlError> {
         self.convert_appendhtmlstring_to_tokentree("\"".to_string(), output, it)?;
         // inner tokens
-        self.convert_rusthtmlappendhtml_to_tokentree(&v, output);
+        self.convert_rusthtmlappendhtml_to_tokentree(&v, output)?;
         self.convert_appendhtmlstring_to_tokentree("\"".to_string(), output, it)?;
         Ok(())
     }

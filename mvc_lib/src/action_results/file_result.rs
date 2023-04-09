@@ -1,5 +1,4 @@
 use std::fs::File;
-use std::cell::RefCell;
 use std::rc::Rc;
 use std::io::Read;
 use std::path::Path;
@@ -49,26 +48,25 @@ impl IActionResult for FileResult {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, _controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, _request_ctx: Rc<RequestContext>, _services: &dyn IServiceCollection) {
-        let mut response = response_ctx.as_ref().borrow_mut();
+    fn configure_response(self: &Self, _controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<RequestContext>, _services: &dyn IServiceCollection) {
         match File::open(self.path.clone()) {
             Ok(f) => {
-                response.add_header_str("Content-Type", &self.content_type);
+                response_ctx.add_header_str("Content-Type", &self.content_type);
                 let mut reader = std::io::BufReader::new(f);
-                match reader.read_to_end(&mut response.body) {
+                match reader.read_to_end(&mut response_ctx.body.borrow_mut()) {
                     Ok(num_read) => {
-                        println!("Wrote {}, {} bytes", self.path, num_read);
-                        response.status_code = StatusCode::OK;
+                        // println!("Wrote {}, {} bytes", self.path, num_read);
+                        response_ctx.status_code.replace(StatusCode::OK);
                     },
                     Err(error) => {
-                        println!("Error reading file: {}", error);
-                        response.status_code = StatusCode::NOT_FOUND;
+                        // println!("Error reading file: {}", error);
+                        response_ctx.status_code.replace(StatusCode::NOT_FOUND);
                     }
                 }
             },
             Err(error) => {
-                println!("Error opening file: {}", error);
-                response.status_code = StatusCode::NOT_FOUND;
+                // println!("Error opening file: {}", error);
+                response_ctx.status_code.replace(StatusCode::NOT_FOUND);
             }
         }
     }

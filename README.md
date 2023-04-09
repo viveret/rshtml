@@ -10,13 +10,12 @@ without referencing the dotnet core source code.
 - API-only and full web applications
 - Dependency injection / type constructor dependency resolution
 - Service collections and scoping
-- HTTP Request pipeline system
+- HTTP request / response middleware
 - Controllers, actions, action results
 - HTML view templating system
 
 
 ### To Do / In Progress Features
-- Middleware?
 - Constraints
 - Authorization
 - Authentication
@@ -35,6 +34,7 @@ without referencing the dotnet core source code.
 The HTML rendering / templating system is similar to Razor / Blazor in C#. There are 
 enough similarities and differences that they should be mentioned here.
 
+
 #### Similarities
 - Use the '@' symbol to escape HTML and use a directive or rust code.
 - keywords / directives like '@model', '@functions', '@use' are used to extend the templating language.
@@ -43,21 +43,20 @@ enough similarities and differences that they should be mentioned here.
 - Can render partial views in a template or on own from action in controller, or by using view renderer.
 - View paths are search by closest first, with the Shared folder being last.
 - Default list of imports required to support the view template.
+- Automatically prepend _view_start.rshtml to views in folder unless "" is specified
 
 
 #### Differences
 - The entry point for Rust HTML is in a macro within a rust file, so the rust parser has precedent in certain cases for tokenization and validation.
 - Currently no support for hot reloading or runtime compilation of views.
 - Some variable names and method names are lower case (instead of LikeThis, it is like_this).
-- Can directly import HTML or Rust HTML files with @html and @rshtml.
+- Can directly import HTML or Rust HTML files with @html and @rshtml, and import markdown / convert to HTML with @mdfile_const or @mdfile_nocache.
 
 
 #### Not Yet Implemented
 - @attributes
-- @inherits
 - @inject
 - @implements
-- @namespace
 - @section
 - @typeparam
 - @addTagHelper
@@ -66,7 +65,6 @@ enough similarities and differences that they should be mentioned here.
 - Tag helpers in general
 - Display and editor templates
 - Sessions or state management
-- Automatic _ViewStart.rshtml prepend or similar functionality
 - Explicit HTML mode by using @:
 - Any kind of reflection
 - Automatic controller / action route mapping (might be able to use https://stackoverflow.com/a/74573771/11765486)

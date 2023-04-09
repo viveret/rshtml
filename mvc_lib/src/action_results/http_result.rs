@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use http::StatusCode;
@@ -26,9 +25,8 @@ impl IActionResult for HttpRedirectResult {
         StatusCode::TEMPORARY_REDIRECT
     }
 
-    fn configure_response(self: &Self, _controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, _request_ctx: Rc<RequestContext>, _services: &dyn IServiceCollection) {
-        let mut response = response_ctx.as_ref().borrow_mut();
-        response.add_header_string("Location".to_string(), self.redirect_target.clone());
+    fn configure_response(self: &Self, _controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<RequestContext>, _services: &dyn IServiceCollection) {
+        response_ctx.add_header_string("Location".to_string(), self.redirect_target.clone());
     }
 }
 

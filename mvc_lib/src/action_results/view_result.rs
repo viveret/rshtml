@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use http::StatusCode;
@@ -33,15 +32,14 @@ impl ViewResult {
         Self { path: "".to_string(), model: Rc::new(Some(model)) }
     }
 
-    pub fn write_response(self: &Self, view_render_result: Result<HtmlString, RustHtmlError>, response_ctx: Rc<RefCell<ResponseContext>>) {
-        let mut response = response_ctx.as_ref().borrow_mut();
-        response.add_header_str("Content-Type", "text/html");
+    pub fn write_response(self: &Self, view_render_result: Result<HtmlString, RustHtmlError>, response_ctx: Rc<ResponseContext>) {
+        response_ctx.add_header_str("Content-Type", "text/html");
         match view_render_result {
             Ok(ok_view_result) => {
-                response.body.extend_from_slice(ok_view_result.content.as_bytes());
+                response_ctx.body.borrow_mut().extend_from_slice(ok_view_result.content.as_bytes());
             },
             Err(err) => {
-                response.body.extend_from_slice(format!("Error: {}", err).as_bytes());
+                response_ctx.body.borrow_mut().extend_from_slice(format!("Error: {}", err).as_bytes());
             }
         }
     }
@@ -52,7 +50,7 @@ impl IActionResult for ViewResult {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, response_ctx: Rc<RefCell<ResponseContext>>, _request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) {
         let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
         let html = view_renderer.render_with_layout_if_specified(&self.path, self.model.clone(), controller_ctx.clone(), response_ctx.clone(), services);
         self.write_response(html, response_ctx)

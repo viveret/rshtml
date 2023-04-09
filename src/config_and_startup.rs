@@ -8,6 +8,8 @@ use mvc_lib::core::type_info::TypeInfo;
 
 use mvc_lib::controllers::icontroller::IController;
 
+use mvc_lib::controller_action_features::local_host_only::LocalHostOnlyControllerActionFeatureMiddleware;
+
 use mvc_lib::services::service_collection::{IServiceCollection, ServiceCollection};
 use mvc_lib::services::service_scope::ServiceScope;
 use mvc_lib::services::service_descriptor::ServiceDescriptor;
@@ -15,12 +17,15 @@ use mvc_lib::services::default_services::{*};
 
 use mvc_lib::options::http_options::{IHttpOptions, HttpOptions};
 use mvc_lib::options::file_provider_controller_options::{IFileProviderControllerOptions, FileProviderControllerOptions};
+use mvc_lib::options::logging_services_options::{ ILogHttpRequestsOptions, LogHttpRequestsOptions };
 
 use mvc_lib::view::iview::IView;
 
 use crate::views::dev::index::view_dev_index;
 use crate::views::dev::views::view_dev_views;
 use crate::views::dev::view_details::view_dev_view_details;
+use crate::views::dev::routes::view_dev_routes;
+use crate::views::dev::route_details::view_dev_route_details;
 use crate::views::dev::sysinfo::view_dev_sysinfo;
 use crate::views::home::index::view_home_index;
 use crate::views::learn::index::view_learn_index;
@@ -38,6 +43,8 @@ pub fn add_views(services: &mut ServiceCollection) {
             view_dev_index::new_service(),
             view_dev_views::new_service(),
             view_dev_view_details::new_service(),
+            view_dev_routes::new_service(),
+            view_dev_route_details::new_service(),
             view_dev_sysinfo::new_service(),
             view_home_index::new_service(),
             view_learn_index::new_service(),
@@ -62,6 +69,19 @@ pub fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) ->
 
     // services.add_instance::<HttpOptions, dyn IHttpOptions>(TypeInfo::rc_of::<dyn IHttpOptions>(), &HTTP_OPTIONS);
     // services.add_instance::<FileProviderControllerOptions, dyn IFileProviderControllerOptions>(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), &FILE_PROVIDER_OPTIONS);
+
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILogHttpRequestsOptions>(), |_| vec![Box::new(Rc::new(LogHttpRequestsOptions {
+        log_request: true,
+        log_response: true,
+        log_request_headers: true,
+        log_response_headers: true,
+        log_request_cookies: true,
+        log_response_cookies: true,
+        // log_request_headers: false,
+        // log_response_headers: false,
+        // log_request_cookies: false,
+        // log_response_cookies: false,
+    }) as Rc<dyn ILogHttpRequestsOptions>)], ServiceScope::Singleton));
 }
 
 pub fn add_controllers(services: &mut ServiceCollection) {
@@ -71,19 +91,19 @@ pub fn add_controllers(services: &mut ServiceCollection) {
 }
 
 pub fn on_configure_services(services: &mut ServiceCollection) -> () {
-    DefaultServices::add_logging(services);
     DefaultServices::add_file_provider(services);
-
-    // these can be added in any order, the HTTP request pipeline will decide usage
-    add_views(services);
-    add_controllers(services);
-    DefaultServices::add_controllers(services);
-    DefaultServices::add_request_handlers(services);
     DefaultServices::add_request_decoders(services);
     DefaultServices::add_response_encoders(services);
 
-    // must be added after the pipeline parts
-    DefaultServices::add_http_request_pipeline(services);
+    add_views(services);
+    add_controllers(services);
+    DefaultServices::add_controllers(services);
+    DefaultServices::add_default_request_middleware(services);
+    DefaultServices::add_routing(services);
+
+    LocalHostOnlyControllerActionFeatureMiddleware::add_to_services(services);
+
+    DefaultServices::add_execute_controller_action(services);
 }
 
 pub fn onstart(_services: &dyn IServiceCollection) -> () {

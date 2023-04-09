@@ -28,8 +28,8 @@ pub trait IViewContext: Send + Sync {
     fn get_view(self: &Self) -> Rc<dyn IView>;
     fn get_view_as_ref(self: &Self) -> &dyn IView;
 
-    fn get_controller_ctx(self: &Self) -> Rc<RefCell<ControllerContext>>;
-    fn get_response_ctx(self: &Self) -> Rc<RefCell<ResponseContext>>;
+    fn get_controller_ctx(self: &Self) -> Rc<ControllerContext>;
+    fn get_response_ctx(self: &Self) -> Rc<ResponseContext>;
     fn get_request_ctx(self: &Self) -> Rc<RequestContext>;
 
     fn get_string(self: &Self, key: String) -> String;
@@ -47,8 +47,8 @@ pub struct ViewContext {
     viewdata: Rc<RefCell<HashMap<String, String>>>,
     viewmodel: Rc<Option<Box<dyn Any>>>,
     view_renderer: Rc<dyn IViewRenderer>,
-    controller_ctx: Rc<RefCell<ControllerContext>>,
-    response_ctx: Rc<RefCell<ResponseContext>>,
+    controller_ctx: Rc<ControllerContext>,
+    response_ctx: Rc<ResponseContext>,
     request_ctx: Rc<RequestContext>,
     html_buffer: RefCell<String>,
 }
@@ -61,18 +61,18 @@ impl ViewContext {
                 view: Rc<dyn IView>,
                 viewmodel: Rc<Option<Box<dyn Any>>>,
                 view_renderer: Rc<dyn IViewRenderer>,
-                controller_ctx: Rc<RefCell<ControllerContext>>,
-                response_ctx: Rc<RefCell<ResponseContext>>,
-                request_ctx: Rc<RequestContext>) -> Self {
+                controller_ctx: Rc<ControllerContext>,
+                response_ctx: Rc<ResponseContext>
+            ) -> Self {
         Self {
             viewdata: Rc::new(RefCell::new(HashMap::new())),
             ctxdata: Rc::new(RefCell::new(HashMap::new())),
             view: view,
             viewmodel: viewmodel,
             view_renderer: view_renderer,
-            controller_ctx: controller_ctx,
+            controller_ctx: controller_ctx.clone(),
             response_ctx: response_ctx,
-            request_ctx: request_ctx,
+            request_ctx: controller_ctx.request_context.clone(),
             html_buffer: RefCell::new(String::new()),
         }
     }
@@ -86,7 +86,6 @@ impl IViewContext for ViewContext {
             self.view_renderer.clone(),
             self.controller_ctx.clone(),
             self.response_ctx.clone(),
-            self.request_ctx.clone()
         ))
     }
 
@@ -130,11 +129,11 @@ impl IViewContext for ViewContext {
         self.view.as_ref()
     }
 
-    fn get_controller_ctx(self: &Self) -> Rc<RefCell<ControllerContext>> {
+    fn get_controller_ctx(self: &Self) -> Rc<ControllerContext> {
         self.controller_ctx.clone()
     }
 
-    fn get_response_ctx(self: &Self) -> Rc<RefCell<ResponseContext>> {
+    fn get_response_ctx(self: &Self) -> Rc<ResponseContext> {
         self.response_ctx.clone()
     }
 
@@ -145,14 +144,7 @@ impl IViewContext for ViewContext {
     fn get_string(self: &Self, key: String) -> String {
         match self.get_view_data().as_ref().borrow().get(&key) {
             Some(s) => s.clone(),
-            None => {
-                let my_view_data_rc = self.controller_ctx.as_ref().borrow_mut().get_view_data();
-                let my_view_data = my_view_data_rc.as_ref().borrow_mut();
-                match my_view_data.get(&key) {
-                    Some(s) => s.clone(),
-                    None => String::new(),
-                }
-            },
+            None => self.controller_ctx.get_string(key),
         }
     }
 
@@ -170,7 +162,7 @@ impl IViewContext for ViewContext {
     }
 
     fn clone_for_layout(self: &Self, layout_view: Rc<dyn IView>) -> Box<dyn IViewContext> {
-        let copy = Self::new(layout_view.clone(), self.viewmodel.clone(), self.view_renderer.clone(), self.controller_ctx.clone(), self.response_ctx.clone(), self.controller_ctx.borrow().request_context.clone());
+        let copy = Self::new(layout_view.clone(), self.viewmodel.clone(), self.view_renderer.clone(), self.controller_ctx.clone(), self.response_ctx.clone());
         copy.viewdata.as_ref().replace(self.viewdata.as_ref().borrow().clone());
         Box::new(copy)
     }

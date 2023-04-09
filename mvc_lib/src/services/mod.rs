@@ -1,6 +1,11 @@
+pub mod controller_action_execute_service;
 pub mod default_services;
 pub mod file_provider_service;
-pub mod request_handler_service;
+pub mod host_environment;
+pub mod logging_services;
+pub mod request_middleware_service;
+pub mod routing_service;
+pub mod routemap_service;
 pub mod service_collection;
 pub mod service_descriptor;
 pub mod service_instance;

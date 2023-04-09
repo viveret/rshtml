@@ -1,20 +1,11 @@
 use std::any::Any;
-use std::cell::RefCell;
-use std::error::Error;
-use std::result::Result;
 use std::rc::Rc;
 
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
-use crate::contexts::controller_context::IControllerContext;
-use crate::contexts::controller_context::ControllerContext;
-
-use crate::action_results::file_result::FileResult;
-use crate::action_results::iaction_result::IActionResult;
-
 use crate::controllers::icontroller::IController;
-use crate::controllers::controller_actions_map::IControllerAction;
+use crate::controllers::controller_action::{ IControllerAction, ControllerActionFileResult, IControllerActionFeature };
 
 use crate::options::file_provider_controller_options::IFileProviderControllerOptions;
 
@@ -39,23 +30,27 @@ impl FileProviderController {
 }
 
 impl IController for FileProviderController {
-    fn get_route_area(self: &Self) -> &'static str {
-        ""
+    fn get_route_area(self: &Self) -> String {
+        String::new()
     }
 
-    fn get_name(self: &Self) -> &'static str {
-        "FileProvider"
+    fn get_name(self: &Self) -> String {
+        "FileProvider".to_string()
     }
 
-    fn process_request(self: &Self, controller_ctx: Rc<RefCell<ControllerContext>>, _services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
-        let find_path = self.options.get_file(*controller_ctx.borrow().get_request_context().path.clone());
-        match find_path {
-            Some(path) => Ok(Some(Box::new(FileResult::new(path, None)))),
-            None => Ok(None),
-        }
+    fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
+        self.options.as_ref()
+            .get_mapped_paths(true)
+            .iter()
+            .map(|x|
+                Rc::new(ControllerActionFileResult::new(
+                    x.1.clone(), x.0.clone(), String::new(), self.get_name(), self.get_route_area(),
+                )) as Rc<dyn IControllerAction>
+            )
+            .collect()
     }
 
-    fn get_actions(self: &Self) -> Vec<Box<dyn IControllerAction>> {
+    fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![]
     }
 }

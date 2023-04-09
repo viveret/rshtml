@@ -95,7 +95,7 @@ mvc_macro_lib::rusthtml_view_macro! {
             @let compile_timestamp = format!("Page compiled at {}", self.when_compiled.format("%Y-%m-%d   %H:%M:%S"));
             @let view_timestamp = format!("Page viewed at {}", chrono::prelude::Utc::now().format("%Y-%m-%d   %H:%M:%S"));
             <p>@format!("{} — {}", compile_timestamp, view_timestamp)</p>
-            <p>@format!("Layout path: {}, action: {}, controller: {}, area: {}", self.ViewPath, view_context.get_str("ActionName"), view_context.get_str("ControllerName"), view_context.get_str("AreaName"))</p>
+            <p>@format!("Layout path: {}, action: {}, controller: {}, area: {}", self.ViewPath, page_action, page_controller, page_area)</p>
         </footer>
     </div>
 

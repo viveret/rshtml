@@ -1,30 +1,28 @@
 use std::any::Any;
-use std::cell::RefCell;
-use std::error::Error;
-use std::result::Result;
 use std::rc::Rc;
 
+use mvc_lib::services::routemap_service::IRouteMapService;
 use mvc_lib::services::service_collection::IServiceCollection;
 use mvc_lib::services::service_collection::ServiceCollectionExtensions;
 
 use mvc_lib::contexts::controller_context::IControllerContext;
-use mvc_lib::contexts::controller_context::ControllerContext;
 
 use mvc_lib::action_results::view_result::ViewResult;
-use mvc_lib::action_results::iaction_result::IActionResult;
 use mvc_lib::action_results::http_result::HttpRedirectResult;
 
 use mvc_lib::controllers::icontroller::IController;
-use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
-use mvc_lib::controllers::controller_actions_map::IControllerAction;
-use mvc_lib::controllers::controller_actions_map::ControllerActionClosure;
+
+use mvc_lib::controllers::controller_action::IControllerAction;
+use mvc_lib::controllers::controller_action::ControllerActionClosure;
+use mvc_lib::controllers::controller_action::IControllerActionFeature;
+
+use mvc_lib::controllers::controller_actions_map::IControllerActionsMap;
+
+use mvc_lib::controller_action_features::local_host_only::LocalHostOnlyControllerActionFeature;
 
 use mvc_lib::view::view_renderer::IViewRenderer;
 
-use crate::view_models::dev::IndexViewModel;
-use crate::view_models::dev::ViewsViewModel;
-use crate::view_models::dev::ViewDetailsViewModel;
-use crate::view_models::dev::SysInfoViewModel;
+use crate::view_models::dev::{ IndexViewModel, ViewsViewModel, ViewDetailsViewModel, RoutesViewModel, RouteDetailsViewModel, SysInfoViewModel };
 
 
 pub struct DevController {
@@ -42,46 +40,71 @@ impl DevController {
 }
 
 impl IController for DevController {
-    fn get_route_area(self: &Self) -> &'static str {
-        ""
+    fn get_route_area(self: &Self) -> String {
+        String::new()
     }
 
-    fn get_name(self: &Self) -> &'static str {
-        "Dev"
-    }
-
-    fn process_request(self: &Self, controller_context: Rc<RefCell<ControllerContext>>, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
-        IControllerExtensions::process_mvc_request(controller_context.clone(), services)
+    fn get_name(self: &Self) -> String {
+        "Dev".to_string()
     }
     
-    fn get_actions(self: &Self) -> Vec<Box<dyn IControllerAction>> {
+    fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         vec![
-            Box::new(ControllerActionClosure::new("/dev", "Index", self.get_name(), self.get_route_area(), |_controller_ctx, _services| {
+            Rc::new(ControllerActionClosure::new(vec![], None, "/dev".to_string(), "Index".to_string(), self.get_name(), self.get_route_area(), |_controller_ctx, _services| {
                 let view_model = Box::new(Rc::new(IndexViewModel::new()));
-                Ok(Some(Box::new(ViewResult::new("views/dev/index.rs".to_string(), view_model))))
+                Ok(Some(Rc::new(ViewResult::new("views/dev/index.rs".to_string(), view_model))))
             })),
-            Box::new(ControllerActionClosure::new("/dev/views", "Views", self.get_name(), self.get_route_area(), |_controller_ctx, services| {
+            Rc::new(ControllerActionClosure::new(vec![], None, "/dev/views".to_string(), "Views".to_string(), self.get_name(), self.get_route_area(), |_controller_ctx, services| {
                 let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
                 let view_model = Box::new(Rc::new(ViewsViewModel::new(view_renderer.get_all_views(services))));
-                Ok(Some(Box::new(ViewResult::new("views/dev/views.rs".to_string(), view_model))))
+                Ok(Some(Rc::new(ViewResult::new("views/dev/views.rs".to_string(), view_model))))
             })),
-            Box::new(ControllerActionClosure::new("/dev/views/..", "ViewDetails", self.get_name(), self.get_route_area(), |controller_ctx, services| {
-                let request_context = controller_ctx.borrow().get_request_context();
+            Rc::new(ControllerActionClosure::new(vec![], None, "/dev/views/..".to_string(), "ViewDetails".to_string(), self.get_name(), self.get_route_area(), |controller_ctx, services| {
+                let request_context = controller_ctx.get_request_context();
+
                 let path = &request_context.path.as_str()["/dev/views/".len()..];
 
                 if path.len() == 0 {
-                    return Ok(Some(Box::new(HttpRedirectResult::new("/dev/views".to_string()))))
+                    return Ok(Some(Rc::new(HttpRedirectResult::new("/dev/views".to_string()))))
                 }
 
                 println!("Viewing view at path: {:?}", path);
                 let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
                 let view_model = Box::new(Rc::new(ViewDetailsViewModel::new(view_renderer.get_view(&path.to_string(), services))));
-                return Ok(Some(Box::new(ViewResult::new("views/dev/view_details.rs".to_string(), view_model))));
+                return Ok(Some(Rc::new(ViewResult::new("views/dev/view_details.rs".to_string(), view_model))));
             })),
-            Box::new(ControllerActionClosure::new("/dev/sysinfo", "SysInfo", self.get_name(), self.get_route_area(), |_controller_ctx, _services| {
+            Rc::new(ControllerActionClosure::new(vec![], None, "/dev/routes".to_string(), "Routes".to_string(), self.get_name(), self.get_route_area(), |_controller_ctx, services| {
+                let routes = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
+                let view_model = Box::new(Rc::new(RoutesViewModel::new(routes.as_ref().get_mapper().as_ref().get_all_actions())));
+                Ok(Some(Rc::new(ViewResult::new("views/dev/routes.rs".to_string(), view_model))))
+            })),
+            Rc::new(ControllerActionClosure::new(vec![], None, "/dev/routes/..".to_string(), "RouteDetails".to_string(), self.get_name(), self.get_route_area(), |controller_ctx, services| {
+                let request_context = controller_ctx.get_request_context();
+                
+                let path = &request_context.path.as_str()["/dev/routes/".len()..];
+
+                if path.len() == 0 {
+                    return Ok(Some(Rc::new(HttpRedirectResult::new("/dev/routes".to_string()))))
+                }
+
+                println!("Viewing route at path: {:?}", path);
+                let routes = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
+                let route = routes.as_ref().get_mapper().as_ref().get_action_at_area_controller_action_path(path.to_string());
+                let controller = routes.as_ref().get_mapper().get_controller(route.get_controller_name());
+
+                let view_model = Box::new(Rc::new(RouteDetailsViewModel::new(route, controller)));
+                return Ok(Some(Rc::new(ViewResult::new("views/dev/route_details.rs".to_string(), view_model))));
+            })),
+            Rc::new(ControllerActionClosure::new(vec![], None, "/dev/sysinfo".to_string(), "SysInfo".to_string(), self.get_name(), self.get_route_area(), |_controller_ctx, _services| {
                 let view_model = Box::new(Rc::new(SysInfoViewModel::new()));
-                Ok(Some(Box::new(ViewResult::new("views/dev/sysinfo.rs".to_string(), view_model))))
+                Ok(Some(Rc::new(ViewResult::new("views/dev/sysinfo.rs".to_string(), view_model))))
             })),
+        ]
+    }
+
+    fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
+        vec![
+            LocalHostOnlyControllerActionFeature::new_service()
         ]
     }
 }

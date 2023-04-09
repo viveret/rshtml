@@ -1,7 +1,4 @@
 use std::any::Any;
-use std::cell::RefCell;
-use std::error::Error;
-use std::result::Result;
 use std::rc::Rc;
 
 use glob::glob;
@@ -11,15 +8,14 @@ use mvc_lib::action_results::http_result::HttpRedirectResult;
 use mvc_lib::services::service_collection::IServiceCollection;
 
 use mvc_lib::contexts::controller_context::IControllerContext;
-use mvc_lib::contexts::controller_context::ControllerContext;
 
 use mvc_lib::action_results::view_result::ViewResult;
-use mvc_lib::action_results::iaction_result::IActionResult;
 
 use mvc_lib::controllers::icontroller::IController;
-use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
-use mvc_lib::controllers::controller_actions_map::IControllerAction;
-use mvc_lib::controllers::controller_actions_map::ControllerActionClosure;
+
+use mvc_lib::controllers::controller_action::IControllerAction;
+use mvc_lib::controllers::controller_action::ControllerActionClosure;
+use mvc_lib::controllers::controller_action::IControllerActionFeature;
 
 use crate::view_models::learn::IndexViewModel;
 use crate::view_models::learn::DetailsViewModel;
@@ -39,21 +35,17 @@ impl LearnController {
 }
 
 impl IController for LearnController {
-    fn get_route_area(self: &Self) -> &'static str {
-        ""
+    fn get_route_area(self: &Self) -> String {
+        String::new()
     }
 
-    fn get_name(self: &Self) -> &'static str {
-        "Learn"
-    }
-
-    fn process_request(self: &Self, controller_context: Rc<RefCell<ControllerContext>>, services: &dyn IServiceCollection) -> Result<Option<Box<dyn IActionResult>>, Box<dyn Error>> {
-        IControllerExtensions::process_mvc_request(controller_context.clone(), services)
+    fn get_name(self: &Self) -> String {
+        "Learn".to_string()
     }
     
-    fn get_actions(self: &Self) -> Vec<Box<dyn IControllerAction>> {
+    fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         vec![
-            Box::new(ControllerActionClosure::new_default_area("/learn", "Index", self.get_name(), |_controller_ctx, _services| {
+            Rc::new(ControllerActionClosure::new_default_area(vec![], None, "/learn".to_string(), "Index".to_string(), self.get_name(), |_controller_ctx, _services| {
                 let learn_docs: Vec<String> = glob("docs/learn/**/*.md")
                     .expect("Failed to read glob pattern")
                     .map(|path_to_string| {
@@ -66,19 +58,23 @@ impl IController for LearnController {
                     .collect();
 
                 let view_model = Box::new(Rc::new(IndexViewModel::new(learn_docs)));
-                Ok(Some(Box::new(ViewResult::new("views/learn/index.rs".to_string(), view_model))))
+                Ok(Some(Rc::new(ViewResult::new("views/learn/index.rs".to_string(), view_model))))
             })),
-            Box::new(ControllerActionClosure::new_default_area("/learn/..", "Details", self.get_name(), |controller_ctx, _services| {
-                let request_context = controller_ctx.borrow().get_request_context();
+            Rc::new(ControllerActionClosure::new_default_area(vec![], None, "/learn/..".to_string(), "Details".to_string(), self.get_name(), |controller_ctx, _services| {
+                let request_context = controller_ctx.get_request_context();
                 let path = &request_context.path.as_str()["/learn/".len()..];
 
                 if path.len() == 0 {
-                    return Ok(Some(Box::new(HttpRedirectResult::new("/learn".to_string()))))
+                    return Ok(Some(Rc::new(HttpRedirectResult::new("/learn".to_string()))))
                 }
 
                 let view_model = Box::new(Rc::new(DetailsViewModel::new(format!("docs/learn/{}.md", path))));
-                Ok(Some(Box::new(ViewResult::new("views/learn/details.rs".to_string(), view_model))))
+                Ok(Some(Rc::new(ViewResult::new("views/learn/details.rs".to_string(), view_model))))
             })),
         ]
+    }
+
+    fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
+        vec![]
     }
 }

@@ -6,8 +6,11 @@ use std::vec::Vec;
 
 use crate::app::http_request_pipeline::IHttpRequestPipeline;
 
+use crate::contexts::connection_context::{ IConnectionContext, ConnectionContext };
+
 use crate::options::http_options::IHttpOptions;
 
+use crate::services::default_services::DefaultServices;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
@@ -76,9 +79,11 @@ impl WebProgram {
         let request_bytes = Vec::<u8>::new();
         let request_bytes_boxed = Box::new(request_bytes);
 
+        let connection_context = Rc::new(ConnectionContext::new(stream.peer_addr().unwrap())) as Rc<dyn IConnectionContext>;
+
         let request_pipeline = ServiceCollectionExtensions::get_required_single::<dyn IHttpRequestPipeline>(&self.services);
 
-        let response = request_pipeline.process_request(http_header, request_headers, request_bytes_boxed, &self.services).expect("could not process request");
+        let response = request_pipeline.process_request(http_header, request_headers, request_bytes_boxed, connection_context, &self.services).expect("could not process request");
         stream.write_all(&response).expect("could not write response");
     }
 }
@@ -90,6 +95,8 @@ impl IWebProgram for WebProgram {
     
     fn configure_services(self: &mut Self) {
         (self.on_configure_services_fn.unwrap())(&mut self.services);
+
+        DefaultServices::add_http_request_pipeline(&mut self.services);
     }
 
     fn start(self: &Self, _args: Rc<Vec<String>>) {

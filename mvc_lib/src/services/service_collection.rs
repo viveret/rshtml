@@ -204,7 +204,7 @@ pub struct ServiceCollectionExtensions {
 }
 
 impl ServiceCollectionExtensions {
-    pub fn try_get_single<T: 'static + ?Sized>(services: &dyn IServiceCollection) -> Result<Rc<T>, &str> {
+    pub fn try_get_single<T: 'static + ?Sized>(services: &dyn IServiceCollection) -> Result<Option<Rc<T>>, &str> {
         let type_info = TypeInfo::rc_of::<T>();
         Ok(services
             .try_get(type_info)
@@ -214,7 +214,7 @@ impl ServiceCollectionExtensions {
             .take(1)
             .map(|x| x.clone())
             .collect::<Vec<Rc<T>>>()
-            .first().unwrap().clone()
+            .first().cloned()
         )
     }
 

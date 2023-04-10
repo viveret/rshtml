@@ -19,6 +19,7 @@ use mvc_lib::controllers::controller_action::ControllerActionClosure;
 use mvc_lib::controllers::controller_actions_map::IControllerActionsMap;
 
 use mvc_lib::controller_action_features::local_host_only::LocalHostOnlyControllerActionFeature;
+use mvc_lib::controller_action_features::authorize::AuthorizeControllerActionFeature;
 
 use mvc_lib::view::view_renderer::IViewRenderer;
 
@@ -104,6 +105,7 @@ impl IController for DevController {
 
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![
+            AuthorizeControllerActionFeature::new_service_parse("admin,dev,owner".to_string(), None),
             LocalHostOnlyControllerActionFeature::new_service()
         ]
     }

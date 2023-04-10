@@ -18,4 +18,7 @@ pub trait IControllerActionFeature {
     fn to_string(self: &Self) -> String;
 
     fn invoke(self: &Self, request_context: Rc<RequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>>;
+
+
+    fn as_any(&self) -> &dyn Any;
 }

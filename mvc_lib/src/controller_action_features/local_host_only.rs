@@ -57,6 +57,10 @@ impl IControllerActionFeature for LocalHostOnlyControllerActionFeature {
     fn invoke(self: &Self, _request_context: Rc<RequestContext>, _response_ctx: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         Ok(MiddlewareResult::OkContinue)
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 pub struct LocalHostOnlyControllerActionFeatureMiddleware {

@@ -12,6 +12,9 @@ use crate::controllers::controller_action::IControllerAction;
 
 use crate::routing::route_data::RouteData;
 
+use crate::services::authorization_service::IAuthClaim;
+
+
 
 pub struct RequestContext {
     pub connection_context: Rc<dyn IConnectionContext>,
@@ -21,6 +24,7 @@ pub struct RequestContext {
     pub headers: HeaderMap,
     pub body: Vec<u8>,
     pub route_data: RefCell<RouteData>,
+    pub auth_claims: RefCell<Vec<Rc<dyn IAuthClaim>>>,
     pub context_data: RefCell<HashMap<String, String>>,
     pub controller_action: RefCell<Option<Rc<dyn IControllerAction>>>,
 }
@@ -40,13 +44,14 @@ impl RequestContext {
             headers: request_headers,
             body: vec![],
             route_data: RefCell::new(RouteData::new()),
+            auth_claims: RefCell::new(Vec::new()),
             context_data: RefCell::new(HashMap::new()),
             controller_action: RefCell::new(None),
         }
     }
 
     pub fn parse(http_header: String, headers: Vec<String>, _request_bytes: Box<Vec<u8>>, connection_context: Rc<dyn IConnectionContext>) -> Rc<RequestContext> {
-        let re_method: Regex = Regex::new(r"^(GET|POST|PUT) ").unwrap();
+        let re_method: Regex = Regex::new(r"^(GET|HEAD|POST|PUT) ").unwrap();
         let re_version: Regex = Regex::new(r" HTTP/(\d\.\d)$").unwrap();
         let re_header: Regex = Regex::new(r"^([a-zA-Z0-9 _-]+): ").unwrap();
 
@@ -74,6 +79,24 @@ impl RequestContext {
                 // HttpHeader::from_httparse_header(name, &value.as_bytes().to_vec())
             }))
         ))
+    }
+
+    pub fn get_cookies_parsed(self: &Self) -> Option<HashMap<String, String>> {
+        // println!("self.headers: {:?}", self.headers);
+        let cookie_header = self.headers.get("cookie");
+        match cookie_header {
+            Some(header) => {
+                Some(header.to_str().unwrap().split(';').map(|cookie| {
+                    let split_kvp = cookie.split('=').map(|x| x.to_string()).collect::<Vec<String>>();
+                    if split_kvp.len() == 2 {
+                        (split_kvp.get(0).unwrap().clone(), split_kvp.get(1).unwrap().clone())
+                    } else {
+                        (split_kvp.get(0).unwrap().clone(), String::new())
+                    }
+                }).collect())
+            },
+            None => None,
+        }
     }
 
     pub fn get_string(self: &Self, key: String) -> String {

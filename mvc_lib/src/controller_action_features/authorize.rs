@@ -13,6 +13,9 @@ use crate::contexts::response_context::ResponseContext;
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controllers::controller_actions_map::IControllerActionsMap;
 
+use crate::services::authorization_service::AuthResult;
+use crate::services::authorization_service::IAuthorizationService;
+
 use crate::services::request_middleware_service::IRequestMiddlewareService;
 use crate::services::request_middleware_service::MiddlewareResult;
 
@@ -24,12 +27,11 @@ use crate::services::service_collection::ServiceCollectionExtensions;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
 
-
-pub struct AuthorizeControllerActionFeature {
+pub struct AllowAnonymous {
 
 }
 
-impl AuthorizeControllerActionFeature {
+impl AllowAnonymous {
     pub fn new() -> Self {
         Self {
 
@@ -38,6 +40,69 @@ impl AuthorizeControllerActionFeature {
 
     pub fn new_service() -> Rc<dyn IControllerActionFeature> {
         Rc::new(Self::new())
+    }
+}
+
+impl IControllerActionFeature for AllowAnonymous {
+    fn get_type_info(self: &Self) -> TypeInfo {
+        TypeInfo::of::<AllowAnonymous>()
+    }
+
+    fn get_name(self: &Self) -> String {
+        name_of_type!(AllowAnonymous).to_string()
+    }
+
+    fn to_string(self: &Self) -> String {
+        format!("{}", self.get_name())
+    }
+
+    fn invoke(self: &Self, request_context: Rc<RequestContext>, _response_ctx: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+        println!("Allow Anonymous {:?}", request_context.connection_context.get_remote_addr());
+        Ok(MiddlewareResult::OkContinue)
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+// https://learn.microsoft.com/en-us/aspnet/core/security/authorization/policies?view=aspnetcore-7.0
+// https://learn.microsoft.com/en-us/aspnet/core/security/authorization/iauthorizationpolicyprovider?view=aspnetcore-7.0
+pub struct AuthorizeControllerActionFeature {
+    pub roles: Vec<String>,
+    pub policy: Option<String>,
+}
+
+impl AuthorizeControllerActionFeature {
+    pub fn new(
+        roles: Vec<String>,
+        policy: Option<String>,
+    ) -> Self {
+        Self {
+            roles: roles,
+            policy: policy,
+        }
+    }
+
+    pub fn new_parse(
+        roles: String,
+        policy: Option<String>,
+    ) -> Self {
+        Self::new(roles.split(',').map(|s| s.to_string()).collect(), policy)
+    }
+
+    pub fn new_service(
+        roles: Vec<String>,
+        policy: Option<String>,
+    ) -> Rc<dyn IControllerActionFeature> {
+        Rc::new(Self::new(roles, policy))
+    }
+
+    pub fn new_service_parse(
+        roles: String,
+        policy: Option<String>,
+    ) -> Rc<dyn IControllerActionFeature> {
+        Rc::new(Self::new_parse(roles, policy))
     }
 }
 
@@ -54,9 +119,12 @@ impl IControllerActionFeature for AuthorizeControllerActionFeature {
         format!("{}", self.get_name())
     }
 
-    fn invoke(self: &Self, request_context: Rc<RequestContext>, _response_ctx: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
-        println!("Authorizing {:?}", request_context.connection_context.get_remote_addr());
+    fn invoke(self: &Self, request_context: Rc<RequestContext>, _response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         Ok(MiddlewareResult::OkContinue)
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 
@@ -86,43 +154,24 @@ impl IRequestMiddlewareService for AuthorizeControllerActionFeatureMiddleware {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, request_context: Rc<RequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, request_context: Rc<RequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+        let auth_service = ServiceCollectionExtensions::get_required_single::<dyn IAuthorizationService>(services);
         let controller_name = request_context.get_str("ControllerName");
 
         if controller_name.len() > 0 {
             let controller = self.mapper_service.get_mapper().get_controller(controller_name.clone());
-
-            let action_features = request_context.controller_action.borrow().as_ref().unwrap().get_features();
-            let controller_features = controller.get_features();
-
-            let find_my_feature: Vec<Rc<dyn IControllerActionFeature>> = controller_features
-                .iter()
-                .chain(
-                    action_features.iter()
-                )
-                .filter(|x| x.get_name() == name_of_type!(AuthorizeControllerActionFeature).to_string())
-                .take(1)
-                .cloned()
-                .collect();
-
-            if find_my_feature.len() > 0 {
-                let my_feature_rc = find_my_feature.first().unwrap();
-                let my_feature_dyn = my_feature_rc.as_ref();
-
-                match my_feature_dyn.invoke(request_context.clone(), response_ctx.clone(), services)? {
-                    MiddlewareResult::OkBreak => {
-                        // short circuit, this is a local host only action
-                        return Ok(MiddlewareResult::OkBreak);
-                    },
-                    MiddlewareResult::OkContinue => {
-                        // continue;
-                    }
-                }
+            match auth_service.authenticate_http_request(controller, request_context.clone())? {
+                AuthResult::Ok => {
+                },
+                AuthResult::Rejection(reason) => {
+                    response_context.as_ref().status_code.replace(http::StatusCode::NOT_FOUND);
+                    return Ok(MiddlewareResult::OkBreak); // short circuit middleware
+                },
             }
         }
         
         if let Some(next) = self.next.borrow().as_ref() {
-            let next_response = next.handle_request(request_context.clone(), response_ctx.clone(), services)?;
+            let next_response = next.handle_request(request_context.clone(), response_context.clone(), services)?;
 
             match next_response {
                 MiddlewareResult::OkBreak => {
@@ -131,7 +180,7 @@ impl IRequestMiddlewareService for AuthorizeControllerActionFeatureMiddleware {
                 _ => { }
             }
         }
-        
+
         Ok(MiddlewareResult::OkContinue)
     }
 }

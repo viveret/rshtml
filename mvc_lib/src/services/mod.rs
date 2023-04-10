@@ -1,4 +1,5 @@
 pub mod controller_action_execute_service;
+pub mod authorization_service;
 pub mod default_services;
 pub mod file_provider_service;
 pub mod host_environment;

@@ -15,6 +15,7 @@ use mvc_lib::services::service_collection::{IServiceCollection, ServiceCollectio
 use mvc_lib::services::service_scope::ServiceScope;
 use mvc_lib::services::service_descriptor::ServiceDescriptor;
 use mvc_lib::services::default_services::{*};
+use mvc_lib::services::authorization_service::AuthorizationService;
 
 use mvc_lib::options::http_options::{IHttpOptions, HttpOptions};
 use mvc_lib::options::file_provider_controller_options::{IFileProviderControllerOptions, FileProviderControllerOptions};
@@ -94,6 +95,8 @@ pub fn add_controllers(services: &mut ServiceCollection) {
 }
 
 pub fn on_configure_services(services: &mut ServiceCollection) -> () {
+    AuthorizationService::add_to_services(services);
+
     DefaultServices::add_file_provider(services);
     DefaultServices::add_request_decoders(services);
     DefaultServices::add_response_encoders(services);

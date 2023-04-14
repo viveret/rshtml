@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::controllers::icontroller::IController;
 use crate::controllers::icontroller_extensions::IControllerExtensions;
-use crate::controllers::controller_action::IControllerAction;
+use crate::controller_actions::controller_action::IControllerAction;
 
 pub trait IControllerActionsMap {
     fn to_string(self: &Self) -> String;

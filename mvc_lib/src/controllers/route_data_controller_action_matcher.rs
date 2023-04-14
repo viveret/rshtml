@@ -4,7 +4,7 @@ use std::rc::Rc;
 use crate::contexts::request_context::RequestContext;
 use crate::contexts::response_context::ResponseContext;
 
-use crate::controllers::controller_action::IControllerAction;
+use crate::controller_actions::controller_action::IControllerAction;
 use crate::controllers::controller_actions_map::IControllerActionsMap;
 
 use crate::services::service_collection::IServiceCollection;

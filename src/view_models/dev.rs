@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use mvc_lib::controllers::controller_action::IControllerAction;
+use mvc_lib::controller_actions::controller_action::IControllerAction;
 use mvc_lib::controllers::icontroller::IController;
 
 use mvc_lib::view::iview::IView;

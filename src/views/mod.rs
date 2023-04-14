@@ -1,3 +1,4 @@
+pub mod authroles;
 pub mod dev;
 pub mod home;
 pub mod learn;

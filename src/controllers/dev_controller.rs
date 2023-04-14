@@ -13,8 +13,8 @@ use mvc_lib::action_results::http_result::HttpRedirectResult;
 use mvc_lib::controllers::icontroller::IController;
 
 use mvc_lib::controller_action_features::controller_action_feature::IControllerActionFeature;
-use mvc_lib::controllers::controller_action::IControllerAction;
-use mvc_lib::controllers::controller_action::ControllerActionClosure;
+use mvc_lib::controller_actions::controller_action::IControllerAction;
+use mvc_lib::controller_actions::closure::ControllerActionClosure;
 
 use mvc_lib::controllers::controller_actions_map::IControllerActionsMap;
 

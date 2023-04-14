@@ -8,7 +8,7 @@ use http::{ HeaderName, HeaderValue, HeaderMap };
 
 use crate::contexts::connection_context::IConnectionContext;
 
-use crate::controllers::controller_action::IControllerAction;
+use crate::controller_actions::controller_action::IControllerAction;
 
 use crate::routing::route_data::RouteData;
 
@@ -82,11 +82,13 @@ impl RequestContext {
     }
 
     pub fn get_cookies_parsed(self: &Self) -> Option<HashMap<String, String>> {
-        // println!("self.headers: {:?}", self.headers);
         let cookie_header = self.headers.get("cookie");
         match cookie_header {
             Some(header) => {
-                Some(header.to_str().unwrap().split(';').map(|cookie| {
+                Some(header.to_str().unwrap().split(';')
+                    .map(|x| x.trim())
+                    .map(|cookie| {
+                    // println!("{}", cookie);
                     let split_kvp = cookie.split('=').map(|x| x.to_string()).collect::<Vec<String>>();
                     if split_kvp.len() == 2 {
                         (split_kvp.get(0).unwrap().clone(), split_kvp.get(1).unwrap().clone())

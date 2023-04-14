@@ -4,6 +4,8 @@ use std::rc::Rc;
 
 use phf::phf_map;
 
+use mvc_lib::auth::iauthroles_dbset_provider::GenericAuthRolesDbSetProvider;
+
 use mvc_lib::core::type_info::TypeInfo;
 
 use mvc_lib::controllers::icontroller::IController;
@@ -23,6 +25,7 @@ use mvc_lib::options::logging_services_options::{ ILogHttpRequestsOptions, LogHt
 
 use mvc_lib::view::iview::IView;
 
+use crate::views::authroles::index::view_authroles_index;
 use crate::views::dev::index::view_dev_index;
 use crate::views::dev::views::view_dev_views;
 use crate::views::dev::view_details::view_dev_view_details;
@@ -37,11 +40,13 @@ use crate::views::shared::_layout::view_shared__layout;
 use crate::controllers::home_controller::HomeController;
 use crate::controllers::learn_controller::LearnController;
 use crate::controllers::dev_controller::DevController;
+use crate::controllers::authroles_controller::AuthRolesController;
 
 
 pub fn add_views(services: &mut ServiceCollection) {
     fn new_dev_views_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![
+            view_authroles_index::new_service(),
             view_dev_index::new_service(),
             view_dev_views::new_service(),
             view_dev_view_details::new_service(),
@@ -92,9 +97,13 @@ pub fn add_controllers(services: &mut ServiceCollection) {
     services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), HomeController::new_service, ServiceScope::Singleton));
     services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), LearnController::new_service, ServiceScope::Singleton));
     services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), DevController::new_service, ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), AuthRolesController::new_service, ServiceScope::Singleton));
 }
 
 pub fn on_configure_services(services: &mut ServiceCollection) -> () {
+
+    GenericAuthRolesDbSetProvider::add_to_services(services);
+
     AuthorizationService::add_to_services(services);
 
     DefaultServices::add_file_provider(services);

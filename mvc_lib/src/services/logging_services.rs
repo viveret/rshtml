@@ -33,10 +33,10 @@ impl LogHttpRequestsMiddleware {
 
     pub fn print_headers(self: &Self, headers: &HeaderMap, log_cookies: bool) {
         for header in headers.iter() {
-            if header.0 == "Cookie" {
+            if header.0 == "Cookie" || header.0 == "cookie" {
                 if log_cookies {
                     println!("\t{}:", header.0);
-                    let cookies: Vec<&str> = header.1.to_str().unwrap().split(';').collect();
+                    let cookies: Vec<&str> = header.1.to_str().unwrap().split(';').map(|x| x.trim()).collect();
                     for cookie in cookies {
                         let split_kvp: Vec<&str> = cookie.split('=').collect();
                         if split_kvp.len() == 2 {

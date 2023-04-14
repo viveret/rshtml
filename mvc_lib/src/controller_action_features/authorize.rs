@@ -3,8 +3,6 @@ use std::cell::RefCell;
 use std::error::Error;
 use std::rc::Rc;
 
-use nameof::name_of_type;
-
 use crate::core::type_info::TypeInfo;
 
 use crate::contexts::request_context::RequestContext;
@@ -49,7 +47,7 @@ impl IControllerActionFeature for AllowAnonymous {
     }
 
     fn get_name(self: &Self) -> String {
-        name_of_type!(AllowAnonymous).to_string()
+        nameof::name_of_type!(AllowAnonymous).to_string()
     }
 
     fn to_string(self: &Self) -> String {
@@ -112,11 +110,11 @@ impl IControllerActionFeature for AuthorizeControllerActionFeature {
     }
 
     fn get_name(self: &Self) -> String {
-        name_of_type!(AuthorizeControllerActionFeature).to_string()
+        nameof::name_of_type!(AuthorizeControllerActionFeature).to_string()
     }
 
     fn to_string(self: &Self) -> String {
-        format!("{}", self.get_name())
+        format!("{} (roles: {:?}, policy: {:?})", self.get_name(), self.roles, self.policy)
     }
 
     fn invoke(self: &Self, request_context: Rc<RequestContext>, _response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
@@ -162,8 +160,10 @@ impl IRequestMiddlewareService for AuthorizeControllerActionFeatureMiddleware {
             let controller = self.mapper_service.get_mapper().get_controller(controller_name.clone());
             match auth_service.authenticate_http_request(controller, request_context.clone())? {
                 AuthResult::Ok => {
+                    // should make note of authorization somewhere
                 },
                 AuthResult::Rejection(reason) => {
+                    println!("Request denied, unauthorized: {:?}", reason);
                     response_context.as_ref().status_code.replace(http::StatusCode::NOT_FOUND);
                     return Ok(MiddlewareResult::OkBreak); // short circuit middleware
                 },

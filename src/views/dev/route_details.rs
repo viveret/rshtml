@@ -13,7 +13,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     
     <h1>@title</h1>
 
-    <h3>@format!("Features ({}):", action_features.len())</h3>
+    <h3>@format!("Action Features ({}):", action_features.len())</h3>
     <ol>
     @for f in action_features {
         <li>

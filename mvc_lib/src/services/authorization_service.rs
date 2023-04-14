@@ -3,15 +3,19 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::rc::Rc;
 
+use crate::auth::auth_role_json_file_dbset::JsonAuthRole;
+use crate::auth::iauthroles_dbset_provider::IAuthRolesDbSetProvider;
+
 use crate::core::type_info::TypeInfo;
 
 use crate::contexts::request_context::RequestContext;
+use crate::contexts::controller_context::IControllerContext;
 
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controller_action_features::authorize::AuthorizeControllerActionFeature;
 use crate::controllers::icontroller::IController;
 
-use crate::services::service_collection::{ IServiceCollection, ServiceCollection };
+use crate::services::service_collection::{ IServiceCollection, ServiceCollection, ServiceCollectionExtensions };
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
 
@@ -124,7 +128,6 @@ impl IAuthClaimTransformer for CookieRoleClaimTransformer {
     fn transform_claims(self: &Self, claims: Vec<Rc<dyn IAuthClaim>>, request_context: Rc<RequestContext>) -> Vec<Rc<dyn IAuthClaim>> {
         if let Some(cookies) = request_context.get_cookies_parsed() {
             if let Some(role) = cookies.get("role") {
-                println!("found cookie role {}", role);
                 return claims.iter().cloned().chain(vec![CookieRoleClaim::new_service(role.clone())]).collect();
             }
         }
@@ -176,8 +179,6 @@ impl IAuthRequirement for RoleAuthRequirement {
         if roles.len() == 0 {
             return Ok(AuthResult::Ok);
         }
-
-        println!("auth_claims: {:?}", auth_claims.iter().map(|x| x.as_ref().to_string()).collect::<Vec<String>>());
 
         let found_roles = auth_claims
             .iter()
@@ -242,11 +243,15 @@ pub trait IAuthorizationService {
 pub struct AuthorizationService {
     pub policies: HashMap<String, Rc<dyn IAuthRequirement>>,
     pub claim_transformers: Vec<Rc<dyn IAuthClaimTransformer>>,
+    pub authrole_dbset_provider: Rc<dyn IAuthRolesDbSetProvider>,
 }
 
 impl AuthorizationService {
-    pub fn new() -> Self {
-        Self { 
+    pub fn new(
+        authrole_dbset_provider: Rc<dyn IAuthRolesDbSetProvider>
+    ) -> Self {
+        Self {
+            authrole_dbset_provider: authrole_dbset_provider,
             policies: vec![
                 RoleAuthRequirement::new_service()
             ].iter().map(|x| (x.get_name(), x.clone())).collect(),
@@ -258,6 +263,7 @@ impl AuthorizationService {
 
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
+            ServiceCollectionExtensions::get_required_single::<dyn IAuthRolesDbSetProvider>(services)
         )) as Rc<dyn IAuthorizationService>)]
     }
 
@@ -296,8 +302,9 @@ impl IAuthorizationService for AuthorizationService {
     }
 
     fn get_roles(self: &Self) -> Vec<String> {
-        vec!["anonymous", "accepted-necessary-cookies", "accepted-all-cookies", "registered", "admin", "dev", "owner" ]
-            .iter().map(|x| x.to_string()).collect()
+        self.authrole_dbset_provider.get_authroles_dbset().get_all_any().iter().map(|x| x.downcast_ref::<JsonAuthRole>().unwrap().name.clone()).collect()
+        // vec!["anonymous", "accepted-necessary-cookies", "accepted-all-cookies", "registered", "admin", "dev", "owner" ]
+        //     .iter().map(|x| x.to_string()).collect()
     }
 
     fn get_auth_claim_providers(self: &Self) -> Vec<String> {
@@ -337,7 +344,7 @@ impl IAuthorizationService for AuthorizationService {
             }
         }
 
-        println!("Authorizing {:?} against roles: {:?}, policies {:?}", request_context.connection_context.get_remote_addr(), required_roles, required_policies);
+        // println!("Authenticating {:?} against roles: {:?}, policies {:?}", request_context.connection_context.get_remote_addr(), required_roles, required_policies);
         // let mut auth_result: Option<AuthResult> = None;
         let mut claims = request_context.as_ref().auth_claims.borrow().clone();
         let mut tokens = vec![];
@@ -350,7 +357,7 @@ impl IAuthorizationService for AuthorizationService {
         if required_roles.len() > 0 {
             match self.authenticate_roles(claims.clone(), required_roles.clone(), request_context.clone())? {
                 AuthResult::Ok => {
-                    println!("authorized! :)");
+                    // println!("authorized! :)");
                 },
                 AuthResult::Rejection(reason) => {
                     return Ok(AuthResult::Rejection(reason));
@@ -362,7 +369,7 @@ impl IAuthorizationService for AuthorizationService {
             for policy in required_policies {
                 match self.authenticate_policy_by_name(claims.clone(), policy.clone(), request_context.clone())? {
                     AuthResult::Ok => {
-                        println!("authorized! :)");
+                        // println!("authorized! :)");
                     },
                     AuthResult::Rejection(reason) => {
                         return Ok(AuthResult::Rejection(reason));

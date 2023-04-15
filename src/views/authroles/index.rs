@@ -13,6 +13,6 @@ mvc_macro_lib::rusthtml_view_macro! {
         @for role in model.roles.iter() {
             <li>@role.name.clone()</li>
         }
-        <li><a href="/auth-roles/add">@"Add New"</a></li>
+        <li><a href="/dev/auth-roles/add">@"Add New"</a></li>
     </ul>
 }

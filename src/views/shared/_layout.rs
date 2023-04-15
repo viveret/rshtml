@@ -64,7 +64,8 @@ mvc_macro_lib::rusthtml_view_macro! {
                 <li><a class=@learn_class href="/learn">Learn</a></li>
                 <li><a class="s-navigation--item" href="https://github.com/viveret/rshtml">GitHub</a></li>
                 <environment include="Development">
-                    @let dev_class = format!("s-navigation--item {}", is_same_action_is_selected("*", "Dev", "", &page_action, &page_controller, &page_area));
+                    @let is_dev_controller = is_same_action("*", "Dev", "", &page_action, &page_controller, &page_area) || is_same_action("*", "AuthRoles", "", &page_action, &page_controller, &page_area);
+                    @let dev_class = format!("s-navigation--item {}", if is_dev_controller { "is-selected" } else { "" });
                     <li><a class=@dev_class href="/dev">@"Dev Tools"</a></li>
                 </environment>
             </ul>

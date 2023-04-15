@@ -2,6 +2,7 @@ use std::any::Any;
 use std::error::Error;
 use std::rc::Rc;
 
+use http::Method;
 use mvc_lib::action_results::iaction_result::IActionResult;
 use mvc_lib::contexts::controller_context::ControllerContext;
 use mvc_lib::contexts::controller_context::IControllerContext;
@@ -28,7 +29,7 @@ use mvc_lib::controller_actions::member_fn::ControllerActionMemberFn;
 use mvc_lib::controller_action_features::local_host_only::LocalHostOnlyControllerActionFeature;
 use mvc_lib::controller_action_features::authorize::AuthorizeControllerActionFeature;
 
-use crate::view_models::authroles::{ IndexViewModel };
+use crate::view_models::authroles::{ IndexViewModel, AddViewModel };
 
 #[derive(Clone)]
 pub struct AuthRolesController {
@@ -64,6 +65,23 @@ impl AuthRolesController {
         let view_model = Box::new(Rc::new(IndexViewModel::new(roles)));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/index.rs".to_string(), view_model))))
     }
+
+    pub fn get_add(controller: Box<AuthRolesController>, _controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+        let view_model = Box::new(Rc::new(AddViewModel::new(String::new(), None)));
+        Ok(Some(Rc::new(ViewResult::new("views/authroles/add.rs".to_string(), view_model))))
+    }
+
+    pub fn post_add(controller: Box<AuthRolesController>, controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+        let new_role = controller_ctx.request_context.get_str("role"); // to do: this needs to use query parameter
+        let view_model = Box::new(Rc::new(
+            if new_role.is_empty() {
+                AddViewModel::new_error(new_role, "Role is blank")
+            } else {
+                AddViewModel::new_ok(new_role, "Successfully created role")
+            }
+        ));
+        Ok(Some(Rc::new(ViewResult::new("views/authroles/add.rs".to_string(), view_model))))
+    }
 }
 
 impl IController for AuthRolesController {
@@ -77,7 +95,9 @@ impl IController for AuthRolesController {
     
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         vec![
-            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new(vec![], None, "/auth-roles".to_string(), "Index".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::get_index)),
+            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new(vec![], None, "/dev/auth-roles".to_string(), "Index".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::get_index)),
+            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new(vec![Method::GET], None, "/dev/auth-roles/add".to_string(), "Add".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::get_add)),
+            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new(vec![Method::POST], None, "/dev/auth-roles/add".to_string(), "AddPost".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::post_add)),
         ]
     }
 

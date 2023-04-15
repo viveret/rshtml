@@ -11,5 +11,6 @@ mvc_macro_lib::rusthtml_view_macro! {
         <li><a href="/dev/views">@"Compiled views"</a></li>
         <li><a href="/dev/routes">@"Routes"</a></li>
         <li><a href="/dev/sysinfo">@"Sys Info"</a></li>
+        <li><a href="/dev/auth-roles">@"Auth Roles"</a></li>
     </ul>
 }

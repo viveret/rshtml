@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::result::Result;
 use std::rc::Rc;
+use std::str::FromStr;
 
 use http::method::Method;
 
@@ -35,4 +36,18 @@ pub trait IControllerAction {
     fn is_route_match(self: &Self, request_context: Rc<RequestContext>) -> Result<bool, Box<dyn Error>>;
 
     fn invoke(self: &Self, request_context: Rc<ControllerContext>, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>>;
+}
+
+
+pub struct IControllerActionExtensions {}
+impl IControllerActionExtensions {
+    pub fn is_method_match(action: &dyn IControllerAction, request_context: Rc<RequestContext>) -> bool {
+        let http_methods_allowed = action.get_http_methods_allowed();
+        let r = http_methods_allowed.len() == 0 ||
+            http_methods_allowed.contains(&Method::from_str(request_context.method.as_ref()).unwrap());
+
+        // println!("is_method_match: {} is in {:?} = {}", request_context.method.as_ref(), http_methods_allowed, r);
+
+        r
+    }
 }

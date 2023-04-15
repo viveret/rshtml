@@ -13,6 +13,7 @@ use crate::contexts::request_context::RequestContext;
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controller_actions::route_pattern::ControllerActionRoutePattern;
 use crate::controller_actions::controller_action::IControllerAction;
+use crate::controller_actions::controller_action::IControllerActionExtensions;
 
 use crate::services::service_collection::IServiceCollection;
 
@@ -69,6 +70,10 @@ impl IControllerAction for ControllerActionFileResult {
     }
 
     fn is_route_match(self: &Self, request_context: Rc<RequestContext>) -> Result<bool, Box<dyn Error>> {
+        if !IControllerActionExtensions::is_method_match(self, request_context.clone()) {
+            return Ok(false);
+        }
+
         let path = request_context.path.as_str().trim();
         let route_pattern = self.get_route_pattern();
 

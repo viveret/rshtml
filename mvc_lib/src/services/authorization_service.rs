@@ -303,8 +303,6 @@ impl IAuthorizationService for AuthorizationService {
 
     fn get_roles(self: &Self) -> Vec<String> {
         self.authrole_dbset_provider.get_authroles_dbset().get_all_any().iter().map(|x| x.downcast_ref::<JsonAuthRole>().unwrap().name.clone()).collect()
-        // vec!["anonymous", "accepted-necessary-cookies", "accepted-all-cookies", "registered", "admin", "dev", "owner" ]
-        //     .iter().map(|x| x.to_string()).collect()
     }
 
     fn get_auth_claim_providers(self: &Self) -> Vec<String> {

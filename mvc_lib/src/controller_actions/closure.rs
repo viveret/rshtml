@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::rc::Rc;
+use std::str::FromStr;
 
 use http::Method;
 
@@ -13,8 +14,8 @@ use crate::controller_action_features::controller_action_feature::IControllerAct
 use crate::services::service_collection::IServiceCollection;
 
 use crate::controller_actions::controller_action::IControllerAction;
+use crate::controller_actions::controller_action::IControllerActionExtensions;
 use crate::controller_actions::route_pattern::ControllerActionRoutePattern;
-
 
 pub struct ControllerActionClosure<T> where T: Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
     pub closure_fn: T,
@@ -63,6 +64,7 @@ impl<T> ControllerActionClosure<T> where T: Fn(Rc<ControllerContext>, &dyn IServ
             features: features.unwrap_or(vec![]),
         }
     }
+
 }
 
 impl<T> IControllerAction for ControllerActionClosure<T> where T: Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
@@ -76,6 +78,10 @@ impl<T> IControllerAction for ControllerActionClosure<T> where T: Fn(Rc<Controll
     }
 
     fn is_route_match(self: &Self, request_context: Rc<RequestContext>) -> Result<bool, Box<dyn Error>> {
+        if !IControllerActionExtensions::is_method_match(self, request_context.clone()) {
+            return Ok(false);
+        }
+
         let path = request_context.path.as_str().trim();
         let route_pattern = self.get_route_pattern();
 

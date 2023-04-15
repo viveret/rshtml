@@ -23,7 +23,7 @@ impl JsonAuthRole {
 
     pub fn parse_json(v: serde_json::Value) -> Self {
         Self {
-            name: v.to_string()
+            name: v.as_str().unwrap().to_string()
         }
     }
 }
@@ -39,9 +39,9 @@ pub struct AuthRoleJsonFileDbSet {
 }
 
 impl AuthRoleJsonFileDbSet {
-    pub fn new() -> Self {
+    pub fn new(file_path: String) -> Self {
         Self {
-            json_dbset: JsonFileDbSet::new(JsonAuthRole::new, JsonAuthRole::parse_json)
+            json_dbset: JsonFileDbSet::new(file_path, JsonAuthRole::new, JsonAuthRole::parse_json)
         }
     }
 }

@@ -26,6 +26,7 @@ use mvc_lib::options::logging_services_options::{ ILogHttpRequestsOptions, LogHt
 use mvc_lib::view::iview::IView;
 
 use crate::views::authroles::index::view_authroles_index;
+use crate::views::authroles::add::view_authroles_add;
 use crate::views::dev::index::view_dev_index;
 use crate::views::dev::views::view_dev_views;
 use crate::views::dev::view_details::view_dev_view_details;
@@ -47,6 +48,7 @@ pub fn add_views(services: &mut ServiceCollection) {
     fn new_dev_views_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![
             view_authroles_index::new_service(),
+            view_authroles_add::new_service(),
             view_dev_index::new_service(),
             view_dev_views::new_service(),
             view_dev_view_details::new_service(),

@@ -2,9 +2,10 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::str::FromStr;
 use regex::Regex;
 
-use http::{ HeaderName, HeaderValue, HeaderMap };
+use http::{ HeaderName, HeaderValue, HeaderMap, Method };
 
 use crate::contexts::connection_context::IConnectionContext;
 
@@ -19,8 +20,9 @@ use crate::services::authorization_service::IAuthClaim;
 pub struct RequestContext {
     pub connection_context: Rc<dyn IConnectionContext>,
     pub http_version: http::version::Version,
-    pub method: Box<String>,
+    pub method: Method,
     pub path: Box<String>,
+    pub query: Box<String>,
     pub headers: HeaderMap,
     pub body: Vec<u8>,
     pub route_data: RefCell<RouteData>,
@@ -33,14 +35,18 @@ impl RequestContext {
     pub fn new(
         connection_context: Rc<dyn IConnectionContext>,
         http_version: http::version::Version,
-        method: Box<String>, path: Box<String>,
+        method_str: Option<Box<String>>,
+        method: Option<Method>,
+        path: Box<String>,
+        query: Box<String>,
         request_headers: HeaderMap
     ) -> Self {
         Self {
             connection_context: connection_context,
             http_version: http_version,
-            method: method,
+            method: method.unwrap_or(Method::from_str(method_str.unwrap().as_ref().as_str()).unwrap()),
             path: path,
+            query: query,
             headers: request_headers,
             body: vec![],
             route_data: RefCell::new(RouteData::new()),
@@ -64,13 +70,19 @@ impl RequestContext {
             _ => panic!("Invalid HTTP version {}", version_str)
         };
 
-        let path = &http_header[method_str.len() + 1 .. http_header.len() - version_str.len() - 1].trim();
+        let path_and_query = url::Url::parse("https://localhost").unwrap().join(&http_header[method_str.len() + 1 .. http_header.len() - version_str.len() - 1].trim()).unwrap();
+
+        let path = path_and_query.path();
+        let query = path_and_query.query().unwrap_or("");
+        // println!("path: {}, query: {}", path, query);
 
         Rc::new(Self::new(
             connection_context,
             version,
-            Box::new(method_str.to_string()),
+            Some(Box::new(method_str.to_string())),
+            None,
             Box::new(path.to_string()),
+            Box::new(query.to_string()),
             HeaderMap::from_iter(headers.iter().map(|x| {
                 let mut name = re_header.find(x).expect(&format!("Invalid header format: {}", x)).as_str();
                 let value = x[name.len()..].to_string();

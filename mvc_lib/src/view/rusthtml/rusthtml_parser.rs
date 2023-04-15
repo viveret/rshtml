@@ -997,7 +997,8 @@ impl RustHtmlParser {
                 self.parse_for_or_while_loop_preamble(output, it, is_raw_tokenstream)?;
             },
             "if" => {
-                return self.panic_or_return_error(format!("If not implemented"));
+                output.push(RustHtmlToken::Identifier(identifier));
+                self.parse_for_or_while_loop_preamble(output, it, is_raw_tokenstream)?;
             },
             "let" => {
                 output.push(RustHtmlToken::Identifier(identifier));

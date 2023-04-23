@@ -56,16 +56,16 @@ impl IController for DevController {
     
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         vec![
-            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev".to_string(), "Index".to_string(), self.get_type_name(), self.get_route_area(), |_controller_ctx, _services| {
+            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev".to_string(), "Index".to_string(), self.get_controller_name(), self.get_route_area(), Rc::new(|_controller_ctx, _services| {
                 let view_model = Box::new(Rc::new(IndexViewModel::new()));
                 Ok(Some(Rc::new(ViewResult::new("views/dev/index.rs".to_string(), view_model))))
-            })),
-            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev/views".to_string(), "Views".to_string(), self.get_type_name(), self.get_route_area(), |_controller_ctx, services| {
+            }))),
+            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev/views".to_string(), "Views".to_string(), self.get_controller_name(), self.get_route_area(), Rc::new(|_controller_ctx, services| {
                 let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
                 let view_model = Box::new(Rc::new(ViewsViewModel::new(view_renderer.get_all_views(services))));
                 Ok(Some(Rc::new(ViewResult::new("views/dev/views.rs".to_string(), view_model))))
-            })),
-            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev/views/..".to_string(), "ViewDetails".to_string(), self.get_type_name(), self.get_route_area(), |controller_ctx, services| {
+            }))),
+            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev/views/..".to_string(), "ViewDetails".to_string(), self.get_controller_name(), self.get_route_area(), Rc::new(|controller_ctx, services| {
                 let request_context = controller_ctx.get_request_context();
 
                 let path = &request_context.get_path()["/dev/views/".len()..];
@@ -78,13 +78,13 @@ impl IController for DevController {
                 let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
                 let view_model = Box::new(Rc::new(ViewDetailsViewModel::new(view_renderer.get_view(&path.to_string(), services))));
                 return Ok(Some(Rc::new(ViewResult::new("views/dev/view_details.rs".to_string(), view_model))));
-            })),
-            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev/routes".to_string(), "Routes".to_string(), self.get_type_name(), self.get_route_area(), |_controller_ctx, services| {
+            }))),
+            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev/routes".to_string(), "Routes".to_string(), self.get_controller_name(), self.get_route_area(), Rc::new(|_controller_ctx, services| {
                 let routes = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
                 let view_model = Box::new(Rc::new(RoutesViewModel::new(routes.as_ref().get_mapper().as_ref().get_all_actions())));
                 Ok(Some(Rc::new(ViewResult::new("views/dev/routes.rs".to_string(), view_model))))
-            })),
-            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev/routes/..".to_string(), "RouteDetails".to_string(), self.get_type_name(), self.get_route_area(), |controller_ctx, services| {
+            }))),
+            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev/routes/..".to_string(), "RouteDetails".to_string(), self.get_controller_name(), self.get_route_area(), Rc::new(|controller_ctx, services| {
                 let request_context = controller_ctx.get_request_context();
                 
                 let path = &request_context.get_path()["/dev/routes/".len()..];
@@ -100,11 +100,11 @@ impl IController for DevController {
 
                 let view_model = Box::new(Rc::new(RouteDetailsViewModel::new(route, controller)));
                 return Ok(Some(Rc::new(ViewResult::new("views/dev/route_details.rs".to_string(), view_model))));
-            })),
-            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev/sysinfo".to_string(), "SysInfo".to_string(), self.get_type_name(), self.get_route_area(), |_controller_ctx, _services| {
+            }))),
+            Rc::new(ControllerActionClosure::new_validated(vec![], None, "/dev/sysinfo".to_string(), "SysInfo".to_string(), self.get_controller_name(), self.get_route_area(), Rc::new(|_controller_ctx, _services| {
                 let view_model = Box::new(Rc::new(SysInfoViewModel::new()));
                 Ok(Some(Rc::new(ViewResult::new("views/dev/sysinfo.rs".to_string(), view_model))))
-            })),
+            }))),
         ]
     }
 

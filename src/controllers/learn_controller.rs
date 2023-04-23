@@ -50,7 +50,7 @@ impl IController for LearnController {
     
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         vec![
-            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn".to_string(), "Index".to_string(), self.get_type_name(), |_controller_ctx, _services| {
+            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn".to_string(), "Index".to_string(), self.get_controller_name(), Rc::new(|_controller_ctx, _services| {
                 let learn_docs: Vec<String> = glob("docs/learn/**/*.md")
                     .expect("Failed to read glob pattern")
                     .map(|path_to_string| {
@@ -64,8 +64,8 @@ impl IController for LearnController {
 
                 let view_model = Box::new(Rc::new(IndexViewModel::new(learn_docs)));
                 Ok(Some(Rc::new(ViewResult::new("views/learn/index.rs".to_string(), view_model))))
-            })),
-            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn/..".to_string(), "Details".to_string(), self.get_type_name(), |controller_ctx, _services| {
+            }))),
+            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn/..".to_string(), "Details".to_string(), self.get_controller_name(), Rc::new(|controller_ctx, _services| {
                 let request_context = controller_ctx.get_request_context();
                 let path = &request_context.get_path()["/learn/".len()..];
 
@@ -75,7 +75,7 @@ impl IController for LearnController {
 
                 let view_model = Box::new(Rc::new(DetailsViewModel::new(format!("docs/learn/{}.md", path))));
                 Ok(Some(Rc::new(ViewResult::new("views/learn/details.rs".to_string(), view_model))))
-            })),
+            }))),
         ]
     }
 

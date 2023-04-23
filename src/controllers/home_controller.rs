@@ -44,10 +44,10 @@ impl IController for HomeController {
     
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         vec![
-            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/".to_string(), "Index".to_string(), self.get_type_name(), |_controller_ctx, _services| {
+            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/".to_string(), "Index".to_string(), self.get_controller_name(), Rc::new(|_controller_ctx, _services| {
                 let view_model = Box::new(Rc::new(IndexViewModel::new()));
                 Ok(Some(Rc::new(ViewResult::new("views/home/index.rs".to_string(), view_model))))
-            })),
+            }))),
         ]
     }
 

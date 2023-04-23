@@ -115,9 +115,10 @@ impl IController for AuthRolesController {
     
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         vec![
-            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![], None, "/dev/auth-roles".to_string(), "Index".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::get_index)),
-            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![Method::GET], None, "/dev/auth-roles/add".to_string(), "Add".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::get_add)),
-            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![Method::POST], None, "/dev/auth-roles/add".to_string(), "AddPost".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::post_add)),
+            Rc::new(action_member!([Method::GET], Self::get_index))
+            // Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![], None, "/dev/auth-roles".to_string(), "Index".to_string(), self.get_controller_name(), self.get_route_area(), Box::new(self.clone()), Self::get_index)),
+            // Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![Method::GET], None, "/dev/auth-roles/add".to_string(), "Add".to_string(), self.get_controller_name(), self.get_route_area(), Box::new(self.clone()), Self::get_add)),
+            // Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![Method::POST], None, "/dev/auth-roles/add".to_string(), "AddPost".to_string(), self.get_controller_name(), self.get_route_area(), Box::new(self.clone()), Self::post_add)),
         ]
     }
 

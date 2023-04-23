@@ -392,7 +392,7 @@ impl RustHtmlParser {
                 if is_in_html_mode {
                     let directive_ident = it.next().unwrap();
                     // println!("directive_ident: {:?}", directive_ident);
-                    self.convert_rusthtml_directive_to_rusthtmltoken(directive_ident, output, it, is_raw_tokenstream)?;
+                    self.convert_rusthtml_directive_to_rusthtmltoken(directive_ident, None, output, it, is_raw_tokenstream)?;
                 } else {
                     return self.panic_or_return_error(format!("Cannot escape HTML when already in rust mode (hint: remove '@'?)"));
                 }
@@ -916,15 +916,15 @@ impl RustHtmlParser {
         Ok(false) // do not break
     }
 
-    pub fn convert_rusthtml_directive_to_rusthtmltoken(self: &Self, token: TokenTree, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError>  {
+    pub fn convert_rusthtml_directive_to_rusthtmltoken(self: &Self, token: TokenTree, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError>  {
         // println!("convert_rusthtml_directive_to_rusthtmltoken: {:?}", token);
         match token {
             TokenTree::Ident(ident) => {
                 // println!("ident: {}", ident.to_string());
-                self.convert_rusthtml_directive_identifier_to_rusthtmltoken(ident, output, it, is_raw_tokenstream)?;
+                self.convert_rusthtml_directive_identifier_to_rusthtmltoken(ident, prefix_token_option, output, it, is_raw_tokenstream)?;
             },
             TokenTree::Group(group) => {
-                self.convert_rusthtml_directive_group_to_rusthtmltoken(group, output, is_raw_tokenstream)?;
+                self.convert_rusthtml_directive_group_to_rusthtmltoken(group, prefix_token_option, output, is_raw_tokenstream)?;
             },
             TokenTree::Literal(literal) => {
                 // println!("literal: {}", literal.to_string());
@@ -939,6 +939,14 @@ impl RustHtmlParser {
                         // println!("escaped '@'");
                         output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::ReservedChar(c, punct.clone())]));
                     },
+                    '&' => {
+                        let prefix_token = RustHtmlToken::ReservedChar(c, punct.clone());
+                        
+                        let next_token = it.next();
+                        if let Some(token) = next_token {
+                            return self.convert_rusthtml_directive_to_rusthtmltoken(token, Some(prefix_token), output, it, is_raw_tokenstream);
+                        }
+                    },
                     _ => {
                         return self.panic_or_return_error(format!("unexpected directive char: {}", c))?;
                     }
@@ -948,7 +956,7 @@ impl RustHtmlParser {
         Ok(true)
     }
 
-    pub fn convert_rusthtml_directive_group_to_rusthtmltoken(self: &Self, group: Group, output: &mut Vec<RustHtmlToken>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
+    pub fn convert_rusthtml_directive_group_to_rusthtmltoken(self: &Self, group: Group, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
         let mut inner_tokens = vec![];
         self.loop_next_and_convert(false, &mut inner_tokens, group.stream().into_iter().peekable().by_ref(), is_raw_tokenstream)?;
         if inner_tokens.len() > 0 {
@@ -969,7 +977,7 @@ impl RustHtmlParser {
         Ok(())
     }
 
-    pub fn convert_rusthtml_directive_identifier_to_rusthtmltoken(self: &Self, identifier: Ident, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
+    pub fn convert_rusthtml_directive_identifier_to_rusthtmltoken(self: &Self, identifier: Ident, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
         // println!("convert_rusthtml_directive_identifier_to_rusthtmltoken: {}", identifier);
         match identifier.to_string().as_str() {
             "name" | "viewstart" => {
@@ -1040,10 +1048,10 @@ impl RustHtmlParser {
                     }
                 }
             },
-            "rshtml" => {
+            "rshtmlfile" => {
                 self.convert_externalrusthtml_directive(identifier, output, it)?;
             },
-            "html" => {
+            "htmlfile" => {
                 self.convert_externalhtml_directive(identifier, output, it)?;
             },
             "mdfile_const" => {
@@ -1054,6 +1062,9 @@ impl RustHtmlParser {
             },
             _ => {
                 let mut inner_tokens = vec![];
+                if let Some(prefix_token) = prefix_token_option {
+                    inner_tokens.push(prefix_token);
+                }
                 self.parse_identifier_expression(identifier, &mut inner_tokens, it)?;
                 output.push(RustHtmlToken::AppendToHtml(inner_tokens));
             }

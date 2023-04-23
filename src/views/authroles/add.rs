@@ -19,7 +19,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     <form method="POST">
         <label for="role">@"Role Name"</label>
         <input name="role" type="text" value=@model.role.clone() />
-        <button type="submit">Submit</button>
+        @html.form.submit("Submit")
     </form>
 
     

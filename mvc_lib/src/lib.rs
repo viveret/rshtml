@@ -11,9 +11,10 @@ pub mod controller_actions;
 pub mod controllers;
 pub mod core;
 pub mod entity;
+pub mod errors;
+pub mod model;
+pub mod middleware;
 pub mod options;
 pub mod services;
 pub mod routing;
 pub mod view;
-
-pub mod errors;

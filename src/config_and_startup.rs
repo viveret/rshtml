@@ -11,12 +11,12 @@ use mvc_lib::core::type_info::TypeInfo;
 use mvc_lib::controllers::icontroller::IController;
 
 use mvc_lib::controller_action_features::local_host_only::LocalHostOnlyControllerActionFeatureMiddleware;
-use mvc_lib::controller_action_features::authorize::AuthorizeControllerActionFeatureMiddleware;
+use mvc_lib::middleware::authorize_controller_action_middleware::AuthorizeControllerActionFeatureMiddleware;
 
 use mvc_lib::services::service_collection::{IServiceCollection, ServiceCollection};
 use mvc_lib::services::service_scope::ServiceScope;
 use mvc_lib::services::service_descriptor::ServiceDescriptor;
-use mvc_lib::services::default_services::{*};
+use mvc_lib::services::default_services::{*, self};
 use mvc_lib::services::authorization_service::AuthorizationService;
 
 use mvc_lib::options::http_options::{IHttpOptions, HttpOptions};
@@ -111,6 +111,11 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::add_file_provider(services);
     DefaultServices::add_request_decoders(services);
     DefaultServices::add_response_encoders(services);
+    DefaultServices::add_model_validators(services);
+
+    DefaultServices::use_request_decoders(services); // adds middleware
+    DefaultServices::use_response_encoders(services); // adds middleware
+    DefaultServices::use_model_validation(services); // adds middleware
 
     add_views(services);
     add_controllers(services);

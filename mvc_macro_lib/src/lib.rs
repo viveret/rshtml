@@ -6,7 +6,7 @@ extern crate mvc_lib;
 use proc_macro::TokenStream;
 use quote::quote;
 
-use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
+use mvc_lib::view::{rusthtml::rusthtml_parser::RustHtmlParser};
 
 #[proc_macro]
 pub fn rusthtml_macro(input: TokenStream) -> TokenStream {
@@ -82,6 +82,7 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                 use mvc_lib::contexts::controller_context::IControllerContext;
                 use mvc_lib::contexts::view_context::IViewContext;
                 use mvc_lib::services::service_collection::IServiceCollection;
+                use mvc_lib::view::html_helpers::helpers::HtmlHelpers;
                 use mvc_lib::view::rusthtml::html_string::HtmlString;
                 use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
                 use mvc_lib::view::rusthtml::rusthtml_view_macros::RustHtmlViewMacros;
@@ -131,6 +132,7 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                     // using template, render the view given the current data
                     fn render(self: &Self, view_context: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
                         #view_model_tokens
+                        let html = HtmlHelpers::new();
 
                         let render_section = |section_name: &str| -> Result<HtmlString, RustHtmlError> {
                             RustHtmlViewMacros::render_section(section_name, self, view_context, services)

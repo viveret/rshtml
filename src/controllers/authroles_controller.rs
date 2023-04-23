@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::borrow::Cow;
 use std::error::Error;
 use std::rc::Rc;
 
@@ -11,7 +12,7 @@ use mvc_lib::auth::auth_role_json_file_dbset::AuthRoleJsonFileDbSet;
 use mvc_lib::auth::auth_role_json_file_dbset::JsonAuthRole;
 use mvc_lib::auth::iauthroles_dbset_provider::IAuthRolesDbSetProvider;
 use mvc_lib::entity::idbset::IDbSet;
-use mvc_lib::entity::idbset::JsonFileDbSet;
+use mvc_lib::entity::json_file_dbset::JsonFileDbSet;
 use mvc_lib::services::authorization_service::IAuthorizationService;
 use mvc_lib::services::service_collection::IServiceCollection;
 use mvc_lib::services::service_collection::ServiceCollectionExtensions;
@@ -55,13 +56,17 @@ impl AuthRolesController {
         )) as Rc<dyn IController>)]
     }
 
-    pub fn get_index(controller: Box<AuthRolesController>, _controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
-        let roles = controller.authroles_dbset.get_authroles_dbset()
+    pub fn get_roles(self: &Self) -> Vec<JsonAuthRole> {
+        self.authroles_dbset.get_authroles_dbset()
             .as_any(TypeInfo::of::<JsonFileDbSet<JsonAuthRole>>())
             .downcast_ref::<AuthRoleJsonFileDbSet>()
             .unwrap()
             .get_all()
-            .iter().cloned().collect();
+            .iter().cloned().collect()
+    }
+
+    pub fn get_index(controller: Box<AuthRolesController>, _controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+        let roles = controller.get_roles();
         let view_model = Box::new(Rc::new(IndexViewModel::new(roles)));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/index.rs".to_string(), view_model))))
     }
@@ -72,12 +77,23 @@ impl AuthRolesController {
     }
 
     pub fn post_add(controller: Box<AuthRolesController>, controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
-        let new_role = controller_ctx.request_context.get_str("role"); // to do: this needs to use query parameter
+        let input_model = controller_ctx.get_request_context().get_model_validation_result();
+        let new_role = controller_ctx.request_context.get_query().get("role"); // to do: this needs to use query parameter
         let view_model = Box::new(Rc::new(
-            if new_role.is_empty() {
-                AddViewModel::new_error(new_role, "Role is blank")
+            if let Some(new_role) = new_role {
+                if new_role.is_empty() {
+                    AddViewModel::new_error(new_role, "Role is blank")
+                } else {
+                    let role = JsonAuthRole::parse_str(&new_role);
+                    let current_roles = controller.get_roles();
+                    if current_roles.contains(&role) {
+                        AddViewModel::new_error(new_role, "Role already exists")
+                    } else {
+                        AddViewModel::new_ok(new_role, "Successfully created role")
+                    }
+                }
             } else {
-                AddViewModel::new_ok(new_role, "Successfully created role")
+                AddViewModel::new_error(String::new(), "Role missing from query string")
             }
         ));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/add.rs".to_string(), view_model))))
@@ -92,12 +108,16 @@ impl IController for AuthRolesController {
     fn get_type_name(self: &Self) -> &'static str {
         nameof::name_of_type!(AuthRolesController)
     }
+
+    fn get_controller_name(self: &Self) -> Cow<'static, str> {
+        Cow::Borrowed(nameof::name_of_type!(AuthRolesController))
+    }
     
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         vec![
-            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new(vec![], None, "/dev/auth-roles".to_string(), "Index".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::get_index)),
-            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new(vec![Method::GET], None, "/dev/auth-roles/add".to_string(), "Add".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::get_add)),
-            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new(vec![Method::POST], None, "/dev/auth-roles/add".to_string(), "AddPost".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::post_add)),
+            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![], None, "/dev/auth-roles".to_string(), "Index".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::get_index)),
+            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![Method::GET], None, "/dev/auth-roles/add".to_string(), "Add".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::get_add)),
+            Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![Method::POST], None, "/dev/auth-roles/add".to_string(), "AddPost".to_string(), self.get_type_name(), self.get_route_area(), Box::new(self.clone()), Self::post_add)),
         ]
     }
 

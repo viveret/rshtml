@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::rc::Rc;
 
-use crate::contexts::request_context::RequestContext;
+use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::ResponseContext;
 
 use crate::controller_actions::controller_action::IControllerAction;
@@ -23,7 +23,7 @@ impl RouteDataControllerActionMatcher {
         }
     }
 
-    pub fn get_action_for_request(self: &Self, request_context: Rc<RequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IControllerAction>>, Box<dyn Error>> {
+    pub fn get_action_for_request(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IControllerAction>>, Box<dyn Error>> {
         let all_actions = self.actions_map.get_all_actions();
         let actions: Vec<Rc<dyn IControllerAction>> = all_actions
             .iter()

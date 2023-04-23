@@ -6,6 +6,7 @@ use std::rc::Rc;
 use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
 use crate::contexts::response_context::ResponseContext;
+use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::request_context::RequestContext;
 
 use crate::view::rusthtml::html_string::HtmlString;
@@ -30,7 +31,7 @@ pub trait IViewContext: Send + Sync {
 
     fn get_controller_ctx(self: &Self) -> Rc<ControllerContext>;
     fn get_response_ctx(self: &Self) -> Rc<ResponseContext>;
-    fn get_request_ctx(self: &Self) -> Rc<RequestContext>;
+    fn get_request_ctx(self: &Self) -> Rc<dyn IRequestContext>;
 
     fn get_string(self: &Self, key: String) -> String;
     fn get_str(self: &Self, key: &str) -> String;
@@ -49,7 +50,7 @@ pub struct ViewContext {
     view_renderer: Rc<dyn IViewRenderer>,
     controller_ctx: Rc<ControllerContext>,
     response_ctx: Rc<ResponseContext>,
-    request_ctx: Rc<RequestContext>,
+    request_ctx: Rc<dyn IRequestContext>,
     html_buffer: RefCell<String>,
 }
 unsafe impl Send for ViewContext {}
@@ -137,7 +138,7 @@ impl IViewContext for ViewContext {
         self.response_ctx.clone()
     }
 
-    fn get_request_ctx(self: &Self) -> Rc<RequestContext> {
+    fn get_request_ctx(self: &Self) -> Rc<dyn IRequestContext> {
         self.request_ctx.clone()
     }
 

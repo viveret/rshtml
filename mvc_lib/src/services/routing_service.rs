@@ -4,7 +4,7 @@ use std::error::Error;
 use std::rc::Rc;
 use std::result::Result;
 
-use crate::contexts::request_context::RequestContext;
+use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::ResponseContext;
 
 use crate::controllers::route_data_controller_action_matcher::RouteDataControllerActionMatcher;
@@ -35,7 +35,7 @@ impl IRequestMiddlewareService for RoutingService {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, request_context: Rc<RequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         let route_matcher = RouteDataControllerActionMatcher::new(self.routemap.get_mapper().clone());
         let action_option = route_matcher.get_action_for_request(request_context.clone(), response_context.clone(), services)?;
 
@@ -45,10 +45,10 @@ impl IRequestMiddlewareService for RoutingService {
                 controller_name = controller_name[..controller_name.len() - "Controller".len()].to_string();
             }
             
-            request_context.route_data.borrow_mut().map.insert("ActionName".to_string(), action.get_name());
-            request_context.route_data.borrow_mut().map.insert("ControllerName".to_string(), controller_name);
-            request_context.route_data.borrow_mut().map.insert("AreaName".to_string(), action.get_area_name());
-            request_context.controller_action.replace(Some(action.clone()));
+            request_context.mut_route_data().borrow_mut().map.insert("ActionName".to_string(), action.get_name());
+            request_context.mut_route_data().borrow_mut().map.insert("ControllerName".to_string(), controller_name);
+            request_context.mut_route_data().borrow_mut().map.insert("AreaName".to_string(), action.get_area_name());
+            request_context.set_controller_action(Some(action.clone()));
         } else {
             // 404 not found
             // panic!("404 not found");

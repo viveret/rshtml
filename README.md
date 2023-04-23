@@ -50,7 +50,7 @@ enough similarities and differences that they should be mentioned here.
 - The entry point for Rust HTML is in a macro within a rust file, so the rust parser has precedent in certain cases for tokenization and validation.
 - Currently no support for hot reloading or runtime compilation of views.
 - Some variable names and method names are lower case (instead of LikeThis, it is like_this).
-- Can directly import HTML or Rust HTML files with @html and @rshtml, and import markdown / convert to HTML with @mdfile_const or @mdfile_nocache.
+- Can directly import HTML or Rust HTML files with @htmlfile and @rshtmlfile, and import markdown / convert to HTML with @mdfile_const or @mdfile_nocache.
 
 
 #### Not Yet Implemented

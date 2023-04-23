@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::error::Error;
 
+use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::request_context::RequestContext;
 use crate::contexts::response_context::ResponseContext;
 use crate::contexts::controller_context::IControllerContext;
@@ -39,8 +40,8 @@ impl IRequestMiddlewareService for ControllerActionExecuteService {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, request_context: Rc<RequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
-        if let Some(action) = request_context.controller_action.borrow().as_ref() {
+    fn handle_request(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+        if let Some(action) = request_context.get_controller_action_optional() {
             let controller = self.mapper_service.get_mapper().get_controller(action.get_controller_name().to_string());
             let controller_context = IControllerExtensions::create_context(controller.clone(), request_context.clone());
             action.invoke(controller_context.clone(), services)?;

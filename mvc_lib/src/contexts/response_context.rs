@@ -39,4 +39,8 @@ impl ResponseContext {
             _ => "".into()
         }
     }
+
+    pub fn get_headers(&self) -> &HeaderMap {
+        todo!()
+    }
 }

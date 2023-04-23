@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use crate::core::type_info::TypeInfo;
 
-use crate::contexts::request_context::RequestContext;
+use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::ResponseContext;
 
 use crate::services::request_middleware_service::MiddlewareResult;
@@ -17,7 +17,7 @@ pub trait IControllerActionFeature {
     fn get_name(self: &Self) -> String;
     fn to_string(self: &Self) -> String;
 
-    fn invoke(self: &Self, request_context: Rc<RequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>>;
+    fn invoke(self: &Self, request_context: Rc<dyn IRequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>>;
 
 
     fn as_any(&self) -> &dyn Any;

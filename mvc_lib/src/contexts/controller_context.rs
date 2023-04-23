@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use crate::action_results::iaction_result::IActionResult;
 
-use crate::contexts::request_context::RequestContext;
+use crate::contexts::irequest_context::IRequestContext;
 
 use crate::controllers::icontroller::IController;
 use crate::controllers::icontroller_extensions::IControllerExtensions;
@@ -15,7 +15,7 @@ use crate::routing::route_data::RouteData;
 
 
 pub trait IControllerContext {
-    fn get_request_context(self: &Self) -> Rc<RequestContext>;
+    fn get_request_context(self: &Self) -> Rc<dyn IRequestContext>;
     fn get_context_data(self: &Self) -> HashMap<String, Rc<Box<dyn Any>>>;
     fn get_view_data(self: &Self) -> HashMap<String, String>;
     fn get_controller(self: &Self) -> Rc<dyn IController>;
@@ -32,7 +32,7 @@ pub trait IControllerContext {
 }
 
 pub struct ControllerContext {
-    pub request_context: Rc<RequestContext>,
+    pub request_context: Rc<dyn IRequestContext>,
     pub context_data: RefCell<HashMap<String, Rc<Box<dyn Any>>>>,
     pub view_data: RefCell<HashMap<String, String>>,
     pub controller: Rc<dyn IController>,
@@ -42,7 +42,7 @@ pub struct ControllerContext {
 impl ControllerContext {
     pub fn new(
         controller: Rc<dyn IController>,
-        request_context: Rc<RequestContext>
+        request_context: Rc<dyn IRequestContext>
     ) -> Self {
         Self {
             request_context: request_context.clone(),
@@ -78,7 +78,7 @@ impl ControllerContext {
 }
 
 impl IControllerContext for ControllerContext {
-    fn get_request_context(self: &Self) -> Rc<RequestContext> {
+    fn get_request_context(self: &Self) -> Rc<dyn IRequestContext> {
         self.request_context.clone()
     }
 

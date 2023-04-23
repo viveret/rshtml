@@ -11,7 +11,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     <p>@format!("There are {} roles", model.roles.len())</p>
     <ul>
         @for role in model.roles.iter() {
-            <li>@role.name.clone()</li>
+            <li>@&role.name</li>
         }
         <li><a href="/dev/auth-roles/add">@"Add New"</a></li>
     </ul>

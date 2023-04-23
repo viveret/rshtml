@@ -19,6 +19,7 @@ mime = "0.3.16"
 nameof = "1.2.2"
 phf = { version = "0.11", features = ["macros"] }
 proc-macro2 = "1.0.51"
+querystring = "1.1.0"
 quote = "1.0.23"
 regex = "1.7.1"
 rustc_lexer = "0.1.0"

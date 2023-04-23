@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use http::StatusCode;
 
-use crate::contexts::request_context::RequestContext;
+use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::ResponseContext;
 use crate::contexts::controller_context::ControllerContext;
 
@@ -25,7 +25,7 @@ impl IActionResult for HttpRedirectResult {
         StatusCode::TEMPORARY_REDIRECT
     }
 
-    fn configure_response(self: &Self, _controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<RequestContext>, _services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, _controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<dyn IRequestContext>, _services: &dyn IServiceCollection) {
         response_ctx.add_header_string("Location".to_string(), self.redirect_target.clone());
     }
 }

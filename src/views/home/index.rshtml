@@ -20,7 +20,7 @@
                 has precedent in certain cases for tokenization and validation."</li>
         <li>@"Currently no support for hot reloading or runtime compilation of views."</li>
         <li>@"Some variable names and method names are lower case (instead of LikeThis, it is like_this)."</li>
-        <li>@"Can directly import HTML or Rust HTML files with @html and @rshtml."</li>
+        <li>@"Can directly import HTML or Rust HTML files with @htmlfile and @rshtmlfile."</li>
     </ul>
 
     <h4>@"Not Yet Implemented"</h4>

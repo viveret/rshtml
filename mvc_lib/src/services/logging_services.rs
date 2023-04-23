@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 use http::HeaderMap;
 
+use crate::contexts::irequest_context::IRequestContext;
 use crate::options::logging_services_options::ILogHttpRequestsOptions;
 
 use crate::contexts::request_context::RequestContext;
@@ -59,15 +60,15 @@ impl IRequestMiddlewareService for LogHttpRequestsMiddleware {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, request_ctx: Rc<RequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, request_ctx: Rc<dyn IRequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         if let Some(options) = &self.options {
             if options.get_log_request() {
-                println!("Inbound HTTP request: {:?} {} {}", request_ctx.http_version, request_ctx.method, request_ctx.path);
+                println!("Inbound HTTP request: {:?} {} {}", request_ctx.get_http_version(), request_ctx.get_method(), request_ctx.get_path());
             }
 
             if options.get_log_request_headers() {
-                println!("Request headers for {}:", request_ctx.path);
-                self.print_headers(&request_ctx.headers, options.get_log_request_cookies());
+                println!("Request headers for {}:", request_ctx.get_path());
+                self.print_headers(request_ctx.get_headers(), options.get_log_request_cookies());
             }
         }
 
@@ -76,11 +77,11 @@ impl IRequestMiddlewareService for LogHttpRequestsMiddleware {
             
             if let Some(options) = &self.options {
                 if options.get_log_response() {
-                    println!("Outbound HTTP response for {} -> {}", request_ctx.path, response_ctx.status_code.borrow());
+                    println!("Outbound HTTP response for {} -> {}", request_ctx.get_path(), response_ctx.status_code.borrow());
                 }
 
                 if options.get_log_response_headers() {
-                    println!("Response headers for {}:", request_ctx.path);
+                    println!("Response headers for {}:", request_ctx.get_path());
                     self.print_headers(&response_ctx.headers.borrow(), options.get_log_response_cookies());
                 }
             }

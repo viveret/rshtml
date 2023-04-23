@@ -1,7 +1,7 @@
 use std::any::Any;
 use std::rc::Rc;
 
-use crate::contexts::request_context::RequestContext;
+use crate::contexts::irequest_context::IRequestContext;
 
 use crate::controllers::icontroller::IController;
 use crate::controllers::controller_actions_map::ControllerActionsMap;
@@ -31,15 +31,15 @@ impl RouteMapService {
         )) as Rc<dyn IRouteMapService>)]
     }
 
-    pub fn get_controllers_in_area(self: &Self, request: Rc<RequestContext>) -> Vec<Rc<dyn IController>> {
+    pub fn get_controllers_in_area(self: &Self, request: Rc<dyn IRequestContext>) -> Vec<Rc<dyn IController>> {
         self.controllers
             .iter()
-            .filter(|x| request.path.starts_with(&x.get_route_area()))
+            .filter(|x| request.get_path().starts_with(&x.get_route_area()))
             .map(|x| x.clone())
             .collect()
     }
 
-    pub fn get_controllers(self: &Self, _request: Rc<RequestContext>) -> Vec<Rc<dyn IController>> {
+    pub fn get_controllers(self: &Self, _request: Rc<dyn IRequestContext>) -> Vec<Rc<dyn IController>> {
         self.controllers.iter().map(|x| x.clone()).collect()
     }
 }

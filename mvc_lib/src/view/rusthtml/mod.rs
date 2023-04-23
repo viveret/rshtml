@@ -1,4 +1,5 @@
 pub mod html_string;
+pub mod rusthtml_directive_result;
 pub mod rusthtml_error;
 pub mod rusthtml_node;
 pub mod rusthtml_lang_parts;

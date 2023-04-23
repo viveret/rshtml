@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 use nameof::name_of_type;
 
+use crate::contexts::irequest_context::IRequestContext;
 use crate::core::type_info::TypeInfo;
 
 use crate::contexts::request_context::RequestContext;
@@ -54,7 +55,7 @@ impl IControllerActionFeature for LocalHostOnlyControllerActionFeature {
         format!("{}", self.get_name())
     }
 
-    fn invoke(self: &Self, _request_context: Rc<RequestContext>, _response_ctx: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn invoke(self: &Self, _request_context: Rc<dyn IRequestContext>, _response_ctx: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         Ok(MiddlewareResult::OkContinue)
     }
 
@@ -89,13 +90,13 @@ impl IRequestMiddlewareService for LocalHostOnlyControllerActionFeatureMiddlewar
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, request_context: Rc<RequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, request_context: Rc<dyn IRequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         let controller_name = request_context.get_str("ControllerName");
 
         if controller_name.len() > 0 {
             let controller = self.mapper_service.get_mapper().get_controller(controller_name.clone());
 
-            let action_features = request_context.controller_action.borrow().as_ref().unwrap().get_features();
+            let action_features = request_context.get_controller_action().get_features();
             let controller_features = controller.get_features();
 
             let find_my_feature: Vec<Rc<dyn IControllerActionFeature>> = controller_features
@@ -111,7 +112,7 @@ impl IRequestMiddlewareService for LocalHostOnlyControllerActionFeatureMiddlewar
             if find_my_feature.len() > 0 {
                 // let my_feature = find_my_feature.first().unwrap();
                 // let feature = my_feature.as_ref() as LocalHostOnlyControllerActionFeature;
-                let remote_addr_str = format!("{:?}", request_context.connection_context.get_remote_addr());
+                let remote_addr_str = format!("{:?}", request_context.get_connection_context().get_remote_addr());
 
                 // println!("connected IP address: {}", remote_addr_str);
                 if !remote_addr_str.starts_with("127.0.0.1:") {

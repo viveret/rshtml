@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::error::Error;
 
 use std::rc::Rc;
@@ -8,6 +9,7 @@ use crate::action_results::file_result::FileResult;
 
 use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
+use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::request_context::RequestContext;
 
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
@@ -21,7 +23,7 @@ use crate::services::service_collection::IServiceCollection;
 pub struct ControllerActionFileResult {
     pub file_path: String,
     pub name: String,
-    pub controller_name: &'static str,
+    pub controller_name: Cow<'static, str>,
     pub area_name: String,
     pub route_pattern: Rc<ControllerActionRoutePattern>,
 }
@@ -31,7 +33,7 @@ impl ControllerActionFileResult {
         file_path: String,
         route_pattern: String,
         name: String,
-        controller_name: &'static str,
+        controller_name: Cow<'static, str>,
         area_name: String,
         ) -> Self {
         Self {
@@ -47,7 +49,7 @@ impl ControllerActionFileResult {
         file_path: String,
         route_pattern: String,
         name: String,
-        controller_name: &'static str,
+        controller_name: Cow<'static, str>,
         ) -> Self {
         Self {
             file_path: file_path,
@@ -69,12 +71,12 @@ impl IControllerAction for ControllerActionFileResult {
         Ok(())
     }
 
-    fn is_route_match(self: &Self, request_context: Rc<RequestContext>) -> Result<bool, Box<dyn Error>> {
+    fn is_route_match(self: &Self, request_context: Rc<dyn IRequestContext>) -> Result<bool, Box<dyn Error>> {
         if !IControllerActionExtensions::is_method_match(self, request_context.clone()) {
             return Ok(false);
         }
 
-        let path = request_context.path.as_str().trim();
+        let path = request_context.get_path().as_str().trim();
         let route_pattern = self.get_route_pattern();
 
         // println!("Testing path {} against pattern {}", path, route_pattern.raw);
@@ -92,8 +94,8 @@ impl IControllerAction for ControllerActionFileResult {
         self.name.clone()
     }
 
-    fn get_controller_name(self: &Self) -> &'static str {
-        self.controller_name
+    fn get_controller_name(self: &Self) -> Cow<'static, str> {
+        self.controller_name.clone()
     }
 
     fn get_area_name(self: &Self) -> String {
@@ -118,5 +120,9 @@ impl IControllerAction for ControllerActionFileResult {
 
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![]
+    }
+
+    fn get_should_validate_model(self: &Self) -> bool {
+        false
     }
 }

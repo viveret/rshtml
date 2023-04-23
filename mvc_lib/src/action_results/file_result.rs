@@ -5,7 +5,7 @@ use std::path::Path;
 
 use http::StatusCode;
 
-use crate::contexts::request_context::RequestContext;
+use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::ResponseContext;
 use crate::contexts::controller_context::ControllerContext;
 
@@ -48,7 +48,7 @@ impl IActionResult for FileResult {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, _controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<RequestContext>, _services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, _controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<dyn IRequestContext>, _services: &dyn IServiceCollection) {
         match File::open(self.path.clone()) {
             Ok(f) => {
                 response_ctx.add_header_str("Content-Type", &self.content_type);

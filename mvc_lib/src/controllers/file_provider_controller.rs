@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::borrow::Cow;
 use std::rc::Rc;
 
 use crate::services::service_collection::IServiceCollection;
@@ -40,13 +41,17 @@ impl IController for FileProviderController {
         nameof::name_of_type!(FileProviderController)
     }
 
+    fn get_controller_name(self: &Self) -> Cow<'static, str> {
+        Cow::Borrowed(nameof::name_of_type!(FileProviderController))
+    }
+
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         self.options.as_ref()
             .get_mapped_paths(true)
             .iter()
             .map(|x|
                 Rc::new(ControllerActionFileResult::new(
-                    x.1.clone(), x.0.clone(), String::new(), self.get_type_name(), self.get_route_area(),
+                    x.1.clone(), x.0.clone(), String::new(), self.get_controller_name(), self.get_route_area(),
                 )) as Rc<dyn IControllerAction>
             )
             .collect()

@@ -3,6 +3,7 @@ use std::error::Error;
 use std::result::Result;
 use std::rc::Rc;
 
+use crate::contexts::irequest_context::IRequestContext;
 use crate::errors::RequestError;
 
 use crate::contexts::connection_context::IConnectionContext;
@@ -38,11 +39,11 @@ impl HttpRequestPipeline {
         )) as Rc<dyn IHttpRequestPipeline>)]
     }
 
-    fn parse_request(self: &Self, http_header: String, headers: Vec<String>, request_bytes: Box<Vec<u8>>, connection_context: Rc<dyn IConnectionContext>) -> Rc<RequestContext> {
+    fn parse_request(self: &Self, http_header: String, headers: Vec<String>, request_bytes: Box<Vec<u8>>, connection_context: Rc<dyn IConnectionContext>) -> Rc<dyn IRequestContext> {
         return RequestContext::parse(http_header, headers, request_bytes, connection_context);
     }
 
-    fn build_response(self: &Self, request_ctx: Rc<RequestContext>, services: &dyn IServiceCollection) -> Result<Rc<ResponseContext>, Box<dyn Error>> {
+    fn build_response(self: &Self, request_ctx: Rc<dyn IRequestContext>, services: &dyn IServiceCollection) -> Result<Rc<ResponseContext>, Box<dyn Error>> {
         let middleware = ServiceCollectionExtensions::get_required_multiple::<dyn IRequestMiddlewareService>(services);
         if middleware.len() == 0 {
             return Err(Box::new(RequestError(format!("No middleware configured"))));
@@ -65,7 +66,7 @@ impl HttpRequestPipeline {
         Ok(response_context)
     }
 
-    fn write_response(self: &Self, response_bytes: &mut Vec<u8>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<RequestContext>) {
+    fn write_response(self: &Self, response_bytes: &mut Vec<u8>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<dyn IRequestContext>) {
         response_bytes.extend_from_slice(b"HTTP/1.1 ");
         response_bytes.extend_from_slice(response_ctx.as_ref().status_code.borrow().as_str().as_bytes());
         response_bytes.extend_from_slice(b" ");

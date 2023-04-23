@@ -6,7 +6,8 @@ use crate::auth::iauth_role::IAuthRole;
 
 use crate::core::type_info::TypeInfo;
 
-use crate::entity::idbset::{ IDbSet, IDbSetAny, JsonFileDbSet };
+use crate::entity::idbset::{ IDbSet, IDbSetAny };
+use crate::entity::json_file_dbset::JsonFileDbSet;
 
 
 #[derive(Clone)]
@@ -21,6 +22,12 @@ impl JsonAuthRole {
         }
     }
 
+    pub fn parse_str(v: &str) -> Self {
+        Self {
+            name: v.to_string()
+        }
+    }
+
     pub fn parse_json(v: serde_json::Value) -> Self {
         Self {
             name: v.as_str().unwrap().to_string()
@@ -31,6 +38,12 @@ impl JsonAuthRole {
 impl IAuthRole for JsonAuthRole {
     fn get_name(self: &Self) -> String {
         self.name.clone()
+    }
+}
+
+impl PartialEq for JsonAuthRole {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
     }
 }
 

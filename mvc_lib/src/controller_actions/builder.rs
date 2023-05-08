@@ -3,15 +3,18 @@ use std::any::Any;
 use std::borrow::{Borrow, Cow};
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::vec;
 
 use http::Method;
 
 use crate::action_results::iaction_result::IActionResult;
+use crate::controllers::icontroller::IController;
 use crate::services::service_collection::IServiceCollection;
 use crate::contexts::controller_context::ControllerContext;
 
 use super::controller_action::IControllerAction;
 use super::closure::ControllerActionClosure;
+use super::member_fn::ControllerActionMemberFn;
 
 
 pub enum RouteType {
@@ -30,6 +33,7 @@ pub struct ControllerActionBuilder {
     action_name: RefCell<Option<String>>,
     should_validate_model: RefCell<Option<bool>>,
     closure_fn: RefCell<Option<Rc<dyn Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>>,
+    // member_fn: RefCell<Option<Rc<fn(self_arg: T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
 }
 
 impl ControllerActionBuilder {
@@ -50,19 +54,37 @@ impl ControllerActionBuilder {
         self
     }
 
-    pub fn set_controller_name(self: &Self) -> &Self {
+    pub fn set_controller_name(self: &Self, name: Cow<'static, str>) -> &Self {
+        self.controller_name.replace(Some(name));
         self
     }
 
-    pub fn set_name(self: &Self) -> &Self {
+    pub fn set_name(self: &Self, name: &'static str) -> &Self {
+        self.action_name.replace(Some(name.to_string()));
         self
     }
 
-    pub fn set_method(self: &Self) -> &Self {
-        self
+    pub fn build_member_fn<T:'static>(
+        self: &Self, 
+        // self_arg: T, 
+        member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+    ) -> Rc<dyn IControllerAction + 'static> {
+        Rc::new(
+            ControllerActionMemberFn::new(
+                self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
+            None,
+            self.route_pattern.clone(),
+            self.action_name.borrow().as_ref().unwrap().clone(),
+            self.controller_name.borrow().as_ref().unwrap().clone(),
+            self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
+            self.should_validate_model.borrow().unwrap_or(false),
+            // self_arg,
+            member_fn
+            )
+        )
     }
 
-    pub fn set_methods(self: &Self) -> &Self {
+    pub fn methods(self: &Self, methods: &[Method]) -> &Self {
         self
     }
 
@@ -87,5 +109,34 @@ impl ControllerActionBuilder {
             self.closure_fn.borrow().as_ref().unwrap().clone()
             )
         )
+    }
+}
+
+
+pub struct ControllerActionsBuilder<'a, T: IController> {
+    controller: &'a T,
+    actions: RefCell<Vec<Rc<ControllerActionBuilder>>>,
+}
+
+impl<'a, T: IController> ControllerActionsBuilder<'a, T> {
+    pub fn new(controller: &'a T) -> Self {
+        Self {
+            controller: controller,
+            actions: RefCell::new(vec![]),
+        }
+    }
+
+    pub fn add(self: &Self, route_pattern: &'static str) -> Rc<ControllerActionBuilder> {
+        let action = Rc::new(ControllerActionBuilder::new(route_pattern));
+        self.actions.borrow_mut().push(action.clone());
+        action.set_controller_name(self.controller.get_controller_name());
+        action
+    }
+
+    pub fn build(self: &Self) -> Vec<Rc<dyn IControllerAction + '_>> {
+        let actions = self.actions.borrow().clone();
+        actions.iter()
+            .map(|x| (*x).build().clone())
+            .collect()
     }
 }

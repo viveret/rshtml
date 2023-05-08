@@ -23,12 +23,15 @@ use mvc_lib::action_results::view_result::ViewResult;
 use mvc_lib::controllers::icontroller::IController;
 
 use mvc_lib::controller_action_features::controller_action_feature::IControllerActionFeature;
+use mvc_lib::controller_actions::builder::{ ControllerActionsBuilder, ControllerActionBuilder };
 use mvc_lib::controller_actions::controller_action::IControllerAction;
 use mvc_lib::controller_actions::closure::ControllerActionClosure;
 use mvc_lib::controller_actions::member_fn::ControllerActionMemberFn;
 
 use mvc_lib::controller_action_features::local_host_only::LocalHostOnlyControllerActionFeature;
 use mvc_lib::controller_action_features::authorize::AuthorizeControllerActionFeature;
+
+// use mvc_macro_lib::action_member;
 
 use crate::view_models::authroles::{ IndexViewModel, AddViewModel };
 
@@ -65,18 +68,18 @@ impl AuthRolesController {
             .iter().cloned().collect()
     }
 
-    pub fn get_index(controller: Box<AuthRolesController>, _controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn get_index(controller: &AuthRolesController, _controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let roles = controller.get_roles();
         let view_model = Box::new(Rc::new(IndexViewModel::new(roles)));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/index.rs".to_string(), view_model))))
     }
 
-    pub fn get_add(controller: Box<AuthRolesController>, _controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn get_add(controller: &AuthRolesController, _controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let view_model = Box::new(Rc::new(AddViewModel::new(String::new(), None)));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/add.rs".to_string(), view_model))))
     }
 
-    pub fn post_add(controller: Box<AuthRolesController>, controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn post_add(controller: &AuthRolesController, controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let input_model = controller_ctx.get_request_context().get_model_validation_result();
         let new_role = controller_ctx.request_context.get_query().get("role"); // to do: this needs to use query parameter
         let view_model = Box::new(Rc::new(
@@ -114,12 +117,28 @@ impl IController for AuthRolesController {
     }
     
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
-        vec![
-            Rc::new(action_member!([Method::GET], Self::get_index))
-            // Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![], None, "/dev/auth-roles".to_string(), "Index".to_string(), self.get_controller_name(), self.get_route_area(), Box::new(self.clone()), Self::get_index)),
-            // Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![Method::GET], None, "/dev/auth-roles/add".to_string(), "Add".to_string(), self.get_controller_name(), self.get_route_area(), Box::new(self.clone()), Self::get_add)),
-            // Rc::new(ControllerActionMemberFn::<Box<AuthRolesController>>::new_validated(vec![Method::POST], None, "/dev/auth-roles/add".to_string(), "AddPost".to_string(), self.get_controller_name(), self.get_route_area(), Box::new(self.clone()), Self::post_add)),
-        ]
+        let actions_builder = ControllerActionsBuilder::new(self);
+        
+        actions_builder.add("/dev/auth-roles")
+            .methods(&[Method::GET])
+            .set_name("index")
+            .set_controller_name(self.get_controller_name())
+            .build_member_fn(Self::get_index);
+
+
+        actions_builder.add("/dev/auth-roles/add")
+            .methods(&[Method::GET])
+            .set_name("add")
+            .set_controller_name(self.get_controller_name())
+            .build_member_fn(Self::get_add);
+
+        actions_builder.add("/dev/auth-roles/add")
+                .methods(&[Method::POST])
+                .set_name("add_post")
+                .set_controller_name(self.get_controller_name())
+                .build_member_fn(Self::post_add);
+
+        actions_builder.build()
     }
 
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {

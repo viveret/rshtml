@@ -169,3 +169,19 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
         },
     })
 }
+
+// #[proc_macro]
+// pub fn action_member(input: TokenStream) -> TokenStream {
+//     // parse arguments for action
+//     let mut it = input.into_iter().peekable();
+
+//     let methods = it.next().unwrap();
+//     let comma = it.next().unwrap();
+//     let method_name = it.next().unwrap();
+//     TokenStream::from(quote!{
+//         {
+//             let builder = ControllerActionBuilder::new();
+//             builder.build()
+//         }
+//     })
+// }

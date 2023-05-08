@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::rc::Rc;
 
+use as_any::Downcast;
 use http::Method;
 
 use crate::action_results::iaction_result::IActionResult;
@@ -20,9 +21,9 @@ use crate::controller_actions::route_pattern::ControllerActionRoutePattern;
 
 
 #[derive(Clone)]
-pub struct ControllerActionMemberFn<T: Clone> {
-    pub self_arg: T,
-    pub member_fn: fn(self_arg: T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>,
+pub struct ControllerActionMemberFn<T: 'static> {
+    // pub self_arg: T,
+    pub member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>,
     pub name: String,
     pub controller_name: Cow<'static, str>,
     pub area_name: String,
@@ -32,7 +33,7 @@ pub struct ControllerActionMemberFn<T: Clone> {
     pub should_validate_model: bool,
 }
 
-impl<T: Clone> ControllerActionMemberFn<T> {
+impl<T: 'static> ControllerActionMemberFn<T> {
     pub fn new(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
@@ -40,16 +41,16 @@ impl<T: Clone> ControllerActionMemberFn<T> {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        self_arg: T,
         should_validate_model: bool,
-        member_fn: fn(self_arg: T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        // self_arg: T,
+        member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self {
             name: name,
             controller_name: controller_name,
             area_name: area_name,
             route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
-            self_arg: self_arg,
+            // self_arg: self_arg,
             member_fn: member_fn,
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or(vec![]),
@@ -64,8 +65,8 @@ impl<T: Clone> ControllerActionMemberFn<T> {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        self_arg: T,
-        member_fn: fn(self_arg: T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        // self_arg: T,
+        member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self::new(
             http_methods_allowed,
@@ -74,8 +75,8 @@ impl<T: Clone> ControllerActionMemberFn<T> {
             name,
             controller_name,
             area_name,
-            self_arg,
             true,
+            // self_arg,
             member_fn,
         )
     }
@@ -87,8 +88,8 @@ impl<T: Clone> ControllerActionMemberFn<T> {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        self_arg: T,
-        member_fn: fn(self_arg: T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        // self_arg: T,
+        member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self::new(
             http_methods_allowed,
@@ -97,8 +98,8 @@ impl<T: Clone> ControllerActionMemberFn<T> {
             name,
             controller_name,
             area_name,
-            self_arg,
             false,
+            // self_arg,
             member_fn,
         )
     }
@@ -111,14 +112,14 @@ impl<T: Clone> ControllerActionMemberFn<T> {
         controller_name: Cow<'static, str>,
         self_arg: T,
         should_validate_model: bool,
-        member_fn: fn(self_arg: T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self {
             name: name,
             controller_name: controller_name,
             area_name: String::new(),
             route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
-            self_arg: self_arg,
+            // self_arg: self_arg,
             member_fn: member_fn,
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or(vec![]),
@@ -127,9 +128,10 @@ impl<T: Clone> ControllerActionMemberFn<T> {
     }
 }
 
-impl<T: Clone> IControllerAction for ControllerActionMemberFn<T> {
+impl<T: 'static> IControllerAction for ControllerActionMemberFn<T> {
     fn invoke(self: &Self, controller_context: Rc<ControllerContext>, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
-        let result_option = (self.member_fn)(self.self_arg.clone(), controller_context.clone(), services)?;
+        // let result_option = (self.member_fn)(self.self_arg.clone(), controller_context.clone(), services)?;
+        let result_option = (self.member_fn)(controller_context.controller.downcast_ref::<T>().unwrap(), controller_context.clone(), services)?;
         if let Some(result) = result_option {
             controller_context.set_action_result(Some(result));
         }

@@ -7,12 +7,14 @@ use http::Method;
 
 use crate::action_results::iaction_result::IActionResult;
 
+use crate::action_results::iaction_result::IActionResultToAny;
 use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::request_context::RequestContext;
 
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
+use crate::controllers::icontroller::IController;
 use crate::services::service_collection::IServiceCollection;
 
 use crate::controller_actions::controller_action::IControllerAction;
@@ -21,8 +23,7 @@ use crate::controller_actions::route_pattern::ControllerActionRoutePattern;
 
 
 #[derive(Clone)]
-pub struct ControllerActionMemberFn<T: 'static> {
-    // pub self_arg: T,
+pub struct ControllerActionMemberFn<T> {
     pub member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>,
     pub name: String,
     pub controller_name: Cow<'static, str>,
@@ -33,7 +34,7 @@ pub struct ControllerActionMemberFn<T: 'static> {
     pub should_validate_model: bool,
 }
 
-impl<T: 'static> ControllerActionMemberFn<T> {
+impl<T> ControllerActionMemberFn<T> {
     pub fn new(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
@@ -42,7 +43,6 @@ impl<T: 'static> ControllerActionMemberFn<T> {
         controller_name: Cow<'static, str>,
         area_name: String,
         should_validate_model: bool,
-        // self_arg: T,
         member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self {
@@ -50,7 +50,6 @@ impl<T: 'static> ControllerActionMemberFn<T> {
             controller_name: controller_name,
             area_name: area_name,
             route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
-            // self_arg: self_arg,
             member_fn: member_fn,
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or(vec![]),
@@ -65,7 +64,6 @@ impl<T: 'static> ControllerActionMemberFn<T> {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        // self_arg: T,
         member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self::new(
@@ -76,7 +74,6 @@ impl<T: 'static> ControllerActionMemberFn<T> {
             controller_name,
             area_name,
             true,
-            // self_arg,
             member_fn,
         )
     }
@@ -88,7 +85,6 @@ impl<T: 'static> ControllerActionMemberFn<T> {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        // self_arg: T,
         member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self::new(
@@ -99,7 +95,6 @@ impl<T: 'static> ControllerActionMemberFn<T> {
             controller_name,
             area_name,
             false,
-            // self_arg,
             member_fn,
         )
     }
@@ -110,7 +105,6 @@ impl<T: 'static> ControllerActionMemberFn<T> {
         route_pattern: String,
         name: String,
         controller_name: Cow<'static, str>,
-        self_arg: T,
         should_validate_model: bool,
         member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
@@ -119,7 +113,6 @@ impl<T: 'static> ControllerActionMemberFn<T> {
             controller_name: controller_name,
             area_name: String::new(),
             route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
-            // self_arg: self_arg,
             member_fn: member_fn,
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or(vec![]),
@@ -128,14 +121,23 @@ impl<T: 'static> ControllerActionMemberFn<T> {
     }
 }
 
-impl<T: 'static> IControllerAction for ControllerActionMemberFn<T> {
+impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T> {
     fn invoke(self: &Self, controller_context: Rc<ControllerContext>, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
-        // let result_option = (self.member_fn)(self.self_arg.clone(), controller_context.clone(), services)?;
-        let result_option = (self.member_fn)(controller_context.controller.downcast_ref::<T>().unwrap(), controller_context.clone(), services)?;
+        let x = controller_context.get_controller();
+
+        // for some reason the below line is not working as described in the solution
+        // here on stack overflow: https://stackoverflow.com/a/40033391/11765486
+        // and also described here: https://users.rust-lang.org/t/downcast-rc-any-to-rc-t/29230/13
+        // A slight variation on that would be to add a method fn as_any(&self) -> &Any { self } 
+        // to AstNode, and then you can call Expression methods (that take &self) by writing 
+        // node.as_any().downcast_ref::<Expression>().method_on_expression(). But there is 
+        // currently no way to (safely) upcast an Rc<dyn Trait> to an Rc<dyn Any> (this 
+        // could change in the future, though).
+        let typed_controller = x.as_any().downcast_ref::<T>().unwrap();
+        let result_option = (self.member_fn)(typed_controller, controller_context.clone(), services)?;
         if let Some(result) = result_option {
             controller_context.set_action_result(Some(result));
         }
-
         Ok(())
     }
 

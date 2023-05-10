@@ -82,4 +82,8 @@ impl IController for LearnController {
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![]
     }
+
+    fn as_any(self: &Self) -> &dyn Any {
+        self
+    }
 }

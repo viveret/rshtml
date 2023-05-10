@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::borrow::Cow;
 use std::rc::Rc;
 
@@ -14,4 +15,6 @@ pub trait IController {
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>>;
 
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>>;
+
+    fn as_any(self: &Self) -> &dyn Any;
 }

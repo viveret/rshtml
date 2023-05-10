@@ -123,20 +123,20 @@ impl IController for AuthRolesController {
             .methods(&[Method::GET])
             .set_name("index")
             .set_controller_name(self.get_controller_name())
-            .build_member_fn(Self::get_index);
+            .set_member_fn(Self::get_index);
 
 
         actions_builder.add("/dev/auth-roles/add")
             .methods(&[Method::GET])
             .set_name("add")
             .set_controller_name(self.get_controller_name())
-            .build_member_fn(Self::get_add);
+            .set_member_fn(Self::get_add);
 
         actions_builder.add("/dev/auth-roles/add")
                 .methods(&[Method::POST])
                 .set_name("add_post")
                 .set_controller_name(self.get_controller_name())
-                .build_member_fn(Self::post_add);
+                .set_member_fn(Self::post_add);
 
         actions_builder.build()
     }
@@ -146,5 +146,9 @@ impl IController for AuthRolesController {
             AuthorizeControllerActionFeature::new_service_parse("admin,dev,owner".to_string(), None),
             LocalHostOnlyControllerActionFeature::new_service()
         ]
+    }
+
+    fn as_any(self: &Self) -> &dyn Any {
+        self
     }
 }

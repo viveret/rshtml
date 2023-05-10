@@ -114,4 +114,8 @@ impl IController for DevController {
             LocalHostOnlyControllerActionFeature::new_service()
         ]
     }
+
+    fn as_any(self: &Self) -> &dyn Any {
+        self
+    }
 }

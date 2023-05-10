@@ -60,4 +60,8 @@ impl IController for FileProviderController {
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![]
     }
+
+    fn as_any(self: &Self) -> &dyn Any {
+        self
+    }
 }

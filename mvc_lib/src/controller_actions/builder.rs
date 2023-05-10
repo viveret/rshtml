@@ -1,6 +1,5 @@
 use std::error::Error;
-use std::any::Any;
-use std::borrow::{Borrow, Cow};
+use std::borrow::Cow;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::vec;
@@ -34,6 +33,7 @@ pub struct ControllerActionBuilder {
     should_validate_model: RefCell<Option<bool>>,
     closure_fn: RefCell<Option<Rc<dyn Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>>,
     // member_fn: RefCell<Option<Rc<fn(self_arg: T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
+    member_fn_action: RefCell<Option<Rc<dyn IControllerAction>>>,
 }
 
 impl ControllerActionBuilder {
@@ -47,6 +47,7 @@ impl ControllerActionBuilder {
             action_name: RefCell::new(None),
             should_validate_model: RefCell::new(None),
             closure_fn: RefCell::new(None),
+            member_fn_action: RefCell::new(None),
         }
     }
 
@@ -64,39 +65,49 @@ impl ControllerActionBuilder {
         self
     }
 
-    pub fn build_member_fn<T:'static>(
+    pub fn set_member_fn<T:'static + IController>(
         self: &Self, 
         // self_arg: T, 
         member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
-    ) -> Rc<dyn IControllerAction + 'static> {
-        Rc::new(
-            ControllerActionMemberFn::new(
-                self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
-            None,
-            self.route_pattern.clone(),
-            self.action_name.borrow().as_ref().unwrap().clone(),
-            self.controller_name.borrow().as_ref().unwrap().clone(),
-            self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
-            self.should_validate_model.borrow().unwrap_or(false),
-            // self_arg,
-            member_fn
+    ) -> &Self {
+        self.route_type.replace(Some(RouteType::MemberFn));
+        self.member_fn_action.replace(
+            Some(
+                Rc::new(
+                    ControllerActionMemberFn::new(
+                        self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
+                    None,
+                    self.route_pattern.clone(),
+                    self.action_name.borrow().as_ref().unwrap().clone(),
+                    self.controller_name.borrow().as_ref().unwrap().clone(),
+                    self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
+                    self.should_validate_model.borrow().unwrap_or(false),
+                    // self_arg,
+                    member_fn
+                    )
+                )
             )
-        )
+        );
+        self
     }
 
     pub fn methods(self: &Self, methods: &[Method]) -> &Self {
         self
     }
 
-    pub fn build(self: &Self) -> Rc<dyn IControllerAction + '_> {
+    pub fn build(self: &Self) -> Rc<dyn IControllerAction> {
         match self.route_type.borrow().as_ref().unwrap() {
             RouteType::Closure => self.build_closure(),
-            RouteType::MemberFn => todo!(),
+            RouteType::MemberFn => self.build_member_fn(),
             RouteType::File => todo!(),
         }
     }
 
-    fn build_closure(self: &Self) -> Rc<dyn IControllerAction + '_> {
+    fn build_member_fn(self: &Self) -> Rc<dyn IControllerAction> {
+        self.member_fn_action.borrow().as_ref().unwrap().clone()
+    }
+
+    fn build_closure(self: &Self) -> Rc<dyn IControllerAction> {
         Rc::new(
             ControllerActionClosure::new(
                 self.http_methods.borrow().as_ref().unwrap().clone(),
@@ -133,10 +144,13 @@ impl<'a, T: IController> ControllerActionsBuilder<'a, T> {
         action
     }
 
-    pub fn build(self: &Self) -> Vec<Rc<dyn IControllerAction + '_>> {
-        let actions = self.actions.borrow().clone();
-        actions.iter()
-            .map(|x| (*x).build().clone())
-            .collect()
+    pub fn build(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
+        let mut actions = vec![];
+
+        for action in self.actions.borrow().iter() {
+            actions.push(action.build());
+        }
+
+        actions
     }
 }

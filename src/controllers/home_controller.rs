@@ -58,12 +58,16 @@ impl IController for HomeController {
             .methods(&[Method::GET])
             .set_name("index")
             .set_controller_name(self.get_controller_name())
-            .build_member_fn(Self::get_index);
+            .set_member_fn(Self::get_index);
 
         actions_builder.build()
     }
 
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![]
+    }
+
+    fn as_any(self: &Self) -> &dyn Any {
+        self
     }
 }

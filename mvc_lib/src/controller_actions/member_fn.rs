@@ -133,7 +133,7 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
         // node.as_any().downcast_ref::<Expression>().method_on_expression(). But there is 
         // currently no way to (safely) upcast an Rc<dyn Trait> to an Rc<dyn Any> (this 
         // could change in the future, though).
-        let typed_controller = x.as_any().downcast_ref::<T>().unwrap();
+        let typed_controller = x.as_any().downcast_ref::<Rc<T>>().unwrap();
         let result_option = (self.member_fn)(typed_controller, controller_context.clone(), services)?;
         if let Some(result) = result_option {
             controller_context.set_action_result(Some(result));

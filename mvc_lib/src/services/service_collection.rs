@@ -9,7 +9,9 @@ use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_instance::ServiceInstance;
 
 
-
+// this interface is used to store services and dependencies in a collection.
+// services are described via their type and scope, and when requested, are instantiated.
+// dependencies are created when a service is instantiated, and are stored in the collection.
 pub trait IServiceCollection: Send + Sync {
     fn try_get(&self, type_info: Box<TypeInfo>) -> Result<Vec<Box<dyn Any>>, &str>;
     fn get_required(&self, type_info: Box<TypeInfo>) -> Vec<Box<dyn Any>>;
@@ -28,6 +30,7 @@ pub trait IServiceCollection: Send + Sync {
 }
 
 
+// generic service collection implementation. 
 #[derive(Clone)]
 pub struct ServiceCollection {
     current_scope: ServiceScope,
@@ -203,6 +206,7 @@ pub struct ServiceCollectionExtensions {
 
 }
 
+// extension methods for IServiceCollection
 impl ServiceCollectionExtensions {
     pub fn try_get_single<T: 'static + ?Sized>(services: &dyn IServiceCollection) -> Result<Option<Rc<T>>, &str> {
         let type_info = TypeInfo::rc_of::<T>();

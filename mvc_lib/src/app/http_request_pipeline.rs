@@ -43,29 +43,68 @@ impl HttpRequestPipeline {
         return RequestContext::parse(http_header, headers, request_bytes, connection_context);
     }
 
+    /// Build a response for a request
+    /// 
+    /// # Arguments
+    /// * `request_ctx` - The request context
+    /// * `services` - The service collection
+    /// 
+    /// # Returns
+    /// The response context
     fn build_response(self: &Self, request_ctx: Rc<dyn IRequestContext>, services: &dyn IServiceCollection) -> Result<Rc<ResponseContext>, Box<dyn Error>> {
+        // Get the middleware services
         let middleware = ServiceCollectionExtensions::get_required_multiple::<dyn IRequestMiddlewareService>(services);
+        // Throw an error if there are no middleware services
         if middleware.len() == 0 {
             return Err(Box::new(RequestError(format!("No middleware configured"))));
         }
 
+        // Create an iterator over the middleware
         let mut it = middleware.iter().cloned().peekable();
+        // Loop through each middleware service
         loop {
+            // Get the next middleware service
             let request_handler_option = it.next();
+            // Check if there is a next middleware service
             if let Some(request_handler) = request_handler_option {
+                // Get the next middleware service
                 let next_request_handler = it.peek();
+                // Set the next middleware service
                 request_handler.set_next(next_request_handler.cloned());
             } else {
+                // There are no more middleware services
                 break;
             }
         }
 
+        // Create a response context
         let response_context = Rc::new(ResponseContext::new(http::version::Version::HTTP_11, http::StatusCode::NOT_FOUND));
+        // Get the first middleware service
         let first = middleware.first().unwrap();
+        // Handle the request
         first.handle_request(request_ctx.clone(), response_context.clone(), services)?;
+        // Return the response context
         Ok(response_context)
     }
 
+    /// Writes an HTTP response to the given destination buffer.
+    ///
+    /// This function is used to write an HTTP response, including the status line,
+    /// headers, and body, to the given destination buffer. This function is used by the
+    /// `Response::write_to` function to write the response to the stream.
+    ///
+    /// # Parameters
+    ///
+    /// * `self` - The HTTP response object.
+    ///
+    /// * `response_bytes` - The destination buffer to which the response will be written.
+    ///
+    /// * `response_ctx` - The context of the response.
+    ///
+    /// * `_request_ctx` - The context of the request that elicited this response.
+    ///
+    /// # Returns
+    /// This function does not return a value.
     fn write_response(self: &Self, response_bytes: &mut Vec<u8>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<dyn IRequestContext>) {
         response_bytes.extend_from_slice(b"HTTP/1.1 ");
         response_bytes.extend_from_slice(response_ctx.as_ref().status_code.borrow().as_str().as_bytes());

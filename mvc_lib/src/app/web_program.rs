@@ -17,13 +17,19 @@ use crate::services::service_collection::ServiceCollectionExtensions;
 
 
 pub trait IWebProgram {
+    // configure is called by the host to allow the program to configure itself.
     fn configure(self: &mut Self, args: Rc<Vec<String>>);
+    
+    // configure_services is called by the host to allow the program to add
+    // services to the service collection.
     fn configure_services(self: &mut Self);
+    
+    // start is called by the host to allow the program to start itself.
     fn start(self: &Self, args: Rc<Vec<String>>);
 
+    // get_services is called by the host to get the service collection.
     fn get_services(self: &Self) -> &dyn IServiceCollection;
 }
-
 
 pub struct WebProgram {
     on_configure_fn: Option<fn(&mut ServiceCollection, Rc<Vec<String>>)>,
@@ -59,11 +65,7 @@ impl WebProgram {
 
     pub fn client_connected(self: &Self, mut stream: TcpStream) {
         let buf_reader = BufReader::new(&mut stream);
-        // stream.read_to_end(&mut request_bytes);
-        // let request_bytes = buf_reader
-        //     .bytes()
-        //     .map(|b| b.unwrap())
-        //     .collect();
+
         let mut request_headers: Vec<String> = buf_reader
             .lines()
             .map(|line| line.unwrap())

@@ -1,6 +1,8 @@
 use super::form_helpers::FormHelpers;
 
+// helpers for HTML views
 pub struct HtmlHelpers {
+    // form helpers
     pub form: FormHelpers,
 }
 

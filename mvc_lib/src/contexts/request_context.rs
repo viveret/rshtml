@@ -22,26 +22,53 @@ use crate::model::view_model_result::ViewModelResult;
 use super::irequest_context::IRequestContext;
 
 
-
+// this struct represents a HTTP request and its context.
+// it is created by the server and passed to middleware and the controller action.
+// it is also passed to the view renderer and view.
 pub struct RequestContext {
+    // the HTTP connection context of the request
     connection_context: Rc<dyn IConnectionContext>,
+    // the HTTP version of the request
     http_version: http::version::Version,
+    // the scheme of the request
     scheme: Box<String>,
+    // the method of the request
     method: Method,
+    // the path of the request
     path: Box<String>,
+    // the query string of the request
     query: QueryString,
+    // the query string of the request as a string
     query_string: Box<String>,
+    // the headers of the request
     headers: HeaderMap,
+    // the body of the request
     body: Vec<u8>,
+    // the model validation result of the request
     model_validation_result: RefCell<Option<ViewModelResult<Rc<dyn Any>>>>,
+    // the body model of the request
     body_model: RefCell<Option<Box<dyn Any>>>,
+    // the route data of the request
     route_data: RefCell<RouteData>,
+    // the authorization claims of the request
     auth_claims: RefCell<Vec<Rc<dyn IAuthClaim>>>,
+    // the context data of the request
     context_data: RefCell<HashMap<String, String>>,
+    // the controller action for the request
     controller_action: RefCell<Option<Rc<dyn IControllerAction>>>,
 }
 
 impl RequestContext {
+    // creates a new request context.
+    // connection_context: the HTTP connection context of the request
+    // http_version: the HTTP version of the request
+    // scheme: the scheme of the request
+    // method_str: the method of the request as a string
+    // method: the method of the request
+    // path: the path of the request
+    // query_string: the query string of the request
+    // request_headers: the headers of the request
+    // returns: the new request context.
     pub fn new(
         connection_context: Rc<dyn IConnectionContext>,
         http_version: http::version::Version,
@@ -71,6 +98,12 @@ impl RequestContext {
         }
     }
 
+    // parses a HTTP request into a request context.
+    // http_header: the HTTP header of the request
+    // headers: the headers of the request
+    // request_bytes: the body of the request
+    // connection_context: the HTTP connection context of the request
+    // returns: the new request context.
     pub fn parse(http_header: String, headers: Vec<String>, _request_bytes: Box<Vec<u8>>, connection_context: Rc<dyn IConnectionContext>) -> Rc<dyn IRequestContext> {
         let re_method: Regex = Regex::new(r"^(GET|HEAD|POST|PUT) ").unwrap();
         let re_version: Regex = Regex::new(r" HTTP/(\d\.\d)$").unwrap();

@@ -1,8 +1,8 @@
 pub mod html_string;
+pub mod html_tag_parse_context;
 pub mod rusthtml_directive_result;
 pub mod rusthtml_error;
 pub mod rusthtml_node;
-pub mod rusthtml_lang_parts;
 pub mod rusthtml_lang_part;
 pub mod rusthtml_parser;
 pub mod rusthtml_token;

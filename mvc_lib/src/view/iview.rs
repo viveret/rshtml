@@ -6,7 +6,8 @@ use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use crate::services::service_collection::IServiceCollection;
 
-
+// this represents a view that can be rendered. It can be a layout view or a partial view.
+// it is used by the view renderer to render views.
 pub trait IView {
     // relative to root "views" folder
     fn get_path(self: &Self) -> String;

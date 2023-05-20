@@ -5,19 +5,31 @@ use std::rc::Rc;
 
 use glob::glob;
 
-
+// this trait abstracts the file provider controller options.
 pub trait IFileProviderControllerOptions {
+    // get the file path for a given path.
+    // path: the path to get the file path for.
     fn get_file(self: &Self, path: String) -> Option<String>;
+
+    // get the mapped paths with the alias as the key and the path as the value.
+    // recursive: whether to get the paths recursively.
     fn get_mapped_paths(self: &Self, recursive: bool) -> HashMap<String, String>;
 }
 
+// this struct implements IFileProviderControllerOptions.
 #[derive(Debug, Clone)]
 pub struct FileProviderControllerOptions {
+    // the directories to serve files from.
     pub serving_directories: &'static [&'static str],
+    // the files to serve mapped to their aliases.
     pub serving_files: &'static phf::Map<&'static str, &'static str>,
 }
 
 impl FileProviderControllerOptions {
+    // create a new FileProviderControllerOptions struct from a list of directories to serve files from and a list of files to serve mapped to their aliases.
+    // serving_directories: the directories to serve files from.
+    // serving_files: the files to serve mapped to their aliases.
+    // returns: a new FileProviderControllerOptions struct.
     pub fn new(
         serving_directories: &'static [&'static str],
         serving_files: &'static phf::Map<&'static str, &'static str>
@@ -28,11 +40,16 @@ impl FileProviderControllerOptions {
         }
     }
 
+    // create a new FileProviderControllerOptions struct with default values.
     pub fn new_defaults() -> Self {
         static _EMPTY: phf::Map<&'static str, &'static str> = phf::Map::new();
         Self { serving_directories: &["wwwroot/"], serving_files: &_EMPTY }
     }
 
+    // create a new FileProviderControllerOptions struct as a service from a list of directories to serve files from and a list of files to serve mapped to their aliases.
+    // serving_directories: the directories to serve files from.
+    // serving_files: the files to serve mapped to their aliases.
+    // returns: a new FileProviderControllerOptions struct as a service.
     pub fn new_service(
         serving_directories: &'static [&'static str],
         serving_files: &'static phf::Map<&'static str, &'static str>
@@ -40,6 +57,7 @@ impl FileProviderControllerOptions {
         Box::new(Rc::new(Self::new(serving_directories, serving_files)) as Rc<dyn IFileProviderControllerOptions>)
     }
 
+    // create a new FileProviderControllerOptions struct as a service with default values.
     pub fn new_service_defaults() -> Box<dyn Any> {
         Box::new(Rc::new(Self::new_defaults()) as Rc<dyn IFileProviderControllerOptions>)
     }

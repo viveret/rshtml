@@ -18,7 +18,16 @@ use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
+// this defines the interface for a class that can render views.
+// the view result calls this to render the view from the controller.
 pub trait IViewRenderer {
+    // render the view with the specified path and view model.
+    // view_path: the path to the view to render.
+    // view_model: the view model to render the view with.
+    // controller_ctx: the controller context for the view.
+    // response_ctx: the response context for the view.
+    // services: the services available to the view.
+    // returns: the rendered view or an error.
     fn render_with_layout_if_specified(
         self: &Self,
         view_path: &String,
@@ -28,14 +37,32 @@ pub trait IViewRenderer {
         services: &dyn IServiceCollection
     ) -> Result<HtmlString, RustHtmlError>;
 
+    // get the layout view from the view context.
+    // view_ctx: the view context to get the layout view from.
+    // services: the services available to the view.
+    // returns: the layout view or None if not specified.
     fn get_layout_view_from_context(self: &Self, view_ctx: &mut ViewContext, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>>;
 
+    // get all views available to the view renderer.
+    // services: the services available to the view renderer.
+    // returns: all views available to the view renderer.
     fn get_all_views(self: &Self, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>>;
+
+    // get all views with the specified path.
+    // path: the path to the views to get.
+    // services: the services available to the view renderer.
     fn get_views(self: &Self, path: &String, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>>;
+    
+    // get the view with the specified path.
+    // path: the path to the view to get.
+    // services: the services available to the view renderer.
+    // returns: the view with the specified path.
     fn get_view(self: &Self, path: &String, services: &dyn IServiceCollection) -> Rc<dyn IView>;
 }
 
+// this is a struct that implements IViewRenderer.
 pub struct ViewRenderer {
+    // the views available to the view renderer.
     cached_views: RefCell<Option<Vec<Rc<dyn IView>>>>,
 }
 
@@ -46,6 +73,7 @@ impl ViewRenderer  {
         }
     }
 
+    // create a new instance of the view renderer service for a service collection.
     pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(ViewRenderer::new()) as Rc<dyn IViewRenderer>)]
     }

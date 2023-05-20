@@ -2,18 +2,21 @@
 
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Span};
 
+// a RustHtml token for a Rust identifier or punctuation.
 #[derive(Clone, Debug)]
 pub enum RustHtmlIdentOrPunct {
     Ident(Ident),
     Punct(Punct),
 }
 
+// a RustHtml token for a Rust identifier or punctuation or literal.
 #[derive(Clone, Debug)]
 pub enum RustHtmlIdentAndPunctOrLiteral {
     Literal(Literal),
     IdentAndPunct(Vec<RustHtmlIdentOrPunct>)
 }
 
+// a RustHtml token for a Rust identifier or punctuation or group.
 #[derive(Clone, Debug)]
 pub enum RustHtmlIdentOrPunctOrGroup {
     Ident(Ident),
@@ -21,12 +24,15 @@ pub enum RustHtmlIdentOrPunctOrGroup {
     Group(Group),
 }
 
+// a RustHtml token for a Rust identifier or punctuation or group or literal.
 #[derive(Clone, Debug)]
 pub enum RustHtmlIdentAndPunctAndGroupOrLiteral {
     Literal(Literal),
     IdentAndPunctAndGroup(Vec<RustHtmlIdentOrPunctOrGroup>)
 }
 
+// The token types for the RustHtml language.
+// Each enum variant represents a different part of the RustHtml language.
 #[derive(Clone, Debug)]
 pub enum RustHtmlToken {
     // any / both
@@ -44,9 +50,12 @@ pub enum RustHtmlToken {
     HtmlTagCloseSelfContainedPunct(Punct),
     HtmlTagCloseStartChildrenPunct(Punct),
 
-    // rust
+    // rust / html
+    // External RustHtml file that is copied into the output
     ExternalRustHtml(String, Span),
+    // External HTML file that is copied into the output
     ExternalHtml(String, Span),
+    // Instruction to append to the HTML output
     AppendToHtml(Vec<RustHtmlToken>),
 
     Literal(Literal),

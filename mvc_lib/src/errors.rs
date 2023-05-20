@@ -2,6 +2,7 @@ use std::error::Error;
 use std::fmt;
 
 
+// this struct represents an error that occurs when a HTTP request is made.
 #[derive(Debug)]
 pub struct RequestError(pub String);
 impl Error for RequestError {}

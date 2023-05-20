@@ -23,47 +23,76 @@ use crate::services::service_scope::ServiceScope;
 use crate::services::request_middleware_service::MiddlewareResult;
 
 
+// this enum is used to indicate the result of an authorization rejection
 #[derive(Debug)]
 pub enum AuthRejectionReason {
+    // the user is not authenticated for an unknown reason
     Other(String)
 }
 
+// this enum is used to indicate the result of an authorization check
 pub enum AuthResult {
+    // the user is authorized
     Ok,
+    // the user is not authorized
     Rejection(AuthRejectionReason)
 }
 
 // cookie, encrypted post form data token, plaintext username/password if logging in
 pub struct AuthenticationToken {
+    // the name of the token
     pub key: String,
+    // the value of the token
     pub value: String,
 }
 
-
+// this trait is used to provide claims for authorization
 pub trait IAuthClaim {
+    // gets the name of the claim
     fn get_name(self: &Self) -> String;
+    // gets the tokens for the claim
     fn get_tokens(self: &Self) -> HashMap<String, String>;
 
+    // gets whether the claim is an identifier
     fn is_identifier(self: &Self) -> bool;
+    // gets whether the claim is a secret
     fn is_secret(self: &Self) -> bool;
 
+    // gets the type info for the claim
     fn get_type_info(self: &Self) -> TypeInfo;
+    // gets the type name for the claim
     fn get_type_name(self: &Self) -> String;
+
+    // gets the string representation of the claim
     fn to_string(self: &Self) -> String;
 }
 
 // Convert input claims and tokens to usable claims and tokens
 pub trait IAuthClaimTransformer {
+    // transform the claims from the request into usable claims for authorization.
+    // claims: the claims from the request.
+    // request_context: the request context.
+    // returns: the usable claims for authorization.
     fn transform_claims(self: &Self, claims: Vec<Rc<dyn IAuthClaim>>, request_context: Rc<dyn IRequestContext>) -> Vec<Rc<dyn IAuthClaim>>;
+    
+    // transform the tokens from the request into usable tokens for authorization.
+    // tokens: the tokens from the request.
+    // request_context: the request context.
+    // returns: the usable tokens for authorization.
     fn transform_tokens(self: &Self, tokens: Vec<Rc<AuthenticationToken>>, request_context: Rc<dyn IRequestContext>) -> Vec<Rc<AuthenticationToken>>;
 
+    // gets the type info for the claim transformer
     fn get_type_info(self: &Self) -> TypeInfo;
+    // gets the type name for the claim transformer
     fn get_type_name(self: &Self) -> String;
+
+    // gets the string representation of the claim transformer
     fn to_string(self: &Self) -> String;
 }
 
 // for testing, allow changing role from cookie
 pub struct CookieRoleClaim {
+    // the role
     pub role: String,
 }
 
@@ -72,6 +101,7 @@ impl CookieRoleClaim {
         Self { role: role }
     }
     
+    // create a new instance of the service for the service collection.
     pub fn new_service(role: String) -> Rc<dyn IAuthClaim> {
         Rc::new(Self::new(role))
     }
@@ -109,6 +139,7 @@ impl IAuthClaim for CookieRoleClaim {
     }
 }
 
+// this struct is used to transform the cookie into a claim
 pub struct CookieRoleClaimTransformer {
 
 }
@@ -120,6 +151,7 @@ impl CookieRoleClaimTransformer {
         }
     }
 
+    // create a new instance of the service for the service collection.
     pub fn new_service() -> Rc<dyn IAuthClaimTransformer> {
         Rc::new(Self::new())
     }
@@ -152,18 +184,30 @@ impl IAuthClaimTransformer for CookieRoleClaimTransformer {
     }
 }
 
-
+// this trait is used to provide authorization requirements.
 pub trait IAuthRequirement {
+    // invoke the authorization requirement check.
+    // auth_claims: the claims to check.
+    // roles: the roles to check.
+    // request_context: the request context.
+    // returns: the result of the authorization check.
     fn invoke(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
 
+    // gets the name of the authorization requirement.
     fn get_name(self: &Self) -> String;
 
+    // gets the type info for the authorization requirement.
     fn get_type_info(self: &Self) -> TypeInfo;
+    // gets the type name for the authorization requirement.
     fn get_type_name(self: &Self) -> String;
+
+    // gets the string representation of the authorization requirement.
     fn to_string(self: &Self) -> String;
 }
 
+// this struct is used to check if the user has a role.
 pub struct RoleAuthRequirement {}
+
 impl RoleAuthRequirement {
     pub fn new() -> Self {
         Self {
@@ -171,10 +215,12 @@ impl RoleAuthRequirement {
         }
     }
 
+    // create a new instance of the service for the service collection.
     pub fn new_service() -> Rc<dyn IAuthRequirement> {
         Rc::new(Self::new())
     }
 }
+
 impl IAuthRequirement for RoleAuthRequirement {
     fn invoke(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>> {
         if roles.len() == 0 {
@@ -215,39 +261,94 @@ impl IAuthRequirement for RoleAuthRequirement {
     }
 }
 
-
+// this trait is used to provide and apply authorization policies.
+// a policy is a set of authorization requirements.
+// a policy can be applied to a set of claims to check if the user is authorized.
 pub trait IAuthorizationService {
+    // authenticate the user for a role.
+    // auth_claims: the claims to check.
+    // role: the role to check.
+    // request_context: the request context.
+    // returns: the result of the authorization check.
     fn authenticate_role(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, role: String, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
+
+    // authenticate the user for a set of roles.
+    // auth_claims: the claims to check.
+    // roles: the roles to check.
+    // request_context: the request context.
+    // returns: the result of the authorization check.
     fn authenticate_roles(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
 
+    // authenticate the user for a set of requirements.
+    // auth_claims: the claims to check.
+    // requirements: the requirements to check.
+    // request_context: the request context.
+    // returns: the result of the authorization check.
     fn authenticate_requirements(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<Rc<dyn IAuthRequirement>>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
+
+    // authenticate the user for a set of requirements by name.
+    // auth_claims: the claims to check.
+    // requirements: the requirements to check.
+    // request_context: the request context.
+    // returns: the result of the authorization check.
     fn authenticate_requirements_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<String>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
 
+    // authenticate the user for a policy.
+    // auth_claims: the claims to check.
+    // policy: the policy to check.
+    // request_context: the request context.
+    // returns: the result of the authorization check.
     fn authenticate_policy(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: Rc<dyn IAuthRequirement>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
+
+    // authenticate the user for a policy by name.
+    // auth_claims: the claims to check.
+    // policy: the policy to check.
+    // request_context: the request context.
+    // returns: the result of the authorization check.
     fn authenticate_policy_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: String, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
 
+    // authenticate the user for an HTTP request.
+    // controller: the controller.
+    // request_context: the request context.
+    // returns: the result of the authorization check.
     fn authenticate_http_request(self: &Self, controller: Rc<dyn IController>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
     
+    // sign in the user.
     fn sign_in(self: &Self);
+    // sign out the user.
     fn sign_out(self: &Self);
 
+    // get the policies.
     fn get_policies(self: &Self) -> Vec<Rc<dyn IAuthRequirement>>;
+    // get the roles.
     fn get_roles(self: &Self) -> Vec<String>;
+    // get the claim providers.
     fn get_auth_claim_providers(self: &Self) -> Vec<String>;
+    // get the claim transformers.
     fn get_claim_transformers(self: &Self) -> Vec<Rc<dyn IAuthClaimTransformer>>;
-
+    
+    // get the type info for the authorization service.
     fn get_type_info(self: &Self) -> TypeInfo;
+    // get the type name for the authorization service.
     fn get_type_name(self: &Self) -> String;
+
+    // get the string representation of the authorization service.
     fn to_string(self: &Self) -> String;
 }
 
+// this struct is used to provide authorization services.
 pub struct AuthorizationService {
+    // the authorization policies.
     pub policies: HashMap<String, Rc<dyn IAuthRequirement>>,
+    // the claim transformers.
     pub claim_transformers: Vec<Rc<dyn IAuthClaimTransformer>>,
+    // the auth roles dbset provider.
     pub authrole_dbset_provider: Rc<dyn IAuthRolesDbSetProvider>,
 }
 
 impl AuthorizationService {
+    // creates a new instance of the service.
+    // authrole_dbset_provider: the auth roles dbset provider.
     pub fn new(
         authrole_dbset_provider: Rc<dyn IAuthRolesDbSetProvider>
     ) -> Self {
@@ -262,12 +363,18 @@ impl AuthorizationService {
         }
     }
 
+    // creates a new instance of the service for the service collection.
+    // services: the service collection.
+    // returns: a vector containing the new instance of the service.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_single::<dyn IAuthRolesDbSetProvider>(services)
         )) as Rc<dyn IAuthorizationService>)]
     }
 
+    // adds the service to the service collection.
+    // services: the service collection.
+    // returns: nothing.
     pub fn add_to_services(services: &mut ServiceCollection) {
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IAuthorizationService>(), Self::new_service, ServiceScope::Singleton));
     }

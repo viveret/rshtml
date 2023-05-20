@@ -17,11 +17,13 @@ use crate::options::http_options::IHttpOptions;
 use crate::contexts::request_context::RequestContext;
 use crate::contexts::response_context::ResponseContext;
 
-
+// this is a trait for a class that can process an HTTP request and return an HTTP response.
+// the way requests are processed is by using a pipeline of middleware services.
 pub trait IHttpRequestPipeline {
     fn process_request(self: &Self, http_header: String, headers: Vec<String>, request_bytes: Box<Vec<u8>>, connection_context: Rc<dyn IConnectionContext>, services: &dyn IServiceCollection) -> Result<Vec<u8>, Box<dyn Error>>;
 }
 
+// this is a struct that implements IHttpRequestPipeline.
 pub struct HttpRequestPipeline {
     #[allow(dead_code)]
     options: Rc<dyn IHttpOptions>,
@@ -33,12 +35,14 @@ impl HttpRequestPipeline {
         Self { options: options }
     }
 
+    // creates HTTP request pipeline as a service.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_single::<dyn IHttpOptions>(services)
         )) as Rc<dyn IHttpRequestPipeline>)]
     }
 
+    // parses an HTTP request.
     fn parse_request(self: &Self, http_header: String, headers: Vec<String>, request_bytes: Box<Vec<u8>>, connection_context: Rc<dyn IConnectionContext>) -> Rc<dyn IRequestContext> {
         return RequestContext::parse(http_header, headers, request_bytes, connection_context);
     }
@@ -106,21 +110,28 @@ impl HttpRequestPipeline {
     /// # Returns
     /// This function does not return a value.
     fn write_response(self: &Self, response_bytes: &mut Vec<u8>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<dyn IRequestContext>) {
+        // write the http version, status code, and status message
         response_bytes.extend_from_slice(b"HTTP/1.1 ");
         response_bytes.extend_from_slice(response_ctx.as_ref().status_code.borrow().as_str().as_bytes());
         response_bytes.extend_from_slice(b" ");
         response_bytes.extend_from_slice(response_ctx.as_ref().status_message().as_str().as_bytes());
         response_bytes.extend_from_slice(b"\r\n");
 
+        // write the headers
         for header in response_ctx.headers.borrow().iter() {
+            // write the header name
             response_bytes.extend_from_slice(header.0.as_str().as_bytes());
             response_bytes.extend_from_slice(b": ");
+            // write the header value
             response_bytes.extend_from_slice(&header.1.as_bytes());
+            // write the header new line
             response_bytes.extend_from_slice(b"\r\n");
         }
     
+        // write another new line
         response_bytes.extend_from_slice(b"\r\n");
 
+        // append the response context body to the response bytes to be sent over the wire
         response_bytes.extend_from_slice(&response_ctx.body.borrow());
     }
 }

@@ -1,4 +1,4 @@
-
+// this is the view model for the home page
 pub struct IndexViewModel {
 }
 

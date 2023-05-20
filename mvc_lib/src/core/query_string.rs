@@ -25,4 +25,15 @@ impl QueryString {
             None => None,
         }
     }
+
+    pub fn to_string(self: &Self) -> String {
+        let mut result = String::new();
+        for (key, values) in &self.entries {
+            for value in values {
+                result.push_str(&format!("{}={}&", key, value));
+            }
+        }
+        result.pop();
+        result
+    }
 }

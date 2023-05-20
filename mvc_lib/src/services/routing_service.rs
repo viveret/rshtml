@@ -13,16 +13,27 @@ use crate::services::service_collection::{ IServiceCollection, ServiceCollection
 use crate::services::request_middleware_service::{ IRequestMiddlewareService, MiddlewareResult };
 use crate::services::routemap_service::IRouteMapService;
 
+// this is the service that handles routing.
+// it maps a request to a controller action.
 pub struct RoutingService {
+    // the route map service
     routemap: Rc<dyn IRouteMapService>,
+
+    // the next middleware service in the pipeline
     next: RefCell<Option<Rc<dyn IRequestMiddlewareService>>>
 }
 
 impl RoutingService {
+    // creates a new routing service.
+    // routemap: the route map service.
+    // returns: the routing service.
     pub fn new(routemap: Rc<dyn IRouteMapService>) -> Self {
         Self { next: RefCell::new(None), routemap: routemap }
     }
 
+    // creates the routing service as a service.
+    // services: the service collection.
+    // returns: a vector containing the routing service as a boxed trait object.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services)

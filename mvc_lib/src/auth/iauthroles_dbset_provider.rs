@@ -7,11 +7,13 @@ use crate::{entity::idbset::IDbSetAny, services::{service_collection::{ServiceCo
 
 use crate::auth::auth_role_json_file_dbset::AuthRoleJsonFileDbSet;
 
-
+// this trait is used to get the authroles dbset
 pub trait IAuthRolesDbSetProvider {
+    // get the authroles dbset
     fn get_authroles_dbset(self: &Self) -> &dyn IDbSetAny;
 }
 
+// this struct implements IAuthRolesDbSetProvider
 pub struct GenericAuthRolesDbSetProvider {
     authroles_dbset: Box<dyn IDbSetAny>,
 }

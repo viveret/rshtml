@@ -7,12 +7,18 @@ use crate::core::type_info::TypeInfo;
 use super::idbset::{ IDbSet, IDbSetAny };
 
 
-
+// this implements the IDbSet trait for a json file dbset for a specific entity type.
+// TEntity is the type of entity that is stored in the database set.
 pub struct JsonFileDbSet<TEntity: Clone> {
+    // the path to the json file
     file_path: String,
+    // the items in the database set
     items: RefCell<Vec<TEntity>>,
+    // the items in the database set as json
     items_json: RefCell<Vec<serde_json::Value>>,
+    // the factory method to create a new TEntity
     factory_method: fn() -> TEntity,
+    // the method to parse a serde_json::Value into a TEntity
     parse_item_method: fn(v: serde_json::Value) -> TEntity,
 }
 
@@ -47,6 +53,7 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
         my_self
     }
 
+    // read the json file and return the items as a Vec<serde_json::Value>
     fn read(&self) -> <Vec<serde_json::Value> as IntoIterator>::IntoIter {
         let cached_len = self.items_json.borrow().len();
         if cached_len > 0 {
@@ -55,10 +62,12 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
         self.items_json.borrow().clone().into_iter()
     }
 
+    // parse a serde_json::Value into a TEntity
     fn parse_item(&self, v: serde_json::Value) -> TEntity {
         (self.parse_item_method)(v)
     }
 
+    // parse a serde_json::Value into a TEntity and cache it
     fn parse_and_cache_dbset_json(&self, v: serde_json::Value) {
         let mut new_items = vec![];
         let mut new_items_json = vec![];
@@ -72,6 +81,9 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
         self.items_json.replace(new_items_json);
     }
 
+    // cache the json file to memory
+    // f: Option<File> the file to be cached. if f is None then it will open the file using the default file path
+    // returns the json file as a serde_json::Value
     fn cache_file_to_memory(self: &Self, f: Option<File>) {
         let f = match f {
             Some(f) => f,
@@ -82,6 +94,7 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
         self.parse_and_cache_dbset_json(json);
     }
 
+    // cache the json file to memory
     fn cache_to_memory(self: &Self) {
         match File::open(self.file_path.clone()) {
             Ok(f) => {

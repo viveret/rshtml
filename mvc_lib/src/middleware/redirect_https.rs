@@ -1,9 +1,26 @@
-// define and implement the middleware
+use std::any::Any;
+use std::cell::RefCell;
+use std::error::Error;
+use std::rc::Rc;
+
+use crate::action_results::http_result::HttpRedirectResult;
+use crate::contexts::irequest_context::IRequestContext;
+use crate::contexts::response_context::ResponseContext;
+use crate::services::request_middleware_service::IRequestMiddlewareService;
+use crate::services::request_middleware_service::MiddlewareResult;
+use crate::services::service_collection::IServiceCollection;
+
+
+
+
+// this trait is for a middleware service that redirects HTTP requests to HTTPS.
 pub trait IRedirectHttpsMiddlewareService: IRequestMiddlewareService {
     fn redirect_to_https(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>) -> Result<MiddlewareResult, Box<dyn Error>>;
 }
 
+// define the middleware service that redirects HTTP requests to HTTPS.
 pub struct RedirectHttpsMiddlewareService {
+    // the next middleware in the pipeline
     next: RefCell<Option<Rc<dyn IRequestMiddlewareService>>>,
 }
 
@@ -12,6 +29,7 @@ impl RedirectHttpsMiddlewareService {
         Self { next: RefCell::new(None) }
     }
 
+    // this is the function that will be called by the service collection to create a new instance of the middleware
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new()) as Rc<dyn IRequestMiddlewareService>)]
     }
@@ -20,8 +38,35 @@ impl RedirectHttpsMiddlewareService {
 impl IRedirectHttpsMiddlewareService for RedirectHttpsMiddlewareService {
     fn redirect_to_https(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>) -> Result<MiddlewareResult, Box<dyn Error>> {
         let mut url = request_context.get_url().clone();
-        url.set_scheme("https");
+        if let Err(_) = url.set_scheme("https") {
+            return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("Error setting scheme to https"))));
+        }
         HttpRedirectResult::config_response(response_context, url.to_string());
         Ok(MiddlewareResult::OkBreak)
+    }
+}
+
+impl IRequestMiddlewareService for RedirectHttpsMiddlewareService {
+    fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
+        self.next.replace(next);
+    }
+
+    fn handle_request(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+        if request_context.as_ref().get_scheme() == "http" {
+            return self.redirect_to_https(request_context, response_context);
+        }
+
+        if let Some(next) = self.next.borrow().as_ref() {
+            let next_response = next.handle_request(request_context.clone(), response_context.clone(), services)?;
+
+            match next_response {
+                MiddlewareResult::OkBreak => {
+                    return Ok(MiddlewareResult::OkBreak); // short circuit middleware
+                },
+                _ => { }
+            }
+        }
+
+        Ok(MiddlewareResult::OkContinue)
     }
 }

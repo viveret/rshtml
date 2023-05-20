@@ -13,17 +13,28 @@ use crate::action_results::iaction_result::IActionResult;
 
 use crate::services::service_collection::IServiceCollection;
 
-
+// this is a struct that holds the file path and the content type
 pub struct FileResult {
     pub path: String,
     pub content_type: String,
 }
 
 impl FileResult {
+    // create a new FileResult. If the content type is not specified, it will be determined by the extension.
+    // if the extension is not recognized, it will be set to text/plain.
+    // path: String - the path to the file
+    // content_type: Option<String> - the content type of the file
+    // returns: FileResult - the FileResult
     pub fn new(path: String, content_type: Option<String>) -> Self {
         Self { path: path.clone(), content_type: content_type.unwrap_or(Self::extension_to_content_type(&path).to_string()) }
     }
 
+    // this function takes a path and returns the content type based on the extension
+    // if the extension is not recognized, it returns text/plain.
+    // this function is used by the constructor to set the content type if it is not specified.
+    // this function is also used by the static file provider to set the content type of the response.
+    // path: &String - the path to the file
+    // returns: mime::Mime - the content type
     pub fn extension_to_content_type(path: &String) -> mime::Mime {
         match Path::new(&path)
             .extension()

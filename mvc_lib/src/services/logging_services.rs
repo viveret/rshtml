@@ -15,23 +15,35 @@ use crate::services::service_collection::{ IServiceCollection, ServiceCollection
 
 use crate::services::request_middleware_service::{ IRequestMiddlewareService, MiddlewareResult };
 
-
+// this is the service that handles logging HTTP requests.
 pub struct LogHttpRequestsMiddleware {
+    // the options for the service.
     options: Option<Rc<dyn ILogHttpRequestsOptions>>,
+    // the next middleware service in the pipeline
     next: RefCell<Option<Rc<dyn IRequestMiddlewareService>>>
 }
 
 impl LogHttpRequestsMiddleware {
+    // creates a new instance of the service.
+    // options: the options for the service.
+    // returns: the new instance of the service.
     pub fn new(options: Option<Rc<dyn ILogHttpRequestsOptions>>) -> Self {
         Self { options: options, next: RefCell::new(None) }
     }
 
+    // creates a new instance of the service for the service collection.
+    // services: the service collection.
+    // returns: a vector containing the new instance of the service.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::try_get_single::<dyn ILogHttpRequestsOptions>(services).expect("could not get options"),
         )) as Rc<dyn IRequestMiddlewareService>)]
     }
 
+    // prints the HTTP headers to the console.
+    // headers: the headers to print.
+    // log_cookies: whether or not to log cookies.
+    // returns: nothing.
     pub fn print_headers(self: &Self, headers: &HeaderMap, log_cookies: bool) {
         for header in headers.iter() {
             if header.0 == "Cookie" || header.0 == "cookie" {

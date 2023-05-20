@@ -14,6 +14,7 @@ use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions};
 
+// this struct holds the path to the view and the model to be rendered
 pub struct ViewResult {
     pub path: String,
     pub model: Rc<Option<Box<dyn Any>>>,
@@ -24,14 +25,17 @@ impl ViewResult {
         Self { path: path, model: Rc::new(Some(model)) }
     }
 
+    // this function creates a new ViewResult with no model
     pub fn new_no_model(path: String) -> Self {
         Self { path: path, model: Rc::new(None) }
     }
 
+    // this function creates a new ViewResult with a specified model and default path
     pub fn new_default_path(model: Box<dyn Any>) -> Self {
         Self { path: "".to_string(), model: Rc::new(Some(model)) }
     }
 
+    // write the view result to the response body
     pub fn write_response(self: &Self, view_render_result: Result<HtmlString, RustHtmlError>, response_ctx: Rc<ResponseContext>) {
         response_ctx.add_header_str("Content-Type", "text/html");
         match view_render_result {

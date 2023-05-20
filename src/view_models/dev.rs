@@ -5,6 +5,7 @@ use mvc_lib::controllers::icontroller::IController;
 
 use mvc_lib::view::iview::IView;
 
+// this is the view model for the index view
 pub struct IndexViewModel {
 }
 
@@ -14,7 +15,7 @@ impl IndexViewModel {
     }
 }
 
-
+// this is the view model for the views view
 pub struct ViewsViewModel {
     pub views: Vec<Rc<dyn IView>>,
 }
@@ -25,6 +26,7 @@ impl ViewsViewModel {
     }
 }
 
+// this is the view model for the view details view
 pub struct ViewDetailsViewModel {
     pub view: Rc<dyn IView>,
 }
@@ -35,7 +37,7 @@ impl ViewDetailsViewModel {
     }
 }
 
-
+// this is the view model for the routes view
 pub struct RoutesViewModel {
     pub routes: Vec<Rc<dyn IControllerAction>>,
 }
@@ -46,6 +48,7 @@ impl RoutesViewModel {
     }
 }
 
+// this is the view model for the route details view
 pub struct RouteDetailsViewModel {
     pub route: Rc<dyn IControllerAction>,
     pub controller: Rc<dyn IController>,
@@ -57,7 +60,7 @@ impl RouteDetailsViewModel {
     }
 }
 
-
+// this is the view model for the system info view
 pub struct SysInfoViewModel {
 }
 

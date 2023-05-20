@@ -1,3 +1,6 @@
+// this file contains the view models for the learn controller
+
+// this is the view model for the index view
 pub struct IndexViewModel {
     pub learn_docs: Vec<String>,
 }
@@ -8,6 +11,7 @@ impl IndexViewModel {
     }
 }
 
+// this is the view model for the details view
 pub struct DetailsViewModel {
     pub path: String,
 }

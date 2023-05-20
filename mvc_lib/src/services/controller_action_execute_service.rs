@@ -17,17 +17,25 @@ use crate::services::request_middleware_service::IRequestMiddlewareService;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
-
+// this is the service that handles executing controller actions.
 pub struct ControllerActionExecuteService {
+    // the route map service.
     mapper_service: Rc<dyn IRouteMapService>,
+    // the next middleware service in the pipeline
     next: RefCell<Option<Rc<dyn IRequestMiddlewareService>>>
 }
 
 impl ControllerActionExecuteService {
+    // creates a new instance of the service.
+    // mapper_service: the route map service.
+    // returns: the new instance of the service.
     pub fn new(mapper_service: Rc<dyn IRouteMapService>) -> Self {
         Self { mapper_service: mapper_service, next: RefCell::new(None) }
     }
 
+    // creates a new instance of the service for the service collection.
+    // services: the service collection.
+    // returns: a vector containing the new instance of the service.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services)

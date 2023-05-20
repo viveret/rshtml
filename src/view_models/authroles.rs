@@ -1,5 +1,6 @@
 use mvc_lib::auth::auth_role_json_file_dbset::JsonAuthRole;
 
+// this is the view model for the index view
 pub struct IndexViewModel {
     pub roles: Vec<JsonAuthRole>
 }
@@ -10,6 +11,7 @@ impl IndexViewModel {
     }
 }
 
+// this is the view model for a validation result
 pub struct ViewModelValidationResult {
     pub has_errors: bool,
     pub message: String,
@@ -28,7 +30,7 @@ impl ViewModelValidationResult {
 
 
 
-
+// this is the view model for the add role view
 pub struct AddViewModel {
     pub role: String,
     pub validation_result: Option<Box<ViewModelValidationResult>>

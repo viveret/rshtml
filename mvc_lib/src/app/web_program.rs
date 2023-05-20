@@ -15,7 +15,7 @@ use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
-
+// this is a trait for a class that can be used to configure and start a web program.
 pub trait IWebProgram {
     // configure is called by the host to allow the program to configure itself.
     fn configure(self: &mut Self, args: Rc<Vec<String>>);
@@ -31,6 +31,7 @@ pub trait IWebProgram {
     fn get_services(self: &Self) -> &dyn IServiceCollection;
 }
 
+// this is a struct that implements IWebProgram. it uses a builder pattern to configure itself.
 pub struct WebProgram {
     on_configure_fn: Option<fn(&mut ServiceCollection, Rc<Vec<String>>)>,
     on_configure_services_fn: Option<fn(&mut ServiceCollection)>,

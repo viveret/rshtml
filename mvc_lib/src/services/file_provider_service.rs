@@ -5,24 +5,32 @@ use std::any::Any;
 
 use crate::services::service_collection::IServiceCollection;
 
+// this is a trait for a class that can provide file services.
 pub trait IFileProviderService {
+    // opens a file for reading.
     fn open_read(self: &Self, path: &str) -> Result<Box<dyn Read>>;
+    // opens a file for writing.
     fn open_write(self: &Self, path: &str) -> Result<Box<dyn Write>>;
 
+    // reads a string from a file.
     fn read_string(self: &Self, path: &str) -> Result<String>;
+    // writes a string to a file.
     fn write_string(self: &Self, path: &str, data: &String) -> Result<()>;
 }
 
+// implementation of the file provider service.
 pub struct FileProviderService {
     // fn open_read(path: &str) -> Read,
     // fn open_write(path: &str) -> Write,
 }
 
 impl FileProviderService {
+    // creates a new instance of the file provider service.
     pub fn new() -> Self {
         Self {}
     }
 
+    // creates the file provider service as a service.
     pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new()))]
     }

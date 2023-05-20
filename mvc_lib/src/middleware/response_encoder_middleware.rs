@@ -11,8 +11,9 @@ use crate::services::service_scope::ServiceScope;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_collection::{IServiceCollection, ServiceCollection};
 
-
+// this middleware is used to encode the response body.
 pub struct ResponseEncoderMiddleware {
+    // the next middleware in the pipeline
     next: RefCell<Option<Rc<dyn IRequestMiddlewareService>>>
 }
 
@@ -23,10 +24,12 @@ impl ResponseEncoderMiddleware {
         }
     }
 
+    // this is the function that will be called by the service collection to create a new instance of the middleware
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new()) as Rc<dyn IRequestMiddlewareService>)]
     }
 
+    // this is called by the application to add the middleware to the service collection
     pub fn add_to_services(services: &mut ServiceCollection) {
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IRequestMiddlewareService>(), Self::new_service, ServiceScope::Singleton));
     }

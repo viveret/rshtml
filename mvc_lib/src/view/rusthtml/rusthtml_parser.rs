@@ -112,7 +112,6 @@ impl HtmlTagParseContext {
 // as well as work with the RustHtml stream more easily.
 pub struct RustHtmlParser {
     pub should_panic_or_return_error: bool,
-    pub lang_parts: Vec<Rc<dyn RustHtmlLangPart>>,
     pub lang_part_stack: RefCell<Vec<Rc<dyn RustHtmlLangPart>>>,
 
     pub punctuation_scope_stack: RefCell<Vec<char>>,
@@ -139,10 +138,6 @@ impl RustHtmlParser {
     pub fn new(should_panic_or_return_error: bool, environment_name: String) -> Self {
         Self {
             should_panic_or_return_error: should_panic_or_return_error,
-            lang_parts: vec![
-                Rc::new(crate::view::rusthtml::rusthtml_lang_parts::rust_html::RustHtml { }),
-                Rc::new(crate::view::rusthtml::rusthtml_lang_parts::directive::Directive { }),
-            ],
             lang_part_stack: RefCell::new(vec![]),
             htmltag_scope_stack: RefCell::new(vec![]),
             punctuation_scope_stack: RefCell::new(vec![]),

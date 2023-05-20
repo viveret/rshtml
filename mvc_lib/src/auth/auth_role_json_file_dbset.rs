@@ -9,25 +9,33 @@ use crate::core::type_info::TypeInfo;
 use crate::entity::idbset::{ IDbSet, IDbSetAny };
 use crate::entity::json_file_dbset::JsonFileDbSet;
 
-
+// this struct is used to store a single role in the authrole_dbset.json file
 #[derive(Clone)]
 pub struct JsonAuthRole {
+    // the name of the role.
     pub name: String,
 }
 
 impl JsonAuthRole {
+    // this is used to create a new JsonAuthRole struct.
+    // returns a JsonAuthRole struct.
     pub fn new() -> Self {
         Self {
             name: "".to_string()
         }
     }
 
+    // this is used to parse a string from the authrole_dbset.json file.
+    // returns a JsonAuthRole struct
     pub fn parse_str(v: &str) -> Self {
         Self {
             name: v.to_string()
         }
     }
 
+    // this is used to parse a serde_json::Value from the authrole_dbset.json file.
+    // v: the serde_json::Value to parse.
+    // returns a JsonAuthRole struct.
     pub fn parse_json(v: serde_json::Value) -> Self {
         Self {
             name: v.as_str().unwrap().to_string()
@@ -47,11 +55,15 @@ impl PartialEq for JsonAuthRole {
     }
 }
 
+// this struct is used to store the authrole_dbset.json file
 pub struct AuthRoleJsonFileDbSet {
     json_dbset: JsonFileDbSet<JsonAuthRole>,
 }
 
 impl AuthRoleJsonFileDbSet {
+    // this is used to create a new AuthRoleJsonFileDbSet struct.
+    // file_path: the path to the authrole_dbset.json file.
+    // returns a AuthRoleJsonFileDbSet struct.
     pub fn new(file_path: String) -> Self {
         Self {
             json_dbset: JsonFileDbSet::new(file_path, JsonAuthRole::new, JsonAuthRole::parse_json)

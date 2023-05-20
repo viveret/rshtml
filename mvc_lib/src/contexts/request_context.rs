@@ -26,6 +26,7 @@ use super::irequest_context::IRequestContext;
 pub struct RequestContext {
     connection_context: Rc<dyn IConnectionContext>,
     http_version: http::version::Version,
+    scheme: Box<String>,
     method: Method,
     path: Box<String>,
     query: QueryString,
@@ -44,6 +45,7 @@ impl RequestContext {
     pub fn new(
         connection_context: Rc<dyn IConnectionContext>,
         http_version: http::version::Version,
+        scheme: Option<Box<String>>,
         method_str: Option<Box<String>>,
         method: Option<Method>,
         path: Box<String>,
@@ -53,6 +55,7 @@ impl RequestContext {
         Self {
             connection_context: connection_context,
             http_version: http_version,
+            scheme: scheme.unwrap_or(Box::new("http".to_string())),
             method: method.unwrap_or(Method::from_str(method_str.unwrap().as_ref().as_str()).unwrap()),
             path: path,
             query: QueryString::parse(query_string.as_ref()),
@@ -91,6 +94,7 @@ impl RequestContext {
         Rc::new(Self::new(
             connection_context,
             version,
+            Some(Box::new(path_and_query.scheme().to_string())),
             Some(Box::new(method_str.to_string())),
             None,
             Box::new(path.to_string()),
@@ -109,6 +113,14 @@ impl RequestContext {
 impl IRequestContext for RequestContext {
     fn get_name(self: &Self) -> &'static str {
         nameof::name_of_type!(RequestContext)
+    }
+
+    fn get_url(self: &Self) -> url::Url {
+        url::Url::parse(&format!("{}://{}{}?{}", self.get_scheme(), self.get_name(), self.get_path(), self.get_query().to_string())).unwrap()
+    }
+
+    fn get_scheme(self: &Self) -> &String {
+        self.scheme.as_ref()
     }
 
     fn get_path(self: &Self) -> &String {

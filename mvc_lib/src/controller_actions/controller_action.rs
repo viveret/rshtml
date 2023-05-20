@@ -1,14 +1,9 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::error::Error;
 use std::result::Result;
 use std::rc::Rc;
-use std::str::FromStr;
 
 use http::method::Method;
-
-use crate::action_results::iaction_result::IActionResult;
-use crate::action_results::file_result::FileResult;
 
 use crate::contexts::irequest_context::IRequestContext;
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
@@ -36,6 +31,8 @@ pub trait IControllerAction {
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>>;
 
     fn is_route_match(self: &Self, request_context: Rc<dyn IRequestContext>) -> Result<bool, Box<dyn Error>>;
+
+    fn gen_url(self: &Self, services: &dyn IServiceCollection, route_values: &Vec<(String, String)>) -> Result<String, Box<dyn Error>>;
 
     fn invoke(self: &Self, request_context: Rc<ControllerContext>, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>>;
 }

@@ -5,6 +5,8 @@ use std::rc::Rc;
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controller_actions::controller_action::IControllerAction;
 
+// this interface represents a routing mechanism for a controller where
+// a controller maps to a route area, a controller name, and a set of actions.
 pub trait IController {
     fn get_route_area(self: &Self) -> String;
     

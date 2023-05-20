@@ -73,4 +73,23 @@ impl ControllerActionRoutePattern {
         }
         Self { raw: s.clone(), parts: parts, captures: captures }
     }
+
+    pub fn gen_url(self: &Self, routeValues: &Vec<(String, String)>) -> String {
+        let mut result = String::new();
+        result.push_str("/");
+        result.push_str(self.parts.join("/").as_str());
+        if routeValues.len() > 0 {
+            result.push_str("?");
+            let mut first = true;
+            for (key, value) in routeValues {
+                if first {
+                    first = false;
+                } else {
+                    result.push_str("&");
+                }
+                result.push_str(&format!("{}={}", key, value));
+            }
+        }
+        result
+    }
 }

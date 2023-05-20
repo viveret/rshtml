@@ -33,13 +33,26 @@ pub trait IServiceCollection: Send + Sync {
 // generic service collection implementation. 
 #[derive(Clone)]
 pub struct ServiceCollection {
+    // scope of the current collection
     current_scope: ServiceScope,
+
+    // outer scope of the current collection
     parent: Option<Rc<dyn IServiceCollection>>,
+
+    // root scope of the current collection
     root: Option<Rc<dyn IServiceCollection>>,
+
+    // services accessible within just this scope
     items: Vec<Rc<ServiceDescriptor>>,
+
+    // type descriptors accessible within just this scope
     type_id_to_descriptor: HashMap<TypeId, Vec<Rc<ServiceDescriptor>>>,
     type_id_to_type_info: HashMap<TypeId, Rc<Box<TypeInfo>>>,
+
+    // singletons accessible within just this scope
     singletons: Vec<Rc<ServiceInstance>>,
+
+    // per-request instances accessible within just this scope
     request_instances: Vec<Rc<ServiceInstance>>,
 }
 unsafe impl Send for ServiceCollection {}

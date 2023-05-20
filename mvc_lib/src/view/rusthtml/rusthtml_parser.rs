@@ -14,17 +14,30 @@ use crate::view::rusthtml::rusthtml_lang_part::RustHtmlLangPart;
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct, RustHtmlIdentAndPunctAndGroupOrLiteral, RustHtmlIdentOrPunctOrGroup };
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
+// this is the main parsing context for the RustHtml language.
+// it is used to parse the RustHtml language into a RustHtmlToken stream of RustHtml tokens.
 pub struct HtmlTagParseContext {
+    // the HTML tag name
     pub tag_name: Vec<RustHtmlIdentOrPunct>,
+    // the HTML tag attributes
     pub html_attrs: HashMap<String, Option<RustHtmlToken>>,
+    // the current HTML attribute key
     pub html_attr_key: String,
+    // the current HTML attribute key literal
     pub html_attr_key_literal: Option<Literal>,
+    // the current HTML attribute key ident
     pub html_attr_key_ident: Vec<RustHtmlIdentOrPunct>,
+    // the current HTML attribute value
     pub html_attr_val: Vec<RustHtmlToken>,
+    // whether or not to parse attributes
     pub parse_attrs: bool,
+    // whether or not to parse attribute values
     pub parse_attr_val: bool,
+    // whether or not the tag is self-contained
     pub is_self_contained_tag: bool,
+    // whether or not the tag is an opening tag
     pub is_opening_tag: bool,
+    // the equals punct
     pub equals_punct: Option<Punct>,
 }
 impl HtmlTagParseContext {
@@ -94,6 +107,9 @@ impl HtmlTagParseContext {
     }
 }
 
+// this is the main parser for the RustHtml language.
+// it is used to parse the RustHtml language into a RustHtmlToken stream of RustHtml tokens
+// as well as work with the RustHtml stream more easily.
 pub struct RustHtmlParser {
     pub should_panic_or_return_error: bool,
     pub lang_parts: Vec<Rc<dyn RustHtmlLangPart>>,
@@ -116,6 +132,10 @@ pub struct RustHtmlParser {
     pub environment_name: String,
 }
 impl RustHtmlParser {
+    // creates a new RustHtmlParser.
+    // should_panic_or_return_error: whether or not to panic or return an error when an error occurs.
+    // environment_name: the name of the environment to use.
+    // returns: a new RustHtmlParser.
     pub fn new(should_panic_or_return_error: bool, environment_name: String) -> Self {
         Self {
             should_panic_or_return_error: should_panic_or_return_error,
@@ -138,6 +158,7 @@ impl RustHtmlParser {
         }
     }
 
+    // get the model type name as a string.
     pub fn get_model_type_name(self: &Self) -> String {
         let mut s = String::new();
         for type_part in self.get_model_type() {
@@ -146,10 +167,12 @@ impl RustHtmlParser {
         s
     }
 
+    // get the model type as a token tree.
     pub fn get_model_type(self: &Self) -> Vec<TokenTree> {
         self.model_type.borrow().clone().unwrap_or(vec![])
     }
 
+    // try to get a parameter value as a string.
     pub fn try_get_param_string(self: &Self, key: &str) -> Option<String> {
         match self.params.borrow().get(&key.to_string()) {
             Some(str_val) => {
@@ -162,6 +185,7 @@ impl RustHtmlParser {
         }
     }
 
+    // get a parameter value as a string.
     pub fn get_param_string(self: &Self, key: &str) -> Result<String, RustHtmlError> {
         match self.params.borrow().get(&key.to_string()) {
             Some(str_val) => {
@@ -174,6 +198,7 @@ impl RustHtmlParser {
         }
     }
 
+    // get the functions section as a token stream.
     pub fn get_functions_section(self: &Self) -> Option<TokenStream> {
         if let Some(has_functions) = self.functions_section.borrow().as_ref() {
             Some(has_functions.clone())
@@ -182,6 +207,7 @@ impl RustHtmlParser {
         }
     }
 
+    // get the struct section as a token stream.
     pub fn get_struct_section(self: &Self) -> Option<TokenStream> {
         if let Some(has_struct) = self.struct_section.borrow().as_ref() {
             Some(has_struct.clone())
@@ -190,6 +216,7 @@ impl RustHtmlParser {
         }
     }
 
+    // get the impl section as a token stream.
     pub fn get_impl_section(self: &Self) -> Option<TokenStream> {
         if let Some(has_impl) = self.impl_section.borrow().as_ref() {
             Some(has_impl.clone())
@@ -198,6 +225,7 @@ impl RustHtmlParser {
         }
     }
 
+    // get the model ident as a token stream.
     pub fn get_model_ident(self: &Self) -> Option<TokenStream> {
         if let Some(has_model) = self.model_type.borrow().as_ref() {
             Some(TokenStream::from_iter(has_model.clone()))
@@ -206,6 +234,9 @@ impl RustHtmlParser {
         }
     }
 
+    // expand a token stream from a token stream. this is used for compiling the RustHtml code into Rust code.
+    // input: the tokens to expand.
+    // returns: the expanded tokens.
     pub fn expand_tokenstream(self: &Self, input: TokenStream) -> Result<TokenStream, RustHtmlError> {
         let mut it = input.into_iter().peekable();
 
@@ -224,10 +255,16 @@ impl RustHtmlParser {
         Ok(TokenStream::from_iter(rust_output))
     }
 
+    // print a token stream as code.
+    // rust_output: the token stream to print.
+    // returns: nothing.
     pub fn print_as_code(self: &Self, rust_output: &Vec<TokenTree>) {
         println!("{}", self.display_as_code(&mut rust_output.iter().cloned().peekable()));
     }
 
+    // display a token stream as code and return it as a string.
+    // rust_output: the token stream to display.
+    // returns: the token stream as a string.
     pub fn display_as_code(self: &Self, rust_output: &mut Peekable<impl Iterator<Item=TokenTree>>) -> String {
         let mut s = String::new();
         for token in rust_output {
@@ -243,6 +280,8 @@ impl RustHtmlParser {
         s
     }
 
+    // panic or return an error. if should_panic_or_return_error is true, then panic. otherwise, return an error.
+    // message: the error message.
     pub fn panic_or_return_error<'a, T>(self: &Self, message: String) -> Result<T, RustHtmlError<'a>> {
         if self.should_panic_or_return_error {
             panic!("{}", message);
@@ -251,18 +290,30 @@ impl RustHtmlParser {
         }
     }
 
+    // parse a token stream to a syn AST.
     pub fn parse_to_ast(self: &Self, input: TokenStream) -> Result<syn::Item, RustHtmlError> {
         let ts = self.expand_tokenstream(input)?;
         let ast = syn::parse(ts).unwrap();
         Ok(ast)
     }
 
+    // parse a token stream to RustHtml tokens.
+    // is_in_html_mode: whether we are in HTML mode or not.
+    // it: the token stream to parse.
+    // is_raw_tokenstream: whether the token stream is raw or not.
+    // returns: the RustHtml tokens.
     pub fn parse_tokenstream_to_rusthtmltokens(self: &Self, is_in_html_mode: bool, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         let mut rusthtml_tokens = Vec::new();
         self.loop_next_and_convert(is_in_html_mode, &mut rusthtml_tokens, it, is_raw_tokenstream)?;
         Ok(rusthtml_tokens)
     }
 
+    // loop through the token stream and convert it to RustHtml tokens.
+    // is_in_html_mode: whether we are in HTML mode or not.
+    // output: the destination for the RustHtml tokens.
+    // it: the token stream to parse.
+    // is_raw_tokenstream: whether the token stream is raw or not.
+    // returns: nothing or error.
     pub fn loop_next_and_convert(self: &Self, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
         loop {
             if self.next_and_convert(is_in_html_mode, output, it, is_raw_tokenstream)? {
@@ -272,6 +323,12 @@ impl RustHtmlParser {
         Ok(())
     }
 
+    // iterate the iterator by one step (next) and convert a token tree to RustHtml tokens.
+    // is_in_html_mode: whether we are in HTML mode or not.
+    // output: the destination for the RustHtml tokens.
+    // it: the token stream to parse.
+    // is_raw_tokenstream: whether the token stream is raw or not.
+    // returns: whether we should break the outer loop or not, or an error.
     pub fn next_and_convert(self: &Self, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError> {
         let token_option = it.next();
 
@@ -293,6 +350,9 @@ impl RustHtmlParser {
         Ok(false)
     }
 
+    // converts a stream of RustHtml tokens to a stream of Rust tokens.
+    // rusthtml_tokens: the RustHtml tokens to convert.
+    // returns: the Rust tokens or an error.
     pub fn parse_rusthtmltokens_to_plain_rust(self: &Self, rusthtml_tokens: Vec<RustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> { // , Option<Vec<TokenTree>>)
         let mut rust_output = Vec::new();
         let iter = rusthtml_tokens.iter();
@@ -306,6 +366,10 @@ impl RustHtmlParser {
         Ok(rust_output)
     }
 
+    // converts a RustHtml token stream to a Rust token stream.
+    // output: the destination for the Rust tokens.
+    // it: the iterator to use.
+    // returns: whether we should break the outer loop or not, or an error.
     pub fn convert_rusthtmltokens_to_plain_rust<'a>(self: &Self, output: &mut Vec<TokenTree>, it: &mut Peekable<impl Iterator<Item = &'a RustHtmlToken>>) -> Result<bool, RustHtmlError> { // , Option<Vec<TokenTree>>)
         let mut should_break_outer_loop = false;
         loop 
@@ -325,6 +389,13 @@ impl RustHtmlParser {
         Ok(should_break_outer_loop)
     }
 
+    // converts a tokentree to a RustHtml token.
+    // token: the token to convert.
+    // is_in_html_mode: whether we are in HTML mode or not.
+    // output: the destination for the RustHtml tokens.
+    // it: the iterator to use.
+    // is_raw_tokenstream: whether the token stream is raw or not.
+    // returns: whether we should break the outer loop or not, or an error.
     pub fn convert_tokentree_to_rusthtmltoken(self: &Self, token: TokenTree, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: &mut Peekable<impl Iterator<Item = TokenTree>>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError> {
         match token.clone() {
             TokenTree::Ident(ident) => {
@@ -353,6 +424,7 @@ impl RustHtmlParser {
         Ok(false) // continue
     }
 
+    // returns if the current output is a RustHtmlToken::ReservedChar and  or RustHtmlToken::Group
     pub fn is_start_of_current_expression(self: &Self, output: &mut Vec<RustHtmlToken>) -> bool {
         if output.len() == 0 {
             // println!("is_start_of_current_expression output.len() == 0, returning true");

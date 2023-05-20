@@ -10,7 +10,6 @@ use crate::action_results::file_result::FileResult;
 use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::request_context::RequestContext;
 
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controller_actions::route_pattern::ControllerActionRoutePattern;
@@ -20,15 +19,28 @@ use crate::controller_actions::controller_action::IControllerActionExtensions;
 use crate::services::service_collection::IServiceCollection;
 
 
+// this struct represents a controller action that is mapped to a file.
+// this struct is useful for serving files from the disk.
 pub struct ControllerActionFileResult {
+    // the path to the file to serve.
     pub file_path: String,
+    // the name of the controller action.
     pub name: String,
+    // the name of the controller.
     pub controller_name: Cow<'static, str>,
+    // the name of the area.
     pub area_name: String,
+    // the route pattern for the controller action.
     pub route_pattern: Rc<ControllerActionRoutePattern>,
 }
 
 impl ControllerActionFileResult {
+    // create a new instance of the action.
+    // file_path: the path to the file to serve.
+    // route_pattern: the route pattern for the controller action.
+    // name: the name of the controller action.
+    // controller_name: the name of the controller.
+    // area_name: the name of the area.
     pub fn new(
         file_path: String,
         route_pattern: String,
@@ -45,6 +57,11 @@ impl ControllerActionFileResult {
         }
     }
     
+    // create a new instance of the action with the default area name.
+    // file_path: the path to the file to serve.
+    // route_pattern: the route pattern for the controller action.
+    // name: the name of the controller action.
+    // controller_name: the name of the controller.
     pub fn new_default_area(
         file_path: String,
         route_pattern: String,

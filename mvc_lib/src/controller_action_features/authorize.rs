@@ -12,17 +12,23 @@ use crate::controller_action_features::controller_action_feature::IControllerAct
 use crate::services::request_middleware_service::MiddlewareResult;
 use crate::services::service_collection::IServiceCollection;
 
+// this struct is used to indicate that a controller action can be called by anyone without authorization.
+// this struct must be used in conjunction with the AllowAnonymousControllerActionFeatureMiddleware or else it will do nothing.
+// this struct is useful for controller actions that are used for logging, metrics, or other non-sensitive data.
+// this struct is also useful for controller actions that are used for authorization or authentication because otherwise the user would not be able to log in.
 pub struct AllowAnonymous {
 
 }
 
 impl AllowAnonymous {
+    // create a new instance of the feature.
     pub fn new() -> Self {
         Self {
 
         }
     }
 
+    // create a new instance of the feature as a service for a service collection.
     pub fn new_service() -> Rc<dyn IControllerActionFeature> {
         Rc::new(Self::new())
     }
@@ -53,12 +59,20 @@ impl IControllerActionFeature for AllowAnonymous {
 
 // https://learn.microsoft.com/en-us/aspnet/core/security/authorization/policies?view=aspnetcore-7.0
 // https://learn.microsoft.com/en-us/aspnet/core/security/authorization/iauthorizationpolicyprovider?view=aspnetcore-7.0
+// this struct is used to indicate that a controller action can only be called by users with a specific role or policy.
+// this struct must be used in conjunction with the AuthorizeControllerActionFeatureMiddleware or else it will do nothing.
+// this struct is useful for controller actions that are used for sensitive data or actions.
 pub struct AuthorizeControllerActionFeature {
+    // the roles that are allowed to call the controller action.
     pub roles: Vec<String>,
+    // the policy that is allowed to call the controller action.
     pub policy: Option<String>,
 }
 
 impl AuthorizeControllerActionFeature {
+    // create a new instance of the feature.
+    // roles: the roles that are allowed to call the controller action.
+    // policy: the policy that is allowed to call the controller action.
     pub fn new(
         roles: Vec<String>,
         policy: Option<String>,
@@ -69,6 +83,9 @@ impl AuthorizeControllerActionFeature {
         }
     }
 
+    // create a new instance of the feature as a service for a service collection from a comma separated list of roles.
+    // roles: the roles that are allowed to call the controller action.
+    // policy: the policy that is allowed to call the controller action.
     pub fn new_parse(
         roles: String,
         policy: Option<String>,
@@ -76,6 +93,7 @@ impl AuthorizeControllerActionFeature {
         Self::new(roles.split(',').map(|s| s.to_string()).collect(), policy)
     }
 
+    // create a new instance of the feature as a service for a service collection.
     pub fn new_service(
         roles: Vec<String>,
         policy: Option<String>,
@@ -83,6 +101,9 @@ impl AuthorizeControllerActionFeature {
         Rc::new(Self::new(roles, policy))
     }
 
+    // create a new instance of the feature as a service for a service collection from a comma separated list of roles.
+    // roles: the roles that are allowed to call the controller action.
+    // policy: the policy that is allowed to call the controller action.
     pub fn new_service_parse(
         roles: String,
         policy: Option<String>,

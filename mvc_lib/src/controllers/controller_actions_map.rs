@@ -4,22 +4,42 @@ use crate::controllers::icontroller::IController;
 use crate::controllers::icontroller_extensions::IControllerExtensions;
 use crate::controller_actions::controller_action::IControllerAction;
 
+
+// this trait is used to map controllers and actions.
+// it is used to get controllers and actions by name.
 pub trait IControllerActionsMap {
+    // get a string representation of the controller actions map.
     fn to_string(self: &Self) -> String;
 
+    // get all the actions in the controller actions map.
     fn get_all_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>>;
+
+    // get all the controllers in the controller actions map.
     fn get_controllers(self: &Self) -> Vec<Rc<dyn IController>>;
     
+    // get the controller with the given name.
+    // name: the name of the controller.
+    // returns: the controller with the given name.
     fn get_controller(self: &Self, name: String) -> Rc<dyn IController>;
+
+    // get the action with the given path.
+    // path: the path of the action.
+    // returns: the action with the given path.
     fn get_action_at_area_controller_action_path(self: &Self, path: String) -> Rc<dyn IControllerAction>;
 }
 
+// this struct is used to map controllers and actions and implement the IControllerActionsMap trait.
 pub struct ControllerActionsMap {
+    // the controllers in the map.
     pub controllers: Vec<Rc<dyn IController>>,
+    // the actions in the map for all the controllers.
     pub actions: Vec<Rc<dyn IControllerAction>>,
 }
 
 impl ControllerActionsMap {
+    // create a new instance of the controller actions map.
+    // controllers: the controllers in the map.
+    // actions: the actions in the map for all the controllers.
     pub fn new(
         controllers: Vec<Rc<dyn IController>>,
         actions: Vec<Rc<dyn IControllerAction>>,
@@ -30,6 +50,8 @@ impl ControllerActionsMap {
         }
     }
 
+    // create a new instance of the controller actions map from a list of controllers.
+    // controllers: the controllers in the map.
     pub fn from_controllers(controllers: Vec<Rc<dyn IController>>) -> Self {
         Self::new(
             controllers.clone(),

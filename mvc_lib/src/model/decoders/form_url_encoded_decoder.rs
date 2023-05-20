@@ -2,7 +2,6 @@ use std::{rc::Rc, any::Any};
 
 use crate::core::type_info::TypeInfo;
 use crate::model::form_url_encoded_model::FormUrlEncodedModel;
-use crate::model::iviewmodel_binder::IViewModelBinder;
 use crate::model::iviewmodel_decoder::IViewModelDecoder;
 use crate::model::view_model_result::ViewModelResult;
 use crate::services::service_collection::ServiceCollection;
@@ -11,20 +10,28 @@ use crate::services::service_scope::ServiceScope;
 use crate::services::service_collection::IServiceCollection;
 use crate::contexts::irequest_context::IRequestContext;
 
+
+// this struct is used to decode the view model from the request body.
 pub struct FormUrlEncodedDecoder {
 }
 
 impl FormUrlEncodedDecoder {
+    // creates a new instance of FormUrlEncodedDecoder.
     pub fn new() -> Self {
         Self {
         }
     }
 
+    // creates a new instance of FormUrlEncodedDecoder as a service from the given IServiceCollection.
+    // services: the IServiceCollection to create the FormUrlEncodedDecoder from.
+    // returns: a Vec of Box<dyn Any> containing the FormUrlEncodedDecoder as a service.
     pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
         )) as Rc<dyn IViewModelDecoder>)]
     }
 
+    // adds the FormUrlEncodedDecoder to the given IServiceCollection.
+    // services: the IServiceCollection to add the FormUrlEncodedDecoder to.
     pub fn add_to_services(services: &mut ServiceCollection) {
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IViewModelDecoder>(), Self::new_service, ServiceScope::Singleton));
     }

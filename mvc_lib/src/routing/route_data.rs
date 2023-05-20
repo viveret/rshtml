@@ -8,6 +8,7 @@ pub struct RouteData {
 }
 
 impl RouteData {
+    // create a new instance of the route data.
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),

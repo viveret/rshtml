@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::rc::Rc;
 
-use as_any::Downcast;
 use http::Method;
 
 use crate::action_results::iaction_result::IActionResult;
@@ -11,7 +10,6 @@ use crate::action_results::iaction_result::IActionResultToAny;
 use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::controller_context::ControllerContext;
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::request_context::RequestContext;
 
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controllers::icontroller::IController;
@@ -22,19 +20,41 @@ use crate::controller_actions::controller_action::IControllerActionExtensions;
 use crate::controller_actions::route_pattern::ControllerActionRoutePattern;
 
 
+// this struct represents a controller action that is a member function of a controller.
+// T - the type of the controller.
 #[derive(Clone)]
 pub struct ControllerActionMemberFn<T> {
+    // the member function to invoke. this is a function pointer.
+    // the first argument is the controller instance, the second argument is the controller context, and the third argument is the service collection.
+    // the return value is an optional action result.
+    // the function pointer is wrapped in an Rc so that it can be cloned.
     pub member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>,
+    // the name of the action (the name of the member function).
     pub name: String,
+    // the name of the controller.
     pub controller_name: Cow<'static, str>,
+    // the name of the area.
     pub area_name: String,
+    // the route pattern for the action.
     pub route_pattern: Rc<ControllerActionRoutePattern>,
+    // the http methods allowed for the action.
     pub http_methods_allowed: Vec<Method>,
+    // the features for the action.
     pub features: Vec<Rc<dyn IControllerActionFeature>>,
+    // whether or not the model should be validated.
     pub should_validate_model: bool,
 }
 
 impl<T> ControllerActionMemberFn<T> {
+    // create a new instance of the action.
+    // http_methods_allowed: the http methods allowed for the action.
+    // features: the features for the action.
+    // route_pattern: the route pattern for the action.
+    // name: the name of the action.
+    // controller_name: the name of the controller.
+    // area_name: the name of the area.
+    // should_validate_model: whether or not the model should be validated.
+    // member_fn: the member function to invoke. this is a function pointer.
     pub fn new(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
@@ -57,6 +77,14 @@ impl<T> ControllerActionMemberFn<T> {
         }
     }
     
+    // create a new instance of the action that is validated.
+    // http_methods_allowed: the http methods allowed for the action.
+    // features: the features for the action.
+    // route_pattern: the route pattern for the action.
+    // name: the name of the action.
+    // controller_name: the name of the controller.
+    // area_name: the name of the area.
+    // member_fn: the member function to invoke. this is a function pointer.
     pub fn new_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
@@ -78,6 +106,14 @@ impl<T> ControllerActionMemberFn<T> {
         )
     }
     
+    // create a new instance of the action that is not validated.
+    // http_methods_allowed: the http methods allowed for the action.
+    // features: the features for the action.
+    // route_pattern: the route pattern for the action.
+    // name: the name of the action.
+    // controller_name: the name of the controller.
+    // area_name: the name of the area.
+    // member_fn: the member function to invoke. this is a function pointer.
     pub fn new_not_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
@@ -99,6 +135,14 @@ impl<T> ControllerActionMemberFn<T> {
         )
     }
     
+    // create a new instance of the action that is validated and has no area.
+    // http_methods_allowed: the http methods allowed for the action.
+    // features: the features for the action.
+    // route_pattern: the route pattern for the action.
+    // name: the name of the action.
+    // controller_name: the name of the controller.
+    // should_validate_model: whether or not the model should be validated.
+    // member_fn: the member function to invoke. this is a function pointer.
     pub fn new_default_area(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,

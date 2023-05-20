@@ -9,22 +9,28 @@ use crate::services::service_collection::{IServiceCollection, ServiceCollection}
 use crate::services::service_scope::ServiceScope;
 
 
-
+// this struct is used to decode the view model from the request body.
 pub struct JsonDecoder {
 
 }
 
 impl JsonDecoder {
+    // creates a new instance of JsonDecoder.
     pub fn new() -> Self {
         Self {
         }
     }
 
+    // creates a new instance of JsonDecoder as a service from the given IServiceCollection.
+    // services: the IServiceCollection to create the JsonDecoder from.
+    // returns: a Vec of Box<dyn Any> containing the JsonDecoder as a service.
     pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
         )) as Rc<dyn IViewModelDecoder>)]
     }
 
+    // adds the JsonDecoder to the given IServiceCollection.
+    // services: the IServiceCollection to add the JsonDecoder to.
     pub fn add_to_services(services: &mut ServiceCollection) {
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IViewModelDecoder>(), Self::new_service, ServiceScope::Singleton));
     }

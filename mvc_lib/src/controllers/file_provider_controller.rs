@@ -13,11 +13,15 @@ use crate::controller_actions::file::ControllerActionFileResult;
 use crate::options::file_provider_controller_options::IFileProviderControllerOptions;
 
 
+// this controller is used to serve static files from the disk.
 pub struct FileProviderController {
+    // the options for the file provider controller.
     pub options: Rc<dyn IFileProviderControllerOptions>,
 }
 
 impl FileProviderController {
+    // create a new instance of the controller.
+    // options: the options for the file provider controller.
     pub fn new(options: Rc<dyn IFileProviderControllerOptions>) -> Self {
         Self
         { 
@@ -25,6 +29,9 @@ impl FileProviderController {
         }
     }
 
+    // create a new instance of the controller as a service for a service collection.
+    // services: the service collection for the controller.
+    // returns: a new instance of the controller in a vector as a service for a service collection.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_single::<dyn IFileProviderControllerOptions>(services)

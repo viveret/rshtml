@@ -1,28 +1,23 @@
-use std::any::Any;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::error::Error;
-use std::rc::Rc;
-
-use crate::action_results::iaction_result::IActionResult;
-
-use crate::contexts::request_context::RequestContext;
-
-use crate::controllers::icontroller::IController;
-
-use crate::routing::route_data::RouteData;
 
 
+// this trait represents a HTTP connection.
 pub trait IConnectionContext {
+    // returns a string representation of the connection context.
     fn to_string(self: &Self) -> String;
+    // get the remote address of the connection.
     fn get_remote_addr(self: &Self) -> std::net::SocketAddr;
 }
 
+// this struct implements IConnectionContext.
 pub struct ConnectionContext {
+    // the remote address of the connection.
     remote_addr: std::net::SocketAddr,
 }
 
 impl ConnectionContext {
+    // create a new ConnectionContext struct from a remote address.
+    // remote_addr: the remote address of the connection.
+    // returns: a new ConnectionContext struct.
     pub fn new(
         remote_addr: std::net::SocketAddr,
     ) -> Self {

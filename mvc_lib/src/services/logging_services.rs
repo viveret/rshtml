@@ -8,7 +8,6 @@ use http::HeaderMap;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::options::logging_services_options::ILogHttpRequestsOptions;
 
-use crate::contexts::request_context::RequestContext;
 use crate::contexts::response_context::ResponseContext;
 
 use crate::services::service_collection::{ IServiceCollection, ServiceCollectionExtensions };

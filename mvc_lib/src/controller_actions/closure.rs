@@ -18,18 +18,38 @@ use crate::controller_actions::controller_action::IControllerActionExtensions;
 use crate::controller_actions::route_pattern::ControllerActionRoutePattern;
 
 
+// this struct represents a controller action that is implemented by a closure.
+// this struct is useful for creating controller actions that are not part of a controller and could be a part of an area.
+// this struct is also useful for creating controller actions that just need to do something simple.
 pub struct ControllerActionClosure {
+    // the closure that implements the controller action.
     pub closure_fn: Rc<dyn Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
+    // the name of the controller action.
     pub name: String,
+    // the name of the controller.
     pub controller_name: Cow<'static, str>,
+    // the name of the area.
     pub area_name: String,
+    // the route pattern for the controller action.
     pub route_pattern: Rc<ControllerActionRoutePattern>,
+    // the HTTP methods allowed for the controller action.
     pub http_methods_allowed: Vec<Method>,
+    // the controller action features for the controller action.
     pub features: Vec<Rc<dyn IControllerActionFeature>>,
+    // whether or not the model should be validated for the controller action.
     pub should_validate_model: bool,
 }
 
 impl ControllerActionClosure {
+    // create a new instance of the action.
+    // http_methods_allowed: the HTTP methods allowed for the controller action.
+    // features: the controller action features for the controller action.
+    // route_pattern: the route pattern for the controller action.
+    // name: the name of the controller action.
+    // controller_name: the name of the controller.
+    // area_name: the name of the area.
+    // should_validate_model: whether or not the model should be validated for the controller action.
+    // closure_fn: the closure that implements the controller action.
     pub fn new(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
@@ -51,6 +71,14 @@ impl ControllerActionClosure {
         }
     }
     
+    // create a new instance of the action that is validated.
+    // http_methods_allowed: the HTTP methods allowed for the controller action.
+    // features: the controller action features for the controller action.
+    // route_pattern: the route pattern for the controller action.
+    // name: the name of the controller action.
+    // controller_name: the name of the controller.
+    // area_name: the name of the area.
+    // closure_fn: the closure that implements the controller action.
     pub fn new_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
@@ -72,6 +100,14 @@ impl ControllerActionClosure {
         )
     }
     
+    // create a new instance of the action that is not validated.
+    // http_methods_allowed: the HTTP methods allowed for the controller action.
+    // features: the controller action features for the controller action.
+    // route_pattern: the route pattern for the controller action.
+    // name: the name of the controller action.
+    // controller_name: the name of the controller.
+    // area_name: the name of the area.
+    // closure_fn: the closure that implements the controller action.
     pub fn new_not_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
@@ -93,6 +129,14 @@ impl ControllerActionClosure {
         )
     }
     
+    // create a new instance of the action that is not part of an area.
+    // http_methods_allowed: the HTTP methods allowed for the controller action.
+    // features: the controller action features for the controller action.
+    // route_pattern: the route pattern for the controller action.
+    // name: the name of the controller action.
+    // controller_name: the name of the controller.
+    // should_validate_model: whether or not the model should be validated for the controller action.
+    // closure_fn: the closure that implements the controller action.
     pub fn new_default_area(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
@@ -114,6 +158,13 @@ impl ControllerActionClosure {
         }
     }
     
+    // create a new instance of the action that is validated and not part of an area.
+    // http_methods_allowed: the HTTP methods allowed for the controller action.
+    // features: the controller action features for the controller action.
+    // route_pattern: the route pattern for the controller action.
+    // name: the name of the controller action.
+    // controller_name: the name of the controller.
+    // closure_fn: the closure that implements the controller action.
     pub fn new_default_area_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
@@ -134,6 +185,13 @@ impl ControllerActionClosure {
         }
     }
     
+    // create a new instance of the action that is not validated and not part of an area.
+    // http_methods_allowed: the HTTP methods allowed for the controller action.
+    // features: the controller action features for the controller action.
+    // route_pattern: the route pattern for the controller action.
+    // name: the name of the controller action.
+    // controller_name: the name of the controller.
+    // closure_fn: the closure that implements the controller action.
     pub fn new_default_area_not_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,

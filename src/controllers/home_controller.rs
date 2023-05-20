@@ -19,19 +19,27 @@ use mvc_lib::controller_actions::builder::ControllerActionsBuilder;
 use crate::view_models::home::IndexViewModel;
 
 
+
+// this is the controller for the home page.
 pub struct HomeController {
 
 }
 
 impl HomeController {
+    // create a new instance of the controller.
     pub fn new() -> Self {
         Self { }
     }
 
+    // create a new instance of the controller as a service for a service collection.
+    // services: the collection of available services.
+    // returns: a new instance of the controller as a service in a vector.
     pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new()) as Rc<dyn IController>)]
     }
 
+    // this is the index action for the home controller.
+    // this is the home page for the site.
     pub fn get_index(controller: &HomeController, _controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let view_model = Box::new(Rc::new(IndexViewModel::new()));
         Ok(Some(Rc::new(ViewResult::new("views/home/index.rs".to_string(), view_model))))

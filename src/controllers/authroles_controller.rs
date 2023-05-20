@@ -31,17 +31,23 @@ use mvc_lib::controller_actions::member_fn::ControllerActionMemberFn;
 use mvc_lib::controller_action_features::local_host_only::LocalHostOnlyControllerActionFeature;
 use mvc_lib::controller_action_features::authorize::AuthorizeControllerActionFeature;
 
-// use mvc_macro_lib::action_member;
-
 use crate::view_models::authroles::{ IndexViewModel, AddViewModel };
 
+
+// this is the controller for authenticaion roles management (dev/auth-roles).
+// this controller is only available on localhost or using the admin, dev, or owner roles.
 #[derive(Clone)]
 pub struct AuthRolesController {
+    // this is the dbset for authentication roles
     authroles_dbset: Rc<dyn IAuthRolesDbSetProvider>,
+    // this is the authorization service
     auth_service: Rc<dyn IAuthorizationService>,
 }
 
 impl AuthRolesController {
+    // create a new instance of the controller.
+    // authroles_dbset: the dbset for authentication roles
+    // auth_service: the authorization service
     pub fn new(
         authroles_dbset: Rc<dyn IAuthRolesDbSetProvider>,
         auth_service: Rc<dyn IAuthorizationService>,
@@ -52,6 +58,9 @@ impl AuthRolesController {
         }
     }
 
+    // create a new instance of the controller as a service.
+    // services: the service collection
+    // returns: a new instance of the controller as a service.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_single::<dyn IAuthRolesDbSetProvider>(services),
@@ -59,6 +68,7 @@ impl AuthRolesController {
         )) as Rc<dyn IController>)]
     }
 
+    // get all the roles from the dbset as a vector.
     pub fn get_roles(self: &Self) -> Vec<JsonAuthRole> {
         self.authroles_dbset.get_authroles_dbset()
             .as_any(TypeInfo::of::<JsonFileDbSet<JsonAuthRole>>())
@@ -68,17 +78,20 @@ impl AuthRolesController {
             .iter().cloned().collect()
     }
 
+    // get the index view, which shows all the roles.
     pub fn get_index(controller: &AuthRolesController, _controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let roles = controller.get_roles();
         let view_model = Box::new(Rc::new(IndexViewModel::new(roles)));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/index.rs".to_string(), view_model))))
     }
 
+    // get the add role view, which allows the user to add a new role.
     pub fn get_add(controller: &AuthRolesController, _controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let view_model = Box::new(Rc::new(AddViewModel::new(String::new(), None)));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/add.rs".to_string(), view_model))))
     }
 
+    // post the add role view, which allows the user to add a new role.
     pub fn post_add(controller: &AuthRolesController, controller_ctx: Rc<ControllerContext>, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let input_model = controller_ctx.get_request_context().get_model_validation_result();
         let new_role = controller_ctx.request_context.get_query().get("role"); // to do: this needs to use query parameter

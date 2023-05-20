@@ -44,6 +44,8 @@ use crate::controllers::dev_controller::DevController;
 use crate::controllers::authroles_controller::AuthRolesController;
 
 
+// add views to the service collection. Eventually this will be done automatically.
+// services: the service collection to add the views to.
 pub fn add_views(services: &mut ServiceCollection) {
     fn new_dev_views_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![
@@ -72,6 +74,9 @@ static SERVING_FILES: phf::Map<&'static str, &'static str> = phf_map! {
 };
 static FILE_PROVIDER_OPTIONS: FileProviderControllerOptions = FileProviderControllerOptions { serving_directories: &SERVING_PATHS, serving_files: &SERVING_FILES };
 
+// this is called when the program is configuring options (before it is started).
+// services: the service collection to add options to.
+// args: the command line arguments.
 pub fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) -> () {
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IHttpOptions>(), |_| vec![Box::new(Rc::new(HTTP_OPTIONS.clone()) as Rc<dyn IHttpOptions>)], ServiceScope::Singleton));
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), |_| vec![Box::new(Rc::new(FILE_PROVIDER_OPTIONS.clone()) as Rc<dyn IFileProviderControllerOptions>)], ServiceScope::Singleton));
@@ -95,6 +100,8 @@ pub fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) ->
     }) as Rc<dyn ILogHttpRequestsOptions>)], ServiceScope::Singleton));
 }
 
+// add controllers to the service collection. Eventually this will be done automatically.
+// services: the service collection to add the controllers to.
 pub fn add_controllers(services: &mut ServiceCollection) {
     services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), HomeController::new_service, ServiceScope::Singleton));
     services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), LearnController::new_service, ServiceScope::Singleton));
@@ -102,6 +109,8 @@ pub fn add_controllers(services: &mut ServiceCollection) {
     services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), AuthRolesController::new_service, ServiceScope::Singleton));
 }
 
+// this is called when the program is configuring services (before it is started).
+// services: the service collection to add services to.
 pub fn on_configure_services(services: &mut ServiceCollection) -> () {
 
     GenericAuthRolesDbSetProvider::add_to_services(services);
@@ -129,6 +138,8 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::add_execute_controller_action(services);
 }
 
+// this is called when the program is starting (after it is configured).
+// services: the service collection to get services from.
 pub fn onstart(_services: &dyn IServiceCollection) -> () {
     // let request = Rc::new(Request::builder()
     //                 .uri("https://www.rust-lang.org/")

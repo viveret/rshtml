@@ -10,6 +10,7 @@ pub struct IndexViewModel {
 }
 
 impl IndexViewModel {
+    // create a new instance of the view model
     pub fn new() -> Self {
         Self { }
     }
@@ -21,6 +22,7 @@ pub struct ViewsViewModel {
 }
 
 impl ViewsViewModel {
+    // create a new instance of the view model
     pub fn new(views: Vec<Rc<dyn IView>>) -> Self {
         Self { views: views }
     }
@@ -32,6 +34,7 @@ pub struct ViewDetailsViewModel {
 }
 
 impl ViewDetailsViewModel {
+    // create a new instance of the view model
     pub fn new(view: Rc<dyn IView>) -> Self {
         Self { view: view }
     }
@@ -43,6 +46,7 @@ pub struct RoutesViewModel {
 }
 
 impl RoutesViewModel {
+    // create a new instance of the view model
     pub fn new(routes: Vec<Rc<dyn IControllerAction>>) -> Self {
         Self { routes: routes }
     }
@@ -55,6 +59,7 @@ pub struct RouteDetailsViewModel {
 }
 
 impl RouteDetailsViewModel {
+    // create a new instance of the view model
     pub fn new(route: Rc<dyn IControllerAction>, controller: Rc<dyn IController>) -> Self {
         Self { route: route, controller: controller }
     }
@@ -65,6 +70,7 @@ pub struct SysInfoViewModel {
 }
 
 impl SysInfoViewModel {
+    // create a new instance of the view model
     pub fn new() -> Self {
         Self {  }
     }

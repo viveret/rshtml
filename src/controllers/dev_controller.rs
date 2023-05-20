@@ -27,15 +27,20 @@ use mvc_lib::view::view_renderer::IViewRenderer;
 use crate::view_models::dev::{ IndexViewModel, ViewsViewModel, ViewDetailsViewModel, RoutesViewModel, RouteDetailsViewModel, SysInfoViewModel };
 
 
+// this is the controller for the developer section of the site.
 pub struct DevController {
 
 }
 
 impl DevController {
+    // create a new instance of the controller.
     pub fn new() -> Self {
         Self { }
     }
 
+    // create a new instance of the controller as a service for a service collection.
+    // services: the collection of available services.
+    // returns: a new instance of the controller as a service in a vector.
     pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new()) as Rc<dyn IController>)]
     }

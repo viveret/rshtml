@@ -6,7 +6,7 @@ extern crate mvc_lib;
 use proc_macro::TokenStream;
 use quote::quote;
 
-use mvc_lib::view::{rusthtml::rusthtml_parser::RustHtmlParser};
+use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
 
 #[proc_macro]
 pub fn rusthtml_macro(input: TokenStream) -> TokenStream {
@@ -30,24 +30,24 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
     TokenStream::from(match result {
         Ok(html_render_fn2) => {
             let html_render_fn = proc_macro2::TokenStream::from(html_render_fn2);
-            let view_name = parser.get_param_string("name").unwrap();
+            let view_name = parser.parse_context.get_param_string("name").unwrap();
             let view_name_ident = quote::format_ident!("view_{}", view_name);
             let _view_name_context_ident = quote::format_ident!("view_{}_context", view_name);
-            let view_functions = match parser.get_functions_section() {
+            let view_functions = match parser.parse_context.get_functions_section() {
                 Some(functions_section) => proc_macro2::TokenStream::from(functions_section),
                 None => quote! {},
             };
-            let view_impl = match parser.get_impl_section() {
+            let view_impl = match parser.parse_context.get_impl_section() {
                 Some(impl_section) => proc_macro2::TokenStream::from(impl_section),
                 None => quote! {},
             };
-            let view_struct = match parser.get_struct_section() {
+            let view_struct = match parser.parse_context.get_struct_section() {
                 Some(struct_section) => proc_macro2::TokenStream::from(struct_section),
                 None => quote! {},
             };
-            let model_type_name = parser.get_model_type_name();
-            let model_type = proc_macro2::TokenStream::from(TokenStream::from_iter(parser.get_model_type().iter().cloned()));
-            let raw = parser.raw.borrow().clone();
+            let model_type_name = parser.parse_context.get_model_type_name();
+            let model_type = proc_macro2::TokenStream::from(TokenStream::from_iter(parser.parse_context.get_model_type().iter().cloned()));
+            let raw = parser.parse_context.get_raw();
 
             let view_model_tokens = if model_type_name.len() > 0 {
                 quote! {
@@ -61,33 +61,11 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                 quote! {}
             };
 
-            let use_statements = proc_macro2::TokenStream::from(TokenStream::from_iter(parser.use_statements.borrow().iter().cloned().map(|s| s.into_iter()).flatten()));
+            let use_statements = proc_macro2::TokenStream::from(TokenStream::from_iter(parser.parse_context.mut_use_statements().iter().cloned().map(|s| s.into_iter()).flatten()));
 
             let when_compiled = chrono::prelude::Utc::now().to_rfc2822();
 
             quote! {
-                use std::any::Any;
-                use std::borrow::Cow;
-                use std::cell::RefCell;
-                use std::collections::HashMap;
-                use std::error::Error;
-                use std::rc::Rc;
-                use std::io::Read;
-                use std::ops::Deref;
-                use std::sync::{Arc, RwLock};
-
-                use chrono::{DateTime, TimeZone, Utc};
-
-                extern crate mvc_lib;
-                use mvc_lib::contexts::controller_context::IControllerContext;
-                use mvc_lib::contexts::view_context::IViewContext;
-                use mvc_lib::services::service_collection::IServiceCollection;
-                use mvc_lib::view::html_helpers::helpers::HtmlHelpers;
-                use mvc_lib::view::rusthtml::html_string::HtmlString;
-                use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
-                use mvc_lib::view::rusthtml::rusthtml_view_macros::RustHtmlViewMacros;
-                use mvc_lib::view::iview::IView;
-
                 #use_statements
 
                 pub struct #view_name_ident {
@@ -134,25 +112,6 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                         #view_model_tokens
                         let html = HtmlHelpers::new();
 
-                        let render_section = |section_name: &str| -> Result<HtmlString, RustHtmlError> {
-                            RustHtmlViewMacros::render_section(section_name, self, view_context, services)
-                        };
-
-                        let render_section_optional = |section_name: &str| -> Result<HtmlString, RustHtmlError> {
-                            RustHtmlViewMacros::render_section_optional(section_name, self, view_context, services)
-                        };
-
-                        let try_render_body = || -> Result<HtmlString, RustHtmlError> {
-                            RustHtmlViewMacros::render_body(self, view_context, services)
-                        };
-
-                        let render_body = || -> HtmlString {
-                            match RustHtmlViewMacros::render_body(self, view_context, services) {
-                                Ok(html) => html,
-                                Err(e) => panic!("{}", e),
-                            }
-                        };
-
                         #view_functions
                         
                         #html_render_fn
@@ -169,19 +128,3 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
         },
     })
 }
-
-// #[proc_macro]
-// pub fn action_member(input: TokenStream) -> TokenStream {
-//     // parse arguments for action
-//     let mut it = input.into_iter().peekable();
-
-//     let methods = it.next().unwrap();
-//     let comma = it.next().unwrap();
-//     let method_name = it.next().unwrap();
-//     TokenStream::from(quote!{
-//         {
-//             let builder = ControllerActionBuilder::new();
-//             builder.build()
-//         }
-//     })
-// }

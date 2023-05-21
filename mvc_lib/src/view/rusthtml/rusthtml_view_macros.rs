@@ -34,11 +34,10 @@ impl RustHtmlViewMacros {
     }
 
     // render the body of the layout view.
-    // view: the layout view being rendered.
     // ctx: the context for the layout view.
     // services: the services available from the layout view.
     // returns: the rendered body of the layout view or an error.
-    pub fn render_body<'a>(_view: &dyn IView, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'a>> {
+    pub fn render_body<'a>(ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError<'a>> {
         let ctxdata_rc = ctx.get_ctx_data();
         let ctxdata = ctxdata_rc.as_ref().borrow();
         let body_view_option = ctxdata.get("BodyView");

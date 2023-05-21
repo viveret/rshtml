@@ -33,6 +33,16 @@ impl HtmlString {
     pub fn empty() -> Self {
         Self { content: "".to_string() }
     }
+
+    // whether or not the HtmlString is empty.
+    pub fn is_empty(&self) -> bool {
+        self.content.is_empty()
+    }
+
+    // get the length of the HtmlString.
+    pub fn len(&self) -> usize {
+        self.content.len()
+    }
 }
 
 impl fmt::Display for HtmlString {

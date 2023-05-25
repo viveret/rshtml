@@ -4,7 +4,7 @@ use std::fmt;
 
 
 // this struct is used to represent an error that occurs while parsing RustHTML.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RustHtmlError<'a>(pub Cow<'a, str>);
 impl <'a> Error for RustHtmlError<'a> {}
 impl <'a> fmt::Display for RustHtmlError<'a> {

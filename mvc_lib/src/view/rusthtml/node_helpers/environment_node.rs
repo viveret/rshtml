@@ -28,21 +28,28 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
         match tag_context.html_attrs.get("include") {
             Some(token) => {
                 match token.clone().unwrap() {
-                    RustHtmlToken::HtmlTagAttributeValue(v_parts) => {
-                        for v in v_parts {
-                            match v {
-                                RustHtmlToken::Literal(literal) => {
-                                    let literal_as_str = snailquote::unescape(&literal.to_string()).unwrap();
-                                    // println!("literal_as_str: {}", literal_as_str);
-
-                                    if html_context.get_environment_name() == literal_as_str {
-                                        keep_or_remove = Some(true);
-                                    } else {
-                                        // println!("self.environment_name ({}) does not match literal_as_str ({})", self.environment_name, literal_as_str);
-                                        keep_or_remove = Some(false);
-                                    }
+                    RustHtmlToken::HtmlTagAttributeValue(value, v_parts) => {
+                        if let Some(v_parts) = v_parts {
+                            for v in v_parts {
+                                match v {
+                                    RustHtmlToken::Literal(literal, string) => {
+                                        let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.unwrap_or_default() }).unwrap();
+                                        keep_or_remove = Some(html_context.get_environment_name() == literal_as_str);
+                                    },
+                                    _ => panic!("Unexpected token for environment tag value: {:?}", token),
+                                }
+                            }
+                        } else {
+                            match value {
+                                Some(v) => {
+                                    let v_as_str = snailquote::unescape(&v).unwrap();
+                                    // println!("v_as_str: {}", v_as_str);
+    
+                                    keep_or_remove = Some(html_context.get_environment_name() == v_as_str);
                                 },
-                                _ => panic!("Unexpected token for environment tag value: {:?}", token),
+                                None => {
+                                    // println!("environment tag does not have include field");
+                                }
                             }
                         }
                     }
@@ -57,20 +64,34 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
         match tag_context.html_attrs.get("exclude") {
             Some(token) => {
                 match token.clone().unwrap() {
-                    RustHtmlToken::HtmlTagAttributeValue(v_parts) => {
-                        for v in v_parts {
-                            match v {
-                                RustHtmlToken::Literal(literal) => {
-                                    let literal_as_str = snailquote::unescape(&literal.to_string()).unwrap();
-                                    // println!("literal_as_str: {}", literal_as_str);
-                                    if html_context.get_environment_name() != literal_as_str {
-                                        keep_or_remove = Some(true);
-                                    } else {
-                                        // println!("self.environment_name ({}) DOES match literal_as_str ({})", self.environment_name, literal_as_str);
-                                        keep_or_remove = Some(false);
-                                    }
-                                },
-                                _ => panic!("Unexpected token for environment tag value: {:?}", token),
+                    RustHtmlToken::HtmlTagAttributeValue(value, v_parts) => {
+                        if let Some(v_parts) = v_parts {
+                            for v in v_parts {
+                                match v {
+                                    RustHtmlToken::Literal(literal, string) => {
+                                        let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.unwrap_or(String::default()) }).unwrap();
+                                        // println!("literal_as_str: {}", literal_as_str);
+                                        if html_context.get_environment_name() != literal_as_str {
+                                            keep_or_remove = Some(true);
+                                        } else {
+                                            // println!("self.environment_name ({}) DOES match literal_as_str ({})", self.environment_name, literal_as_str);
+                                            keep_or_remove = Some(false);
+                                        }
+                                    },
+                                    _ => panic!("Unexpected token for environment tag value: {:?}", token),
+                                }
+                            }
+                        }
+
+                        if let Some(value) = value {
+                            let value_as_str = snailquote::unescape(&value).unwrap();
+                            // println!("value_as_str: {}", value_as_str);
+
+                            if html_context.get_environment_name() != value_as_str {
+                                keep_or_remove = Some(true);
+                            } else {
+                                // println!("self.environment_name ({}) DOES match value_as_str ({})", self.environment_name, value_as_str);
+                                keep_or_remove = Some(false);
                             }
                         }
                     }
@@ -88,9 +109,9 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                     // keep - don't add outer environment tags but do add inner elements
                     loop {
                         match output.first().unwrap() {
-                            RustHtmlToken::HtmlTagCloseVoidPunct(_) |
-                            RustHtmlToken::HtmlTagCloseSelfContainedPunct(_) |
-                            RustHtmlToken::HtmlTagCloseStartChildrenPunct(_) => {
+                            RustHtmlToken::HtmlTagCloseVoidPunct(_, _) |
+                            RustHtmlToken::HtmlTagCloseSelfContainedPunct(_, _) |
+                            RustHtmlToken::HtmlTagCloseStartChildrenPunct(_, _) => {
                                 output.remove(0);
                                 break;
                             },

@@ -1,6 +1,7 @@
 pub mod directives;
 pub mod html_string;
 pub mod html_tag_parse_context;
+pub mod helpers;
 pub mod peekable_tokentree;
 pub mod peekable_rusthtmltoken;
 pub mod rusthtml_directive_result;
@@ -11,7 +12,6 @@ pub mod rusthtml_parser_context;
 pub mod rusthtml_token;
 pub mod rusthtml_to_rust_converter;
 pub mod irusthtml_to_rust_converter;
-pub mod rusthtml_view_macros;
 pub mod rust_to_rusthtml_converter;
 pub mod irust_to_rusthtml_converter;
 pub mod tag_helpers;

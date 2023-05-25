@@ -62,7 +62,7 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
             };
 
             let use_statements = proc_macro2::TokenStream::from(TokenStream::from_iter(parser.parse_context.mut_use_statements().iter().cloned().map(|s| s.into_iter()).flatten()));
-
+            let inject_tokens = proc_macro2::TokenStream::from(TokenStream::from_iter(parser.parse_context.mut_inject_statements().iter().cloned().map(|s| s.into_iter()).flatten()));
             let when_compiled = chrono::prelude::Utc::now().to_rfc2822();
 
             quote! {
@@ -110,14 +110,16 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                     // using template, render the view given the current data
                     fn render(self: &Self, view_context: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
                         #view_model_tokens
-                        let html = HtmlHelpers::new();
+                        #inject_tokens
+
+                        let html_output = HtmlBuffer::new();
 
                         #view_functions
                         
                         #html_render_fn
                         
-                        // should all be written to view_context html_buffer
-                        Ok(HtmlString::empty())
+                        // should all be written to view_context html_output
+                        Ok(html_output.collect_html())
                     }
                 }
             }

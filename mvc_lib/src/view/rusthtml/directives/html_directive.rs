@@ -22,7 +22,7 @@ impl HtmlDirective {
 
 impl IRustHtmlDirective for HtmlDirective {
     fn matches(self: &Self, name: &String) -> bool {
-        name == "html"
+        name == "rawhtml"
     }
 
     fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {

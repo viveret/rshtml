@@ -55,7 +55,7 @@ impl RouteDataControllerActionMatcher {
                 Ok(Some(actions.first().unwrap().clone()))
             },
             _ => {
-                panic!("Ambiguous routes: {:?}", actions.iter().map(|x| x.get_name()).collect::<Vec<String>>());
+                panic!("Ambiguous routes: {:?}", actions.iter().map(|x| x.to_string()).collect::<Vec<String>>());
             }
         }
     }

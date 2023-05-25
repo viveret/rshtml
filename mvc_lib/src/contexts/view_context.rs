@@ -21,19 +21,6 @@ pub trait IViewContext: Send + Sync {
     // returns: a new view context.
     fn recurse_into_new_context(self: &Self, view: Rc<dyn IView>) -> Box<dyn IViewContext>;
 
-    // write html to the view context.
-    // html: the html to write.
-    fn write_html(self: &Self, html: HtmlString);
-    // write html to the view context.
-    // html: the html to write.
-    fn write_html_str(self: &Self, html: &str);
-    // write content to the view context.
-    // content: the content to write.
-    fn write_content(self: &Self, content: String);
-    // collect the html that has been written to the view context.
-    // returns: the html that has been written to the view context.
-    fn collect_html(self: &Self) -> HtmlString;
-
     // get the view renderer for the view context.
     fn get_view_renderer(self: &Self) -> Rc<dyn IViewRenderer>;
     // get the context data for the view context.
@@ -86,8 +73,6 @@ pub struct ViewContext {
     response_ctx: Rc<ResponseContext>,
     // the request context for the view context.
     request_ctx: Rc<dyn IRequestContext>,
-    // the html buffer for the view context.
-    html_buffer: RefCell<String>,
 }
 unsafe impl Send for ViewContext {}
 unsafe impl Sync for ViewContext {}
@@ -117,7 +102,6 @@ impl ViewContext {
             controller_ctx: controller_ctx.clone(),
             response_ctx: response_ctx,
             request_ctx: controller_ctx.request_context.clone(),
-            html_buffer: RefCell::new(String::new()),
         }
     }
 }
@@ -131,22 +115,6 @@ impl IViewContext for ViewContext {
             self.controller_ctx.clone(),
             self.response_ctx.clone(),
         ))
-    }
-
-    fn write_html(self: &Self, html: HtmlString) {
-        self.write_html_str(html.content.as_str());
-    }
-
-    fn write_html_str(self: &Self, html: &str) {
-        self.html_buffer.borrow_mut().push_str(html);
-    }
-
-    fn write_content(self: &Self, content: String) {
-        self.write_html(HtmlString::new_data_string(content))
-    }
-
-    fn collect_html(self: &Self) -> HtmlString {
-        HtmlString::new_from_html(self.html_buffer.borrow().clone())
     }
 
     fn get_view_renderer(self: &Self) -> Rc<dyn IViewRenderer> {

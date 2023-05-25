@@ -22,6 +22,7 @@ pub enum RustHtmlIdentOrPunctOrGroup {
     Ident(Ident),
     Punct(Punct),
     Group(Group),
+    // GroupParsed(Vec<RustHtmlToken>),
 }
 
 // a RustHtml token for a Rust identifier or punctuation or group or literal.
@@ -40,15 +41,15 @@ pub enum RustHtmlToken {
 
     // html
     HtmlTextNode(String, Span),
-    HtmlTagVoid(String, Vec<RustHtmlIdentOrPunct>),
-    HtmlTagStart(String, Vec<RustHtmlIdentOrPunct>),
-    HtmlTagEnd(String, Vec<RustHtmlIdentOrPunct>),
-    HtmlTagAttributeName(String, RustHtmlIdentAndPunctOrLiteral),
-    HtmlTagAttributeEquals(Punct),
-    HtmlTagAttributeValue(Vec<RustHtmlToken>),
-    HtmlTagCloseVoidPunct(Punct),
-    HtmlTagCloseSelfContainedPunct(Punct),
-    HtmlTagCloseStartChildrenPunct(Punct),
+    HtmlTagVoid(String, Option<Vec<RustHtmlIdentOrPunct>>),
+    HtmlTagStart(String, Option<Vec<RustHtmlIdentOrPunct>>),
+    HtmlTagEnd(String, Option<Vec<RustHtmlIdentOrPunct>>),
+    HtmlTagAttributeName(String, Option<RustHtmlIdentAndPunctOrLiteral>),
+    HtmlTagAttributeEquals(char, Option<Punct>),
+    HtmlTagAttributeValue(Option<String>, Option<Vec<RustHtmlToken>>),
+    HtmlTagCloseVoidPunct(char, Option<Punct>),
+    HtmlTagCloseSelfContainedPunct(char, Option<Punct>),
+    HtmlTagCloseStartChildrenPunct(char, Option<Punct>),
 
     // rust / html
     // External RustHtml file that is copied into the output
@@ -58,7 +59,7 @@ pub enum RustHtmlToken {
     // Instruction to append to the HTML output
     AppendToHtml(Vec<RustHtmlToken>),
 
-    Literal(Literal),
+    Literal(Option<Literal>, Option<String>),
     Identifier(Ident),
     ReservedChar(char, Punct),
     ReservedIndent(String, Ident),

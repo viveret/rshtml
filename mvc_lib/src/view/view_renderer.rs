@@ -93,7 +93,6 @@ impl IViewRenderer for ViewRenderer {
         match body_view_ctx.get_view_as_ref().render(&body_view_ctx, services) {
             Ok(body_html) => {
                 let mut combined_body_html_str = String::new();
-                combined_body_html_str.push_str(&body_view_ctx.collect_html().content);
                 combined_body_html_str.push_str(&body_html.content);
                 let combined_body_html = HtmlString::new_from_html(combined_body_html_str);
 
@@ -107,7 +106,6 @@ impl IViewRenderer for ViewRenderer {
                         match layout_view_ctx.get_view_as_ref().render(layout_view_ctx.deref(), services) {
                             Ok(layout_html) => {
                                 let mut combined_layout_html_str = String::new();
-                                combined_layout_html_str.push_str(&layout_view_ctx.collect_html().content);
                                 combined_layout_html_str.push_str(&layout_html.content);
 
                                 Ok(HtmlString::new_from_html(combined_layout_html_str))

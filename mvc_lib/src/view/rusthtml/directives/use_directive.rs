@@ -1,4 +1,4 @@
-use std::{borrow::Cow, rc::Rc};
+use std::rc::Rc;
 
 use proc_macro::{Ident, TokenStream};
 
@@ -24,8 +24,9 @@ impl IRustHtmlDirective for UseDirective {
         name == "use"
     }
 
-    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
-        if let Ok(type_ident_tokens) = parser.parse_type_identifier(it) { // expecting type identifier
+    fn execute(self: &Self, _: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, _: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        // expecting type identifier
+        if let Ok(type_ident_tokens) = parser.parse_type_identifier(it) {
             let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_tokens));
             parser.get_context().mut_use_statements().push(TokenStream::from(quote::quote! { use #inner_tokenstream; }));
             Ok(RustHtmlDirectiveResult::OkContinue)

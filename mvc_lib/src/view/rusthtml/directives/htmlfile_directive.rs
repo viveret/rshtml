@@ -25,7 +25,7 @@ impl HtmlFileDirective {
     // it: the iterator to use.
     // returns: nothing or an error.
     pub fn convert_externalhtml_directive(identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
-        if let Ok(path) = parser.convert_path_str(identifier.clone(), it) {
+        if let Ok(path) = parser.convert_path_str(identifier.clone(), it, parser.get_context().get_is_raw_tokenstream()) {
             match std::fs::File::open(path.as_str()) {
                 Ok(_f) => {
                     output.push(RustHtmlToken::ExternalHtml(path, identifier.span()));

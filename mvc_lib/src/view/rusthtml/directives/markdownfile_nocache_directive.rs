@@ -26,7 +26,7 @@ impl MarkdownFileNoCacheDirective {
     // returns: nothing or an error.
     pub fn convert_mdfile_nocache_directive(identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
         // could be literal or ident
-        if let Ok(path_tokens) = parser.convert_string_or_ident(it) {
+        if let Ok(path_tokens) = parser.convert_string_or_ident(it, parser.get_context().get_is_raw_tokenstream()) {
             if let Ok(x) = parser.convert_ident_and_punct_and_group_or_literal_to_tokenstream(&path_tokens) {
                 let path = proc_macro2::TokenStream::from(x);
                 let tokenstream = quote::quote! {
@@ -39,7 +39,7 @@ impl MarkdownFileNoCacheDirective {
                         Ok(mut f) => {
                             let mut buffer = String::new();
                             f.read_to_string(&mut buffer).expect("could not read markdown file");
-                            view_context.write_html_str(comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default()).as_str());
+                            html_output.write_html_str(comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default()).as_str());
                         },
                         Err(e) => {
                             println!("convert_mdfile_nocache_directive: could not find {}", #path);

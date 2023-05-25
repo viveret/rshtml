@@ -1,6 +1,7 @@
 extern crate mvc_lib;
 
 pub mod controllers;
+pub mod helpers;
 pub mod views;
 pub mod view_models;
 pub mod config_and_startup;

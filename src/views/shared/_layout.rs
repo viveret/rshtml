@@ -86,7 +86,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     </div>
 
     <div class="container body-content ps-relative py24 t64 mx-auto w100 wmx12">
-        @render_body()
+        @render.body()
         <footer class="pt32">
             <hr />
 
@@ -107,7 +107,7 @@ mvc_macro_lib::rusthtml_view_macro! {
         <script src="/js/site.min.js" asp-append-version="true"></script>
     </environment>
 
-    @render_section_optional("Scripts")
+    @render.section_optional("Scripts")
 </body>
 </html>
 }

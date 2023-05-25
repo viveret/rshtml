@@ -14,6 +14,7 @@ use super::directives::for_directive::ForDirective;
 use super::directives::html_directive::HtmlDirective;
 use super::directives::htmlfile_directive::HtmlFileDirective;
 use super::directives::if_directive::IfDirective;
+use super::directives::inject_directive::InjectDirective;
 use super::directives::irusthtml_directive::IRustHtmlDirective;
 use super::directives::lang_directive::LangDirective;
 use super::directives::let_directive::LetDirective;
@@ -22,13 +23,8 @@ use super::directives::markdownfile_const_directive::MarkdownFileConstDirective;
 use super::directives::markdownfile_nocache_directive::MarkdownFileNoCacheDirective;
 use super::directives::model_directive::ModelDirective;
 use super::directives::name_directive::NameDirective;
-use super::directives::render_body_directive::RenderBodyDirective;
-use super::directives::render_page_directive::RenderPageDirective;
-use super::directives::render_section_directive::RenderSectionDirective;
-use super::directives::render_section_optional_directive::RenderSectionOptionalDirective;
 use super::directives::rusthtmlfile_directive::RustHtmlFileDirective;
 use super::directives::rusthtmlfile_nocache_directive::RustHtmlFileNoCacheDirective;
-use super::directives::section_directive::SectionDirective;
 use super::directives::section_functions_directive::FunctionsSectionDirective;
 use super::directives::section_impl_directive::ImplSectionDirective;
 use super::directives::section_struct_directive::StructSectionDirective;
@@ -39,6 +35,8 @@ use super::node_helpers::environment_node::EnvironmentHtmlNodeParsed;
 use super::node_helpers::inode_parsed::IHtmlNodeParsed;
 use super::tag_helpers::environment_tag::EnvironmentHtmlTagParsed;
 use super::tag_helpers::itag_parsed::IHtmlTagParsed;
+
+
 
 // this is the main parser context for the RustHtml language.
 // it is used to parse the RustHtml language into a RustHtmlToken stream of RustHtml tokens
@@ -73,6 +71,8 @@ pub trait IRustHtmlParserContext {
     fn mut_punct_scope_stack(self: &Self) -> RefMut<Vec<char>>;
     // get the use statements as mutable.
     fn mut_use_statements(self: &Self) -> RefMut<Vec<TokenStream>>;
+    // get the inject statements as mutable.
+    fn mut_inject_statements(self: &Self) -> RefMut<Vec<TokenStream>>;
     // get the params as mutable.
     fn mut_params(self: &Self) -> RefMut<HashMap<String, String>>;
     // get the environment name.
@@ -127,6 +127,8 @@ pub struct RustHtmlParserContext {
     pub model_type: RefCell<Option<Vec<TokenTree>>>,
     // the use statements of the RustHtml code.
     pub use_statements: RefCell<Vec<TokenStream>>,
+    // the inject statements of the RustHtml code.
+    pub inject_statements: RefCell<Vec<TokenStream>>,
 
     // the raw RustHtml code.
     pub raw: RefCell<String>,
@@ -180,14 +182,24 @@ impl RustHtmlParserContext {
 
                     use chrono::{DateTime, TimeZone, Utc};
 
+                    use mvc_lib::core::html_buffer::IHtmlBuffer;
+                    use mvc_lib::core::html_buffer::HtmlBuffer;
                     use mvc_lib::contexts::controller_context::IControllerContext;
                     use mvc_lib::contexts::view_context::IViewContext;
                     use mvc_lib::services::service_collection::IServiceCollection;
-                    use mvc_lib::view::html_helpers::helpers::HtmlHelpers;
+                    use mvc_lib::view::rusthtml::helpers::ihtml_helpers::IHtmlHelpers;
+                    use mvc_lib::view::rusthtml::helpers::html_helpers::HtmlHelpers;
+                    use mvc_lib::view::rusthtml::helpers::irender_helpers::IRenderHelpers;
+                    use mvc_lib::view::rusthtml::helpers::render_helpers::RenderHelpers;
                     use mvc_lib::view::rusthtml::html_string::HtmlString;
                     use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
-                    use mvc_lib::view::rusthtml::rusthtml_view_macros::RustHtmlViewMacros;
                     use mvc_lib::view::iview::IView;
+                }.into(),
+            ]),
+            inject_statements: RefCell::new(vec![
+                quote::quote!{
+                    let render = RenderHelpers::new(view_context, services);
+                    let html = HtmlHelpers::new(view_context, services);
                 }.into(),
             ]),
             raw: RefCell::new(String::new()),
@@ -211,19 +223,15 @@ impl RustHtmlParserContext {
                 Rc::new(ModelDirective::new()),
                 Rc::new(NameDirective::new()),
                 Rc::new(ViewStartDirective::new()),
+                Rc::new(InjectDirective::new()),
+
+                // html directives.
+                // Rc::new(HtmlFormDirective::new()),
 
                 // sections for this view that are not for rendering.
                 Rc::new(FunctionsSectionDirective::new()),
                 Rc::new(StructSectionDirective::new()),
                 Rc::new(ImplSectionDirective::new()),
-
-                // rendering and external view directives.
-                Rc::new(SectionDirective::new()),
-                Rc::new(RenderSectionDirective::new()),
-                Rc::new(RenderSectionOptionalDirective::new()),
-                Rc::new(RenderBodyDirective::new()),
-                Rc::new(RenderPageDirective::new()),
-
 
                 // Style and script directives.
                 // Rc::new(CssDirective::new()),
@@ -420,5 +428,9 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         } else {
             self.sections.borrow_mut().remove(&name);
         }
+    }
+
+    fn mut_inject_statements(self: &Self) -> RefMut<Vec<TokenStream>> {
+        self.inject_statements.borrow_mut()
     }
 }

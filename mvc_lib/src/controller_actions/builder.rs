@@ -112,6 +112,7 @@ impl ControllerActionBuilder {
 
     // set the HTTP methods allowed for the controller action.
     pub fn methods(self: &Self, methods: &[Method]) -> &Self {
+        self.http_methods.borrow_mut().replace(methods.to_vec());
         self
     }
 

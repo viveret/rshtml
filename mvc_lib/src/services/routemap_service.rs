@@ -4,14 +4,14 @@ use std::rc::Rc;
 use crate::contexts::irequest_context::IRequestContext;
 
 use crate::controllers::icontroller::IController;
-use crate::controllers::controller_actions_map::ControllerActionsMap;
+use crate::controllers::controller_actions_map::{ControllerActionsMap, IControllerActionsMap};
 
 use crate::services::service_collection::{ IServiceCollection, ServiceCollectionExtensions };
 
 // this is the service that handles route mapping.
 pub trait IRouteMapService {
     // gets the mapper.
-    fn get_mapper(self: &Self) -> Rc<ControllerActionsMap>;
+    fn get_mapper(self: &Self) -> Rc<dyn IControllerActionsMap>;
 }
 
 // implementation of the route map service.
@@ -61,7 +61,7 @@ impl RouteMapService {
 }
 
 impl IRouteMapService for RouteMapService {
-    fn get_mapper(self: &Self) -> Rc<ControllerActionsMap> {
+    fn get_mapper(self: &Self) -> Rc<dyn IControllerActionsMap> {
         self.mapper.clone()
     }
 }

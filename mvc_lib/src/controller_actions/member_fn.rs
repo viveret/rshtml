@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::error::Error;
 use std::rc::Rc;
 
@@ -174,10 +175,6 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
             controller_context.set_action_result(Some(result));
         }
         Ok(())
-    }
-    
-    fn gen_url(self: &Self, services: &dyn IServiceCollection, route_values: &Vec<(String, String)>) -> Result<String, Box<dyn Error>> {
-        Ok(self.get_route_pattern().gen_url(route_values))
     }
 
     fn is_route_match(self: &Self, request_context: Rc<dyn IRequestContext>) -> Result<bool, Box<dyn Error>> {

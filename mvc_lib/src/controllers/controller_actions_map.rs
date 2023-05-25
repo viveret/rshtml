@@ -26,6 +26,13 @@ pub trait IControllerActionsMap {
     // path: the path of the action.
     // returns: the action with the given path.
     fn get_action_at_area_controller_action_path(self: &Self, path: String) -> Rc<dyn IControllerAction>;
+
+    // get the action with the given name values.
+    // action_name: the name of the action.
+    // controller_name: the name of the controller.
+    // area_name: the name of the area.
+    // returns: the action with the given name values.
+    fn get_action(self: &Self, action_name: &str, controller_name: &str, area_name: &str) -> Rc<dyn IControllerAction>;
 }
 
 // this struct is used to map controllers and actions and implement the IControllerActionsMap trait.
@@ -108,5 +115,17 @@ impl IControllerActionsMap for ControllerActionsMap  {
             s.push_str(&format!("\t{}) {}\n", i + 1, x.to_string()));
         }
         s
+    }
+
+    fn get_action(self: &Self, action_name: &str, controller_name: &str, area_name: &str) -> Rc<dyn IControllerAction> {
+        self.actions
+            .iter()
+            .filter(|x| x.get_name() == action_name && x.get_controller_name() == controller_name && x.get_area_name() == area_name)
+            .take(1)
+            .cloned()
+            .collect::<Vec<Rc<dyn IControllerAction>>>()
+            .first()
+            .expect(format!("Could not find controller action with name {} in controller {} in area {}", action_name, controller_name, area_name).as_str())
+            .clone()
     }
 }

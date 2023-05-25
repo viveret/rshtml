@@ -93,7 +93,7 @@ impl ControllerActionRoutePattern {
     // for example, if the route pattern is /users/{id:int} and the route values are [("id", "123")], the generated url will be /users/123.
     // route_values: the route values to use to generate the url.
     // returns: the generated url.
-    pub fn gen_url(self: &Self, route_values: &Vec<(String, String)>) -> String {
+    pub fn gen_url(self: &Self, route_values: &HashMap<String, String>) -> String {
         let mut result = String::new();
         result.push_str("/");
         result.push_str(self.parts.join("/").as_str());

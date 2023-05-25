@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use http::StatusCode;
@@ -44,12 +45,12 @@ pub struct RedirectToActionResult {
     pub action_name: String,
     pub controller_name: String,
     pub area_name: String,
-    pub route_values: Vec<(String, String)>,
+    pub route_values: HashMap<String, String>,
 }
 
 impl RedirectToActionResult {
-    pub fn new(action_name: String, controller_name: String, area_name: String, route_values: Option<Vec<(String, String)>>) -> Self {
-        Self { action_name: action_name, controller_name: controller_name, area_name: area_name, route_values: route_values.or(Some(Vec::new())).unwrap() }
+    pub fn new(action_name: String, controller_name: String, area_name: String, route_values: Option<HashMap<String, String>>) -> Self {
+        Self { action_name: action_name, controller_name: controller_name, area_name: area_name, route_values: route_values.or(Some(HashMap::new())).unwrap() }
     }
 }
 
@@ -59,19 +60,11 @@ impl IActionResult for RedirectToActionResult {
     }
 
     fn configure_response(self: &Self, _controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<dyn IRequestContext>, services: &dyn IServiceCollection) {
-        // build the redirect action path from the area, controller and action name.
-        let mut redirect_action_path = "/".to_string();
-        if !self.area_name.is_empty() {
-            redirect_action_path = format!("/{}/{}", self.area_name, redirect_action_path);
-        }
-        redirect_action_path = format!("{}/{}", redirect_action_path, self.controller_name);
-        redirect_action_path = format!("{}/{}", redirect_action_path, self.action_name);
-
-        // get the route map service and get the action at the area controller action path.
+        // get the route map service and get the action from the route map.
         let route_map_service = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
-        let action = route_map_service.get_mapper().get_action_at_area_controller_action_path(redirect_action_path);
+        let action = route_map_service.get_mapper().get_action(self.action_name.as_str(), self.controller_name.as_str(), self.area_name.as_str());
         // generate the redirect url from the route values.
-        let redirect_url = action.as_ref().gen_url(services, &self.route_values).unwrap();
+        let redirect_url = action.as_ref().get_route_pattern().gen_url(&self.route_values);
         // configure the response to redirect to the redirect url.
         response_ctx.add_header_string("Location".to_string(), redirect_url);
     }

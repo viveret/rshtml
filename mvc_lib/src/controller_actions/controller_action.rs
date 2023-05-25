@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::error::Error;
 use std::result::Result;
 use std::rc::Rc;
@@ -41,8 +42,6 @@ pub trait IControllerAction {
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>>;
     // get whether or not the action matches the request.
     fn is_route_match(self: &Self, request_context: Rc<dyn IRequestContext>) -> Result<bool, Box<dyn Error>>;
-    // get the URL for the controller action.
-    fn gen_url(self: &Self, services: &dyn IServiceCollection, route_values: &Vec<(String, String)>) -> Result<String, Box<dyn Error>>;
     // invoke the controller action for the request and context.
     fn invoke(self: &Self, request_context: Rc<ControllerContext>, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>>;
 }

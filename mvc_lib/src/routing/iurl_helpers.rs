@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 
 
-pub trait IUrlHelper {
+pub trait IUrlHelpers {
     // get an url by the action identifiers and route values within the current context.
     // is_relative: whether the url is relative (true) or absolute (false).
     // is_https: whether the url is https (true) or http (false). This requires is_relative to be false.

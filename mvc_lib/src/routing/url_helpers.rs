@@ -2,30 +2,33 @@ use std::collections::HashMap;
 
 use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::irequest_context::IRequestContext;
+use crate::contexts::view_context::IViewContext;
 use crate::services::routemap_service::IRouteMapService;
 use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions};
 
-use super::iurl_helper::IUrlHelper;
+use super::iurl_helpers::IUrlHelpers;
 
 
-// this struct helps with url generation and implements IUrlHelper.
-pub struct UrlHelper<'a> {
+// this struct helps with url generation and implements IUrlHelpers.
+pub struct UrlHelpers<'a> {
     // pub current_route_data: &'a super::route_data::RouteData,
     // action_context: &'a IActionContext,
     // controller_context: &'a dyn IControllerContext,
     // request_context: &'a dyn IRequestContext,
+    view_context: Option<&'a dyn IViewContext>,
     services: &'a dyn IServiceCollection,
 }
 
-impl <'a> UrlHelper<'a> {
-    pub fn new(services: &'a dyn IServiceCollection) -> Self {
+impl <'a> UrlHelpers<'a> {
+    pub fn new(view_context: &'a dyn IViewContext, services: &'a dyn IServiceCollection) -> Self {
         Self {
+            view_context: Some(view_context),
             services: services,
         }
     }
 }
 
-impl <'a> IUrlHelper for UrlHelper<'a> {
+impl <'a> IUrlHelpers for UrlHelpers<'a> {
     fn url_action(self: &Self,
         is_relative: bool,
         is_https: Option<bool>,

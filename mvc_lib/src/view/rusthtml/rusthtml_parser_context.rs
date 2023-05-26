@@ -194,12 +194,15 @@ impl RustHtmlParserContext {
                     use mvc_lib::view::rusthtml::html_string::HtmlString;
                     use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
                     use mvc_lib::view::iview::IView;
+                    use mvc_lib::routing::iurl_helpers::IUrlHelpers;
+                    use mvc_lib::routing::url_helpers::UrlHelpers;
                 }.into(),
             ]),
             inject_statements: RefCell::new(vec![
                 quote::quote!{
                     let render = RenderHelpers::new(view_context, services);
                     let html = HtmlHelpers::new(view_context, services);
+                    let url = UrlHelpers::new(view_context, services);
                 }.into(),
             ]),
             raw: RefCell::new(String::new()),

@@ -13,16 +13,17 @@ without referencing the dotnet core source code.
 - HTTP request / response middleware
 - Controllers, actions, action results
 - HTML view templating system
+- Authorization
+- Authentication
+- Automatic route pattern capturing and building
+- Areas
 
 
 ### To Do / In Progress Features
 - Constraints
-- Authorization
-- Authentication
 - HTTPS
-- Automatic route mapping
-- Areas
 - Logging / error handling
+- Automatic area / controller / action discovery 
 
 
 ### Main Differences from C# / dot net
@@ -37,7 +38,7 @@ enough similarities and differences that they should be mentioned here.
 
 #### Similarities
 - Use the '@' symbol to escape HTML and use a directive or rust code.
-- keywords / directives like '@model', '@functions', '@use' are used to extend the templating language.
+- keywords / directives like '@model', '@functions', '@use', '@inject' are used to extend the templating language.
 - Extendable through dependency injection at many different layers.
 - Can define a layout view for views that require an outer template that calls render_body().
 - Can render partial views in a template or on own from action in controller, or by using view renderer.
@@ -55,7 +56,6 @@ enough similarities and differences that they should be mentioned here.
 
 #### Not Yet Implemented
 - @attributes
-- @inject
 - @implements
 - @section
 - @typeparam
@@ -67,7 +67,7 @@ enough similarities and differences that they should be mentioned here.
 - Sessions or state management
 - Explicit HTML mode by using @:
 - Any kind of reflection
-- Automatic controller / action route mapping (might be able to use https://stackoverflow.com/a/74573771/11765486)
+- Automatic controller / action route discovery (might be able to use https://stackoverflow.com/a/74573771/11765486)
 - Model binding / validation
 - General configuration
 - Localization

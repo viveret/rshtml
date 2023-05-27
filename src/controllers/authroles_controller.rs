@@ -7,6 +7,8 @@ use http::Method;
 use mvc_lib::action_results::iaction_result::IActionResult;
 use mvc_lib::contexts::controller_context::ControllerContext;
 use mvc_lib::contexts::controller_context::IControllerContext;
+use mvc_lib::controller_action_features::authorize::BypassOnLocalActionFilter;
+use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
 use mvc_lib::core::type_info::TypeInfo;
 use mvc_lib::auth::auth_role_json_file_dbset::AuthRoleJsonFileDbSet;
 use mvc_lib::auth::auth_role_json_file_dbset::JsonAuthRole;
@@ -125,30 +127,27 @@ impl IController for AuthRolesController {
         nameof::name_of_type!(AuthRolesController)
     }
 
-    fn get_controller_name(self: &Self) -> Cow<'static, str> {
-        Cow::Borrowed(nameof::name_of_type!(AuthRolesController))
-    }
-    
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         let actions_builder = ControllerActionsBuilder::new(self);
+        let controller_name = IControllerExtensions::get_name_ref(self);
         
         actions_builder.add("/dev/auth-roles")
             .methods(&[Method::GET])
             .set_name("index")
-            .set_controller_name(self.get_controller_name())
+            .set_controller_name(Cow::Owned(controller_name.clone()))
             .set_member_fn(Self::get_index);
 
 
         actions_builder.add("/dev/auth-roles/add")
             .methods(&[Method::GET])
             .set_name("add")
-            .set_controller_name(self.get_controller_name())
+            .set_controller_name(Cow::Owned(controller_name.clone()))
             .set_member_fn(Self::get_add);
 
         actions_builder.add("/dev/auth-roles/add")
                 .methods(&[Method::POST])
                 .set_name("add_post")
-                .set_controller_name(self.get_controller_name())
+                .set_controller_name(Cow::Owned(controller_name.clone()))
                 .set_member_fn(Self::post_add);
 
         actions_builder.build()
@@ -156,7 +155,9 @@ impl IController for AuthRolesController {
 
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![
-            AuthorizeControllerActionFeature::new_service_parse("admin,dev,owner".to_string(), None),
+            AuthorizeControllerActionFeature::new_service_parse("admin,dev,owner".to_string(), None, Some(vec![
+                Box::new(BypassOnLocalActionFilter::new())
+            ])),
             LocalHostOnlyControllerActionFeature::new_service()
         ]
     }

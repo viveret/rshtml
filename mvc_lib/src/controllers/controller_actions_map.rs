@@ -1,3 +1,4 @@
+use std::fmt;
 use std::rc::Rc;
 
 use crate::controllers::icontroller::IController;
@@ -99,7 +100,7 @@ impl IControllerActionsMap for ControllerActionsMap  {
     fn get_action_at_area_controller_action_path(self: &Self, path: String) -> Rc<dyn IControllerAction> {
         self.actions
             .iter()
-            .filter(|x| x.get_path() == path)
+            .filter(|x| x.get_path().is_equivalent_to(&path))
             .take(1)
             .cloned()
             .collect::<Vec<Rc<dyn IControllerAction>>>()
@@ -127,5 +128,14 @@ impl IControllerActionsMap for ControllerActionsMap  {
             .first()
             .expect(format!("Could not find controller action with name {} in controller {} in area {}", action_name, controller_name, area_name).as_str())
             .clone()
+    }
+}
+
+impl fmt::Display for ControllerActionsMap {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for action in self.actions.iter() {
+            write!(f, "{} -> {}\n", action.get_path(), action.get_route_pattern().to_string())?;
+        }
+        write!(f, "\n")
     }
 }

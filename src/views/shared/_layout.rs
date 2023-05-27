@@ -50,6 +50,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     <header class="s-topbar stacks-topbar ps-fixed h64 js-stacks-topbar print:d-none">
         <div class="s-topbar--container px8">
             <a href="#" class="s-topbar--menu-btn d-none md:d-flex js-hamburger-btn"><span></span></a>
+            // TODO: use url.action_url() to build automatically
             <a class="s-topbar--logo" href="/">
                 <span class="v-visible-sr">Site home</span>
                 @htmlfile "src/views/shared/_icon_svg.html"
@@ -60,6 +61,8 @@ mvc_macro_lib::rusthtml_view_macro! {
             <ul class="s-navigation ml8 fw-nowrap sm:d-none">
                 @let home_class = format!("s-navigation--item {}", is_same_action_is_selected("*", "Home", "", &page_action, &page_controller, &page_area));
                 @let learn_class = format!("s-navigation--item {}", is_same_action_is_selected("*", "Learn", "", &page_action, &page_controller, &page_area));
+
+                // TODO: use url.action_url() to build automatically
                 <li><a class=@home_class href="/">Home</a></li>
                 <li><a class=@learn_class href="/learn">Learn</a></li>
                 <li><a class="s-navigation--item" href="https://github.com/viveret/rshtml">GitHub</a></li>

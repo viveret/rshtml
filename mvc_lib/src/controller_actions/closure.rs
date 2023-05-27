@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::error::Error;
 use std::rc::Rc;
@@ -12,6 +13,8 @@ use crate::contexts::controller_context::ControllerContext;
 use crate::contexts::irequest_context::IRequestContext;
 
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
+use crate::routing::action_path::ActionPath;
+use crate::routing::path_builder::ActionPathBuilder;
 use crate::services::service_collection::IServiceCollection;
 
 use crate::controller_actions::controller_action::IControllerAction;
@@ -266,8 +269,13 @@ impl IControllerAction for ControllerActionClosure {
         format!("{} {} mapped to {}", methods_str, self.get_path(), self.route_pattern.raw)
     }
 
-    fn get_path(self: &Self) -> String {
-        format!("{}/{}/{}", self.area_name, self.controller_name, self.name)
+    fn get_path(self: &Self) -> ActionPath {
+        let mut path_builder = ActionPathBuilder::new();
+        path_builder
+            .add(&self.area_name, false)
+            .add(self.controller_name.borrow(), true)
+            .add(&self.name, false)
+            .as_action_path()
     }
 
     fn get_http_methods_allowed(self: &Self) -> Vec<Method> {

@@ -26,9 +26,11 @@ impl RouteMapService {
     // creates a new instance of the route map service.
     // controllers: the controllers to use to build the mapper.
     pub fn new(controllers: Vec<Rc<dyn IController>>) -> Self {
+        let mapper = Rc::new(ControllerActionsMap::from_controllers(controllers.clone()));
+        // println!("{}", mapper.clone().as_ref());
         Self {
             controllers: controllers.clone(),
-            mapper: Rc::new(ControllerActionsMap::from_controllers(controllers)),
+            mapper: mapper,
         }
     }
 

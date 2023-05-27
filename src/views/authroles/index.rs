@@ -13,6 +13,7 @@ mvc_macro_lib::rusthtml_view_macro! {
         @for role in model.roles.iter() {
             <li>@&role.name</li>
         }
+        // TODO: use url.action_url() to build automatically
         <li><a href="/dev/auth-roles/add">@"Add New"</a></li>
     </ul>
 }

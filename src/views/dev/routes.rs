@@ -10,6 +10,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     <p>@format!("In total there are {} routes:", model.routes.len())</p>
     <ul>
     @for route in model.routes.iter() {
+        // TODO: use url.action_url() to build automatically
         let href = format!("/dev/routes/{}", route.get_path());
         <li>
             <a href=@href>@route.to_string()</a>

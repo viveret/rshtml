@@ -10,6 +10,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     <p>@format!("In total there are {} views:", model.views.len())</p>
     <ul>
     @for compiled_view in model.views.iter() {
+        // TODO: use url.action_url() to build automatically
         let href = format!("/dev/views/{}", compiled_view.get_path());
         <li>
             <a href=@href>@compiled_view.get_path() <span>@" requires "</span> @compiled_view.get_model_type_name()</a>

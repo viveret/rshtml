@@ -11,6 +11,7 @@ use crate::controller_action_features::controller_action_feature::IControllerAct
 
 use crate::contexts::controller_context::ControllerContext;
 
+use crate::routing::action_path::ActionPath;
 use crate::services::service_collection::IServiceCollection;
 
 use super::route_pattern::ControllerActionRoutePattern;
@@ -25,7 +26,7 @@ pub trait IControllerAction {
     // get a string representation of the controller action.
     fn to_string(self: &Self) -> String;
     // get the path for the controller action.
-    fn get_path(self: &Self) -> String;
+    fn get_path(self: &Self) -> ActionPath;
     // get the name of the controller action (the name of the member function, the name of the static function, or the name of the closure).
     fn get_name(self: &Self) -> String;
     // get the name of the controller.

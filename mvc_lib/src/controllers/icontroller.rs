@@ -17,8 +17,6 @@ pub trait IController {
     fn get_route_area(self: &Self) -> String;
     // get the type name of the controller.
     fn get_type_name(self: &Self) -> &'static str;
-    // get the name of the controller.
-    fn get_controller_name(self: &Self) -> Cow<'static, str>;
     // get the actions of the controller.
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>>;
     // get the features of the controller.

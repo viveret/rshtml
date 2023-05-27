@@ -12,6 +12,27 @@ use crate::controller_action_features::controller_action_feature::IControllerAct
 use crate::services::request_middleware_service::MiddlewareResult;
 use crate::services::service_collection::IServiceCollection;
 
+
+
+pub trait IAuthRequirementFilter {
+    fn use_requirement(self: &Self) -> bool;
+}
+
+pub struct BypassOnLocalActionFilter {}
+
+impl BypassOnLocalActionFilter {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl IAuthRequirementFilter for BypassOnLocalActionFilter {
+    fn use_requirement(self: &Self) -> bool {
+        false
+    }
+}
+
+
 // this struct is used to indicate that a controller action can be called by anyone without authorization.
 // this struct must be used in conjunction with the AllowAnonymousControllerActionFeatureMiddleware or else it will do nothing.
 // this struct is useful for controller actions that are used for logging, metrics, or other non-sensitive data.
@@ -67,6 +88,8 @@ pub struct AuthorizeControllerActionFeature {
     pub roles: Vec<String>,
     // the policy that is allowed to call the controller action.
     pub policy: Option<String>,
+    // what rules define when the requirement should be applied (default is always)
+    pub filters: Option<Vec<Box<dyn IAuthRequirementFilter>>>
 }
 
 impl AuthorizeControllerActionFeature {
@@ -76,10 +99,12 @@ impl AuthorizeControllerActionFeature {
     pub fn new(
         roles: Vec<String>,
         policy: Option<String>,
+        filters: Option<Vec<Box<dyn IAuthRequirementFilter>>>,
     ) -> Self {
         Self {
             roles: roles,
             policy: policy,
+            filters: filters,
         }
     }
 
@@ -89,16 +114,18 @@ impl AuthorizeControllerActionFeature {
     pub fn new_parse(
         roles: String,
         policy: Option<String>,
+        filters: Option<Vec<Box<dyn IAuthRequirementFilter>>>,
     ) -> Self {
-        Self::new(roles.split(',').map(|s| s.to_string()).collect(), policy)
+        Self::new(roles.split(',').map(|s| s.to_string()).collect(), policy, filters)
     }
 
     // create a new instance of the feature as a service for a service collection.
     pub fn new_service(
         roles: Vec<String>,
         policy: Option<String>,
+        filters: Option<Vec<Box<dyn IAuthRequirementFilter>>>,
     ) -> Rc<dyn IControllerActionFeature> {
-        Rc::new(Self::new(roles, policy))
+        Rc::new(Self::new(roles, policy, filters))
     }
 
     // create a new instance of the feature as a service for a service collection from a comma separated list of roles.
@@ -107,8 +134,9 @@ impl AuthorizeControllerActionFeature {
     pub fn new_service_parse(
         roles: String,
         policy: Option<String>,
+        filters: Option<Vec<Box<dyn IAuthRequirementFilter>>>,
     ) -> Rc<dyn IControllerActionFeature> {
-        Rc::new(Self::new_parse(roles, policy))
+        Rc::new(Self::new_parse(roles, policy, filters))
     }
 }
 

@@ -19,6 +19,10 @@ pub struct ControllerActionRoutePattern {
 }
 
 impl ControllerActionRoutePattern {
+    pub fn to_string(self: &Self) -> String {
+        self.raw.clone()
+    }
+
     // parse a string into a route pattern.
     // s: the string to parse
     pub fn parse(s: &String) -> Self {

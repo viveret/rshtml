@@ -9,9 +9,6 @@ use crate::auth::iauthroles_dbset_provider::IAuthRolesDbSetProvider;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::core::type_info::TypeInfo;
 
-use crate::contexts::request_context::RequestContext;
-use crate::contexts::controller_context::IControllerContext;
-
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controller_action_features::authorize::AuthorizeControllerActionFeature;
 use crate::controllers::icontroller::IController;
@@ -19,8 +16,6 @@ use crate::controllers::icontroller::IController;
 use crate::services::service_collection::{ IServiceCollection, ServiceCollection, ServiceCollectionExtensions };
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
-
-use crate::services::request_middleware_service::MiddlewareResult;
 
 
 // this enum is used to indicate the result of an authorization rejection
@@ -443,9 +438,19 @@ impl IAuthorizationService for AuthorizationService {
             // collect required roles and policies
             for it in find_my_feature.iter() {
                 let req = it.as_any().downcast_ref::<AuthorizeControllerActionFeature>().unwrap();
-                required_roles.extend_from_slice(&req.roles);
-                if let Some(policy) = &req.policy {
-                    required_policies.push(policy);
+                let mut apply_requirement = true;
+                if let Some(req_filters) = &req.filters {
+                    for req_filter in req_filters {
+                        if !req_filter.use_requirement() {
+                            apply_requirement = false;
+                        }
+                    }
+                }
+                if apply_requirement {
+                    required_roles.extend_from_slice(&req.roles);
+                    if let Some(policy) = &req.policy {
+                        required_policies.push(policy);
+                    }
                 }
             }
         }

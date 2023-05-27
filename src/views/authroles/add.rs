@@ -8,7 +8,7 @@ mvc_macro_lib::rusthtml_view_macro! {
         view_context.insert_str("Title", "Add Auth Role - Dev".to_string());
     }
     
-    @custom_html.link("/dev/auth-roles", "< Back to auth roles list", None)
+    @custom_html.link(url.url_action(false, Some(true), None, Some("index"), Some("AuthRoles"), None, None).as_str(), "< Back to auth roles list", None)
     
     <h1>@view_context.get_str("Title")</h1>
     
@@ -19,7 +19,7 @@ mvc_macro_lib::rusthtml_view_macro! {
         }
     }
 
-    @custom_html.form(http::method::Method::POST, url.url_action(false, Some(true), None, Some("Add"), Some("AuthRoles"), None, None).into(), Some(HashMap::new()) /* optional attributes, takes precedent over route values */, HashMap::new() /* optional route values */, || -> HtmlString {
+    @custom_html.form(http::method::Method::POST, url.url_action(false, Some(true), None, Some("add"), Some("AuthRoles"), None, None).into(), Some(HashMap::new()) /* optional attributes, takes precedent over route values */, HashMap::new() /* optional route values */, || -> HtmlString {
         let role_name_label = "Role Name";
         @custom_html.label("role", role_name_label, None)
         @custom_html.input("role", "text", model.role.as_str(), None)

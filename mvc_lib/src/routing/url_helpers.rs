@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 
-use crate::contexts::controller_context::IControllerContext;
-use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::view_context::IViewContext;
 use crate::services::routemap_service::IRouteMapService;
 use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions};
 
 use super::iurl_helpers::IUrlHelpers;
+use super::path_builder::ActionPathBuilder;
 
 
 // this struct helps with url generation and implements IUrlHelpers.
@@ -38,21 +37,14 @@ impl <'a> IUrlHelpers for UrlHelpers<'a> {
         area_name: Option<&str>,
         route_values: Option<&HashMap<String, String>>
     ) -> String {
-        let mut action_path = "/".to_string();
-        if !area_name.unwrap_or_default().is_empty() {
-            action_path = format!("/{}/{}", area_name.unwrap(), action_path);
-        }
-
-        if !controller_name.unwrap_or_default().is_empty() {
-            action_path = format!("/{}/{}", controller_name.unwrap(), action_path);
-        }
-
-        if !action_name.unwrap_or_default().is_empty() {
-            action_path = format!("/{}/{}", action_name.unwrap(), action_path);
-        }
+        let mut path_builder = ActionPathBuilder::new();
+        path_builder
+            .add_optional(area_name)
+            .add_optional(controller_name)
+            .add_optional(action_name);
 
         let mapper = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(self.services);
-        let action = mapper.as_ref().get_mapper().get_action_at_area_controller_action_path(action_path);
+        let action = mapper.as_ref().get_mapper().get_action_at_area_controller_action_path(path_builder.path);
 
         let mut url = String::new();
         if is_relative {

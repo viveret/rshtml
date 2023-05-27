@@ -12,6 +12,8 @@ use crate::controller_actions::file::ControllerActionFileResult;
 
 use crate::options::file_provider_controller_options::IFileProviderControllerOptions;
 
+use super::icontroller_extensions::IControllerExtensions;
+
 
 // this controller is used to serve static files from the disk.
 pub struct FileProviderController {
@@ -48,17 +50,13 @@ impl IController for FileProviderController {
         nameof::name_of_type!(FileProviderController)
     }
 
-    fn get_controller_name(self: &Self) -> Cow<'static, str> {
-        Cow::Borrowed(nameof::name_of_type!(FileProviderController))
-    }
-
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         self.options.as_ref()
             .get_mapped_paths(true)
             .iter()
             .map(|x|
                 Rc::new(ControllerActionFileResult::new(
-                    x.1.clone(), x.0.clone(), String::new(), self.get_controller_name(), self.get_route_area(),
+                    x.1.clone(), x.0.clone(), String::new(), Cow::Owned(IControllerExtensions::get_name_ref(self)), self.get_route_area(),
                 )) as Rc<dyn IControllerAction>
             )
             .collect()

@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::error::Error;
 
@@ -17,6 +18,8 @@ use crate::controller_actions::route_pattern::ControllerActionRoutePattern;
 use crate::controller_actions::controller_action::IControllerAction;
 use crate::controller_actions::controller_action::IControllerActionExtensions;
 
+use crate::routing::action_path::ActionPath;
+use crate::routing::path_builder::ActionPathBuilder;
 use crate::services::service_collection::IServiceCollection;
 
 
@@ -128,8 +131,13 @@ impl IControllerAction for ControllerActionFileResult {
         format!("[{:?}] {} mapped to {} (which is mapped to file {})", self.get_http_methods_allowed(), self.get_path(), self.route_pattern.raw, self.file_path)
     }
 
-    fn get_path(self: &Self) -> String {
-        format!("{}/{}/{}", self.area_name, self.controller_name, self.name)
+    fn get_path(self: &Self) -> ActionPath {
+        let mut path_builder = ActionPathBuilder::new();
+        path_builder
+            .add(&self.area_name, false)
+            .add(self.controller_name.borrow(), true)
+            .add(&self.name, false)
+            .as_action_path()
     }
 
     fn get_http_methods_allowed(self: &Self) -> Vec<Method> {

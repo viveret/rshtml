@@ -170,7 +170,7 @@ impl<'a, T: IController> ControllerActionsBuilder<'a, T> {
     pub fn add(self: &Self, route_pattern: &'static str) -> Rc<ControllerActionBuilder> {
         let action = Rc::new(ControllerActionBuilder::new(route_pattern));
         self.actions.borrow_mut().push(action.clone());
-        action.set_controller_name(self.controller.get_controller_name());
+        action.set_controller_name(Cow::Borrowed(self.controller.get_type_name()));
         action
     }
 

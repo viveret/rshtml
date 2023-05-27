@@ -6,6 +6,7 @@ use std::rc::Rc;
 use http::Method;
 use mvc_lib::action_results::iaction_result::IActionResult;
 use mvc_lib::contexts::controller_context::ControllerContext;
+use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
 use mvc_lib::services::service_collection::IServiceCollection;
 
 use mvc_lib::action_results::view_result::ViewResult;
@@ -55,17 +56,14 @@ impl IController for HomeController {
         nameof::name_of_type!(HomeController)
     }
 
-    fn get_controller_name(self: &Self) -> Cow<'static, str> {
-        Cow::Borrowed(nameof::name_of_type!(HomeController))
-    }
-    
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         let actions_builder = ControllerActionsBuilder::new(self);
+        let controller_name = Cow::Owned(IControllerExtensions::get_name_ref(self));
         
         actions_builder.add("/")
             .methods(&[Method::GET])
             .set_name("index")
-            .set_controller_name(self.get_controller_name())
+            .set_controller_name(controller_name)
             .set_member_fn(Self::get_index);
 
         actions_builder.build()

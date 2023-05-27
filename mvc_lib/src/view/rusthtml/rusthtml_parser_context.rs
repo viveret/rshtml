@@ -196,6 +196,7 @@ impl RustHtmlParserContext {
                     use mvc_lib::view::iview::IView;
                     use mvc_lib::routing::iurl_helpers::IUrlHelpers;
                     use mvc_lib::routing::url_helpers::UrlHelpers;
+                    use mvc_lib::routing::route_values_builder::RouteValuesBuilder;
                 }.into(),
             ]),
             inject_statements: RefCell::new(vec![

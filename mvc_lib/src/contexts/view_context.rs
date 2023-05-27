@@ -39,7 +39,7 @@ pub trait IViewContext: Send + Sync {
     // get the response context for the view context.
     fn get_response_ctx(self: &Self) -> Rc<ResponseContext>;
     // get the request context for the view context.
-    fn get_request_ctx(self: &Self) -> Rc<dyn IRequestContext>;
+    fn get_request_context(self: &Self) -> Rc<dyn IRequestContext>;
 
     // get a string from the view data or the controller context.
     fn get_string(self: &Self, key: String) -> String;
@@ -149,7 +149,7 @@ impl IViewContext for ViewContext {
         self.response_ctx.clone()
     }
 
-    fn get_request_ctx(self: &Self) -> Rc<dyn IRequestContext> {
+    fn get_request_context(self: &Self) -> Rc<dyn IRequestContext> {
         self.request_ctx.clone()
     }
 

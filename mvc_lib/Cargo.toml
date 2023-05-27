@@ -28,3 +28,5 @@ snailquote = "0.3.1"
 syn = { version = "1.0.109", features = ["full"] }
 sysinfo = "0.28.4"
 url = "2.3.1"
+
+core_macro_lib = { path = "../core_macro_lib" }

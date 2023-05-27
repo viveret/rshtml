@@ -54,14 +54,12 @@ impl IController for LearnController {
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         let controller_name = IControllerExtensions::get_name_ref(self);
         vec![
-            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn".to_string(), "Index".to_string(), Cow::Owned(controller_name.clone()), Rc::new(|_controller_ctx, _services| {
+            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn".to_string(), "index".to_string(), Cow::Owned(controller_name.clone()), Rc::new(|_controller_ctx, _services| {
                 let learn_docs: Vec<String> = glob("docs/learn/**/*.md")
                     .expect("Failed to read glob pattern")
                     .map(|path_to_string| {
                         let p = path_to_string.unwrap();
                         let path = p.as_path().to_str().unwrap();
-
-                        // TODO: use url.action_url() to build automatically
                         let s = &path["docs/learn/".len()..path.len() - 3];// remove extension ".md"
                         s.to_string()
                     })
@@ -71,7 +69,7 @@ impl IController for LearnController {
                 let view_model = Box::new(Rc::new(IndexViewModel::new(learn_docs)));
                 Ok(Some(Rc::new(ViewResult::new("views/learn/index.rs".to_string(), view_model))))
             }))),
-            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn/..".to_string(), "Details".to_string(), Cow::Owned(controller_name), Rc::new(|controller_ctx, _services| {
+            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn/..".to_string(), "details".to_string(), Cow::Owned(controller_name), Rc::new(|controller_ctx, _services| {
                 let request_context = controller_ctx.get_request_context();
                 let path = &request_context.get_path()["/learn/".len()..];
 
@@ -79,7 +77,6 @@ impl IController for LearnController {
                     return Ok(Some(Rc::new(HttpRedirectResult::new("/learn".to_string()))))
                 }
 
-                // TODO: use url.action_url() to build automatically
                 let view_model = Box::new(Rc::new(DetailsViewModel::new(format!("docs/learn/{}.md", path))));
                 Ok(Some(Rc::new(ViewResult::new("views/learn/details.rs".to_string(), view_model))))
             }))),

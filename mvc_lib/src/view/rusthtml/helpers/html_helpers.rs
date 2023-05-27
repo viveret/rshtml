@@ -25,7 +25,7 @@ impl <'a> HtmlHelpers<'a> {
 }
 
 impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
-    fn form<'b, F>(self: &Self, method: http::method::Method, action: Cow<'b, str>, html_attrs: Option<HashMap<String, String>>, route_values: HashMap<String, String>, inner_render_fn: F) -> HtmlString where F: Fn() -> HtmlString {
+    fn form<'b, F>(self: &Self, method: http::method::Method, action: Cow<'b, str>, html_attrs: Option<&HashMap<String, String>>, inner_render_fn: F) -> HtmlString where F: Fn() -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         let html_output = HtmlBuffer::new();
         html_output.write_html_str(
@@ -40,12 +40,12 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         html_output.collect_html()
     }
 
-    fn submit(self: &Self, text: &str, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn submit(self: &Self, text: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         HtmlString { content: format!("<button type=\"submit\" {}>{}</button>", html_attrs_str, html_escape::encode_text(&text)) }
     }
 
-    fn input(self: &Self, name: &str, input_type: &str, value: &str, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn input(self: &Self, name: &str, input_type: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         HtmlString { content: 
             format!("<input type=\"{}\" name=\"{}\" value=\"{}\" {}/>", 
@@ -57,7 +57,7 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         }
     }
 
-    fn hidden(self: &Self, name: &str, value: &str, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn hidden(self: &Self, name: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         HtmlString { content: 
             format!("<input type=\"hidden\" name=\"{}\" value=\"{}\" {}/>", 
@@ -68,7 +68,7 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         }
     }
 
-    fn checkbox(self: &Self, name: &str, checked: bool, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn checkbox(self: &Self, name: &str, checked: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         HtmlString { content: 
             format!("<input type=\"checkbox\" name=\"{}\" {} {}/>", 
@@ -79,7 +79,7 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         }
     }
 
-    fn textarea(self: &Self, name: &str, value: &str, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn textarea(self: &Self, name: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         HtmlString { content: 
             format!("<textarea name=\"{}\" {}>{}</textarea>", 
@@ -89,7 +89,7 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         }
     }
 
-    fn label(self: &Self, for_name: &str, text: &str, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn label(self: &Self, for_name: &str, text: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         HtmlString { content: 
             format!("<label for=\"{}\" {}>{}</label>", 
@@ -100,7 +100,7 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         }
     }
 
-    fn select(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn select(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         let mut html = format!("<select name=\"{}\" {}>", html_escape::encode_text(&name), html_attrs_str);
         for option in options {
@@ -110,7 +110,7 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         HtmlString { content: html }
     }
 
-    fn select_multiple(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn select_multiple(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         let mut html = format!("<select name=\"{}\" multiple {}>", html_escape::encode_text(&name), html_attrs_str);
         for option in options {
@@ -120,7 +120,7 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         HtmlString { content: html }
     }
 
-    fn option(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn option(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         HtmlString { content: 
             format!("<option value=\"{}\" {} {}>{}</option>", 
@@ -132,7 +132,7 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         }
     }
 
-    fn option_selected(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn option_selected(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         HtmlString { content: 
             format!("<option value=\"{}\" selected {} {}>{}</option>", 
@@ -144,7 +144,7 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         }
     }
 
-    fn option_group(self: &Self, label: &str, options: Vec<(String, String)>, disabled: bool, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn option_group(self: &Self, label: &str, options: Vec<(String, String)>, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let mut html = format!("<optgroup label=\"{}\">", html_escape::encode_text(&label));
         for option in options {
             html = format!("{}<option value=\"{}\" {}>{}</option>", html, html_escape::encode_text(&option.0), if disabled { "disabled" } else { "" }, html_escape::encode_text(&option.1));
@@ -153,32 +153,33 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         HtmlString { content: html }
     }
 
-    fn append_html_attrs_into_first(self: &Self, html_attrs_first: Option<HashMap<String, String>>, html_attrs_second: Option<HashMap<String, String>>) -> Option<HashMap<String, String>> {
-        if let Some(mut html_attrs_first) = html_attrs_first {
+    fn append_html_attrs_into_first(self: &Self, html_attrs_first: Option<&HashMap<String, String>>, html_attrs_second: Option<&HashMap<String, String>>) -> Option<HashMap<String, String>> {
+        if let Some(html_attrs_first) = html_attrs_first {
+            let mut new_first = html_attrs_first.clone();
             if let Some(html_attrs_second) = html_attrs_second {
                 for (key, value) in html_attrs_second {
                     if html_attrs_first.contains_key(key.as_str()) {
-                        let new_value = html_attrs_first.get(&key).unwrap().to_string() + " " + &value;
-                        html_attrs_first.insert(key, new_value);
+                        let new_value = html_attrs_first.get(key).unwrap().to_string() + " " + &value;
+                        new_first.insert(key.clone(), new_value);
                     } else {
-                        html_attrs_first.insert(key, value);
+                        new_first.insert(key.clone(), value.clone());
                     }
                 }
             }
-            Some(html_attrs_first)
+            Some(new_first)
         } else {
-            html_attrs_second.clone()
+            html_attrs_second.cloned()
         }
     }
 
-    fn append_html_attrs_into_new(self: &Self, html_attrs_first: Option<HashMap<String, String>>, html_attrs_second: Option<HashMap<String, String>>) -> HashMap<String, String> {
+    fn append_html_attrs_into_new(self: &Self, html_attrs_first: Option<&HashMap<String, String>>, html_attrs_second: Option<&HashMap<String, String>>) -> HashMap<String, String> {
         let copy_first = html_attrs_first.clone();
-        self.append_html_attrs_into_first(copy_first, html_attrs_second).unwrap_or(HashMap::new())
+        self.append_html_attrs_into_first(copy_first, html_attrs_second).unwrap().clone()
     }
 
-    fn html_attrs_str_to_string(self: &Self, html_attrs: Option<HashMap<&str, &str>>) -> Option<HashMap<String, String>> {
+    fn html_attrs_str_to_string(self: &Self, html_attrs: Option<&HashMap<&str, &str>>) -> Option<HashMap<String, String>> {
         if let Some(html_attrs) = html_attrs {
-            Some(html_attrs.iter().map(|x| (x.0.to_string(), x.1.to_string())).collect())
+            Some(html_attrs.iter().map(|x| (x.0.to_string().clone(), x.1.to_string().clone())).collect())
         } else {
             None
         }
@@ -188,7 +189,7 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         html_attrs.iter().map(|x| (x.0.to_string(), x.1.to_string())).collect()
     }
 
-    fn html_attrs_to_string(self: &Self, html_attrs: Option<HashMap<String, String>>) -> String {
+    fn html_attrs_to_string(self: &Self, html_attrs: Option<&HashMap<String, String>>) -> String {
         if let Some(html_attrs) = html_attrs {
             let mut html = String::new();
             for (key, value) in html_attrs {
@@ -205,7 +206,7 @@ impl <'a> IHtmlHelpers<'a> for HtmlHelpers<'a> {
         }
     }
 
-    fn link<'b>(self: &Self, href: &'b str, text: &'b str, html_attrs: Option<HashMap<String, String>>) -> HtmlString {
+    fn link<'b>(self: &Self, href: &'b str, text: &'b str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = self.html_attrs_to_string(html_attrs);
         HtmlString { content: 
             format!("<a href=\"{}\" {}>{}</a>", 

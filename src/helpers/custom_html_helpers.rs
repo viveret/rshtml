@@ -25,71 +25,71 @@ impl <'a> CustomHtmlHelpers<'a> {
 }
 
 impl <'a> IHtmlHelpers<'a> for CustomHtmlHelpers<'a> {
-    fn form<'b, F>(self: &Self, method: http::method::Method, action: std::borrow::Cow<'b, str>, html_attrs: Option<HashMap<String, String>>, route_values: HashMap<String, String>, inner_render_fn: F) -> mvc_lib::view::rusthtml::html_string::HtmlString where F: Fn() -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn form<'b, F>(self: &Self, method: http::method::Method, action: std::borrow::Cow<'b, str>, html_attrs: Option<&HashMap<String, String>>, inner_render_fn: F) -> mvc_lib::view::rusthtml::html_string::HtmlString where F: Fn() -> mvc_lib::view::rusthtml::html_string::HtmlString {
         let default_html_attrs = self.html_attrs_array_tuple_str_to_string(&[("class", "s-form")]);
-        let combined_html_attrs = self.append_html_attrs_into_first(Some(default_html_attrs), html_attrs);
-        self.html_helpers.form(method, action, combined_html_attrs, route_values, inner_render_fn)
+        let combined_html_attrs = self.append_html_attrs_into_first(Some(&default_html_attrs), html_attrs);
+        self.html_helpers.form(method, action, combined_html_attrs.as_ref(), inner_render_fn)
     }
 
-    fn submit(self: &Self, text: &str, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn submit(self: &Self, text: &str, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         let default_html_attrs = self.html_attrs_array_tuple_str_to_string(&[("class", "s-btn s-btn__primary")]);
-        let combined_html_attrs = self.append_html_attrs_into_first(Some(default_html_attrs), html_attrs);
-        self.html_helpers.submit(text, combined_html_attrs)
+        let combined_html_attrs = self.append_html_attrs_into_first(Some(&default_html_attrs), html_attrs);
+        self.html_helpers.submit(text, combined_html_attrs.as_ref())
     }
 
-    fn input(self: &Self, name: &str, input_type: &str, value: &str, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn input(self: &Self, name: &str, input_type: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         let default_html_attrs = self.html_attrs_array_tuple_str_to_string(&[("class", "s-input")]);
-        let combined_html_attrs = self.append_html_attrs_into_first(Some(default_html_attrs), html_attrs);
-        self.html_helpers.input(name, input_type, value, combined_html_attrs)
+        let combined_html_attrs = self.append_html_attrs_into_first(Some(&default_html_attrs), html_attrs);
+        self.html_helpers.input(name, input_type, value, combined_html_attrs.as_ref())
     }
 
-    fn hidden(self: &Self, name: &str, value: &str, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn hidden(self: &Self, name: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         todo!()
     }
 
-    fn checkbox(self: &Self, name: &str, checked: bool, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn checkbox(self: &Self, name: &str, checked: bool, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         todo!()
     }
 
-    fn textarea(self: &Self, name: &str, value: &str, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn textarea(self: &Self, name: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         todo!()
     }
 
-    fn label(self: &Self, for_name: &str, text: &str, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn label(self: &Self, for_name: &str, text: &str, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         let default_html_attrs = self.html_attrs_array_tuple_str_to_string(&[("class", "s-label")]);
-        let combined_html_attrs = self.append_html_attrs_into_first(Some(default_html_attrs), html_attrs);
-        self.html_helpers.label(for_name, text, combined_html_attrs)
+        let combined_html_attrs = self.append_html_attrs_into_first(Some(&default_html_attrs), html_attrs);
+        self.html_helpers.label(for_name, text, combined_html_attrs.as_ref())
     }
 
-    fn select(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn select(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         todo!()
     }
 
-    fn select_multiple(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn select_multiple(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         todo!()
     }
 
-    fn option(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn option(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         todo!()
     }
 
-    fn option_selected(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn option_selected(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         todo!()
     }
 
-    fn option_group(self: &Self, label: &str, options: Vec<(String, String)>, disabled: bool, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn option_group(self: &Self, label: &str, options: Vec<(String, String)>, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         todo!()
     }
 
-    fn append_html_attrs_into_first(self: &Self, html_attrs_first: Option<HashMap<String, String>>, html_attrs_second: Option<HashMap<String, String>>) -> Option<HashMap<String, String>> {
+    fn append_html_attrs_into_first(self: &Self, html_attrs_first: Option<&HashMap<String, String>>, html_attrs_second: Option<&HashMap<String, String>>) -> Option<HashMap<String, String>> {
         self.html_helpers.append_html_attrs_into_first(html_attrs_first, html_attrs_second)
     }
 
-    fn append_html_attrs_into_new(self: &Self, html_attrs_first: Option<HashMap<String, String>>, html_attrs_second: Option<HashMap<String, String>>) -> HashMap<String, String> {
+    fn append_html_attrs_into_new(self: &Self, html_attrs_first: Option<&HashMap<String, String>>, html_attrs_second: Option<&HashMap<String, String>>) -> HashMap<String, String> {
         self.html_helpers.append_html_attrs_into_new(html_attrs_first, html_attrs_second)
     }
 
-    fn html_attrs_str_to_string(self: &Self, html_attrs: Option<HashMap<&str, &str>>) -> Option<HashMap<String, String>> {
+    fn html_attrs_str_to_string(self: &Self, html_attrs: Option<&HashMap<&str, &str>>) -> Option<HashMap<String, String>> {
         self.html_helpers.html_attrs_str_to_string(html_attrs)
     }
 
@@ -97,13 +97,13 @@ impl <'a> IHtmlHelpers<'a> for CustomHtmlHelpers<'a> {
         self.html_helpers.html_attrs_array_tuple_str_to_string(html_attrs)
     }
 
-    fn html_attrs_to_string(self: &Self, html_attrs: Option<HashMap<String, String>>) -> String {
+    fn html_attrs_to_string(self: &Self, html_attrs: Option<&HashMap<String, String>>) -> String {
         self.html_helpers.html_attrs_to_string(html_attrs)
     }
 
-    fn link<'b>(self: &Self, href: &'b str, text: &'b str, html_attrs: Option<HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
+    fn link<'b>(self: &Self, href: &'b str, text: &'b str, html_attrs: Option<&HashMap<String, String>>) -> mvc_lib::view::rusthtml::html_string::HtmlString {
         let default_html_attrs = self.html_attrs_array_tuple_str_to_string(&[("class", "s-link")]);
-        let combined_html_attrs = self.append_html_attrs_into_first(Some(default_html_attrs), html_attrs);
-        self.html_helpers.link(href, text, combined_html_attrs)
+        let combined_html_attrs = self.append_html_attrs_into_first(Some(&default_html_attrs), html_attrs);
+        self.html_helpers.link(href, text, combined_html_attrs.as_ref())
     }
 }

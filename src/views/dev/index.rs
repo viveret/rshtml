@@ -3,15 +3,14 @@ mvc_macro_lib::rusthtml_view_macro! {
     @name "dev_index"
     @model crate::view_models::dev::IndexViewModel
     @{
-        view_context.insert_str("Title", "Compiled Views - Dev".to_string());
+        view_context.insert_str("Title", "Dev Routes".to_string());
     }
     
     <h1>@view_context.get_str("Title")</h1>
     <ul>
-    // TODO: use url.action_url() to build automatically
-        <li><a href="/dev/views">@"Compiled views"</a></li>
-        <li><a href="/dev/routes">@"Routes"</a></li>
-        <li><a href="/dev/sysinfo">@"Sys Info"</a></li>
-        <li><a href="/dev/auth-roles">@"Auth Roles"</a></li>
+        <li>@html.link(url.url_action(false, Some(false), None, Some("views"), Some("Dev"), None, None).as_str(), "Compiled views", None)</li>
+        <li>@html.link(url.url_action(false, Some(false), None, Some("routes"), Some("Dev"), None, None).as_str(), "Routes", None)</li>
+        <li>@html.link(url.url_action(false, Some(false), None, Some("sys_info"), Some("Dev"), None, None).as_str(), "Sys Info", None)</li>
+        <li>@html.link(url.url_action(false, Some(false), None, Some("index"), Some("AuthRoles"), None, None).as_str(), "Auth Roles", None)</li>
     </ul>
 }

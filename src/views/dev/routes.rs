@@ -6,14 +6,16 @@ mvc_macro_lib::rusthtml_view_macro! {
         view_context.insert_str("Title", "Routes - Dev".to_string());
     }
     
+    @html.link(url.url_action(false, Some(false), None, Some("index"), Some("Dev"), None, None).as_str(), "< Back to dev routes list", None)
+
     <h1>@view_context.get_str("Title")</h1>
     <p>@format!("In total there are {} routes:", model.routes.len())</p>
     <ul>
     @for route in model.routes.iter() {
-        // TODO: use url.action_url() to build automatically
-        let href = format!("/dev/routes/{}", route.get_path());
+        let link_text = route.to_string();
+        let link_href = url.url_action(false, Some(false), None, Some("route_details"), Some("Dev"), None, Some(&RouteValuesBuilder::build_area(route.get_path().to_string().as_str())));
         <li>
-            <a href=@href>@route.to_string()</a>
+            @html.link(&link_href, link_text.as_str(), None)
         </li>
     }
     </ul>

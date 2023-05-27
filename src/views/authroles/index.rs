@@ -7,13 +7,15 @@ mvc_macro_lib::rusthtml_view_macro! {
         view_context.insert_str("Title", "Auth Roles - Dev".to_string());
     }
     
+    @html.link(url.url_action(false, Some(false), None, Some("index"), Some("Dev"), None, None).as_str(), "< Back to dev routes list", None)
+    
     <h1>@view_context.get_str("Title")</h1>
+    
     <p>@format!("There are {} roles", model.roles.len())</p>
     <ul>
         @for role in model.roles.iter() {
             <li>@&role.name</li>
         }
-        // TODO: use url.action_url() to build automatically
-        <li><a href="/dev/auth-roles/add">@"Add New"</a></li>
+        <li>@html.link(url.url_action(false, Some(false), None, Some("add"), Some("AuthRoles"), None, None).as_str(), "Add New", None)</a></li>
     </ul>
 }

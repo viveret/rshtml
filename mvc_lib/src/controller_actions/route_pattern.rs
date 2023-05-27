@@ -76,6 +76,25 @@ impl ControllerActionRoutePattern {
                             parts.push(param_name.clone());
                             captures.insert(param_name, param_type);
                         },
+                        '.' => {
+                            if str_match.len() > 0 {
+                                str_match.push(c);
+                            } else {
+                                // check if next char is '.' too
+                                if let Some(next_c) = route_dir_it.next() {
+                                    if next_c == '.' {
+                                        parts.push("..".to_string());
+                                        captures.insert("..".to_string(), "..".to_string());
+                                        // println!("Found custom area");
+                                        break;
+                                    } else {
+                                        str_match.push(c);
+                                    }
+                                } else {
+                                    break;
+                                }
+                            }
+                        },
                         _ => {
                             str_match.push(c);
                         }
@@ -89,6 +108,8 @@ impl ControllerActionRoutePattern {
                 parts.push(str_match);
             }
         }
+        // println!("Parts: {:?}", parts);
+        // println!("captures: {:?}", captures);
         Self { raw: s.clone(), parts: parts, captures: captures }
     }
 
@@ -99,19 +120,39 @@ impl ControllerActionRoutePattern {
     // returns: the generated url.
     pub fn gen_url(self: &Self, route_values: &HashMap<String, String>) -> String {
         let mut result = String::new();
-        result.push_str("/");
-        result.push_str(self.parts.join("/").as_str());
+
+        for part in self.parts.iter() {
+            result.push_str("/");
+            if let Some(_) = self.captures.get(part) {
+                let route_val = route_values.get(part);
+                if let Some(value) = route_val {
+                    result.push_str(value);
+                } else {
+                    panic!("Expected route value for capture group {}", part);
+                }
+            } else {
+                result.push_str(part.as_str());
+            }
+        }
+
         if route_values.len() > 0 {
-            result.push_str("?");
+            let mut query_string = String::new();
             let mut first = true;
             for (key, value) in route_values {
+                // skip special keys
+                if self.captures.contains_key(key) {
+                    continue;
+                }
+
                 if first {
                     first = false;
+                    query_string.push_str("?");
                 } else {
-                    result.push_str("&");
+                    query_string.push_str("&");
                 }
-                result.push_str(&format!("{}={}", key, value));
+                query_string.push_str(&format!("{}={}", key, value));
             }
+            result.push_str(query_string.as_str());
         }
         result
     }

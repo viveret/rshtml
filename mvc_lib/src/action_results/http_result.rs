@@ -45,12 +45,12 @@ pub struct RedirectToActionResult {
     pub action_name: String,
     pub controller_name: String,
     pub area_name: String,
-    pub route_values: HashMap<String, String>,
+    pub route_values: Option<HashMap<String, String>>,
 }
 
 impl RedirectToActionResult {
-    pub fn new(action_name: String, controller_name: String, area_name: String, route_values: Option<HashMap<String, String>>) -> Self {
-        Self { action_name: action_name, controller_name: controller_name, area_name: area_name, route_values: route_values.or(Some(HashMap::new())).unwrap() }
+    pub fn new(action_name: String, controller_name: String, area_name: String, route_values: Option<&HashMap<String, String>>) -> Self {
+        Self { action_name: action_name, controller_name: controller_name, area_name: area_name, route_values: route_values.cloned() }
     }
 }
 
@@ -64,7 +64,7 @@ impl IActionResult for RedirectToActionResult {
         let route_map_service = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
         let action = route_map_service.get_mapper().get_action(self.action_name.as_str(), self.controller_name.as_str(), self.area_name.as_str());
         // generate the redirect url from the route values.
-        let redirect_url = action.as_ref().get_route_pattern().gen_url(&self.route_values);
+        let redirect_url = action.as_ref().get_route_pattern().gen_url(self.route_values.as_ref().unwrap());
         // configure the response to redirect to the redirect url.
         response_ctx.add_header_string("Location".to_string(), redirect_url);
     }

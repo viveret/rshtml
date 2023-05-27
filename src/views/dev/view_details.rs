@@ -15,6 +15,7 @@ mvc_macro_lib::rusthtml_view_macro! {
         };
     }
     
+    @html.link(url.url_action(false, Some(false), None, Some("views"), Some("Dev"), None, None).as_str(), "< Back to views list", None)
     <h1>@title</h1>
     <h3>@model_type_name</h3>
     <ol>

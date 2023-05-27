@@ -34,6 +34,10 @@ pub struct RequestContext {
     scheme: Box<String>,
     // the method of the request
     method: Method,
+    // the port of the the connection the request was received on
+    port: u16,
+    // the host name of the request (should be the same as the current server host name)
+    host_name: Box<String>,
     // the path of the request
     path: Box<String>,
     // the query string of the request
@@ -75,6 +79,8 @@ impl RequestContext {
         scheme: Option<Box<String>>,
         method_str: Option<Box<String>>,
         method: Option<Method>,
+        host_name: Box<String>,
+        port: u16,
         path: Box<String>,
         query_string: Box<String>,
         request_headers: HeaderMap
@@ -84,6 +90,8 @@ impl RequestContext {
             http_version: http_version,
             scheme: scheme.unwrap_or(Box::new("http".to_string())),
             method: method.unwrap_or(Method::from_str(method_str.unwrap().as_ref().as_str()).unwrap()),
+            host_name: host_name,
+            port: port,
             path: path,
             query: QueryString::parse(query_string.as_ref()),
             query_string: query_string,
@@ -118,7 +126,20 @@ impl RequestContext {
             _ => panic!("Invalid HTTP version {}", version_str)
         };
 
-        let path_and_query = url::Url::parse("https://localhost").unwrap().join(&http_header[method_str.len() + 1 .. http_header.len() - version_str.len() - 1].trim()).unwrap();
+        let headers = HeaderMap::from_iter(headers.iter().map(|x| {
+            let mut name = re_header.find(x).expect(&format!("Invalid header format: {}", x)).as_str();
+            let value = x[name.len()..].to_string();
+            name = &name[..name.len()-2];
+            (HeaderName::from_bytes(name.as_bytes()).unwrap(), HeaderValue::from_bytes(value.as_bytes()).unwrap())
+            // HttpHeader::from_httparse_header(name, &value.as_bytes().to_vec())
+        }));
+
+        let host_header_value = headers.get("Host").unwrap();
+        let host_header_string = format!("http://{}", host_header_value.to_str().unwrap());
+        let host_header_url = url::Url::parse(host_header_string.as_str()).unwrap();
+
+        let request_url = host_header_url;
+        let path_and_query = request_url.join(&http_header[method_str.len() + 1 .. http_header.len() - version_str.len() - 1].trim()).unwrap();
 
         let path = path_and_query.path();
         let query = path_and_query.query().unwrap_or("");
@@ -130,30 +151,48 @@ impl RequestContext {
             Some(Box::new(path_and_query.scheme().to_string())),
             Some(Box::new(method_str.to_string())),
             None,
+            Box::new(request_url.host().unwrap().to_string()),
+            request_url.port().unwrap(),
             Box::new(path.to_string()),
             Box::new(query.to_string()),
-            HeaderMap::from_iter(headers.iter().map(|x| {
-                let mut name = re_header.find(x).expect(&format!("Invalid header format: {}", x)).as_str();
-                let value = x[name.len()..].to_string();
-                name = &name[..name.len()-2];
-                (HeaderName::from_bytes(name.as_bytes()).unwrap(), HeaderValue::from_bytes(value.as_bytes()).unwrap())
-                // HttpHeader::from_httparse_header(name, &value.as_bytes().to_vec())
-            }))
+            headers
         ))
     }
 }
 
 impl IRequestContext for RequestContext {
-    fn get_name(self: &Self) -> &'static str {
+    fn get_type_name(self: &Self) -> &'static str {
         nameof::name_of_type!(RequestContext)
     }
 
+    fn get_host_name(self: &Self) -> &String {
+        self.host_name.as_ref()
+    }
+
     fn get_url(self: &Self) -> url::Url {
-        url::Url::parse(&format!("{}://{}{}?{}", self.get_scheme(), self.get_name(), self.get_path(), self.get_query().to_string())).unwrap()
+        let port = self.get_port();
+        let port_str = if port == 80 || port == 443 { "".to_string() } else { format!(":{}", port) };
+
+        let query = self.get_query().to_string();
+        let query_str = if query.is_empty() { "".to_string() } else { format!("?{}", query) };
+
+        let url_str = &format!(
+            "{}://{}{}{}{}",
+            self.get_scheme(),
+            self.get_host_name(),
+            port_str,
+            self.get_path(),
+            query_str
+        );
+        url::Url::parse(url_str).unwrap()
     }
 
     fn get_scheme(self: &Self) -> &String {
         self.scheme.as_ref()
+    }
+
+    fn get_port(self: &Self) -> u16 {
+        self.port
     }
 
     fn get_path(self: &Self) -> &String {
@@ -221,14 +260,16 @@ impl IRequestContext for RequestContext {
                 Some(header.to_str().unwrap().split(';')
                     .map(|x| x.trim())
                     .map(|cookie| {
-                    // println!("{}", cookie);
-                    let split_kvp = cookie.split('=').map(|x| x.to_string()).collect::<Vec<String>>();
-                    if split_kvp.len() == 2 {
-                        (split_kvp.get(0).unwrap().clone(), split_kvp.get(1).unwrap().clone())
-                    } else {
-                        (split_kvp.get(0).unwrap().clone(), String::new())
-                    }
-                }).collect())
+                        // println!("{}", cookie);
+                        let split_kvp = cookie.split('=').map(|x| x.to_string()).collect::<Vec<String>>();
+                        if split_kvp.len() == 2 {
+                            (split_kvp.get(0).unwrap().clone(), split_kvp.get(1).unwrap().clone())
+                        } else {
+                            (split_kvp.get(0).unwrap().clone(), String::new())
+                        }
+                    })
+                    .collect()
+                )
             },
             None => None,
         }

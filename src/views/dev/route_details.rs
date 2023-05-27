@@ -11,6 +11,8 @@ mvc_macro_lib::rusthtml_view_macro! {
         let controller_features = model.controller.get_features();
     }
     
+    @html.link(url.url_action(false, Some(false), None, Some("routes"), Some("Dev"), None, None).as_str(), "< Back to routes list", None)
+
     <h1>@title</h1>
 
     <h3>@format!("Action Features ({}):", action_features.len())</h3>

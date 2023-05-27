@@ -10,10 +10,10 @@ mvc_macro_lib::rusthtml_view_macro! {
 
     <ul>
     @for doc_name in model.learn_docs.iter() {
-        // TODO: use url.action_url() to build automatically
-        let href = format!("/learn/{}", doc_name);
+        // doc_name as text and as href id
+        let href = url.url_action(false, Some(false), None, Some("details"), Some("Learn"), None, Some(&RouteValuesBuilder::build_area(doc_name)));
         <li>
-            <a href=@href>@doc_name</a>
+            @html.link(href.as_str(), doc_name, None)
         </li>
     }
     </ul>

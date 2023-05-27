@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::error::Error;
 use std::result::Result;
 use std::rc::Rc;

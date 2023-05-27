@@ -20,8 +20,12 @@ pub trait IRequestContext {
     fn get_http_version(self: &Self) -> http::version::Version;
     // get the method of the request
     fn get_url(self: &Self) -> url::Url;
+    // get the type name of the request Rust type
+    fn get_type_name(self: &Self) -> &'static str;
     // get the host name? of the request
-    fn get_name(self: &Self) -> &'static str;
+    fn get_host_name(self: &Self) -> &String;
+    // get the port of the request
+    fn get_port(self: &Self) -> u16;
     // get the scheme of the request
     fn get_scheme(self: &Self) -> &String;
     // get the path of the request

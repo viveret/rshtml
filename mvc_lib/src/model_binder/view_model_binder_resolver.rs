@@ -11,6 +11,18 @@ use super::iviewmodel_binder::IViewModelBinder;
 use super::view_model_result::ViewModelResult;
 
 
+// this trait represents a view model binder resolver which is used to resolve the correct IViewModelBinder for a given content type and context.
+pub trait IViewModelBinderResolver {
+    // resolves the correct IViewModelBinder for the given content type.
+    fn resolve_for_content_type(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IViewModelBinder>>;
+
+    // binds and validates the view model for the given request context.
+    // request_context: the request context to bind and validate the view model for.
+    // returns: the result of the binding and validation.
+    fn bind_and_validate_view_model(self: &Self, request_context: &dyn IRequestContext) -> ViewModelResult<Rc<dyn Any>>;
+}
+
+
 // this struct is used to resolve the correct IViewModelBinder for a given content type and context.
 // it is used by the ModelBinderResolverMiddleware.
 // it uses the IViewModelBinder instances registered in the IServiceCollection to validate and bind the view model.
@@ -39,25 +51,22 @@ impl ViewModelBinderResolver {
     pub fn add_to_services(services: &mut ServiceCollection) {
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<ViewModelBinderResolver>(), Self::new_service, ServiceScope::Singleton));
     }
+}
 
-    // resolves the correct IViewModelBinder for the given content type.
-    pub fn resolve_for_content_type(self: &Self, content_type: &str) -> Option<Rc<dyn IViewModelBinder>> {
+impl IViewModelBinderResolver for ViewModelBinderResolver {
+    fn resolve_for_content_type(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IViewModelBinder>> {
         for it in self.view_model_binders.iter() {
-            if it.matches_content_type(content_type) {
+            if it.matches(request_context) {
                 return Some(it.clone());
             }
         }
         None
     }
 
-    // binds and validates the view model for the given request context.
-    // request_context: the request context to bind and validate the view model for.
-    // returns: the result of the binding and validation.
-    pub fn bind_and_validate_view_model(self: &Self, request_context: Rc<dyn IRequestContext>) -> ViewModelResult<Box<dyn Any>> {
-        let content_type = request_context.get_headers().get("Content-Type").unwrap().to_str().unwrap();
-        if let Some(binder) = self.resolve_for_content_type(content_type) {
-            return binder.bind_view_model(request_context.clone());
+    fn bind_and_validate_view_model(self: &Self, request_context: &dyn IRequestContext) -> ViewModelResult<Rc<dyn Any>> {
+        if let Some(binder) = self.resolve_for_content_type(request_context.clone()) {
+            return binder.bind_view_model(request_context);
         }
-        ViewModelResult::<Box<dyn Any>>::OkNone
+        ViewModelResult::<Rc<dyn Any>>::OkNone
     }
 }

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::any::{Any, TypeId};
+use std::error::Error;
 use std::rc::Rc;
 
 use crate::core::type_info::TypeInfo;
@@ -22,10 +23,10 @@ pub trait IServiceCollection: Send + Sync {
     fn get_current_scope(&self) -> ServiceScope;
 
     // get the parent scope of the collection
-    fn get_parent(&self) -> Option<Rc<dyn IServiceCollection>>;
+    fn get_parent(&self) -> Option<&dyn IServiceCollection>;
     
     // get the root scope of the collection
-    fn get_root(&self) -> Option<Rc<dyn IServiceCollection>>;
+    fn get_root(&self) -> Option<&dyn IServiceCollection>;
     
     // get the items in the collection
     fn get_items(&self) -> &Vec<Rc<ServiceDescriptor>>;
@@ -47,33 +48,33 @@ pub trait IServiceCollection: Send + Sync {
 
 // generic service collection implementation. 
 #[derive(Clone)]
-pub struct ServiceCollection {
+pub struct ServiceCollection<'a> {
     // scope of the current collection
     current_scope: ServiceScope,
 
     // outer scope of the current collection
-    parent: Option<Rc<dyn IServiceCollection>>,
+    parent: Option<&'a dyn IServiceCollection>,
 
     // root scope of the current collection
-    root: Option<Rc<dyn IServiceCollection>>,
+    root: Option<&'a dyn IServiceCollection>,
 
-    // services accessible within just this scope
+    // services kept alive within this scope
     items: Vec<Rc<ServiceDescriptor>>,
 
-    // type descriptors accessible within just this scope
+    // type descriptors kept alive within just this scope
     type_id_to_descriptor: HashMap<TypeId, Vec<Rc<ServiceDescriptor>>>,
     type_id_to_type_info: HashMap<TypeId, Rc<Box<TypeInfo>>>,
 
-    // singletons accessible within just this scope
+    // singletons live in this scope
     singletons: Vec<Rc<ServiceInstance>>,
 
-    // per-request instances accessible within just this scope
+    // per-request instances live in this scope
     request_instances: Vec<Rc<ServiceInstance>>,
 }
-unsafe impl Send for ServiceCollection {}
-unsafe impl Sync for ServiceCollection {}
+unsafe impl <'a> Send for ServiceCollection<'a> {}
+unsafe impl <'a> Sync for ServiceCollection<'a> {}
 
-impl ServiceCollection {
+impl <'a> ServiceCollection<'a> {
     // create a new root service collection
     pub fn new_root() -> Self {
         Self { 
@@ -89,7 +90,7 @@ impl ServiceCollection {
     }
 
     // create a new service collection with the given scope, parent, and root
-    pub fn new(scope: ServiceScope, parent: Rc<ServiceCollection>, root: Rc<ServiceCollection>) -> Self {
+    pub fn new(scope: ServiceScope, parent: &'a (dyn IServiceCollection + 'a), root: &'a (dyn IServiceCollection + 'a)) -> Self {
         Self {
             current_scope: scope,
             parent: Some(parent),
@@ -147,36 +148,44 @@ impl ServiceCollection {
                 match &descriptor.type_factory_closure {
                     Some(closure_fn) => (closure_fn)(self),
                     None => {
-                        self.print_could_not_find_descriptor(descriptor.type_info.clone());
-                        panic!("No type factory function available for {}", descriptor)
+                        if let Some(parent) = self.parent {
+                            return parent.try_get(descriptor.type_info.clone()).unwrap_or(vec![]);
+                        } else {
+                            self.get_could_not_find_descriptor_message(descriptor.type_info.clone());
+                            panic!("No type factory function available for {}", descriptor)
+                        }
                     },
                 }
             }
         }
     }
     
-    // print a message that a service could not be found for type info
-    fn print_could_not_find_descriptor(self: &Self, type_info: Box<TypeInfo>) {
-        println!("Could not get service for type {}", type_info.type_name);
-        println!("Services:");
+    // get a message that a service could not be found for type info
+    fn get_could_not_find_descriptor_message(self: &Self, type_info: Box<TypeInfo>) -> String {
+        let mut message = String::new();
+        message.push_str(format!("Could not get service for type {}", type_info.type_name).as_str());
+        message.push_str(format!("Services:").as_str());
         for type_descriptors in self.type_id_to_type_info.values() {
-            println!("\t{:?}", type_descriptors);
+            message.push_str(format!("\t{:?}", type_descriptors).as_str());
         }
+        message
     }
     
-    // print a message that a service could not be found for a type id
-    fn print_could_not_find_type_id(self: &Self, type_id: TypeId) {
-        println!("Could not get service for type {:?}", type_id);
-        println!("Services:");
+    // get a message that a service could not be found for a type id
+    fn get_could_not_find_type_id_message(self: &Self, type_id: TypeId) -> String {
+        let mut message = String::new();
+        message.push_str(format!("Could not get service for type {:?}", type_id).as_str());
+        message.push_str(format!("Services:").as_str());
         for type_descriptors in self.type_id_to_type_info.values() {
-            println!("\t{:?}", type_descriptors);
+            message.push_str(format!("\t{:?}", type_descriptors).as_str());
         }
+        message
     }
     // might need methods for creating derived service collections with instantiated non-singleton scoped services
 }
 
 
-impl IServiceCollection for ServiceCollection {
+impl <'a> IServiceCollection for ServiceCollection<'a> {
     // should implement get_at_index, contains, index_of, insert, clear, remove, make_readonly
     // if it is possible to add extension methods, should add them as helpers.
     // for example, add_web_response_handlers (convert web response to string for HTTP)
@@ -198,18 +207,34 @@ impl IServiceCollection for ServiceCollection {
     }
 
     fn get_required(&self, type_info: Box<TypeInfo>) -> Vec<Box<dyn Any>> {
-        self.try_get(type_info.clone()).expect(&format!("type not found: {}", type_info).to_string())
+        let try_get_self = self.try_get(type_info.clone());
+        match try_get_self {
+            Ok(x) => x,
+            Err(_) => {
+                let try_get_parent = match self.parent {
+                    Some(parent) => parent.try_get(type_info.clone()),
+                    None => Err(""),
+                };
+
+                match try_get_parent {
+                    Ok(x) => x,
+                    Err(_) => {
+                        panic!("type not found: {}", type_info);
+                    },
+                }
+            },
+        }
     }
 
     fn get_current_scope(&self) -> ServiceScope {
         self.current_scope
     }
 
-    fn get_parent(&self) -> Option<Rc<dyn IServiceCollection>> {
+    fn get_parent(&self) -> Option<&dyn IServiceCollection> {
         self.parent.clone()
     }
 
-    fn get_root(&self) -> Option<Rc<dyn IServiceCollection>> {
+    fn get_root(&self) -> Option<&dyn IServiceCollection> {
         self.root.clone()
     }
     
@@ -228,19 +253,49 @@ impl IServiceCollection for ServiceCollection {
     fn find_descriptor(self: &Self, type_info: Box<TypeInfo>) -> Vec<Rc<ServiceDescriptor>> {
         match self.type_id_to_descriptor.get(&type_info.type_id) {
             Some(descriptor) => descriptor.clone(),
-            None => { self.print_could_not_find_descriptor(type_info); panic!() },
+            None => {
+                vec![]
+            },
         }
+        .iter()
+        .cloned()
+        .chain(
+            match self.parent {
+                Some(parent) => parent.find_descriptor(type_info),
+                None => { vec![] },
+            }.iter().cloned()
+        )
+        .collect()
     }
 
     fn find_descriptor_by_id(self: &Self, type_id: TypeId) -> Vec<Rc<ServiceDescriptor>> {
         match self.try_find_descriptor_by_id(type_id) {
             Some(descriptor) => descriptor.clone(),
-            None => { panic!("self.print_could_not_find_descriptor(type_id)") },
+            None => { vec![] }, // panic!("{}", self.get_could_not_find_type_id_message(type_id))
         }
+        .iter()
+        .cloned()
+        .chain(
+            match self.parent {
+                Some(parent) => parent.try_find_descriptor_by_id(type_id),
+                None => { None },
+            }
+            .unwrap_or(&vec![])
+            .iter()
+            .cloned()
+        )
+        .collect()
     }
 
     fn try_find_descriptor_by_id(self: &Self, type_id: TypeId) -> Option<&Vec<Rc<ServiceDescriptor>>> {
-        self.type_id_to_descriptor.get(&type_id)
+        if let Some(descriptor) = self.type_id_to_descriptor.get(&type_id) {
+            Some(descriptor)
+        } else {
+            match self.parent {
+                Some(parent) => parent.try_find_descriptor_by_id(type_id),
+                None => { None },
+            }
+        }
     }
 }
 
@@ -250,7 +305,7 @@ pub struct ServiceCollectionExtensions {}
 // extension methods for IServiceCollection
 impl ServiceCollectionExtensions {
     // try to get a service from the collection. if it is not found, return an error.
-    pub fn try_get_single<T: 'static + ?Sized>(services: &dyn IServiceCollection) -> Result<Option<Rc<T>>, &str> {
+    pub fn try_get_single<T: 'static + ?Sized>(services: &dyn IServiceCollection) -> Result<Option<Rc<T>>, Box<dyn Error>> {
         let type_info = TypeInfo::rc_of::<T>();
         Ok(services
             .try_get(type_info)

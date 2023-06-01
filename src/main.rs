@@ -27,7 +27,5 @@ fn main() {
         .on_start(onstart);
 
     // Now do configuration and start web app
-    prog.configure(args.clone());
-    prog.configure_services();
-    prog.start(args.clone());
+    prog.main(args.clone());
 }

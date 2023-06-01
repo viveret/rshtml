@@ -1,19 +1,21 @@
+use std::cell::RefCell;
 use std::rc::Rc;
-use std::net::{TcpStream, TcpListener};
-use std::io::{Write, BufReader, BufRead};
+use std::net::{TcpStream, TcpListener, Shutdown};
 use std::option::Option;
 use std::vec::Vec;
 
 use crate::app::http_request_pipeline::IHttpRequestPipeline;
 
-use crate::contexts::connection_context::{ IConnectionContext, ConnectionContext };
+use crate::contexts::connection_context::{ ConnectionContext, HttpConnectionContext, IHttpConnectionContext };
 
+use crate::core::buffered_tcpstream::BufferedTcpStream;
 use crate::options::http_options::IHttpOptions;
 
 use crate::services::default_services::DefaultServices;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
+use crate::services::service_scope::ServiceScope;
 
 // this is a trait for a class that can be used to configure and start a web program.
 pub trait IWebProgram {
@@ -27,22 +29,22 @@ pub trait IWebProgram {
     // start is called by the host to allow the program to start itself.
     fn start(self: &Self, args: Rc<Vec<String>>);
 
-    // get_services is called by the host to get the service collection.
-    fn get_services(self: &Self) -> &dyn IServiceCollection;
+    // main is called by the host to allow the program to configure options, configure services, and start itself.
+    fn main(self: &mut Self, args: Rc<Vec<String>>);
 }
 
 // this is a struct that implements IWebProgram. it uses a builder pattern to configure itself.
-pub struct WebProgram {
+pub struct WebProgram<'a> {
     on_configure_fn: Option<fn(&mut ServiceCollection, Rc<Vec<String>>)>,
     on_configure_services_fn: Option<fn(&mut ServiceCollection)>,
     onstart_fn: Option<fn(&dyn IServiceCollection)>,
-    services: ServiceCollection,
+    services_builder: RefCell<ServiceCollection<'a>>,
 }
 
-impl WebProgram {
+impl <'a> WebProgram<'a> {
     pub fn new() -> Self {
         Self {
-            services: ServiceCollection::new_root(),
+            services_builder: RefCell::new(ServiceCollection::new_root()),
             on_configure_fn: None,
             on_configure_services_fn: None,
             onstart_fn: None,
@@ -64,58 +66,68 @@ impl WebProgram {
         self
     }
 
-    pub fn client_connected(self: &Self, mut stream: TcpStream) {
-        let buf_reader = BufReader::new(&mut stream);
-
-        let mut request_headers: Vec<String> = buf_reader
-            .lines()
-            .map(|line| line.unwrap())
-            .take_while(|x| !x.is_empty() )
-            .collect();
-
-        if request_headers.len() == 0 {
-            println!("Could not read http header");
-            return;
+    pub fn client_connected(self: &Self, client: Result<TcpStream, std::io::Error>) {
+        match client {
+            Ok(stream) => {
+                // stream.set_ttl(100).unwrap();
+                // stream.set_nodelay(true).unwrap();
+                // stream.set_nonblocking(true).unwrap();
+                // stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+                // stream.set_write_timeout(Some(Duration::from_secs(2))).unwrap();
+                self.client_ready(stream);
+            },
+            Err(e) => {
+                panic!("Error: {}", e);
+            }
         }
-        let http_header: String = request_headers.remove(0);
+    }
 
-        let request_bytes = Vec::<u8>::new();
-        let request_bytes_boxed = Box::new(request_bytes);
+    fn client_ready(&self, stream: TcpStream) {
+        let connection_context = HttpConnectionContext::new_from_stream(stream);
 
-        let connection_context = Rc::new(ConnectionContext::new(stream.peer_addr().unwrap())) as Rc<dyn IConnectionContext>;
+        let self_services = self.services_builder.borrow().clone();
+        let connection_services = ServiceCollection::new(ServiceScope::Request, &self_services, self_services.get_root().unwrap_or(&self_services));
 
-        let request_pipeline = ServiceCollectionExtensions::get_required_single::<dyn IHttpRequestPipeline>(&self.services);
+        // get the request pipeline from the connection services.
+        let request_pipeline = ServiceCollectionExtensions::get_required_single::<dyn IHttpRequestPipeline>(&connection_services);
 
-        let response = request_pipeline.process_request(http_header, request_headers, request_bytes_boxed, connection_context, &self.services).expect("could not process request");
-        stream.write_all(&response).expect("could not write response");
+        // invoke the request pipeline to process the request and get the response.
+        request_pipeline.as_ref().process_request(&connection_context, &connection_services).expect("could not process request");
+
+        // flush the stream. this will send the response back to the client.
+        connection_context.flush().expect("could not flush response");
+        connection_context.shutdown(Shutdown::Both).expect("could not shutdown stream");
     }
 }
 
-impl IWebProgram for WebProgram {
+impl <'a> IWebProgram for WebProgram<'a> {
     fn configure(self: &mut Self, args: Rc<Vec<String>>) {
-        (self.on_configure_fn.unwrap())(&mut self.services, args);
+        (self.on_configure_fn.unwrap())(&mut self.services_builder.borrow_mut(), args);
     }
     
     fn configure_services(self: &mut Self) {
-        (self.on_configure_services_fn.unwrap())(&mut self.services);
+        (self.on_configure_services_fn.unwrap())(&mut self.services_builder.borrow_mut());
 
-        DefaultServices::add_http_request_pipeline(&mut self.services);
+        DefaultServices::add_http_request_pipeline(&mut self.services_builder.borrow_mut());
     }
 
     fn start(self: &Self, _args: Rc<Vec<String>>) {
-        (self.onstart_fn.unwrap())(&self.services);
+        let services = &self.services_builder.clone().into_inner();
+        (self.onstart_fn.unwrap())(services);
 
-        let options = ServiceCollectionExtensions::get_required_single::<dyn IHttpOptions>(&self.services);
+        let options = ServiceCollectionExtensions::get_required_single::<dyn IHttpOptions>(services);
 
         println!("Hosting at {}", options.get_ip_and_port());
         let listener = TcpListener::bind(options.get_ip_and_port()).unwrap();
 
         for stream in listener.incoming() {
-            self.client_connected(stream.unwrap());
+            self.client_connected(stream);
         }
     }
 
-    fn get_services(self: &Self) -> &dyn IServiceCollection {
-        &self.services
+    fn main(self: &mut Self, args: Rc<Vec<String>>) {
+        self.configure(args.clone());
+        self.configure_services();
+        self.start(args);
     }
 }

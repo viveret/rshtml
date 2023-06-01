@@ -9,7 +9,7 @@ use http::Method;
 use crate::action_results::iaction_result::IActionResult;
 use crate::controllers::icontroller::IController;
 use crate::services::service_collection::IServiceCollection;
-use crate::contexts::controller_context::ControllerContext;
+use crate::contexts::controller_context::{ControllerContext, IControllerContext};
 
 use super::controller_action::IControllerAction;
 use super::closure::ControllerActionClosure;
@@ -43,8 +43,8 @@ pub struct ControllerActionBuilder {
     // whether or not the model should be validated for the controller action
     should_validate_model: RefCell<Option<bool>>,
     // the closure function for the controller action (if the route type is a closure)
-    closure_fn: RefCell<Option<Rc<dyn Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>>,
-    // member_fn: RefCell<Option<Rc<fn(self_arg: T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
+    closure_fn: RefCell<Option<Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>>,
+    // member_fn: RefCell<Option<Rc<fn(self_arg: T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     // the member function for the controller action (if the route type is a member function)
     member_fn_action: RefCell<Option<Rc<dyn IControllerAction>>>,
 }
@@ -87,7 +87,7 @@ impl ControllerActionBuilder {
     pub fn set_member_fn<T:'static + IController>(
         self: &Self, 
         // self_arg: T, 
-        member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn: fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> &Self {
         self.route_type.replace(Some(RouteType::MemberFn));
         self.member_fn_action.replace(

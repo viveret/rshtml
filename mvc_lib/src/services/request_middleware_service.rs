@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::result::Result;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::ResponseContext;
+use crate::contexts::response_context::{ResponseContext, IResponseContext};
 
 use crate::services::service_collection::IServiceCollection;
 
@@ -24,9 +24,9 @@ pub trait IRequestMiddlewareService {
     fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>);
 
     // handles the request.
-    // request_ctx: the request context.
-    // response_ctx: the response context.
+    // request_context: the request context.
+    // response_context: the response context.
     // services: the service collection.
     // returns: the result of the middleware service.
-    fn handle_request(self: &Self, request_ctx: Rc<dyn IRequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>>;
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>>;
 }

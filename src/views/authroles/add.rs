@@ -19,7 +19,7 @@ mvc_macro_lib::rusthtml_view_macro! {
         }
     }
 
-    @custom_html.form(http::method::Method::POST, url.url_action(false, Some(true), None, Some("add"), Some("AuthRoles"), None, None).into(), Some(&HashMap::new()) /* optional attributes, takes precedent over route values */, || -> HtmlString {
+    @custom_html.form(http::method::Method::POST, url.url_action(false, Some(false), None, Some("add"), Some("AuthRoles"), None, None).into(), Some(&HashMap::new()) /* optional attributes, takes precedent over route values */, || -> HtmlString {
         let role_name_label = "Role Name";
         @custom_html.label("role", role_name_label, None)
         @custom_html.input("role", "text", model.role.as_str(), None)

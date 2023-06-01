@@ -11,13 +11,18 @@ use crate::contexts::irequest_context::IRequestContext;
 use crate::controllers::icontroller::IController;
 use crate::controllers::icontroller_extensions::IControllerExtensions;
 
+use crate::core::type_info::TypeInfo;
+use crate::model_binder::iviewmodel_binder::IViewModelBinder;
+use crate::model_binder::view_model_binder_resolver::IViewModelBinderResolver;
+use crate::model_binder::view_model_result::ViewModelResult;
 use crate::routing::route_data::RouteData;
+use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions};
 
 // this trait represents a controller context which is used to invoke a controller action.
 // a controller context is created for each controller that is created.
 pub trait IControllerContext {
     // get the request context for the controller context.
-    fn get_request_context(self: &Self) -> Rc<dyn IRequestContext>;
+    fn get_request_context(self: &Self) -> &dyn IRequestContext;
     // get the context data for the controller context.
     fn get_context_data(self: &Self) -> HashMap<String, Rc<Box<dyn Any>>>;
     // get the view data for the controller context.
@@ -41,12 +46,16 @@ pub trait IControllerContext {
     fn insert_string(self: &Self, key: String, value: String) -> String;
     // insert a string into the context data.
     fn insert_str(self: &Self, key: &str, value: String) -> String;
+
+    // bind the view model type to the request context body content.
+    fn bind_view_model(self: &Self, type_info: TypeInfo, services: &dyn IServiceCollection) -> Result<Box<dyn Any>, Rc<dyn Error>>;
+    //fn bind_view_model<T: 'static>(self: &Self, services: &dyn IServiceCollection) -> Result<Rc<T>, Rc<dyn Error>>;
 }
 
 // this struct implements IControllerContext.
-pub struct ControllerContext {
+pub struct ControllerContext<'a> {
     // the request context for the controller context.
-    pub request_context: Rc<dyn IRequestContext>,
+    pub request_context: &'a dyn IRequestContext,
     // the context data for the controller context.
     pub context_data: RefCell<HashMap<String, Rc<Box<dyn Any>>>>,
     // the view data for the controller context.
@@ -57,16 +66,16 @@ pub struct ControllerContext {
     pub action_result: RefCell<Option<Rc<dyn IActionResult>>>,
 }
 
-impl ControllerContext {
+impl <'a> ControllerContext<'a> {
     // create a new controller context.
     // controller: the controller for the controller context.
     // request_context: the request context for the controller context.
     pub fn new(
         controller: Rc<dyn IController>,
-        request_context: Rc<dyn IRequestContext>
+        request_context: &'a dyn IRequestContext
     ) -> Self {
         Self {
-            request_context: request_context.clone(),
+            request_context: request_context,
             context_data: RefCell::new(HashMap::new()),
             view_data: RefCell::new(HashMap::new()),
             controller: controller.clone(),
@@ -100,9 +109,9 @@ impl ControllerContext {
     }
 }
 
-impl IControllerContext for ControllerContext {
-    fn get_request_context(self: &Self) -> Rc<dyn IRequestContext> {
-        self.request_context.clone()
+impl <'a> IControllerContext for ControllerContext<'a> {
+    fn get_request_context(self: &Self) -> &dyn IRequestContext {
+        self.request_context
     }
 
     fn get_context_data(self: &Self) -> HashMap<String, Rc<Box<dyn Any>>> {
@@ -125,7 +134,7 @@ impl IControllerContext for ControllerContext {
         match self.view_data.borrow().get(&key) {
             Some(s) => s.clone(),
             None => {
-                self.request_context.as_ref().get_string(key)
+                self.request_context.get_string(key)
             },
         }
     }
@@ -153,5 +162,32 @@ impl IControllerContext for ControllerContext {
     fn set_action_result(self: &Self, action_result: Option<Rc<dyn IActionResult>>) {
         self.action_result.replace(action_result);
     }
+
+    fn bind_view_model(self: &Self, type_info: TypeInfo, services: &dyn IServiceCollection) -> Result<Box<dyn Any>, Rc<dyn Error>> {
+        todo!()
+    }
+
+    // new_fn: fn() -> Box<dyn Any>
+    // fn bind_view_model<T: 'static>(self: &Self, services: &dyn IServiceCollection) -> Result<Rc<T>, Rc<dyn Error>> {
+    //     let binder_resolver = ServiceCollectionExtensions::get_required_single::<dyn IViewModelBinderResolver>(services);
+    //     let binder = binder_resolver.resolve_for_content_type(self.request_context).unwrap();
+    //     let model = binder.bind_view_model(self.request_context);
+    //     println!("binder: {:?}", binder.type_info());
+    //     match model {
+    //         ViewModelResult::Ok(model) => {
+    //             let model = model.downcast::<T>().unwrap();
+    //             Ok(model)
+    //         },
+    //         ViewModelResult::OkNone => {
+    //             panic!("ViewModelResult::OkNone")
+    //         },
+    //         ViewModelResult::ModelError(err, err2) => {
+    //             Err(err2)
+    //         },
+    //         ViewModelResult::PropertyError(a, err, err2) => {
+    //             Err(err2)
+    //         },
+    //     }
+    // }
 
 }

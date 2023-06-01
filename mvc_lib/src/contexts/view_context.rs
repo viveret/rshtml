@@ -4,23 +4,16 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::contexts::controller_context::IControllerContext;
-use crate::contexts::controller_context::ControllerContext;
-use crate::contexts::response_context::ResponseContext;
 use crate::contexts::irequest_context::IRequestContext;
 
-use crate::view::rusthtml::html_string::HtmlString;
 use crate::view::iview::IView;
 use crate::view::view_renderer::IViewRenderer;
+
+use super::response_context::IResponseContext;
 
 // this trait represents a view context which is used to render a view.
 // a view context is created for each view that is rendered.
 pub trait IViewContext: Send + Sync {
-    // create a new view context for a view that is rendered within the current view context.
-    // this is used for rendering layouts and partial views.
-    // view: the view to render.
-    // returns: a new view context.
-    fn recurse_into_new_context(self: &Self, view: Rc<dyn IView>) -> Box<dyn IViewContext>;
-
     // get the view renderer for the view context.
     fn get_view_renderer(self: &Self) -> Rc<dyn IViewRenderer>;
     // get the context data for the view context.
@@ -35,11 +28,11 @@ pub trait IViewContext: Send + Sync {
     fn get_view_as_ref(self: &Self) -> &dyn IView;
 
     // get the controller context for the view context.
-    fn get_controller_ctx(self: &Self) -> Rc<ControllerContext>;
+    fn get_controller_ctx(self: &Self) -> &dyn IControllerContext;
     // get the response context for the view context.
-    fn get_response_ctx(self: &Self) -> Rc<ResponseContext>;
+    fn get_response_context(self: &Self) -> &dyn IResponseContext;
     // get the request context for the view context.
-    fn get_request_context(self: &Self) -> Rc<dyn IRequestContext>;
+    fn get_request_context(self: &Self) -> &dyn IRequestContext;
 
     // get a string from the view data or the controller context.
     fn get_string(self: &Self, key: String) -> String;
@@ -50,13 +43,10 @@ pub trait IViewContext: Send + Sync {
     fn insert_string(self: &Self, key: String, value: String) -> String;
     // insert a string into the view data.
     fn insert_str(self: &Self, key: &str, value: String) -> String;
-
-    // clone the view context for a layout view.
-    fn clone_for_layout(self: &Self, layout_view: Rc<dyn IView>) -> Box<dyn IViewContext>;
 }
 
 // this struct implements IViewContext.
-pub struct ViewContext {
+pub struct ViewContext<'a> {
     // the view to render.
     view: Rc<dyn IView>,
     // the context data for the view context.
@@ -68,30 +58,30 @@ pub struct ViewContext {
     // the view renderer for the view context.
     view_renderer: Rc<dyn IViewRenderer>,
     // the controller context for the view context.
-    controller_ctx: Rc<ControllerContext>,
+    controller_ctx: &'a dyn IControllerContext,
     // the response context for the view context.
-    response_ctx: Rc<ResponseContext>,
+    response_context: &'a dyn IResponseContext,
     // the request context for the view context.
-    request_ctx: Rc<dyn IRequestContext>,
+    request_context: &'a dyn IRequestContext,
 }
-unsafe impl Send for ViewContext {}
-unsafe impl Sync for ViewContext {}
+unsafe impl <'a> Send for ViewContext<'a> {}
+unsafe impl <'a> Sync for ViewContext<'a> {}
 
 
-impl ViewContext {
+impl <'a> ViewContext<'a> {
     // create a new ViewContext struct.
     // view: the view to render.
     // viewmodel: the view model for the view context.
     // view_renderer: the view renderer for the view context.
     // controller_ctx: the controller context for the view context.
-    // response_ctx: the response context for the view context.
+    // response_context: the response context for the view context.
     // returns: a new ViewContext struct.
     pub fn new(
                 view: Rc<dyn IView>,
                 viewmodel: Rc<Option<Box<dyn Any>>>,
                 view_renderer: Rc<dyn IViewRenderer>,
-                controller_ctx: Rc<ControllerContext>,
-                response_ctx: Rc<ResponseContext>
+                controller_ctx: &'a dyn IControllerContext,
+                response_context: &'a dyn IResponseContext
             ) -> Self {
         Self {
             viewdata: Rc::new(RefCell::new(HashMap::new())),
@@ -99,24 +89,35 @@ impl ViewContext {
             view: view,
             viewmodel: viewmodel,
             view_renderer: view_renderer,
-            controller_ctx: controller_ctx.clone(),
-            response_ctx: response_ctx,
-            request_ctx: controller_ctx.request_context.clone(),
+            controller_ctx: controller_ctx,
+            response_context: response_context,
+            request_context: controller_ctx.get_request_context(),
         }
+    }
+
+    // create a new view context for a view that is rendered within the current view context.
+    // this is used for rendering layouts and partial views.
+    // view: the view to render.
+    // returns: a new view context.
+    pub fn recurse_into_new_context(parent_context: &'a dyn IViewContext, view: Rc<dyn IView>) -> ViewContext<'a> {
+        Self::new(
+            view,
+            parent_context.get_viewmodel(),
+            parent_context.get_view_renderer(),
+            parent_context.get_controller_ctx(),
+            parent_context.get_response_context(),
+        )
+    }
+
+    // clone the view context for a layout view.
+    pub fn clone_for_layout(ctx: &'a dyn IViewContext, layout_view: Rc<dyn IView>) -> ViewContext<'a> {
+        let copy = Self::new(layout_view.clone(), ctx.get_viewmodel(), ctx.get_view_renderer(), ctx.get_controller_ctx(), ctx.get_response_context());
+        copy.viewdata.as_ref().replace(ctx.get_view_data().as_ref().borrow().clone());
+        copy
     }
 }
 
-impl IViewContext for ViewContext {
-    fn recurse_into_new_context(self: &Self, view: Rc<dyn IView>) -> Box<dyn IViewContext> {
-        Box::new(Self::new(
-            view,
-            self.viewmodel.clone(),
-            self.view_renderer.clone(),
-            self.controller_ctx.clone(),
-            self.response_ctx.clone(),
-        ))
-    }
-
+impl <'a> IViewContext for ViewContext<'a> {
     fn get_view_renderer(self: &Self) -> Rc<dyn IViewRenderer> {
         self.view_renderer.clone()
     }
@@ -141,16 +142,16 @@ impl IViewContext for ViewContext {
         self.view.as_ref()
     }
 
-    fn get_controller_ctx(self: &Self) -> Rc<ControllerContext> {
-        self.controller_ctx.clone()
+    fn get_controller_ctx(self: &Self) -> &dyn IControllerContext {
+        self.controller_ctx
     }
 
-    fn get_response_ctx(self: &Self) -> Rc<ResponseContext> {
-        self.response_ctx.clone()
+    fn get_response_context(self: &Self) -> &dyn IResponseContext {
+        self.response_context
     }
 
-    fn get_request_context(self: &Self) -> Rc<dyn IRequestContext> {
-        self.request_ctx.clone()
+    fn get_request_context(self: &Self) -> &dyn IRequestContext {
+        self.request_context
     }
 
     fn get_string(self: &Self, key: String) -> String {
@@ -171,11 +172,5 @@ impl IViewContext for ViewContext {
 
     fn insert_str(self: &Self, key: &str, value: String) -> String {
         self.insert_string(key.to_string(), value)
-    }
-
-    fn clone_for_layout(self: &Self, layout_view: Rc<dyn IView>) -> Box<dyn IViewContext> {
-        let copy = Self::new(layout_view.clone(), self.viewmodel.clone(), self.view_renderer.clone(), self.controller_ctx.clone(), self.response_ctx.clone());
-        copy.viewdata.as_ref().replace(self.viewdata.as_ref().borrow().clone());
-        Box::new(copy)
     }
 }

@@ -1,26 +1,25 @@
-use std::any::Any;
 use std::cell::RefCell;
 use std::error::Error;
-use std::rc::Rc;
+use std::{rc::Rc, any::Any};
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::ResponseContext;
+use crate::contexts::response_context::{ResponseContext, IResponseContext};
 use crate::core::type_info::TypeInfo;
 use crate::auth::iauthroles_dbset_provider::IAuthRolesDbSetProvider;
-use crate::model::model_decoder_resolver::ModelDecoderResolver;
-use crate::model::view_model_result::ViewModelResult;
 use crate::services::request_middleware_service::{IRequestMiddlewareService, MiddlewareResult};
 use crate::services::service_scope::ServiceScope;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_collection::{IServiceCollection, ServiceCollection, ServiceCollectionExtensions};
 
-// this middleware is used to decode the request body.
-pub struct RequestDecoderMiddleware {
+use super::ihttp_body_stream_format::IHttpBodyStreamFormat;
+
+// this middleware is used to encode the response body.
+pub struct ResponseEncoderMiddleware {
     // the next middleware in the pipeline
     next: RefCell<Option<Rc<dyn IRequestMiddlewareService>>>
 }
 
-impl RequestDecoderMiddleware {
+impl ResponseEncoderMiddleware {
     pub fn new() -> Self {
         Self {
             next: RefCell::new(None)
@@ -38,18 +37,21 @@ impl RequestDecoderMiddleware {
     }
 }
 
-impl IRequestMiddlewareService for RequestDecoderMiddleware {
+impl IRequestMiddlewareService for ResponseEncoderMiddleware {
     fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
-        let request_decoder_resolver = ServiceCollectionExtensions::get_required_single::<ModelDecoderResolver>(services);
-        let result = request_decoder_resolver.decode_model(request_context.clone());
-        request_context.set_model_validation_result(Some(result));
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+        // get accept header from request
+        let accept_header = request_context.get_headers().get("Accept").unwrap();
+        let accept_str = accept_header.to_str().unwrap();
         
+        // get encoder from service collection
+        let encoder = ServiceCollectionExtensions::get_required_single::<dyn IHttpBodyStreamFormat>(services).get_encoder(accept_str);
+
         if let Some(next) = self.next.borrow().as_ref() {
-            let next_response = next.handle_request(request_context.clone(), response_context.clone(), services)?;
+            let next_response = next.handle_request(response_context, request_context, services)?;
 
             match next_response {
                 MiddlewareResult::OkBreak => {

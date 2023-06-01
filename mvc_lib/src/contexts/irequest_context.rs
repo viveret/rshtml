@@ -6,12 +6,13 @@ use std::rc::Rc;
 use http::{Method, HeaderMap};
 
 use crate::core::query_string::QueryString;
-use crate::model::view_model_result::ViewModelResult;
+use crate::http::http_body_content::{IBodyContent, ContentType};
+use crate::model_binder::view_model_result::ViewModelResult;
 use crate::routing::route_data::RouteData;
 use crate::services::authorization_service::IAuthClaim;
 use crate::controller_actions::controller_action::IControllerAction;
 
-use super::connection_context::IConnectionContext;
+use super::connection_context::{IConnectionContext, IHttpConnectionContext};
 
 
 // this trait represents a HTTP request and its context.
@@ -32,8 +33,11 @@ pub trait IRequestContext {
     fn get_path(self: &Self) -> &String;
     // get the method of the request
     fn get_method(self: &Self) -> &Method;
-    // get the body of the request
-    fn get_body(self: &Self) -> &Vec<u8>;
+
+    // get the body of the request if it exists and is not empty.
+    // fn get_body_raw(self: &Self) -> Option<Box<Vec<u8>>>;
+    // get the body of the request if it exists and is not empty, and was decoded.
+    fn get_body_content(self: &Self) -> Option<Rc<dyn IBodyContent>>;
     
     // get the model validation result of the request
     fn get_model_validation_result(self: &Self) -> Option<ViewModelResult<Rc<dyn Any>>>;
@@ -41,7 +45,7 @@ pub trait IRequestContext {
     fn set_model_validation_result(self: &Self, v: Option<ViewModelResult<Rc<dyn Any>>>);
 
     // get the body model of the request
-    fn get_connection_context(self: &Self) -> Rc<dyn IConnectionContext>;
+    fn get_connection_context(self: &Self) -> &dyn IHttpConnectionContext;
 
     // get the route data of the request
     fn get_route_data(self: &Self) -> RouteData;
@@ -74,4 +78,9 @@ pub trait IRequestContext {
     fn get_headers(self: &Self) -> &HeaderMap;
     // get the cookies of the request
     fn get_cookies_parsed(self: &Self) -> Option<HashMap<String, String>>;
+
+    // get the content type of the request
+    fn get_content_type(self: &Self) -> Option<ContentType>;
+    // get the content length of the request
+    fn get_content_length(self: &Self) -> Option<usize>;
 }

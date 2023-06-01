@@ -4,12 +4,11 @@ use std::rc::Rc;
 use std::error::Error;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::request_context::RequestContext;
+use crate::contexts::response_context::IResponseContext;
 use crate::contexts::response_context::ResponseContext;
 use crate::contexts::controller_context::IControllerContext;
 
 use crate::controllers::icontroller_extensions::IControllerExtensions;
-use crate::controllers::controller_actions_map::IControllerActionsMap;
 
 use crate::services::routemap_service::IRouteMapService;
 use crate::services::request_middleware_service::MiddlewareResult;
@@ -48,17 +47,17 @@ impl IRequestMiddlewareService for ControllerActionExecuteService {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         if let Some(action) = request_context.get_controller_action_optional() {
             let controller = self.mapper_service.get_mapper().get_controller(action.get_controller_name().to_string());
-            let controller_context = IControllerExtensions::create_context(controller.clone(), request_context.clone());
-            action.invoke(controller_context.clone(), services)?;
+            let controller_context = IControllerExtensions::create_context(controller.clone(), request_context);
+            action.invoke(&controller_context, services)?;
             let result = controller_context.get_action_result();
 
             match result {
                 Some(action_result) => {
-                    response_context.status_code.replace(action_result.get_statuscode());
-                    action_result.configure_response(controller_context.clone(), response_context.clone(), request_context.clone(), services);
+                    response_context.set_status_code(action_result.get_statuscode());
+                    action_result.configure_response(&controller_context, response_context, request_context, services);
                 },
                 None => {
                     // println!("Trying next path if available");

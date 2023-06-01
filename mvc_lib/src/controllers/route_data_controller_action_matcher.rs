@@ -2,7 +2,7 @@ use std::error::Error;
 use std::rc::Rc;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::ResponseContext;
+use crate::contexts::response_context::{ResponseContext, IResponseContext};
 
 use crate::controller_actions::controller_action::IControllerAction;
 use crate::controllers::controller_actions_map::IControllerActionsMap;
@@ -30,10 +30,10 @@ impl RouteDataControllerActionMatcher {
 
     // create a new instance of the matcher as a service for a service collection.
     // request_context: the request context for the controller action.
-    // response_ctx: the response context for the controller action.
+    // response_context: the response context for the controller action.
     // services: the service collection for the controller action.
     // returns: the controller action or an error.
-    pub fn get_action_for_request(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IControllerAction>>, Box<dyn Error>> {
+    pub fn get_action_for_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IControllerAction>>, Box<dyn Error>> {
         let all_actions = self.actions_map.get_all_actions();
         let actions: Vec<Rc<dyn IControllerAction>> = all_actions
             .iter()

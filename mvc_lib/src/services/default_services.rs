@@ -2,12 +2,19 @@ use crate::core::type_info::TypeInfo;
 
 use crate::app::http_request_pipeline::{ IHttpRequestPipeline, HttpRequestPipeline };
 
-use crate::middleware::request_decoder_middleware::RequestDecoderMiddleware;
-use crate::middleware::response_encoder_middleware::ResponseEncoderMiddleware;
-use crate::model::decoders::form_url_encoded_decoder::FormUrlEncodedDecoder;
-use crate::model::decoders::json_decoder::JsonDecoder;
-use crate::model::model_decoder_resolver::ModelDecoderResolver;
-use crate::model::model_encoder_resolver::ModelEncoderResolver;
+use crate::diagnostics::logging::log_http_requests::LogHttpRequestsMiddleware;
+use crate::diagnostics::logging::logging_service::{LoggingService, ILoggingService};
+use crate::diagnostics::performance::iperformance_logger_service::IPerformanceLoggerService;
+use crate::diagnostics::performance::performance_logger_service::PerformanceLoggerService;
+use crate::http::http_body_format_resolver::HttpBodyFormatResolver;
+use crate::http::http_body_format_service::HttpBodyFormatService;
+use crate::http::request_decoder_middleware::RequestDecoderMiddleware;
+use crate::http::response_encoder_middleware::ResponseEncoderMiddleware;
+use crate::model_binder::decoders::url_encoded_model_decoder::UrlEncodedDecoder;
+use crate::model_binder::decoders::json_decoder::JsonDecoder;
+use crate::model_binder::model_binder_middleware::ModelBinderMiddleware;
+use crate::model_binder::model_binder_resolver::ModelBinderResolver;
+use crate::model_binder::model_serializer_resolver::ModelEncoderResolver;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
 use crate::services::file_provider_service::{IFileProviderService, FileProviderService };
@@ -16,14 +23,13 @@ use crate::services::request_middleware_service::IRequestMiddlewareService;
 use crate::services::controller_action_execute_service::ControllerActionExecuteService;
 use crate::services::routing_service::RoutingService;
 use crate::services::routemap_service::{ IRouteMapService, RouteMapService };
-use crate::services::logging_services::LogHttpRequestsMiddleware;
 
 use crate::view::view_renderer::{ IViewRenderer, ViewRenderer };
 
 use crate::controllers::icontroller::IController;
 use crate::controllers::file_provider_controller::FileProviderController;
-// use crate::model::form_url_encoded_binder::FormUrlEncodedBinder;
-use crate::model::view_model_binder_resolver::ViewModelBinderResolver;
+use crate::model_binder::view_model_binder_resolver::ViewModelBinderResolver;
+
 
 
 // this is a struct that holds the default services for the framework.
@@ -40,6 +46,18 @@ use crate::model::view_model_binder_resolver::ViewModelBinderResolver;
 pub struct DefaultServices {}
 
 impl DefaultServices {
+    // add the default logging services to the service collection.
+    pub fn add_logging(services: &mut ServiceCollection) {
+        // services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn ILogHttpRequestsOptions>(), LogHttpRequestsOptions::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn ILoggingService>(), LoggingService::new_service, ServiceScope::Singleton));
+    }
+
+    // add the default performance logging services to the service collection.
+    pub fn add_performance_logging(services: &mut ServiceCollection) {
+        // services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn ILogHttpRequestsOptions>(), LogHttpRequestsOptions::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IPerformanceLoggerService>(), PerformanceLoggerService::new_service, ServiceScope::Singleton));
+    }
+
     // add the default file provider services to the service collection.
     pub fn add_file_provider(services: &mut ServiceCollection) {
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IFileProviderService>(), FileProviderService::new_service, ServiceScope::Singleton));
@@ -72,10 +90,11 @@ impl DefaultServices {
 
     // add the default request pipeline services to the service collection.
     pub fn add_request_decoders(services: &mut ServiceCollection) {
-        FormUrlEncodedDecoder::add_to_services(services);
+        HttpBodyFormatResolver::add_to_services(services);
+        HttpBodyFormatService::add_to_services(services);
+
+        UrlEncodedDecoder::add_to_services(services);
         JsonDecoder::add_to_services(services);
-        
-        ModelDecoderResolver::add_to_services(services);
     }
 
     // add the default response encoder services to the service collection.
@@ -94,11 +113,6 @@ impl DefaultServices {
         ResponseEncoderMiddleware::add_to_services(services);
     }
 
-    // add the default model validation middleware to the service collection.
-    pub fn use_model_validation(services: &mut ServiceCollection) {
-        // ResponseEncoderMiddleware::add_to_services(services);
-    }
-
     // add the default http request pipeline services to the service collection.
     pub fn add_http_request_pipeline(services: &mut ServiceCollection) {
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IHttpRequestPipeline>(), HttpRequestPipeline::new_service, ServiceScope::Request));
@@ -109,7 +123,13 @@ impl DefaultServices {
         // add factories / binders / validators to services
         // FormUrlEncodedBinder::add_to_services(services);
         
-        // add resolver
+        // add resolvers
+        ModelBinderResolver::add_to_services(services);
         ViewModelBinderResolver::add_to_services(services);
+    }
+
+    // add the default model validation middleware to the service collection.
+    pub fn use_model_validation(services: &mut ServiceCollection) {
+        ModelBinderMiddleware::add_to_services(services);
     }
 }

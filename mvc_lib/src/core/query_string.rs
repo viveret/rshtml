@@ -3,6 +3,8 @@ use std::collections::HashMap;
 // this struct holds the query string key/value pairs.
 #[derive(Debug)]
 pub struct QueryString {
+    pub raw_str: String,
+
     // the query string key/value pairs
     pub entries: HashMap<String, Vec<String>>
 }
@@ -13,6 +15,7 @@ impl QueryString {
     pub fn parse(query: &str) -> Self {
         // println!("query: {}", query);
         Self {
+            raw_str: query.to_string(),
             entries: querystring::querify(query)
                         .iter()
                         .map(|kvp| (
@@ -44,5 +47,9 @@ impl QueryString {
         }
         result.pop();
         result
+    }
+
+    pub fn to_str(self: &Self) -> &str {
+        self.raw_str.as_str()
     }
 }

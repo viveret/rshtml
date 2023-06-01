@@ -27,7 +27,7 @@ use crate::controller_actions::route_pattern::ControllerActionRoutePattern;
 // this struct is also useful for creating controller actions that just need to do something simple.
 pub struct ControllerActionClosure {
     // the closure that implements the controller action.
-    pub closure_fn: Rc<dyn Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
+    pub closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
     // the name of the controller action.
     pub name: String,
     // the name of the controller.
@@ -62,7 +62,7 @@ impl ControllerActionClosure {
         controller_name: Cow<'static, str>,
         area_name: String,
         should_validate_model: bool,
-        closure_fn: Rc<dyn Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>) -> Self {
+        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>) -> Self {
         Self {
             name: name,
             controller_name: controller_name,
@@ -90,7 +90,7 @@ impl ControllerActionClosure {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        closure_fn: Rc<dyn Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
+        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
         Self::new(
             http_methods_allowed,
@@ -119,7 +119,7 @@ impl ControllerActionClosure {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        closure_fn: Rc<dyn Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
+        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
         Self::new(
             http_methods_allowed,
@@ -148,7 +148,7 @@ impl ControllerActionClosure {
         name: String,
         controller_name: Cow<'static, str>,
         should_validate_model: bool,
-        closure_fn: Rc<dyn Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
+        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
         Self {
             name: name,
@@ -175,7 +175,7 @@ impl ControllerActionClosure {
         route_pattern: String,
         name: String,
         controller_name: Cow<'static, str>,
-        closure_fn: Rc<dyn Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
+        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
         Self {
             name: name,
@@ -202,7 +202,7 @@ impl ControllerActionClosure {
         route_pattern: String,
         name: String,
         controller_name: Cow<'static, str>,
-        closure_fn: Rc<dyn Fn(Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
+        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
         Self {
             name: name,
@@ -219,8 +219,8 @@ impl ControllerActionClosure {
 }
 
 impl IControllerAction for ControllerActionClosure {
-    fn invoke(self: &Self, controller_context: Rc<ControllerContext>, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
-        let result_option = (self.closure_fn)(controller_context.clone(), services)?;
+    fn invoke(self: &Self, controller_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
+        let result_option = (self.closure_fn)(controller_context, services)?;
         if let Some(result) = result_option {
             controller_context.set_action_result(Some(result));
         }
@@ -228,8 +228,8 @@ impl IControllerAction for ControllerActionClosure {
         Ok(())
     }
 
-    fn is_route_match(self: &Self, request_context: Rc<dyn IRequestContext>) -> Result<bool, Box<dyn Error>> {
-        if !IControllerActionExtensions::is_method_match(self, request_context.clone()) {
+    fn is_route_match(self: &Self, request_context: &dyn IRequestContext) -> Result<bool, Box<dyn Error>> {
+        if !IControllerActionExtensions::is_method_match(self, request_context) {
             return Ok(false);
         }
 

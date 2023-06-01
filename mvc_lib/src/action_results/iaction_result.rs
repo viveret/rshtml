@@ -1,11 +1,10 @@
 use std::any::Any;
-use std::rc::Rc;
 
 use http::StatusCode;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::ResponseContext;
-use crate::contexts::controller_context::ControllerContext;
+use crate::contexts::response_context::IResponseContext;
+use crate::contexts::controller_context::IControllerContext;
 
 use crate::services::service_collection::IServiceCollection;
 
@@ -26,5 +25,5 @@ pub trait IActionResult: IActionResultToAny {
     fn get_statuscode(self: &Self) -> StatusCode;
 
     // configure the response based on the action result
-    fn configure_response(self: &Self, controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, request_ctx: Rc<dyn IRequestContext>, services: &dyn IServiceCollection);
+    fn configure_response(self: &Self, controller_ctx: &dyn IControllerContext, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection);
 }

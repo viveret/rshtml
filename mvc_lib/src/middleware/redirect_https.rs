@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 use crate::action_results::http_result::HttpRedirectResult;
 use crate::contexts::irequest_context::IRequestContext;
+use crate::contexts::response_context::IResponseContext;
 use crate::contexts::response_context::ResponseContext;
 use crate::services::request_middleware_service::IRequestMiddlewareService;
 use crate::services::request_middleware_service::MiddlewareResult;
@@ -15,7 +16,7 @@ use crate::services::service_collection::IServiceCollection;
 
 // this trait is for a middleware service that redirects HTTP requests to HTTPS.
 pub trait IRedirectHttpsMiddlewareService: IRequestMiddlewareService {
-    fn redirect_to_https(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>) -> Result<MiddlewareResult, Box<dyn Error>>;
+    fn redirect_to_https(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext) -> Result<MiddlewareResult, Box<dyn Error>>;
 }
 
 // define the middleware service that redirects HTTP requests to HTTPS.
@@ -36,7 +37,7 @@ impl RedirectHttpsMiddlewareService {
 }
 
 impl IRedirectHttpsMiddlewareService for RedirectHttpsMiddlewareService {
-    fn redirect_to_https(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn redirect_to_https(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext) -> Result<MiddlewareResult, Box<dyn Error>> {
         let mut url = request_context.get_url().clone();
         if let Err(_) = url.set_scheme("https") {
             return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("Error setting scheme to https"))));
@@ -51,13 +52,13 @@ impl IRequestMiddlewareService for RedirectHttpsMiddlewareService {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
-        if request_context.as_ref().get_scheme() == "http" {
-            return self.redirect_to_https(request_context, response_context);
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+        if request_context.get_scheme() == "http" {
+            return self.redirect_to_https(response_context, request_context);
         }
 
         if let Some(next) = self.next.borrow().as_ref() {
-            let next_response = next.handle_request(request_context.clone(), response_context.clone(), services)?;
+            let next_response = next.handle_request(response_context, request_context, services)?;
 
             match next_response {
                 MiddlewareResult::OkBreak => {

@@ -1,13 +1,12 @@
 use std::fs::File;
-use std::rc::Rc;
 use std::io::Read;
 use std::path::Path;
 
 use http::StatusCode;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::ResponseContext;
-use crate::contexts::controller_context::ControllerContext;
+use crate::contexts::response_context::{ResponseContext, IResponseContext};
+use crate::contexts::controller_context::IControllerContext;
 
 use crate::action_results::iaction_result::IActionResult;
 
@@ -59,25 +58,28 @@ impl IActionResult for FileResult {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, _controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<dyn IRequestContext>, _services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, _controller_ctx: &dyn IControllerContext, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) {
         match File::open(self.path.clone()) {
             Ok(f) => {
-                response_ctx.add_header_str("Content-Type", &self.content_type);
+                response_context.set_status_code(StatusCode::OK);
+                response_context.add_header_str("Content-Type", &self.content_type);
                 let mut reader = std::io::BufReader::new(f);
-                match reader.read_to_end(&mut response_ctx.body.borrow_mut()) {
-                    Ok(num_read) => {
-                        // println!("Wrote {}, {} bytes", self.path, num_read);
-                        response_ctx.status_code.replace(StatusCode::OK);
-                    },
-                    Err(error) => {
-                        // println!("Error reading file: {}", error);
-                        response_ctx.status_code.replace(StatusCode::NOT_FOUND);
+                let mut body_stream = response_context.get_connection_context();
+                let mut buffer = [0; 4096];
+                loop {
+                    let num_read = reader.read(&mut buffer).unwrap();
+                    if num_read == 0 {
+                        break;
+                    }
+                    match body_stream.write(&buffer[0..num_read]) {
+                        Ok(_) => {},
+                        Err(error) => break,
                     }
                 }
             },
             Err(error) => {
                 // println!("Error opening file: {}", error);
-                response_ctx.status_code.replace(StatusCode::NOT_FOUND);
+                response_context.set_status_code(StatusCode::NOT_FOUND);
             }
         }
     }

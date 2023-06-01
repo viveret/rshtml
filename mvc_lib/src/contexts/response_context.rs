@@ -3,61 +3,106 @@ use std::cell::RefCell;
 use http::{StatusCode, Version};
 use http::{ HeaderName, HeaderValue, HeaderMap };
 
+use super::connection_context::{IConnectionContext, IHttpConnectionContext};
+use super::irequest_context::IRequestContext;
+
+
 // this trait represents a HTTP response and its context.
-pub struct ResponseContext {
-    // the HTTP version of the response
-    pub http_version: Version,
-    // the status code of the response
-    pub status_code: RefCell<StatusCode>,
-    // the headers of the response
-    pub headers: RefCell<HeaderMap>,
-    // the body of the response
-    pub body: RefCell<Vec<u8>>,
+pub trait IResponseContext {
+    // add a header to the response.
+    // name: the name of the header.
+    // value: the value of the header.
+    fn add_header_string(self: &Self, name: String, value: String);
+
+    // add a header to the response.
+    // name: the name of the header.
+    // value: the value of the header.
+    fn add_header_str(self: &Self, name: &str, value: &str);
+
+    // get the status message of the response.
+    fn status_message(self: &Self) -> String;
+
+    // get the headers of the response.
+    fn get_headers(&self) -> HeaderMap;
+
+    // get the status code of the response.
+    fn get_status_code(&self) -> StatusCode;
+
+    // set the status code of the response.
+    fn set_status_code(&self, status_code: StatusCode);
+
+    // get the request context of the response.
+    fn get_request_context(&self) -> &dyn IRequestContext;
+
+    // get the connection context of the response, same as the one for the request context.
+    fn get_connection_context(&self) -> &dyn IHttpConnectionContext;
 }
 
-impl ResponseContext {
+// this trait represents a HTTP response and its context.
+pub struct ResponseContext<'a> {
+    // // the HTTP version of the response
+    // pub http_version: Version,
+    // // the status code of the response
+    // pub status_code: RefCell<StatusCode>,
+    // // the headers of the response
+    // pub headers: RefCell<HeaderMap>,
+
+    // the request context of the response.
+    pub request_context: &'a dyn IRequestContext,
+    // the connection context of the response, same as the one for the request context.
+    pub connection_context: &'a dyn IHttpConnectionContext,
+}
+
+impl <'a> ResponseContext<'a> {
     // create a new response context.
     // http_version: the HTTP version of the response.
     // status_code: the status code of the response.
     // returns: the new response context.
-    pub fn new(http_version: Version, status_code: StatusCode) -> Self {
+    pub fn new(
+        request_context: &'a dyn IRequestContext,
+    ) -> Self {
+        let http_context = request_context.get_connection_context();
+
         Self {
-            http_version: http_version,
-            status_code: RefCell::new(status_code),
-            headers: RefCell::new(HeaderMap::new()),
-            body: RefCell::new(vec![]),
+            // http_version: http_version,
+            // status_code: RefCell::new(status_code),
+            // headers: RefCell::new(HeaderMap::new()),
+            request_context: request_context,
+            connection_context: http_context,
         }
     }
+}
 
-    // return the response as bytes.
-    pub fn to_bytes(self: &Self) -> Vec<u8> {
-        vec![]
+impl <'a> IResponseContext for ResponseContext<'a> {
+    fn add_header_string(self: &Self, name: String, value: String) {
+        self.connection_context.add_header_string(name, value);
     }
 
-    // add a header to the response.
-    // name: the name of the header.
-    // value: the value of the header.
-    pub fn add_header_string(self: &Self, name: String, value: String) {
-        self.headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).unwrap(), HeaderValue::from_bytes(value.as_bytes()).unwrap());
+    fn add_header_str(self: &Self, name: &str, value: &str) {
+        self.connection_context.add_header_str(name, value);
     }
 
-    // add a header to the response.
-    // name: the name of the header.
-    // value: the value of the header.
-    pub fn add_header_str(self: &Self, name: &str, value: &str) {
-        self.headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).unwrap(), HeaderValue::from_bytes(value.as_bytes()).unwrap());
+    fn status_message(self: &Self) -> String {
+        self.connection_context.get_pending_status_message()
     }
 
-    // get the status message of the response.
-    pub fn status_message(self: &Self) -> String {
-        match self.http_version {
-            Version::HTTP_10 | Version::HTTP_11 => self.status_code.borrow().canonical_reason().unwrap_or("").to_string(),
-            _ => "".into()
-        }
+    fn get_headers(&self) -> HeaderMap {
+        self.connection_context.get_pending_headers()
     }
 
-    // get the headers of the response.
-    pub fn get_headers(&self) -> &HeaderMap {
-        todo!()
+    fn set_status_code(&self, status_code: StatusCode) {
+        self.connection_context.set_pending_status_code(status_code);
+    }
+
+    fn get_status_code(&self) -> StatusCode {
+        self.connection_context.get_pending_status_code()
+    }
+
+    fn get_request_context(&self) -> &dyn IRequestContext {
+        self.request_context
+    }
+
+    fn get_connection_context(&self) -> &dyn IHttpConnectionContext {
+        self.connection_context
     }
 }

@@ -30,7 +30,7 @@ pub struct ControllerActionMemberFn<T> {
     // the first argument is the controller instance, the second argument is the controller context, and the third argument is the service collection.
     // the return value is an optional action result.
     // the function pointer is wrapped in an Rc so that it can be cloned.
-    pub member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>,
+    pub member_fn: fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>,
     // the name of the action (the name of the member function).
     pub name: String,
     // the name of the controller.
@@ -65,7 +65,7 @@ impl<T> ControllerActionMemberFn<T> {
         controller_name: Cow<'static, str>,
         area_name: String,
         should_validate_model: bool,
-        member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn: fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self {
             name: name,
@@ -94,7 +94,7 @@ impl<T> ControllerActionMemberFn<T> {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn: fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self::new(
             http_methods_allowed,
@@ -123,7 +123,7 @@ impl<T> ControllerActionMemberFn<T> {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn: fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self::new(
             http_methods_allowed,
@@ -152,7 +152,7 @@ impl<T> ControllerActionMemberFn<T> {
         name: String,
         controller_name: Cow<'static, str>,
         should_validate_model: bool,
-        member_fn: fn(self_arg: &T, Rc<ControllerContext>, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn: fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self {
             name: name,
@@ -168,19 +168,19 @@ impl<T> ControllerActionMemberFn<T> {
 }
 
 impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T> {
-    fn invoke(self: &Self, controller_context: Rc<ControllerContext>, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
+    fn invoke(self: &Self, controller_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
         let base_controller = controller_context.get_controller();
         let downcasted = base_controller.as_ref().as_any().downcast_ref::<T>().expect("Could not downcast base_controller to T where T: IController.");
 
-        let result_option = (self.member_fn)(downcasted, controller_context.clone(), services)?;
+        let result_option = (self.member_fn)(downcasted, controller_context, services)?;
         if let Some(result) = result_option {
             controller_context.set_action_result(Some(result));
         }
         Ok(())
     }
 
-    fn is_route_match(self: &Self, request_context: Rc<dyn IRequestContext>) -> Result<bool, Box<dyn Error>> {
-        if !IControllerActionExtensions::is_method_match(self, request_context.clone()) {
+    fn is_route_match(self: &Self, request_context: &dyn IRequestContext) -> Result<bool, Box<dyn Error>> {
+        if !IControllerActionExtensions::is_method_match(self, request_context) {
             return Ok(false);
         }
 

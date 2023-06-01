@@ -4,8 +4,8 @@ use std::rc::Rc;
 use http::StatusCode;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::ResponseContext;
-use crate::contexts::controller_context::ControllerContext;
+use crate::contexts::response_context::IResponseContext;
+use crate::contexts::controller_context::IControllerContext;
 
 use crate::action_results::iaction_result::IActionResult;
 use crate::view::view_renderer::IViewRenderer;
@@ -36,14 +36,14 @@ impl ViewResult {
     }
 
     // write the view result to the response body
-    pub fn write_response(self: &Self, view_render_result: Result<HtmlString, RustHtmlError>, response_ctx: Rc<ResponseContext>) {
-        response_ctx.add_header_str("Content-Type", "text/html");
+    pub fn write_response(self: &Self, view_render_result: Result<HtmlString, RustHtmlError>, response_context: &dyn IResponseContext) {
+        response_context.add_header_str("Content-Type", "text/html");
         match view_render_result {
             Ok(ok_view_result) => {
-                response_ctx.body.borrow_mut().extend_from_slice(ok_view_result.content.as_bytes());
+                response_context.get_connection_context().write_line(&ok_view_result.content).unwrap();
             },
             Err(err) => {
-                response_ctx.body.borrow_mut().extend_from_slice(format!("Error: {}", err).as_bytes());
+                response_context.get_connection_context().write_str(format!("Error: {}", err).as_str()).unwrap();
             }
         }
     }
@@ -54,9 +54,9 @@ impl IActionResult for ViewResult {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<dyn IRequestContext>, services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, controller_ctx: &dyn IControllerContext, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, services: &dyn IServiceCollection) {
         let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
-        let html = view_renderer.render_with_layout_if_specified(&self.path, self.model.clone(), controller_ctx.clone(), response_ctx.clone(), services);
-        self.write_response(html, response_ctx)
+        let html = view_renderer.render_with_layout_if_specified(&self.path, self.model.clone(), controller_ctx, response_context.clone(), services);
+        self.write_response(html, response_context)
     }
 }

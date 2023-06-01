@@ -28,6 +28,10 @@ use mvc_lib::view::iview::IView;
 use crate::views::authroles::index::view_authroles_index;
 use crate::views::authroles::add::view_authroles_add;
 use crate::views::dev::index::view_dev_index;
+use crate::views::dev::log::view_dev_log;
+use crate::views::dev::log_add::view_dev_log_add;
+use crate::views::dev::log_clear::view_dev_log_clear;
+use crate::views::dev::perf_log::view_dev_perf_log;
 use crate::views::dev::views::view_dev_views;
 use crate::views::dev::view_details::view_dev_view_details;
 use crate::views::dev::routes::view_dev_routes;
@@ -52,6 +56,10 @@ pub fn add_views(services: &mut ServiceCollection) {
             view_authroles_index::new_service(),
             view_authroles_add::new_service(),
             view_dev_index::new_service(),
+            view_dev_log::new_service(),
+            view_dev_log_add::new_service(),
+            view_dev_log_clear::new_service(),
+            view_dev_perf_log::new_service(),
             view_dev_views::new_service(),
             view_dev_view_details::new_service(),
             view_dev_routes::new_service(),
@@ -112,12 +120,14 @@ pub fn add_controllers(services: &mut ServiceCollection) {
 // this is called when the program is configuring services (before it is started).
 // services: the service collection to add services to.
 pub fn on_configure_services(services: &mut ServiceCollection) -> () {
+    DefaultServices::add_logging(services);
+    DefaultServices::add_performance_logging(services);
+    DefaultServices::add_file_provider(services);
 
     GenericAuthRolesDbSetProvider::add_to_services(services);
 
     AuthorizationService::add_to_services(services);
 
-    DefaultServices::add_file_provider(services);
     DefaultServices::add_request_decoders(services);
     DefaultServices::add_response_encoders(services);
     DefaultServices::add_model_validators(services);

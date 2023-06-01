@@ -6,12 +6,12 @@ use std::rc::Rc;
 use nameof::name_of_type;
 
 use crate::contexts::irequest_context::IRequestContext;
+use crate::contexts::response_context::IResponseContext;
 use crate::core::type_info::TypeInfo;
 
 use crate::contexts::response_context::ResponseContext;
 
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
-use crate::controllers::controller_actions_map::IControllerActionsMap;
 
 use crate::services::request_middleware_service::IRequestMiddlewareService;
 use crate::services::request_middleware_service::MiddlewareResult;
@@ -58,7 +58,7 @@ impl IControllerActionFeature for LocalHostOnlyControllerActionFeature {
         format!("{}", self.get_name())
     }
 
-    fn invoke(self: &Self, _request_context: Rc<dyn IRequestContext>, _response_ctx: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn invoke(self: &Self, _request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         Ok(MiddlewareResult::OkContinue)
     }
 
@@ -87,7 +87,7 @@ impl LocalHostOnlyControllerActionFeatureMiddleware {
     // services: the service collection.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
-            ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services)
+            ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services),
         )) as Rc<dyn IRequestMiddlewareService>)]
     }
     
@@ -103,7 +103,7 @@ impl IRequestMiddlewareService for LocalHostOnlyControllerActionFeatureMiddlewar
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, request_context: Rc<dyn IRequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         let controller_name = request_context.get_str("ControllerName");
 
         if controller_name.len() > 0 {
@@ -125,7 +125,7 @@ impl IRequestMiddlewareService for LocalHostOnlyControllerActionFeatureMiddlewar
             if find_my_feature.len() > 0 {
                 // let my_feature = find_my_feature.first().unwrap();
                 // let feature = my_feature.as_ref() as LocalHostOnlyControllerActionFeature;
-                let remote_addr_str = format!("{:?}", request_context.get_connection_context().get_remote_addr());
+                let remote_addr_str = format!("{:?}", request_context.get_connection_context().get_tcp_context().get_remote_addr());
 
                 // println!("connected IP address: {}", remote_addr_str);
                 if !remote_addr_str.starts_with("127.0.0.1:") {
@@ -136,7 +136,7 @@ impl IRequestMiddlewareService for LocalHostOnlyControllerActionFeatureMiddlewar
         }
         
         if let Some(next) = self.next.borrow().as_ref() {
-            let next_response = next.handle_request(request_context.clone(), response_ctx.clone(), services)?;
+            let next_response = next.handle_request(response_context, request_context, services)?;
 
             match next_response {
                 MiddlewareResult::OkBreak => {

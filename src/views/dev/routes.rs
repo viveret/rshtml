@@ -9,6 +9,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     @html.link(url.url_action(false, Some(false), None, Some("index"), Some("Dev"), None, None).as_str(), "< Back to dev routes list", None)
 
     <h1>@view_context.get_str("Title")</h1>
+    
     <p>@format!("In total there are {} routes:", model.routes.len())</p>
     <ul>
     @for route in model.routes.iter() {

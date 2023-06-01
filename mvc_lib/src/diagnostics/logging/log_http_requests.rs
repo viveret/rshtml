@@ -8,11 +8,13 @@ use http::HeaderMap;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::options::logging_services_options::ILogHttpRequestsOptions;
 
-use crate::contexts::response_context::ResponseContext;
+use crate::contexts::response_context::{ResponseContext, IResponseContext};
 
 use crate::services::service_collection::{ IServiceCollection, ServiceCollectionExtensions };
 
 use crate::services::request_middleware_service::{ IRequestMiddlewareService, MiddlewareResult };
+
+
 
 // this is the service that handles logging HTTP requests.
 pub struct LogHttpRequestsMiddleware {
@@ -71,29 +73,29 @@ impl IRequestMiddlewareService for LogHttpRequestsMiddleware {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, request_ctx: Rc<dyn IRequestContext>, response_ctx: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         if let Some(options) = &self.options {
             if options.get_log_request() {
-                println!("Inbound HTTP request: {:?} {} {}", request_ctx.get_http_version(), request_ctx.get_method(), request_ctx.get_path());
+                println!("Inbound HTTP request: {:?} {} {}", request_context.get_http_version(), request_context.get_method(), request_context.get_path());
             }
 
             if options.get_log_request_headers() {
-                println!("Request headers for {}:", request_ctx.get_path());
-                self.print_headers(request_ctx.get_headers(), options.get_log_request_cookies());
+                println!("Request headers for {}:", request_context.get_path());
+                self.print_headers(request_context.get_headers(), options.get_log_request_cookies());
             }
         }
 
         if let Some(next) = self.next.borrow().as_ref() {
-            let next_response = next.handle_request(request_ctx.clone(), response_ctx.clone(), services)?;
+            let next_response = next.handle_request(response_context, request_context, services)?;
             
             if let Some(options) = &self.options {
                 if options.get_log_response() {
-                    println!("Outbound HTTP response for {} -> {}", request_ctx.get_path(), response_ctx.status_code.borrow());
+                    println!("Outbound HTTP response for {} -> {}", request_context.get_path(), response_context.get_status_code());
                 }
 
                 if options.get_log_response_headers() {
-                    println!("Response headers for {}:", request_ctx.get_path());
-                    self.print_headers(&response_ctx.headers.borrow(), options.get_log_response_cookies());
+                    println!("Response headers for {}:", request_context.get_path());
+                    self.print_headers(&response_context.get_headers(), options.get_log_response_cookies());
                 }
             }
 

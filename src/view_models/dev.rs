@@ -75,3 +75,49 @@ impl SysInfoViewModel {
         Self {  }
     }
 }
+
+pub struct LogViewModel {
+    pub supports_read: bool,
+    pub logs: Vec<String>,
+}
+
+impl LogViewModel {
+    pub fn new(supports_read: bool, logs: Vec<String>) -> Self {
+        Self { supports_read: supports_read, logs: logs }
+    }
+}
+
+pub struct LogAddInputModel {
+    pub message: String,
+    pub level: String,
+}
+
+pub struct LogAddViewModel {
+    pub supports_read: bool,
+}
+
+impl LogAddViewModel {
+    pub fn new(supports_read: bool) -> Self {
+        Self { supports_read: supports_read }
+    }
+}
+
+pub struct LogClearViewModel {
+    pub supports_clear: bool,
+}
+
+impl LogClearViewModel {
+    pub fn new(supports_clear: bool) -> Self {
+        Self { supports_clear: supports_clear }
+    }
+}
+
+pub struct PerfLogViewModel {
+
+}
+
+impl PerfLogViewModel {
+    pub fn new() -> Self {
+        Self { }
+    }
+}

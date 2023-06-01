@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::contexts::view_context::IViewContext;
+use crate::contexts::view_context::{IViewContext, ViewContext};
 use crate::services::service_collection::IServiceCollection;
 use crate::view::iview::IView;
 use crate::view::rusthtml::html_string::HtmlString;
@@ -40,8 +40,8 @@ impl <'a> IRenderHelpers<'a> for RenderHelpers<'a> {
             Some(body_view_any) => {
                 let body_view = body_view_any.downcast_ref::<Rc<dyn IView>>().expect("could not downcast Any to Box<dyn IView>").clone();
                 // need new context for child view
-                let new_ctx = self.view_context.recurse_into_new_context(body_view.clone());
-                match body_view.render(&*new_ctx, self.services) {
+                let new_ctx = ViewContext::recurse_into_new_context(self.view_context, body_view.clone());
+                match body_view.render(&new_ctx, self.services) {
                     Ok(html) => {
                         Ok(html)
                     },

@@ -8,7 +8,7 @@ use http::method::Method;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 
-use crate::contexts::controller_context::ControllerContext;
+use crate::contexts::controller_context::{ControllerContext, IControllerContext};
 
 use crate::routing::action_path::ActionPath;
 use crate::services::service_collection::IServiceCollection;
@@ -41,9 +41,9 @@ pub trait IControllerAction {
     // get the controller action features for the controller action.
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>>;
     // get whether or not the action matches the request.
-    fn is_route_match(self: &Self, request_context: Rc<dyn IRequestContext>) -> Result<bool, Box<dyn Error>>;
+    fn is_route_match(self: &Self, request_context: &dyn IRequestContext) -> Result<bool, Box<dyn Error>>;
     // invoke the controller action for the request and context.
-    fn invoke(self: &Self, request_context: Rc<ControllerContext>, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>>;
+    fn invoke(self: &Self, request_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>>;
 }
 
 // extension methods for IControllerAction
@@ -53,7 +53,7 @@ impl IControllerActionExtensions {
     // action: the controller action.
     // request_context: the request context.
     // returns: whether or not the action matches the request.
-    pub fn is_method_match(action: &dyn IControllerAction, request_context: Rc<dyn IRequestContext>) -> bool {
+    pub fn is_method_match(action: &dyn IControllerAction, request_context: &dyn IRequestContext) -> bool {
         let http_methods_allowed = action.get_http_methods_allowed();
         let r = http_methods_allowed.len() == 0 ||
             http_methods_allowed.contains(request_context.get_method());

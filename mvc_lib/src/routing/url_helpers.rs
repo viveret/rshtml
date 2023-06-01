@@ -32,7 +32,7 @@ impl <'a> UrlHelpers<'a> {
         is_https: Option<bool>,
         protocol: Option<&str>,
         route_values: Option<&HashMap<String, String>>,
-        request_context: Option<Rc<dyn IRequestContext>>,
+        request_context: Option<&dyn IRequestContext>,
         services: &'a dyn IServiceCollection,
     ) -> String {
         let mut path_builder = ActionPathBuilder::new();

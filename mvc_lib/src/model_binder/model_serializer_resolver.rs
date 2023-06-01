@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use std::any::Any;
 
-use crate::contexts::response_context::ResponseContext;
+use crate::contexts::response_context::{ResponseContext, IResponseContext};
 use crate::core::type_info::TypeInfo;
 use crate::services::service_scope::ServiceScope;
 use crate::services::service_descriptor::ServiceDescriptor;
@@ -59,10 +59,11 @@ impl ModelEncoderResolver {
     // model: the view model to encode.
     // response_context: the response context to encode the view model for.
     // returns: the result of the encoding.
-    pub fn encode_view_model(self: &Self, model: Box<dyn Any>, response_context: Rc<ResponseContext>) -> ViewModelResult<Vec<u8>> {
-        let content_type = response_context.as_ref().get_headers().get("Content-Type").unwrap().to_str().unwrap();
+    pub fn encode_view_model(self: &Self, model: Box<dyn Any>, response_context: &dyn IResponseContext) -> ViewModelResult<Vec<u8>> {
+        let headers = response_context.get_headers();
+        let content_type = headers.get("Content-Type").unwrap().to_str().unwrap();
         if let Some(binder) = self.resolve_for_content_type(content_type) {
-            return binder.encode_model(model, response_context.clone());
+            return binder.encode_model(model, response_context);
         }
         ViewModelResult::<Vec<u8>>::OkNone
     }

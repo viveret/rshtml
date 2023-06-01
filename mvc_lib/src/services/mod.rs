@@ -3,7 +3,6 @@ pub mod authorization_service;
 pub mod default_services;
 pub mod file_provider_service;
 pub mod host_environment;
-pub mod logging_services;
 pub mod request_middleware_service;
 pub mod routing_service;
 pub mod routemap_service;

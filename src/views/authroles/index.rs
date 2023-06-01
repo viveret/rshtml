@@ -11,11 +11,11 @@ mvc_macro_lib::rusthtml_view_macro! {
     
     <h1>@view_context.get_str("Title")</h1>
     
-    <p>@format!("There are {} roles", model.roles.len())</p>
-    <ul>
+    <p>@format!("There are {} roles:", model.roles.len())</p>
+    <ol>
         @for role in model.roles.iter() {
             <li>@&role.name</li>
         }
-        <li>@html.link(url.url_action(false, Some(false), None, Some("add"), Some("AuthRoles"), None, None).as_str(), "Add New", None)</a></li>
-    </ul>
+    </ol>
+    @html.link(url.url_action(false, Some(false), None, Some("add"), Some("AuthRoles"), None, None).as_str(), "+ Add New", None)
 }

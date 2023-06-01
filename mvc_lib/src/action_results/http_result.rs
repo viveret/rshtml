@@ -1,11 +1,11 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use http::StatusCode;
 
 use crate::contexts::irequest_context::IRequestContext;
+use crate::contexts::response_context::IResponseContext;
 use crate::contexts::response_context::ResponseContext;
-use crate::contexts::controller_context::ControllerContext;
+use crate::contexts::controller_context::IControllerContext;
 
 use crate::action_results::iaction_result::IActionResult;
 
@@ -25,8 +25,8 @@ impl HttpRedirectResult {
     }
 
     // this function configures the response to redirect to the redirect target.
-    pub fn config_response(response_ctx: Rc<ResponseContext>, redirect_target: String) {
-        response_ctx.add_header_string("Location".to_string(), redirect_target);
+    pub fn config_response(response_context: &dyn IResponseContext, redirect_target: String) {
+        response_context.add_header_string("Location".to_string(), redirect_target);
     }
 }
 
@@ -35,8 +35,8 @@ impl IActionResult for HttpRedirectResult {
         StatusCode::TEMPORARY_REDIRECT
     }
 
-    fn configure_response(self: &Self, _controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<dyn IRequestContext>, _services: &dyn IServiceCollection) {
-        Self::config_response(response_ctx, self.redirect_target.clone());
+    fn configure_response(self: &Self, _controller_ctx: &dyn IControllerContext, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) {
+        Self::config_response(response_context, self.redirect_target.clone());
     }
 }
 
@@ -59,13 +59,13 @@ impl IActionResult for RedirectToActionResult {
         StatusCode::TEMPORARY_REDIRECT
     }
 
-    fn configure_response(self: &Self, _controller_ctx: Rc<ControllerContext>, response_ctx: Rc<ResponseContext>, _request_ctx: Rc<dyn IRequestContext>, services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, _controller_ctx: &dyn IControllerContext, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, services: &dyn IServiceCollection) {
         // get the route map service and get the action from the route map.
         let route_map_service = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
         let action = route_map_service.get_mapper().get_action(self.action_name.as_str(), self.controller_name.as_str(), self.area_name.as_str());
         // generate the redirect url from the route values.
         let redirect_url = action.as_ref().get_route_pattern().gen_url(self.route_values.as_ref().unwrap());
         // configure the response to redirect to the redirect url.
-        response_ctx.add_header_string("Location".to_string(), redirect_url);
+        response_context.add_header_string("Location".to_string(), redirect_url);
     }
 }

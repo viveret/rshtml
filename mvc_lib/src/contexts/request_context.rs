@@ -14,20 +14,22 @@ use crate::controller_actions::controller_action::IControllerAction;
 
 use crate::core::query_string::QueryString;
 
+use crate::http::http_body_content::ContentType;
+use crate::http::http_body_content::IBodyContent;
 use crate::routing::route_data::RouteData;
 
 use crate::services::authorization_service::IAuthClaim;
-use crate::model::view_model_result::ViewModelResult;
+use crate::model_binder::view_model_result::ViewModelResult;
 
+use super::connection_context::IHttpConnectionContext;
 use super::irequest_context::IRequestContext;
-
 
 // this struct represents a HTTP request and its context.
 // it is created by the server and passed to middleware and the controller action.
 // it is also passed to the view renderer and view.
-pub struct RequestContext {
+pub struct RequestContext<'a> {
     // the HTTP connection context of the request
-    connection_context: Rc<dyn IConnectionContext>,
+    connection_context: &'a dyn IHttpConnectionContext,
     // the HTTP version of the request
     http_version: http::version::Version,
     // the scheme of the request
@@ -46,8 +48,8 @@ pub struct RequestContext {
     query_string: Box<String>,
     // the headers of the request
     headers: HeaderMap,
-    // the body of the request
-    body: Vec<u8>,
+    // the decoded body content of the request
+    body_content: RefCell<Option<Rc<dyn IBodyContent>>>,
     // the model validation result of the request
     model_validation_result: RefCell<Option<ViewModelResult<Rc<dyn Any>>>>,
     // the body model of the request
@@ -62,7 +64,7 @@ pub struct RequestContext {
     controller_action: RefCell<Option<Rc<dyn IControllerAction>>>,
 }
 
-impl RequestContext {
+impl <'a> RequestContext<'a> {
     // creates a new request context.
     // connection_context: the HTTP connection context of the request
     // http_version: the HTTP version of the request
@@ -74,7 +76,7 @@ impl RequestContext {
     // request_headers: the headers of the request
     // returns: the new request context.
     pub fn new(
-        connection_context: Rc<dyn IConnectionContext>,
+        connection_context: &'a dyn IHttpConnectionContext,
         http_version: http::version::Version,
         scheme: Option<Box<String>>,
         method_str: Option<Box<String>>,
@@ -83,7 +85,7 @@ impl RequestContext {
         port: u16,
         path: Box<String>,
         query_string: Box<String>,
-        request_headers: HeaderMap
+        request_headers: HeaderMap,
     ) -> Self {
         Self {
             connection_context: connection_context,
@@ -96,7 +98,7 @@ impl RequestContext {
             query: QueryString::parse(query_string.as_ref()),
             query_string: query_string,
             headers: request_headers,
-            body: vec![],
+            body_content: RefCell::new(None),
             model_validation_result: RefCell::new(None),
             body_model: RefCell::new(None),
             route_data: RefCell::new(RouteData::new()),
@@ -112,13 +114,50 @@ impl RequestContext {
     // request_bytes: the body of the request
     // connection_context: the HTTP connection context of the request
     // returns: the new request context.
-    pub fn parse(http_header: String, headers: Vec<String>, _request_bytes: Box<Vec<u8>>, connection_context: Rc<dyn IConnectionContext>) -> Rc<dyn IRequestContext> {
-        let re_method: Regex = Regex::new(r"^(GET|HEAD|POST|PUT) ").unwrap();
-        let re_version: Regex = Regex::new(r" HTTP/(\d\.\d)$").unwrap();
+    pub fn parse(connection_context: &'a dyn IHttpConnectionContext) -> RequestContext<'a> {
+        // let mut body_reader = connection_context.mut_body_stream().borrow_mut();
+        let mut request_headers: Vec<String> = vec![];
+        // for attempt in 0..2 {
+            loop {
+                let read_result = connection_context.read_line();
+                match read_result {
+                    Ok(line) => {
+                        if line.trim() == "" {
+                            break;
+                        }
+            
+                        request_headers.push(line);
+                    },
+                    Err(err) => {
+                        println!("Could not read http headers: {}", err);
+                        break;
+                    },
+                }
+            }
+
+            // if request_headers.len() > 0 {
+            //     break;
+            // }
+        // }
+
+        if request_headers.len() == 0 {
+            panic!("Could not read http headers: no headers found.");
+        }
+
+        let http_header: String = request_headers.remove(0);
+
+        let method_str = &http_header[..http_header.find(' ').unwrap()];
+        let version_str = &http_header[http_header.rfind(' ').unwrap() + 1..];
+
+        let re_method_valid: Regex = Regex::new(r"^GET|HEAD|POST|PUT$").unwrap();
         let re_header: Regex = Regex::new(r"^([a-zA-Z0-9 _-]+): ").unwrap();
 
-        let method_str = re_method.find(&http_header).expect("HTTP method not found").as_str().trim();
-        let version_str = re_version.find(&http_header).expect("HTTP version not found").as_str().trim();
+        // println!("Received request: {}", http_header);
+
+        if !re_method_valid.is_match(&http_header) {
+            panic!("Invalid HTTP method: {}", method_str);
+        }
+
         let version = match version_str {
             "HTTP/0.9" => http::version::Version::HTTP_09,
             "HTTP/1.0" => http::version::Version::HTTP_10,
@@ -126,11 +165,20 @@ impl RequestContext {
             _ => panic!("Invalid HTTP version {}", version_str)
         };
 
-        let headers = HeaderMap::from_iter(headers.iter().map(|x| {
+        let headers = HeaderMap::from_iter(request_headers.iter().map(|x| {
             let mut name = re_header.find(x).expect(&format!("Invalid header format: {}", x)).as_str();
             let value = x[name.len()..].to_string();
             name = &name[..name.len()-2];
-            (HeaderName::from_bytes(name.as_bytes()).unwrap(), HeaderValue::from_bytes(value.as_bytes()).unwrap())
+            let value_str = value.trim();
+
+            match HeaderValue::from_str(value_str) {
+                Ok(header_val) => {
+                    (HeaderName::from_bytes(name.as_bytes()).unwrap(), header_val)
+                },
+                Err(err) => {
+                    panic!("Could not parse header value '{}': {}", value_str, err);
+                },
+            }
             // HttpHeader::from_httparse_header(name, &value.as_bytes().to_vec())
         }));
 
@@ -145,7 +193,7 @@ impl RequestContext {
         let query = path_and_query.query().unwrap_or("");
         // println!("path: {}, query: {}, http_header: {}", path, query, http_header);
 
-        Rc::new(Self::new(
+        Self::new(
             connection_context,
             version,
             Some(Box::new(path_and_query.scheme().to_string())),
@@ -155,12 +203,13 @@ impl RequestContext {
             request_url.port().unwrap(),
             Box::new(path.to_string()),
             Box::new(query.to_string()),
-            headers
-        ))
+            headers,
+        )
     }
+    
 }
 
-impl IRequestContext for RequestContext {
+impl<'a> IRequestContext for RequestContext<'a> {
     fn get_type_name(self: &Self) -> &'static str {
         nameof::name_of_type!(RequestContext)
     }
@@ -203,8 +252,8 @@ impl IRequestContext for RequestContext {
         &self.query
     }
 
-    fn get_connection_context(self: &Self) -> Rc<dyn IConnectionContext> {
-        self.connection_context.clone()
+    fn get_connection_context(self: &Self) -> &dyn IHttpConnectionContext {
+        self.connection_context
     }
 
     fn get_controller_action_optional(self: &Self) -> Option<Rc<dyn IControllerAction>> {
@@ -245,8 +294,8 @@ impl IRequestContext for RequestContext {
         &self.method
     }
 
-    fn get_body(self: &Self) -> &Vec<u8> {
-        &self.body
+    fn get_body_content(self: &Self) -> Option<Rc<dyn IBodyContent>> {
+        self.body_content.borrow().clone()
     }
 
     fn get_auth_claims(self: &Self) -> Vec<Rc<dyn IAuthClaim>> {
@@ -296,12 +345,12 @@ impl IRequestContext for RequestContext {
     }
 
     fn set_model_validation_result(self: &Self, v: Option<ViewModelResult<Rc<dyn Any>>>) {
-        if let Some(v2) = v {
+        if let Some(ref v2) = v {
             self.model_validation_result.replace(Some(v2.clone()));
             match v2 {
                 ViewModelResult::OkNone => {
                 },
-                ViewModelResult::Ok(ref model) => {
+                ViewModelResult::Ok(model) => {
                     self.body_model.replace(Some(Box::new(model.clone())));
                 },
                 ViewModelResult::ModelError(..) => {
@@ -309,6 +358,47 @@ impl IRequestContext for RequestContext {
                 ViewModelResult::PropertyError(..) => {
                 },
             }
+        }
+    }
+    
+    // this function is used to get the content length from the headers.
+    fn get_content_length(self: &Self) -> Option<usize> {
+        if let Some(content_length_header_val) = self.headers.get("Content-Length") {
+            match content_length_header_val.to_str() {
+                Ok(content_length_str) => {
+                    match content_length_str.parse::<usize>() {
+                        Ok(content_length) => {
+                            println!("found_content_length: {}", content_length);
+                            Some(content_length)
+                        },
+                        Err(e) => {
+                            panic!("Invalid content-length header value: {}", e);
+                        },
+                    }
+                },
+                Err(e) => {
+                    panic!("Invalid content-length header value: {}", e);
+                },
+            }
+        } else {
+            None
+        }
+    }
+    
+    // this function is used to get the content type from the headers.
+    fn get_content_type(self: &Self) -> Option<ContentType> {
+        if let Some(content_type_header_val) = self.headers.get("Content-Type") {
+            match content_type_header_val.to_str() {
+                Ok(content_type_str) => {
+                    println!("found_content_type: {}", content_type_str);
+                    Some(ContentType::parse(&content_type_str.to_string()))
+                },
+                Err(e) => {
+                    panic!("Invalid content-type header value: {}", e);
+                },
+            }
+        } else {
+            None
         }
     }
 }

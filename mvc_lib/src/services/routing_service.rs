@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::result::Result;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::ResponseContext;
+use crate::contexts::response_context::{ResponseContext, IResponseContext};
 
 use crate::controllers::route_data_controller_action_matcher::RouteDataControllerActionMatcher;
 
@@ -46,9 +46,9 @@ impl IRequestMiddlewareService for RoutingService {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         let route_matcher = RouteDataControllerActionMatcher::new(self.routemap.get_mapper().clone());
-        let action_option = route_matcher.get_action_for_request(request_context.clone(), response_context.clone(), services)?;
+        let action_option = route_matcher.get_action_for_request(response_context, request_context, services)?;
 
         if let Some(action) = action_option {
             let mut controller_name = action.get_controller_name().to_string();
@@ -66,7 +66,7 @@ impl IRequestMiddlewareService for RoutingService {
         }
                 
         if let Some(next) = self.next.borrow().as_ref() {
-            next.handle_request(request_context.clone(), response_context.clone(), services)
+            next.handle_request(response_context, request_context, services)
         } else {
             Ok(MiddlewareResult::OkContinue)
         }

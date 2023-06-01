@@ -68,13 +68,13 @@ pub trait IAuthClaimTransformer {
     // claims: the claims from the request.
     // request_context: the request context.
     // returns: the usable claims for authorization.
-    fn transform_claims(self: &Self, claims: Vec<Rc<dyn IAuthClaim>>, request_context: Rc<dyn IRequestContext>) -> Vec<Rc<dyn IAuthClaim>>;
+    fn transform_claims(self: &Self, claims: Vec<Rc<dyn IAuthClaim>>, request_context: &dyn IRequestContext) -> Vec<Rc<dyn IAuthClaim>>;
     
     // transform the tokens from the request into usable tokens for authorization.
     // tokens: the tokens from the request.
     // request_context: the request context.
     // returns: the usable tokens for authorization.
-    fn transform_tokens(self: &Self, tokens: Vec<Rc<AuthenticationToken>>, request_context: Rc<dyn IRequestContext>) -> Vec<Rc<AuthenticationToken>>;
+    fn transform_tokens(self: &Self, tokens: Vec<Rc<AuthenticationToken>>, request_context: &dyn IRequestContext) -> Vec<Rc<AuthenticationToken>>;
 
     // gets the type info for the claim transformer
     fn get_type_info(self: &Self) -> TypeInfo;
@@ -153,7 +153,7 @@ impl CookieRoleClaimTransformer {
 }
 
 impl IAuthClaimTransformer for CookieRoleClaimTransformer {
-    fn transform_claims(self: &Self, claims: Vec<Rc<dyn IAuthClaim>>, request_context: Rc<dyn IRequestContext>) -> Vec<Rc<dyn IAuthClaim>> {
+    fn transform_claims(self: &Self, claims: Vec<Rc<dyn IAuthClaim>>, request_context: &dyn IRequestContext) -> Vec<Rc<dyn IAuthClaim>> {
         if let Some(cookies) = request_context.get_cookies_parsed() {
             if let Some(role) = cookies.get("role") {
                 return claims.iter().cloned().chain(vec![CookieRoleClaim::new_service(role.clone())]).collect();
@@ -162,7 +162,7 @@ impl IAuthClaimTransformer for CookieRoleClaimTransformer {
         claims
     }
 
-    fn transform_tokens(self: &Self, tokens: Vec<Rc<AuthenticationToken>>, request_context: Rc<dyn IRequestContext>) -> Vec<Rc<AuthenticationToken>> {
+    fn transform_tokens(self: &Self, tokens: Vec<Rc<AuthenticationToken>>, request_context: &dyn IRequestContext) -> Vec<Rc<AuthenticationToken>> {
         tokens
     }
 
@@ -186,7 +186,7 @@ pub trait IAuthRequirement {
     // roles: the roles to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn invoke(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
+    fn invoke(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>>;
 
     // gets the name of the authorization requirement.
     fn get_name(self: &Self) -> String;
@@ -217,7 +217,7 @@ impl RoleAuthRequirement {
 }
 
 impl IAuthRequirement for RoleAuthRequirement {
-    fn invoke(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>> {
+    fn invoke(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>> {
         if roles.len() == 0 {
             return Ok(AuthResult::Ok);
         }
@@ -265,48 +265,48 @@ pub trait IAuthorizationService {
     // role: the role to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_role(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, role: String, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
+    fn authenticate_role(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, role: String, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>>;
 
     // authenticate the user for a set of roles.
     // auth_claims: the claims to check.
     // roles: the roles to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_roles(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
+    fn authenticate_roles(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>>;
 
     // authenticate the user for a set of requirements.
     // auth_claims: the claims to check.
     // requirements: the requirements to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_requirements(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<Rc<dyn IAuthRequirement>>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
+    fn authenticate_requirements(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<Rc<dyn IAuthRequirement>>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>>;
 
     // authenticate the user for a set of requirements by name.
     // auth_claims: the claims to check.
     // requirements: the requirements to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_requirements_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<String>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
+    fn authenticate_requirements_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>>;
 
     // authenticate the user for a policy.
     // auth_claims: the claims to check.
     // policy: the policy to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_policy(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: Rc<dyn IAuthRequirement>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
+    fn authenticate_policy(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: Rc<dyn IAuthRequirement>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>>;
 
     // authenticate the user for a policy by name.
     // auth_claims: the claims to check.
     // policy: the policy to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_policy_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: String, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
+    fn authenticate_policy_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: String, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>>;
 
     // authenticate the user for an HTTP request.
     // controller: the controller.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_http_request(self: &Self, controller: Rc<dyn IController>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>>;
+    fn authenticate_http_request(self: &Self, controller: Rc<dyn IController>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>>;
     
     // sign in the user.
     fn sign_in(self: &Self);
@@ -376,27 +376,27 @@ impl AuthorizationService {
 }
 
 impl IAuthorizationService for AuthorizationService {
-    fn authenticate_role(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, role: String, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>> {
+    fn authenticate_role(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, role: String, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>> {
         Ok(AuthResult::Ok)
     }
 
-    fn authenticate_roles(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>> {
+    fn authenticate_roles(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>> {
         self.policies.get("Role").unwrap().invoke(auth_claims, roles, request_context)
     }
 
-    fn authenticate_requirements(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<Rc<dyn IAuthRequirement>>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>> {
+    fn authenticate_requirements(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<Rc<dyn IAuthRequirement>>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>> {
         Ok(AuthResult::Ok)
     }
 
-    fn authenticate_requirements_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<String>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>> {
+    fn authenticate_requirements_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>> {
         Ok(AuthResult::Ok)
     }
 
-    fn authenticate_policy(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: Rc<dyn IAuthRequirement>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>> {
+    fn authenticate_policy(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: Rc<dyn IAuthRequirement>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>> {
         Ok(AuthResult::Ok)
     }
 
-    fn authenticate_policy_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: String, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>> {
+    fn authenticate_policy_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: String, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>> {
         Ok(AuthResult::Ok)
     }
 
@@ -416,7 +416,7 @@ impl IAuthorizationService for AuthorizationService {
         self.claim_transformers.clone()
     }
 
-    fn authenticate_http_request(self: &Self, controller: Rc<dyn IController>, request_context: Rc<dyn IRequestContext>) -> Result<AuthResult, Box<dyn Error>> {
+    fn authenticate_http_request(self: &Self, controller: Rc<dyn IController>, request_context: &dyn IRequestContext) -> Result<AuthResult, Box<dyn Error>> {
         let mut required_roles = vec![];
         let mut required_policies = vec![];
 
@@ -457,16 +457,16 @@ impl IAuthorizationService for AuthorizationService {
 
         // println!("Authenticating {:?} against roles: {:?}, policies {:?}", request_context.connection_context.get_remote_addr(), required_roles, required_policies);
         // let mut auth_result: Option<AuthResult> = None;
-        let mut claims = request_context.as_ref().get_auth_claims();//.borrow().clone();
+        let mut claims = request_context.get_auth_claims();//.borrow().clone();
         let mut tokens = vec![];
 
         for it in self.claim_transformers.iter() {
-            claims = it.transform_claims(claims, request_context.clone());
-            tokens = it.transform_tokens(tokens, request_context.clone());
+            claims = it.transform_claims(claims, request_context);
+            tokens = it.transform_tokens(tokens, request_context);
         }
 
         if required_roles.len() > 0 {
-            match self.authenticate_roles(claims.clone(), required_roles.clone(), request_context.clone())? {
+            match self.authenticate_roles(claims.clone(), required_roles.clone(), request_context)? {
                 AuthResult::Ok => {
                     // println!("authorized! :)");
                 },
@@ -478,7 +478,7 @@ impl IAuthorizationService for AuthorizationService {
 
         if required_policies.len() > 0 {
             for policy in required_policies {
-                match self.authenticate_policy_by_name(claims.clone(), policy.clone(), request_context.clone())? {
+                match self.authenticate_policy_by_name(claims.clone(), policy.clone(), request_context)? {
                     AuthResult::Ok => {
                         // println!("authorized! :)");
                     },

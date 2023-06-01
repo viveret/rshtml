@@ -82,7 +82,7 @@ impl ControllerActionFileResult {
 }
 
 impl IControllerAction for ControllerActionFileResult {
-    fn invoke(self: &Self, controller_context: Rc<ControllerContext>, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
+    fn invoke(self: &Self, controller_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
         let result_option = Some(Rc::new(FileResult::new(self.file_path.clone(), None)));
         if let Some(result) = result_option {
             controller_context.set_action_result(Some(result));
@@ -91,8 +91,8 @@ impl IControllerAction for ControllerActionFileResult {
         Ok(())
     }
 
-    fn is_route_match(self: &Self, request_context: Rc<dyn IRequestContext>) -> Result<bool, Box<dyn Error>> {
-        if !IControllerActionExtensions::is_method_match(self, request_context.clone()) {
+    fn is_route_match(self: &Self, request_context: &dyn IRequestContext) -> Result<bool, Box<dyn Error>> {
+        if !IControllerActionExtensions::is_method_match(self, request_context) {
             return Ok(false);
         }
 

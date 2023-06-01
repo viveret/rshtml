@@ -4,12 +4,13 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::ops::Deref;
 
+use crate::contexts::controller_context::IControllerContext;
 use crate::core::string_extensions::string_ends_with_any;
 
 use crate::contexts::controller_context::ControllerContext;
 use crate::contexts::view_context::IViewContext;
 use crate::contexts::view_context::ViewContext;
-use crate::contexts::response_context::ResponseContext;
+use crate::contexts::response_context::IResponseContext;
 
 use crate::view::iview::IView;
 use crate::view::rusthtml::html_string::HtmlString;
@@ -25,15 +26,15 @@ pub trait IViewRenderer {
     // view_path: the path to the view to render.
     // view_model: the view model to render the view with.
     // controller_ctx: the controller context for the view.
-    // response_ctx: the response context for the view.
+    // response_context: the response context for the view.
     // services: the services available to the view.
     // returns: the rendered view or an error.
     fn render_with_layout_if_specified(
         self: &Self,
         view_path: &String,
         view_model: Rc<Option<Box<dyn Any>>>,
-        controller_ctx: Rc<ControllerContext>,
-        response_ctx: Rc<ResponseContext>,
+        controller_ctx: &dyn IControllerContext,
+        response_context: &dyn IResponseContext,
         services: &dyn IServiceCollection
     ) -> Result<HtmlString, RustHtmlError>;
 
@@ -84,38 +85,29 @@ impl IViewRenderer for ViewRenderer {
         self: &Self,
         view_path: &String,
         view_model: Rc<Option<Box<dyn Any>>>,
-        controller_ctx: Rc<ControllerContext>,
-        response_ctx: Rc<ResponseContext>,
+        controller_ctx: &dyn IControllerContext,
+        response_context: &dyn IResponseContext,
         services: &dyn IServiceCollection
     ) -> Result<HtmlString, RustHtmlError> {
         let view_renderer_service_instance = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
-        let mut body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model.clone(), view_renderer_service_instance.clone(), controller_ctx.clone(), response_ctx.clone());
+        let mut body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model.clone(), view_renderer_service_instance.clone(), controller_ctx, response_context);
         match body_view_ctx.get_view_as_ref().render(&body_view_ctx, services) {
             Ok(body_html) => {
-                let mut combined_body_html_str = String::new();
-                combined_body_html_str.push_str(&body_html.content);
-                let combined_body_html = HtmlString::new_from_html(combined_body_html_str);
 
                 let layout_view_option = self.get_layout_view_from_context(&mut body_view_ctx, services);
                 match layout_view_option {
                     Some(ref layout_view) => {
-                        // println!("layout_view_option: found");
-                        let layout_view_ctx = body_view_ctx.clone_for_layout(layout_view.clone());
-                        layout_view_ctx.insert_str("BodyHtml", combined_body_html.content);
+                        let layout_view_ctx = ViewContext::clone_for_layout(&body_view_ctx, layout_view.clone());
+                        layout_view_ctx.insert_str("BodyHtml", body_html.content);
 
-                        match layout_view_ctx.get_view_as_ref().render(layout_view_ctx.deref(), services) {
-                            Ok(layout_html) => {
-                                let mut combined_layout_html_str = String::new();
-                                combined_layout_html_str.push_str(&layout_html.content);
-
-                                Ok(HtmlString::new_from_html(combined_layout_html_str))
-                            },
+                        match layout_view_ctx.get_view_as_ref().render(&layout_view_ctx, services) {
+                            Ok(layout_html) => Ok(layout_html),
                             Err(e) => Err(RustHtmlError(Cow::Owned(format!("Could not render layout for view: {}", e)))),
                         }
                     },
                     None => {
                         println!("layout_view_option: NOT found");
-                        Ok(combined_body_html)
+                        Ok(body_html)
                     },
                 }
             },

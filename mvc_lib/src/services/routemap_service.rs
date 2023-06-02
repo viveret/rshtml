@@ -6,7 +6,12 @@ use crate::contexts::irequest_context::IRequestContext;
 use crate::controllers::icontroller::IController;
 use crate::controllers::controller_actions_map::{ControllerActionsMap, IControllerActionsMap};
 
+use crate::core::type_info::TypeInfo;
 use crate::services::service_collection::{ IServiceCollection, ServiceCollectionExtensions };
+
+use super::service_collection::ServiceCollection;
+use super::service_descriptor::ServiceDescriptor;
+use super::service_scope::ServiceScope;
 
 // this is the service that handles route mapping.
 pub trait IRouteMapService {
@@ -41,6 +46,11 @@ impl RouteMapService {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_multiple::<dyn IController>(services)
         )) as Rc<dyn IRouteMapService>)]
+    }
+
+    // adds the route map service to the given service collection.
+    pub fn add_to_services(services: &mut ServiceCollection) {
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IRouteMapService>(), RouteMapService::new_service, ServiceScope::Singleton));
     }
 
     // gets the controllers in the area of the request.

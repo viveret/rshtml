@@ -150,4 +150,8 @@ impl IControllerAction for ControllerActionFileResult {
     fn get_should_validate_model(self: &Self) -> bool {
         false
     }
+
+    fn get_model_type(self: &Self) -> Option<Box<crate::core::type_info::TypeInfo>> {
+        None
+    }
 }

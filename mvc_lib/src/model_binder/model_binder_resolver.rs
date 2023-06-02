@@ -11,6 +11,13 @@ use super::iviewmodel_binder::IViewModelBinder;
 use super::view_model_result::ViewModelResult;
 
 
+pub trait IModelBinderResolver {
+    // resolves the correct IViewModelBinder for the given content type.
+    // content_type: the content type to resolve the IViewModelBinder for.
+    // returns: the resolved IViewModelBinder if found, otherwise None.
+    fn resolve_for_request(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IViewModelBinder>>;
+}
+
 // this struct is used to resolve the correct IViewModelBinder for a given content type and context.
 // it is used by the ModelDecoderMiddleware.
 // it uses the IViewModelBinder instances registered in the IServiceCollection to decode the view model.
@@ -42,11 +49,10 @@ impl ModelBinderResolver {
     pub fn add_to_services(services: &mut ServiceCollection) {
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<ModelBinderResolver>(), Self::new_service, ServiceScope::Singleton));
     }
+}
 
-    // resolves the correct IViewModelBinder for the given content type.
-    // content_type: the content type to resolve the IViewModelBinder for.
-    // returns: the resolved IViewModelBinder if found, otherwise None.
-    pub fn resolve_for_request(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IViewModelBinder>> {
+impl IModelBinderResolver for ModelBinderResolver {
+    fn resolve_for_request(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IViewModelBinder>> {
         // // expecting content-length in order to read, decode, and parse the body.
         // let mut found_content_length = request_context.get_content_length();
 
@@ -58,15 +64,5 @@ impl ModelBinderResolver {
             }
         }
         None
-    }
-
-    // decodes the view model for the given request context.
-    // request_context: the request context to decode the view model for.
-    // returns: the decoded view model result.
-    pub fn bind_view_model(self: &Self, request_context: &dyn IRequestContext) -> ViewModelResult<Rc<dyn Any>> {
-        if let Some(binder) = self.resolve_for_request(request_context) {
-            return binder.bind_view_model(request_context);
-        }
-        ViewModelResult::<Rc<dyn Any>>::OkNone
     }
 }

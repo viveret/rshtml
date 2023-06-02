@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::string::FromUtf8Error;
@@ -6,7 +7,7 @@ use super::itcp_stream_wrapper::ITcpStreamWrapper;
 
 
 pub struct BufferedTcpStream {
-    stream: TcpStream,
+    stream: RefCell<TcpStream>,
 }
 
 impl BufferedTcpStream {
@@ -14,12 +15,16 @@ impl BufferedTcpStream {
         stream: TcpStream,
     ) -> Self {
         Self {
-            stream: stream,
+            stream: RefCell::new(stream),
         }
     }
 
     pub fn new_from_tcp(stream: TcpStream) -> BufferedTcpStream {
         Self::new(stream)
+    }
+
+    pub fn new_self(source_stream: &RefCell<BufferedTcpStream>) -> BufferedTcpStream {
+        Self::new(source_stream.borrow().stream.borrow().try_clone().unwrap())
     }
 }
 
@@ -29,25 +34,25 @@ impl BufferedTcpStream {
 
 impl ITcpStreamWrapper for BufferedTcpStream {
     fn shutdown(&self, how: std::net::Shutdown) -> std::io::Result<()> {
-        self.stream.shutdown(how)
+        self.stream.borrow_mut().shutdown(how)
     }
 
     // flush if writer is set, otherwise flush stream
-    fn flush(&mut self) -> std::io::Result<()> {
-        self.stream.flush()
+    fn flush(&self) -> std::io::Result<()> {
+        self.stream.borrow_mut().flush()
     }
 
-    fn read(&mut self, b: &mut [u8]) -> std::io::Result<usize> {
-        self.stream.read(b)
+    fn read(&self, b: &mut [u8]) -> std::io::Result<usize> {
+        self.stream.borrow_mut().read(b)
     }
 
-    fn read_line(&mut self) -> Result<String, FromUtf8Error> {
+    fn read_line(&self) -> Result<String, FromUtf8Error> {
         // read until \r\n
         let mut s: Vec<char> = vec![];
         let mut last_char = '\0';
         loop {
             let mut buf = [0; 1];
-            let read = self.stream.read(&mut buf).unwrap_or_default();
+            let read = self.stream.borrow_mut().read(&mut buf).unwrap_or_default();
             let c = buf[0] as char;
             if read == 0 {
                 break;
@@ -70,7 +75,7 @@ impl ITcpStreamWrapper for BufferedTcpStream {
         }
     }
 
-    fn write(&mut self, b: &[u8]) -> std::io::Result<usize> {
+    fn write(&self, b: &[u8]) -> std::io::Result<usize> {
         // // preview of output
         // if b.len() > 20 {
         //     println!("writing {} bytes: {} ... {}", b.len(),
@@ -82,13 +87,13 @@ impl ITcpStreamWrapper for BufferedTcpStream {
         
         let mut i = 0;
         while i < b.len() {
-            let num_written = self.stream.write(&b[i..])?;
+            let num_written = self.stream.borrow_mut().write(&b[i..])?;
             if num_written == 0 {
                 break;
             }
             i += num_written;
         }
-        self.stream.flush()?;
+        self.flush()?;
         
         if i != b.len() {
             println!("write: {} != {}", i, b.len());
@@ -96,11 +101,11 @@ impl ITcpStreamWrapper for BufferedTcpStream {
         Ok(i)
     }
 
-    fn write_line(&mut self, b: &String) -> std::io::Result<usize> {
+    fn write_line(&self, b: &String) -> std::io::Result<usize> {
         self.write(format!("{}\r\n", b).as_bytes())
     }
 
     fn remote_addr(&self) -> std::net::SocketAddr {
-        self.stream.peer_addr().unwrap()
+        self.stream.borrow().peer_addr().unwrap()
     }
 }

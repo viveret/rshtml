@@ -2,16 +2,18 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::ops::Deref;
 
 use crate::contexts::controller_context::IControllerContext;
 use crate::core::string_extensions::string_ends_with_any;
 
-use crate::contexts::controller_context::ControllerContext;
 use crate::contexts::view_context::IViewContext;
 use crate::contexts::view_context::ViewContext;
 use crate::contexts::response_context::IResponseContext;
 
+use crate::core::type_info::TypeInfo;
+use crate::services::service_collection::ServiceCollection;
+use crate::services::service_descriptor::ServiceDescriptor;
+use crate::services::service_scope::ServiceScope;
 use crate::view::iview::IView;
 use crate::view::rusthtml::html_string::HtmlString;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -77,6 +79,11 @@ impl ViewRenderer  {
     // create a new instance of the view renderer service for a service collection.
     pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(ViewRenderer::new()) as Rc<dyn IViewRenderer>)]
+    }
+
+    // add the view renderer service to the service collection.
+    pub fn add_to_services(services: &mut ServiceCollection) {
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IViewRenderer>(), ViewRenderer::new_service, ServiceScope::Singleton));
     }
 }
 

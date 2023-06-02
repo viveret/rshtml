@@ -3,7 +3,11 @@ use std::io::{Read, Write, BufReader, BufWriter, Result};
 use std::rc::Rc;
 use std::any::Any;
 
+use crate::core::type_info::TypeInfo;
 use crate::services::service_collection::IServiceCollection;
+
+use super::service_descriptor::ServiceDescriptor;
+use super::service_scope::ServiceScope;
 
 // this is a trait for a class that can provide file services.
 pub trait IFileProviderService {
@@ -33,6 +37,11 @@ impl FileProviderService {
     // creates the file provider service as a service.
     pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new()))]
+    }
+
+    // adds the file provider service to the given service collection.
+    pub fn add_to_services(services: &mut super::service_collection::ServiceCollection) {
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IFileProviderService>(), FileProviderService::new_service, ServiceScope::Singleton));
     }
 }
 

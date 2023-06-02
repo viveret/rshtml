@@ -132,15 +132,18 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::add_response_encoders(services);
     DefaultServices::add_model_validators(services);
 
-    DefaultServices::use_request_decoders(services); // adds middleware
-    DefaultServices::use_response_encoders(services); // adds middleware
-    DefaultServices::use_model_validation(services); // adds middleware
-
     add_views(services);
     add_controllers(services);
     DefaultServices::add_controllers(services);
     DefaultServices::add_default_request_middleware(services);
     DefaultServices::add_routing(services);
+
+    // configure middleware
+    DefaultServices::use_routing(services);
+    DefaultServices::use_request_decoders(services);
+    DefaultServices::use_response_encoders(services);
+    DefaultServices::use_model_validation(services);
+
 
     AuthorizeControllerActionFeatureMiddleware::add_to_services(services);
     LocalHostOnlyControllerActionFeatureMiddleware::add_to_services(services);

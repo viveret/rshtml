@@ -6,6 +6,7 @@ use std::rc::Rc;
 use crate::contexts::connection_context::IHttpConnectionContext;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::IResponseContext;
+use crate::core::type_info::TypeInfo;
 use crate::diagnostics::logging::logging_service::ILoggingService;
 use crate::diagnostics::logging::logging_service::LoggingService;
 use crate::errors::RequestError;
@@ -13,6 +14,7 @@ use crate::errors::RequestError;
 use crate::contexts::connection_context::IConnectionContext;
 
 use crate::services::service_collection::IServiceCollection;
+use crate::services::service_collection::ServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 use crate::services::request_middleware_service::IRequestMiddlewareService;
 
@@ -20,6 +22,8 @@ use crate::options::http_options::IHttpOptions;
 
 use crate::contexts::request_context::RequestContext;
 use crate::contexts::response_context::ResponseContext;
+use crate::services::service_descriptor::ServiceDescriptor;
+use crate::services::service_scope::ServiceScope;
 
 // this is a trait for a class that can process an HTTP request and return an HTTP response.
 // the way requests are processed is by using a pipeline of middleware services.
@@ -51,6 +55,11 @@ impl HttpRequestPipeline {
             ServiceCollectionExtensions::get_required_single::<dyn IHttpOptions>(services.clone()),
             LoggingService::get_service(services),
         )) as Rc<dyn IHttpRequestPipeline>)]
+    }
+
+    // adds the HTTP request pipeline to the given service collection.
+    pub fn add_to_services(services: &mut ServiceCollection) {
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IHttpRequestPipeline>(), HttpRequestPipeline::new_service, ServiceScope::Request));
     }
 
     /// Process the request using the middleware.
@@ -106,10 +115,18 @@ impl HttpRequestPipeline {
 
 impl IHttpRequestPipeline for HttpRequestPipeline {
     fn process_request<'a>(self: &Self, connection_context: &dyn IHttpConnectionContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
-        let request_context = RequestContext::parse(connection_context);
-        let response_context = ResponseContext::new(&request_context);
+        let request_result = RequestContext::parse(connection_context);
+        match request_result {
+            Ok(request_context) => {
+                let response_context = ResponseContext::new(&request_context);
 
-        self.process_request_using_middleware(&response_context, &request_context, services)?;
-        return Ok(());
+                self.process_request_using_middleware(&response_context, &request_context, services)?;
+                return Ok(());
+            },
+            Err(err) => {
+                self.logger_service.log_error(&format!("Error parsing request: {}", err));
+                return Err(Box::new(err));
+            }
+        }
     }
 }

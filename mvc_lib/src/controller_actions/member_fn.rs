@@ -13,6 +13,7 @@ use crate::contexts::irequest_context::IRequestContext;
 
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controllers::icontroller::IController;
+use crate::core::type_info::TypeInfo;
 use crate::routing::action_path::ActionPath;
 use crate::routing::path_builder::ActionPathBuilder;
 use crate::services::service_collection::IServiceCollection;
@@ -45,6 +46,8 @@ pub struct ControllerActionMemberFn<T> {
     pub features: Vec<Rc<dyn IControllerActionFeature>>,
     // whether or not the model should be validated.
     pub should_validate_model: bool,
+    // the type of the model.
+    pub model_type: Option<Box<TypeInfo>>,
 }
 
 impl<T> ControllerActionMemberFn<T> {
@@ -76,6 +79,7 @@ impl<T> ControllerActionMemberFn<T> {
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or(vec![]),
             should_validate_model: should_validate_model,
+            model_type: None,
         }
     }
     
@@ -163,6 +167,7 @@ impl<T> ControllerActionMemberFn<T> {
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or(vec![]),
             should_validate_model: should_validate_model,
+            model_type: None,
         }
     }
 }
@@ -239,5 +244,9 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
 
     fn get_should_validate_model(self: &Self) -> bool {
         self.should_validate_model
+    }
+
+    fn get_model_type(self: &Self) -> Option<Box<crate::core::type_info::TypeInfo>> {
+        self.model_type.clone()
     }
 }

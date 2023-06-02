@@ -10,6 +10,7 @@ use crate::controller_action_features::controller_action_feature::IControllerAct
 
 use crate::contexts::controller_context::{ControllerContext, IControllerContext};
 
+use crate::core::type_info::TypeInfo;
 use crate::routing::action_path::ActionPath;
 use crate::services::service_collection::IServiceCollection;
 
@@ -38,6 +39,8 @@ pub trait IControllerAction {
     fn get_http_methods_allowed(self: &Self) -> Vec<Method>;
     // get whether or not the model should be validated for the controller action.
     fn get_should_validate_model(self: &Self) -> bool;
+    // get model type
+    fn get_model_type(self: &Self) -> Option<Box<TypeInfo>>;
     // get the controller action features for the controller action.
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>>;
     // get whether or not the action matches the request.

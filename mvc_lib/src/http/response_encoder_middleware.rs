@@ -48,7 +48,7 @@ impl IRequestMiddlewareService for ResponseEncoderMiddleware {
         let accept_str = accept_header.to_str().unwrap();
         
         // get encoder from service collection
-        let encoder = ServiceCollectionExtensions::get_required_single::<dyn IHttpBodyStreamFormat>(services).get_encoder(accept_str);
+        // let encoder = ServiceCollectionExtensions::get_required_single::<dyn IHttpBodyStreamFormat>(services).get(accept_str);
 
         if let Some(next) = self.next.borrow().as_ref() {
             let next_response = next.handle_request(response_context, request_context, services)?;

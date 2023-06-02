@@ -7,6 +7,7 @@ use http::status::StatusCode;
 
 use crate::core::buffered_tcpstream::BufferedTcpStream;
 use crate::core::itcp_stream_wrapper::ITcpStreamWrapper;
+use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
 
 
 // this trait represents a TCP connection.
@@ -19,17 +20,11 @@ pub trait IConnectionContext {
 
     // // get the body stream of the connection.
     // fn mut_body_stream(self: &Self) -> &RefCell<Rc<dyn ITcpStreamWrapper>>;
-
-
-    fn add_decoder(self: &Self, decoder: Box<dyn ITcpStreamWrapper>);
-    fn add_encoder(self: &Self, encoder: Box<dyn ITcpStreamWrapper>);
 }
 
 // this struct implements IConnectionContext and represents a HTTP connection.
 pub struct ConnectionContext {
     source_stream: RefCell<BufferedTcpStream>,
-    decoders: RefCell<Vec<Box<dyn ITcpStreamWrapper>>>,
-    encoders: RefCell<Vec<Box<dyn ITcpStreamWrapper>>>,
 }
 
 impl ConnectionContext {
@@ -38,20 +33,16 @@ impl ConnectionContext {
     // returns: a new ConnectionContext struct.
     pub fn new(
         source_stream: RefCell<BufferedTcpStream>,
-        decoders: Option<Vec<Box<dyn ITcpStreamWrapper>>>,
-        encoders: Option<Vec<Box<dyn ITcpStreamWrapper>>>,
     ) -> Self {
         Self {
             source_stream: source_stream,
-            decoders: RefCell::new(decoders.unwrap_or(vec![])),
-            encoders: RefCell::new(encoders.unwrap_or(vec![])),
         }
     }
 
     pub fn new_from_stream(stream: BufferedTcpStream) -> Self {
         let buf_reader = RefCell::new(stream);
 
-        Self::new(buf_reader, None, None)
+        Self::new(buf_reader)
     }
 
     fn shutdown(&self, how: std::net::Shutdown) -> Result<(), std::io::Error> {
@@ -87,19 +78,12 @@ impl IConnectionContext for ConnectionContext {
     fn get_remote_addr(self: &Self) -> std::net::SocketAddr {
         self.source_stream.borrow().remote_addr().clone()
     }
-
-    fn add_decoder(self: &Self, decoder: Box<dyn ITcpStreamWrapper>) {
-        self.decoders.borrow_mut().push(decoder);
-    }
-
-    fn add_encoder(self: &Self, encoder: Box<dyn ITcpStreamWrapper>) {
-        self.encoders.borrow_mut().push(encoder);
-    }
 }
 
 
 pub trait IHttpConnectionContext {
     fn get_tcp_context(&self) -> &dyn IConnectionContext;
+    fn get_stream(&self) -> &RefCell<Rc<dyn ITcpStreamWrapper>>;
 
     fn get_pending_status_code(&self) -> StatusCode;
     fn get_pending_status_message(&self) -> String;
@@ -128,17 +112,19 @@ pub trait IHttpConnectionContext {
 }
 
 pub struct HttpConnectionContext {
-    tcp_connection_context: ConnectionContext,
-    has_started_writing: RefCell<bool>,
+    pub tcp_connection_context: ConnectionContext,
+    pub stream: RefCell<Rc<dyn ITcpStreamWrapper>>,
+    pub has_started_writing: RefCell<bool>,
 
-    pending_http_version: RefCell<http::Version>,
-    pending_status_code: RefCell<Option<StatusCode>>,
-    pending_status_message: RefCell<Option<String>>,
-    pending_headers: RefCell<HeaderMap>,
+    pub pending_http_version: RefCell<http::Version>,
+    pub pending_status_code: RefCell<Option<StatusCode>>,
+    pub pending_status_message: RefCell<Option<String>>,
+    pub pending_headers: RefCell<HeaderMap>,
 }
 
 impl HttpConnectionContext {
     pub fn new(connection_context: ConnectionContext) -> Self {
+        let stream = RefCell::new(Rc::new(BufferedTcpStream::new_self(&connection_context.source_stream))); // connection_context.source_stream.borrow()
         Self {
             tcp_connection_context: connection_context,
             has_started_writing: RefCell::new(false),
@@ -146,6 +132,7 @@ impl HttpConnectionContext {
             pending_status_code: RefCell::new(None),
             pending_status_message: RefCell::new(None),
             pending_headers: RefCell::new(HeaderMap::new()),
+            stream: stream
         }
     }
 
@@ -161,6 +148,10 @@ impl HttpConnectionContext {
 impl IHttpConnectionContext for HttpConnectionContext {
     fn get_tcp_context(&self) -> &dyn IConnectionContext {
         &self.tcp_connection_context
+    }
+
+    fn get_stream(&self) -> &RefCell<Rc<dyn ITcpStreamWrapper>> {
+        &self.stream
     }
 
     fn flush(&self) -> std::io::Result<()> {

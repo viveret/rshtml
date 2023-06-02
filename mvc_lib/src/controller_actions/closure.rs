@@ -289,4 +289,8 @@ impl IControllerAction for ControllerActionClosure {
     fn get_should_validate_model(self: &Self) -> bool {
         self.should_validate_model
     }
+
+    fn get_model_type(self: &Self) -> Option<Box<crate::core::type_info::TypeInfo>> {
+        todo!()
+    }
 }

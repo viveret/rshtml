@@ -3,6 +3,8 @@ pub mod encoders;
 pub mod iviewmodel;
 pub mod iviewmodel_binder;
 pub mod iviewmodel_encoder;
+pub mod imodelbinder_service;
+pub mod modelbinder_service;
 pub mod model_binder_resolver;
 pub mod model_binder_middleware;
 pub mod model_serializer_resolver;

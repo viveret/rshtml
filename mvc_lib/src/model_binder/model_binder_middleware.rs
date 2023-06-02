@@ -13,6 +13,7 @@ use crate::services::service_collection::ServiceCollectionExtensions;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::service_collection::IServiceCollection;
 
+use super::model_binder_resolver::IModelBinderResolver;
 use super::model_binder_resolver::ModelBinderResolver;
 
 

@@ -6,11 +6,15 @@ use std::rc::Rc;
 use http::{Method, HeaderMap};
 
 use crate::core::query_string::QueryString;
+use crate::core::type_info::TypeInfo;
 use crate::http::http_body_content::{IBodyContent, ContentType};
+use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
+use crate::model_binder::imodelbinder_service::IModelBinderService;
 use crate::model_binder::view_model_result::ViewModelResult;
 use crate::routing::route_data::RouteData;
 use crate::services::authorization_service::IAuthClaim;
 use crate::controller_actions::controller_action::IControllerAction;
+use crate::services::service_collection::IServiceCollection;
 
 use super::connection_context::{IConnectionContext, IHttpConnectionContext};
 
@@ -78,6 +82,12 @@ pub trait IRequestContext {
     fn get_headers(self: &Self) -> &HeaderMap;
     // get the cookies of the request
     fn get_cookies_parsed(self: &Self) -> Option<HashMap<String, String>>;
+
+    // use a decoder for the request body.
+    fn use_decoder(self: &Self, decoder: Rc<dyn IHttpBodyStreamFormat>);
+
+    // decode and bind the body of the request
+    fn decode_and_bind_body(self: &Self, services: &dyn IServiceCollection) -> Option<Rc<dyn IBodyContent>>;
 
     // get the content type of the request
     fn get_content_type(self: &Self) -> Option<ContentType>;

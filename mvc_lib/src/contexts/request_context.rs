@@ -8,18 +8,21 @@ use regex::Regex;
 
 use http::{ HeaderName, HeaderValue, HeaderMap, Method };
 
-use crate::contexts::connection_context::IConnectionContext;
-
 use crate::controller_actions::controller_action::IControllerAction;
 
 use crate::core::query_string::QueryString;
 
+use crate::core::type_info::TypeInfo;
 use crate::http::http_body_content::ContentType;
 use crate::http::http_body_content::IBodyContent;
+use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
+use crate::model_binder::imodelbinder_service::IModelBinderService;
 use crate::routing::route_data::RouteData;
 
 use crate::services::authorization_service::IAuthClaim;
 use crate::model_binder::view_model_result::ViewModelResult;
+use crate::services::service_collection::IServiceCollection;
+use crate::services::service_collection::ServiceCollectionExtensions;
 
 use super::connection_context::IHttpConnectionContext;
 use super::irequest_context::IRequestContext;
@@ -48,6 +51,8 @@ pub struct RequestContext<'a> {
     query_string: Box<String>,
     // the headers of the request
     headers: HeaderMap,
+    // decoders used to decode the request body
+    decoders: RefCell<Vec<Rc<dyn IHttpBodyStreamFormat>>>,
     // the decoded body content of the request
     body_content: RefCell<Option<Rc<dyn IBodyContent>>>,
     // the model validation result of the request
@@ -105,6 +110,7 @@ impl <'a> RequestContext<'a> {
             auth_claims: RefCell::new(Vec::new()),
             context_data: RefCell::new(HashMap::new()),
             controller_action: RefCell::new(None),
+            decoders: RefCell::new(Vec::new()),
         }
     }
 
@@ -114,34 +120,27 @@ impl <'a> RequestContext<'a> {
     // request_bytes: the body of the request
     // connection_context: the HTTP connection context of the request
     // returns: the new request context.
-    pub fn parse(connection_context: &'a dyn IHttpConnectionContext) -> RequestContext<'a> {
-        // let mut body_reader = connection_context.mut_body_stream().borrow_mut();
+    pub fn parse(connection_context: &'a dyn IHttpConnectionContext) -> Result<RequestContext<'a>, std::io::Error> {
         let mut request_headers: Vec<String> = vec![];
-        // for attempt in 0..2 {
-            loop {
-                let read_result = connection_context.read_line();
-                match read_result {
-                    Ok(line) => {
-                        if line.trim() == "" {
-                            break;
-                        }
-            
-                        request_headers.push(line);
-                    },
-                    Err(err) => {
-                        println!("Could not read http headers: {}", err);
+        loop {
+            let read_result = connection_context.read_line();
+            match read_result {
+                Ok(line) => {
+                    if line.trim() == "" {
                         break;
-                    },
-                }
+                    }
+        
+                    request_headers.push(line);
+                },
+                Err(err) => {
+                    println!("Could not read http headers: {}", err);
+                    break;
+                },
             }
-
-            // if request_headers.len() > 0 {
-            //     break;
-            // }
-        // }
+        }
 
         if request_headers.len() == 0 {
-            panic!("Could not read http headers: no headers found.");
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Could not read http headers: no headers found."));
         }
 
         let http_header: String = request_headers.remove(0);
@@ -155,16 +154,19 @@ impl <'a> RequestContext<'a> {
         // println!("Received request: {}", http_header);
 
         if !re_method_valid.is_match(&http_header) {
-            panic!("Invalid HTTP method: {}", method_str);
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Invalid HTTP method: {}", method_str)));
         }
 
         let version = match version_str {
             "HTTP/0.9" => http::version::Version::HTTP_09,
             "HTTP/1.0" => http::version::Version::HTTP_10,
             "HTTP/1.1" => http::version::Version::HTTP_11,
-            _ => panic!("Invalid HTTP version {}", version_str)
+            _ => {
+                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Invalid HTTP version {}", version_str)));
+            }
         };
 
+        let mut errors = vec![];
         let headers = HeaderMap::from_iter(request_headers.iter().map(|x| {
             let mut name = re_header.find(x).expect(&format!("Invalid header format: {}", x)).as_str();
             let value = x[name.len()..].to_string();
@@ -173,14 +175,18 @@ impl <'a> RequestContext<'a> {
 
             match HeaderValue::from_str(value_str) {
                 Ok(header_val) => {
-                    (HeaderName::from_bytes(name.as_bytes()).unwrap(), header_val)
+                    Some((HeaderName::from_bytes(name.as_bytes()).unwrap(), header_val))
                 },
                 Err(err) => {
-                    panic!("Could not parse header value '{}': {}", value_str, err);
+                    errors.push(err);
+                    None
                 },
             }
-            // HttpHeader::from_httparse_header(name, &value.as_bytes().to_vec())
-        }));
+        }).filter(Option::is_some).map(|x| x.unwrap()));
+
+        if errors.len() > 0 {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Could not parse headers: {:?}", errors)));
+        }
 
         let host_header_value = headers.get("Host").unwrap();
         let host_header_string = format!("http://{}", host_header_value.to_str().unwrap());
@@ -191,9 +197,8 @@ impl <'a> RequestContext<'a> {
 
         let path = path_and_query.path();
         let query = path_and_query.query().unwrap_or("");
-        // println!("path: {}, query: {}, http_header: {}", path, query, http_header);
 
-        Self::new(
+        Ok(Self::new(
             connection_context,
             version,
             Some(Box::new(path_and_query.scheme().to_string())),
@@ -204,7 +209,7 @@ impl <'a> RequestContext<'a> {
             Box::new(path.to_string()),
             Box::new(query.to_string()),
             headers,
-        )
+        ))
     }
     
 }
@@ -387,6 +392,7 @@ impl<'a> IRequestContext for RequestContext<'a> {
     
     // this function is used to get the content type from the headers.
     fn get_content_type(self: &Self) -> Option<ContentType> {
+        // get_headers().get("Content-Type").unwrap()
         if let Some(content_type_header_val) = self.headers.get("Content-Type") {
             match content_type_header_val.to_str() {
                 Ok(content_type_str) => {
@@ -400,5 +406,49 @@ impl<'a> IRequestContext for RequestContext<'a> {
         } else {
             None
         }
+    }
+
+    fn use_decoder(self: &Self, decoder: Rc<dyn IHttpBodyStreamFormat>) {
+        self.decoders.borrow_mut().push(decoder);
+    }
+
+    fn decode_and_bind_body(self: &Self, services: &dyn IServiceCollection) -> Option<Rc<dyn IBodyContent>> {
+        // // get content type from request
+
+        // if let Some(content_type) = request_context.get_content_type() {
+        //     if let Some(action) = request_context.get_controller_action() {
+        //     }
+        //     // replace source request stream with decoder stream if content encoding is gzip
+        //     // if let Some(content_encoding) = request_context.get_headers().get("Content-Encoding") {
+        //     //     let content_encoding_str = content_encoding.to_str().unwrap();
+        //     //     if let Some(formatter) = self.body_content_decoder_service.resolve(content_type.clone()) {
+        //     //         if formatter.matches_content_type(&content_type) {
+        //     //             request_context.decode_body(formatter);
+        //     //         }
+        //     //     }
+        //     // }
+        // }
+
+        if let Some(action) = self.get_controller_action_optional() {
+            if let Some(model_type) = action.get_model_type() {
+                println!("decode_and_bind_body: {} has model type {}", self.get_path(), model_type.to_string());
+                let model_binder_service: Rc<dyn IModelBinderService> = ServiceCollectionExtensions::get_required_single(services);
+                
+                let final_stream = self.connection_context.get_stream();
+                for decoder in self.decoders.borrow().iter() {
+                    let decoded_stream = decoder.decode(final_stream.borrow().clone(), self.get_content_type().as_ref().unwrap());
+                    final_stream.replace(decoded_stream);
+                }
+        
+                // use model binder to try and read stream into model
+                self.set_model_validation_result(Some(model_binder_service.bind_model(self, model_type.as_ref())));
+            } else {
+                println!("decode_and_bind_body: {} does not have model type", self.get_path());
+            }
+        } else {
+            println!("decode_and_bind_body: {} does not have controller action", self.get_path());
+        }
+
+        None
     }
 }

@@ -1,7 +1,10 @@
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use http::{StatusCode, Version};
 use http::{ HeaderName, HeaderValue, HeaderMap };
+
+use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
 
 use super::connection_context::{IConnectionContext, IHttpConnectionContext};
 use super::irequest_context::IRequestContext;
@@ -36,6 +39,9 @@ pub trait IResponseContext {
 
     // get the connection context of the response, same as the one for the request context.
     fn get_connection_context(&self) -> &dyn IHttpConnectionContext;
+
+    // use an encoder for the response body.
+    fn use_encoder(self: &Self, encoder: Rc<dyn IHttpBodyStreamFormat>);
 }
 
 // this trait represents a HTTP response and its context.
@@ -51,6 +57,8 @@ pub struct ResponseContext<'a> {
     pub request_context: &'a dyn IRequestContext,
     // the connection context of the response, same as the one for the request context.
     pub connection_context: &'a dyn IHttpConnectionContext,
+    // the encoders to use for the response body.
+    encoders: RefCell<Vec<Rc<dyn IHttpBodyStreamFormat>>>,
 }
 
 impl <'a> ResponseContext<'a> {
@@ -69,6 +77,7 @@ impl <'a> ResponseContext<'a> {
             // headers: RefCell::new(HeaderMap::new()),
             request_context: request_context,
             connection_context: http_context,
+            encoders: RefCell::new(Vec::new()),
         }
     }
 }
@@ -104,5 +113,9 @@ impl <'a> IResponseContext for ResponseContext<'a> {
 
     fn get_connection_context(&self) -> &dyn IHttpConnectionContext {
         self.connection_context
+    }
+
+    fn use_encoder(self: &Self, encoder: Rc<dyn IHttpBodyStreamFormat>) {
+        self.encoders.borrow_mut().push(encoder);
     }
 }

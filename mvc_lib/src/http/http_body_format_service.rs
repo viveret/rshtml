@@ -5,13 +5,13 @@ use std::rc::Rc;
 use crate::http::http_body_content::ContentType;
 use crate::http::http_body_content::GenericBodyContent;
 use crate::http::http_body_content::IBodyContent;
-use crate::model_binder::decoders::url_encoded_model_decoder::UrlEncodedDecoder;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 use crate::services::service_descriptor::ServiceDescriptor;
 
 use super::ihttp_body_format_resolver::IHttpBodyFormatResolver;
+use super::ihttp_body_stream_format::IHttpBodyStreamFormat;
 
 
 
@@ -76,11 +76,13 @@ use super::ihttp_body_format_resolver::IHttpBodyFormatResolver;
 
 // decodes a stream of bytes from one format to another based on the content type
 pub trait IHttpBodyFormatService {
-    fn decode(self: &Self, body: Rc<dyn IBodyContent>) -> Rc<dyn IBodyContent>;
-    fn decode_from_raw(self: &Self, content_type: ContentType, content_length: usize, body_raw: &Vec<u8>) -> Rc<dyn IBodyContent>;
+    // fn decode(self: &Self, body: Rc<dyn IBodyContent>) -> Rc<dyn IBodyContent>;
+    // fn decode_from_raw(self: &Self, content_type: ContentType, content_length: usize, body_raw: &Vec<u8>) -> Rc<dyn IBodyContent>;
 
-    fn encode(self: &Self, body: Rc<dyn IBodyContent>) -> Rc<dyn IBodyContent>;
-    fn encode_from_raw(self: &Self, content_type: ContentType, body: Rc<dyn IBodyContent>) -> &Vec<u8>;
+    // fn encode(self: &Self, body: Rc<dyn IBodyContent>) -> Rc<dyn IBodyContent>;
+    // fn encode_from_raw(self: &Self, content_type: ContentType, body: Rc<dyn IBodyContent>) -> &Vec<u8>;
+
+    fn resolve(&self, get_content_type: ContentType) -> Option<Rc<dyn IHttpBodyStreamFormat>>;
 }
 
 pub struct HttpBodyFormatService {
@@ -111,40 +113,51 @@ impl HttpBodyFormatService {
             crate::services::service_scope::ServiceScope::Singleton,
         ));
     }
+
+    fn resolve(&self, get_content_type: ContentType) -> Option<Rc<dyn IHttpBodyStreamFormat>> {
+        for resolver in &self.resolvers {
+            if let Some(decoder) = resolver.resolve(&get_content_type) {
+                return Some(decoder);
+            }
+        }
+        None
+    }
 }
 
 impl IHttpBodyFormatService for HttpBodyFormatService {
-    fn decode(self: &Self, body: Rc<dyn IBodyContent>) -> Rc<dyn IBodyContent> {
-        let resolved = self.resolve(body.get_content_type());
-        if let Some(resolved) = resolved {
-            // println!("self.decoders.len: {}", self.decoders.len());
-            let mut body = body;
-            for decoder in &self.formats {
-                if decoder.matches_content_type(body.get_content_type()) {
-                    // println!("RequestBodyDecoderService::decode: decoding body with decoder: {}", decoder.type_info());
-                    body = decoder.decode(body);
-                }
+    fn resolve(&self, get_content_type: ContentType) -> Option<Rc<dyn IHttpBodyStreamFormat>> {
+        for resolver in &self.resolvers {
+            if let Some(decoder) = resolver.resolve(&get_content_type) {
+                return Some(decoder);
             }
-            body
-        } else {
-            body
         }
+        None
     }
 
-    fn decode_from_raw(self: &Self, content_type: ContentType, content_length: usize, body_raw: &Vec<u8>) -> Rc<dyn IBodyContent> {
-        let body = Rc::new(GenericBodyContent::new(
-            content_type,
-            content_length,
-            body_raw.clone()
-        ));
-        self.decode(body)
-    }
+    
+//     fn decode(self: &Self, body: Rc<dyn IBodyContent>) -> Rc<dyn IBodyContent> {
+//         let resolved = self.resolve(body.get_content_type());
+//         if let Some(resolved) = resolved {
+//             resolved.decode(body.get_stream(), body.get_content_type())
+//         } else {
+//             body
+//         }
+//     }
 
-    fn encode(self: &Self, body: Rc<dyn IBodyContent>) -> Rc<dyn IBodyContent> {
-        todo!()
-    }
+//     fn decode_from_raw(self: &Self, content_type: ContentType, content_length: usize, body_raw: &Vec<u8>) -> Rc<dyn IBodyContent> {
+//         let body = Rc::new(GenericBodyContent::new(
+//             content_type,
+//             content_length,
+//             body_raw.clone()
+//         ));
+//         self.decode(body)
+//     }
 
-    fn encode_from_raw(self: &Self, content_type: ContentType, body: Rc<dyn IBodyContent>) -> &Vec<u8> {
-        todo!()
-    }
+//     fn encode(self: &Self, body: Rc<dyn IBodyContent>) -> Rc<dyn IBodyContent> {
+//         todo!()
+//     }
+
+//     fn encode_from_raw(self: &Self, content_type: ContentType, body: Rc<dyn IBodyContent>) -> &Vec<u8> {
+//         todo!()
+//     }
 }

@@ -9,9 +9,14 @@ use crate::contexts::response_context::{ResponseContext, IResponseContext};
 
 use crate::controllers::route_data_controller_action_matcher::RouteDataControllerActionMatcher;
 
+use crate::core::type_info::TypeInfo;
 use crate::services::service_collection::{ IServiceCollection, ServiceCollectionExtensions };
 use crate::services::request_middleware_service::{ IRequestMiddlewareService, MiddlewareResult };
 use crate::services::routemap_service::IRouteMapService;
+
+use super::service_collection::ServiceCollection;
+use super::service_descriptor::ServiceDescriptor;
+use super::service_scope::ServiceScope;
 
 // this is the service that handles routing.
 // it maps a request to a controller action.
@@ -38,6 +43,11 @@ impl RoutingService {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services)
         )) as Rc<dyn IRequestMiddlewareService>)]
+    }
+
+    // adds the routing service to the service collection.
+    pub fn add_to_services(services: &mut ServiceCollection) {
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IRequestMiddlewareService>(), RoutingService::new_service, ServiceScope::Singleton));
     }
 }
 

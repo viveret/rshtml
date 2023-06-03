@@ -10,5 +10,13 @@ mvc_macro_lib::rusthtml_view_macro! {
 
     <h1>@view_context.get_str("Title")</h1>
 
-    <b>@"todo: Not implemented yet"</b>
+    @html.form(http::method::Method::POST, url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).into(), Some(&HashMap::new()) /* optional attributes, takes precedent over route values */, || -> HtmlString {
+        @html.label("message", "Message", None)
+        @html.input("message", "text", model.input.message.as_str(), None)
+
+        @html.label("level", "Log Level", None)
+        @html.input("level", "level", model.input.level.as_str(), None)
+        
+        @html.submit("Submit", None)
+    })
 }

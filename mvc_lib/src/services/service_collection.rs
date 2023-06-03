@@ -29,7 +29,7 @@ pub trait IServiceCollection: Send + Sync {
     fn get_root(&self) -> Option<&dyn IServiceCollection>;
     
     // get the items in the collection
-    fn get_items(&self) -> &Vec<Rc<ServiceDescriptor>>;
+    fn get_items(&self) -> Vec<Rc<ServiceDescriptor>>;
 
     // get the singletons in the collection
     fn get_singletons(&self) -> &Vec<Rc<ServiceInstance>>;
@@ -184,7 +184,8 @@ impl <'a> ServiceCollection<'a> {
     // might need methods for creating derived service collections with instantiated non-singleton scoped services
 }
 
-
+// FIXME: fix nesting collections because currently it cannot find a service when we know it exists
+// in a parent context. this is because the parent context is not searched when the child context is called.
 impl <'a> IServiceCollection for ServiceCollection<'a> {
     // should implement get_at_index, contains, index_of, insert, clear, remove, make_readonly
     // if it is possible to add extension methods, should add them as helpers.
@@ -238,8 +239,16 @@ impl <'a> IServiceCollection for ServiceCollection<'a> {
         self.root.clone()
     }
     
-    fn get_items(&self) -> &Vec<Rc<ServiceDescriptor>> {
-        &self.items
+    fn get_items(&self) -> Vec<Rc<ServiceDescriptor>> {
+        if let Some(parent) = self.parent {
+            self.items
+                .iter()
+                .chain(parent.get_items().iter())
+                .cloned()
+                .collect::<Vec<Rc<ServiceDescriptor>>>()
+        } else {
+            self.items.clone()
+        }
     }
 
     fn get_singletons(&self) -> &Vec<Rc<ServiceInstance>> {
@@ -262,7 +271,7 @@ impl <'a> IServiceCollection for ServiceCollection<'a> {
         .chain(
             match self.parent {
                 Some(parent) => parent.find_descriptor(type_info),
-                None => { vec![] },
+                None => vec![],
             }.iter().cloned()
         )
         .collect()
@@ -330,7 +339,9 @@ impl ServiceCollectionExtensions {
             .take(1)
             .map(|x| x.clone())
             .collect::<Vec<Rc<T>>>()
-            .first().unwrap().clone()
+            .first()
+            .unwrap()
+            .clone()
     }
 
     // get a service from the collection. if it is not found, panic.
@@ -358,5 +369,17 @@ impl ServiceCollectionExtensions {
             .map(|x| x.downcast_ref::<Rc<T>>().expect("could not downcast Any to T"))
             .map(|x| x.clone())
             .collect::<Vec<Rc<T>>>()
+    }
+
+    // get multiple services from the collection. if it is not found, panic.
+    pub fn get_required_one_or_more<T: 'static + ?Sized>(services: &dyn IServiceCollection) -> Vec<Rc<T>> {
+        let found = Self::get_required_multiple::<T>(services);
+        if found.len() == 0 {
+            println!("Available services ({}): {}", services.get_items().len(), services.get_items().iter().map(|x| x.type_info.type_name.as_ref()).collect::<Vec<&str>>().join(", "));
+            let type_info = TypeInfo::rc_of::<T>();
+            panic!("No services found for type {}", type_info.type_name);
+        } else {
+            found
+        }
     }
 }

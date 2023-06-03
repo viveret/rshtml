@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 as-any = "0.3.0"
 bytestream = "0.4"
+chrono = "0.4.24"
 comrak = "0.18.0"
 eval = "0.4.3"
 flate2 = "1.0"

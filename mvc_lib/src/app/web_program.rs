@@ -92,11 +92,29 @@ impl <'a> WebProgram<'a> {
         let request_pipeline = ServiceCollectionExtensions::get_required_single::<dyn IHttpRequestPipeline>(&connection_services);
 
         // invoke the request pipeline to process the request and get the response.
-        request_pipeline.as_ref().process_request(&connection_context, &connection_services).expect("could not process request");
+        match request_pipeline.as_ref().process_request(&connection_context, &connection_services) {
+            Ok(_) => {},
+            Err(e) => {
+                // send the error back to the client.
+                println!("could not process request: {}", e);
+            }
+        }
 
         // flush the stream. this will send the response back to the client.
-        connection_context.flush().expect("could not flush response");
-        connection_context.shutdown(Shutdown::Both).expect("could not shutdown stream");
+        match connection_context.flush() {
+            Ok(_) => {},
+            Err(e) => {
+                println!("could not flush stream: {}", e);
+            }
+        }
+        
+        // shutdown the stream. this disconnects the client.
+        match connection_context.shutdown(Shutdown::Both) {
+            Ok(_) => {},
+            Err(e) => {
+                println!("could not shutdown stream: {}", e);
+            }
+        }
     }
 }
 

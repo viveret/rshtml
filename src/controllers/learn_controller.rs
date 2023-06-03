@@ -9,8 +9,6 @@ use mvc_lib::action_results::http_result::HttpRedirectResult;
 use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
 use mvc_lib::services::service_collection::IServiceCollection;
 
-use mvc_lib::contexts::controller_context::IControllerContext;
-
 use mvc_lib::action_results::view_result::ViewResult;
 
 use mvc_lib::controllers::icontroller::IController;

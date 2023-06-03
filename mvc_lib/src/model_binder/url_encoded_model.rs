@@ -3,12 +3,12 @@ use std::rc::Rc;
 use crate::http::http_body_content::{ContentType, IBodyContent};
 use crate::core::query_string::QueryString;
 
-use super::iviewmodel::IViewModel;
+use super::imodel::IModel;
 
 
 // this struct is used to parse the body content of a form url encoded request.
 // it is used by the FormUrlEncodedBinder.
-pub struct UrlEncodedModel(QueryString);
+pub struct UrlEncodedModel(pub QueryString);
 impl UrlEncodedModel {
     // parse the body content of a form url encoded request.
     // body_content: the body content to parse.
@@ -24,8 +24,34 @@ impl UrlEncodedModel {
     }
 }
 
-impl IViewModel for UrlEncodedModel {
+impl IModel for UrlEncodedModel {
+    fn get_properties(&self) -> std::collections::HashMap<String, Box<dyn std::any::Any>> {
+        todo!()
+    }
 
+    fn get_property(&self, name: &str) -> Option<Box<dyn std::any::Any>> {
+        todo!()
+    }
+
+    fn get_attributes(&self) -> Vec<Box<dyn std::any::Any>> {
+        todo!()
+    }
+
+    fn get_attribute(&self, typeinfo: &crate::core::type_info::TypeInfo) -> Option<Box<dyn std::any::Any>> {
+        todo!()
+    }
+
+    fn get_type_info(&self) -> Box<crate::core::type_info::TypeInfo> {
+        todo!()
+    }
+
+    fn get_underlying_value(&self) -> Box<dyn std::any::Any> {
+        todo!()
+    }
+
+    fn to_string(&self) -> String {
+        todo!()
+    }
 }
 
 impl IBodyContent for UrlEncodedModel {

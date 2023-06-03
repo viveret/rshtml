@@ -32,6 +32,8 @@ use super::irequest_context::IRequestContext;
 // it is created by the server and passed to middleware and the controller action.
 // it is also passed to the view renderer and view.
 pub struct RequestContext<'a> {
+    // the unique identifier of the request
+    uuid: uuid::Uuid,
     // the HTTP connection context of the request
     connection_context: &'a dyn IHttpConnectionContext,
     // the HTTP version of the request
@@ -94,6 +96,7 @@ impl <'a> RequestContext<'a> {
         request_headers: HeaderMap,
     ) -> Self {
         Self {
+            uuid: uuid::Uuid::new_v4(),
             connection_context: connection_context,
             http_version: http_version,
             scheme: scheme.unwrap_or(Box::new("http".to_string())),
@@ -450,7 +453,7 @@ impl<'a> IRequestContext for RequestContext<'a> {
             
                     // use model binder to try and read stream into model
                     let bind_result = model_binder_service.bind_model(self, model_type.as_ref());
-                    println!("decode_and_bind_body: bind_result: {}", bind_result.to_string());
+                    println!("{} decode_and_bind_body: bind_result: {}", self.uuid, bind_result.to_string());
                     self.set_model_validation_result(Some(bind_result));
                 }
             } else {
@@ -461,5 +464,9 @@ impl<'a> IRequestContext for RequestContext<'a> {
         }
 
         None
+    }
+
+    fn get_uuid(self: &Self) -> &uuid::Uuid {
+        &self.uuid
     }
 }

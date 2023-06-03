@@ -23,6 +23,10 @@ impl ModelBinderService {
     pub fn new(
         resolvers: Vec<Rc<dyn IModelBinderResolver>>,
     ) -> Self {
+        if resolvers.len() == 0 {
+            panic!("ModelBinderService::new: no model binder resolvers provided");
+        }
+
         Self {
             resolvers: resolvers,
         }
@@ -30,7 +34,7 @@ impl ModelBinderService {
 
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
-            ServiceCollectionExtensions::get_required_multiple::<dyn IModelBinderResolver>(services)
+            ServiceCollectionExtensions::get_required_one_or_more::<dyn IModelBinderResolver>(services)
         )) as Rc<dyn IModelBinderService>)]
     }
 
@@ -47,7 +51,16 @@ impl IModelBinderService for ModelBinderService {
             }
         }
 
-        println!("No model binder found for model type: {}", model_type.type_name);
+        // println!("Resolver count: {}", self.resolvers.len());
+
+        let avail_types_str = self.resolvers
+            .iter()
+            .flat_map(|r| r.get_binders())
+            .map(|r| r.as_ref().type_info().type_name.as_ref().to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        println!("No model binder found for model type: {}\nAvailable types: {}", model_type.type_name, avail_types_str);
         // should also be able to check type for default instantiation function (constructor)
         // and then check if the model implements an interface that accepts the body content as a parameter
         // such that the type can be instantiated with defaults then the interface can be used to get values

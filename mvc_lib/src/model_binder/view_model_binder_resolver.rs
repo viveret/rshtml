@@ -1,3 +1,4 @@
+use core::panic;
 use std::rc::Rc;
 use std::any::Any;
 
@@ -29,20 +30,23 @@ pub trait IModelBinderResolver {
 // it uses the IModelBinder instances registered in the IServiceCollection to validate and bind the view model.
 pub struct ModelBinderResolver {
     // the view model binders used to validate and bind the view model.
-    view_model_binders: Vec<Rc<dyn IModelBinder>>,
+    model_binders: Vec<Rc<dyn IModelBinder>>,
 }
 
 impl ModelBinderResolver {
     // creates a new instance of ModelBinderResolver from the given view model binders.
-    // view_model_binders: the view model binders used to validate and bind the view model.
-    pub fn new(view_model_binders: Vec<Rc<dyn IModelBinder>>) -> Self {
+    // model_binders: the view model binders used to validate and bind the view model.
+    pub fn new(model_binders: Vec<Rc<dyn IModelBinder>>) -> Self {
+        panic!("ModelBinderResolver::new");
+        println!("model_binders: {:?}", model_binders.iter().map(|r| r.as_ref().type_info().type_name.as_ref().to_string()).collect::<Vec<String>>().join(", "));
         Self {
-            view_model_binders: view_model_binders,
+            model_binders: model_binders,
         }
     }
 
     // creates a new instance of ModelBinderResolver as a service from the given IServiceCollection.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+        panic!("ModelBinderResolver::new_service");
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_multiple::<dyn IModelBinder>(services)
         )))]
@@ -50,13 +54,14 @@ impl ModelBinderResolver {
 
     // adds the ModelBinderResolver to the given IServiceCollection.
     pub fn add_to_services(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<ModelBinderResolver>(), Self::new_service, ServiceScope::Singleton));
+        panic!("ModelBinderResolver::add_to_services");
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IModelBinderResolver>(), Self::new_service, ServiceScope::Singleton));
     }
 }
 
 impl IModelBinderResolver for ModelBinderResolver {
     fn resolve_for_content_type(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IModelBinder>> {
-        for it in self.view_model_binders.iter() {
+        for it in self.model_binders.iter() {
             if it.matches(request_context) {
                 return Some(it.clone());
             }

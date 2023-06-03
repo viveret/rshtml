@@ -2,13 +2,12 @@ use std::any::Any;
 use std::error::Error;
 use std::rc::Rc;
 
-use log::Log;
-
 use crate::options::logging_services_options::ILogHttpRequestsOptions;
 
 use crate::services::service_collection::{ IServiceCollection, ServiceCollectionExtensions };
 
-use super::logger::{ILogger, ILoggerSink};
+use super::ilogger::ILogger;
+use super::iloggersink::ILoggerSink;
 
 pub trait ILoggingService: ILogger {
     fn get_logger(&self) -> Rc<dyn ILogger>;

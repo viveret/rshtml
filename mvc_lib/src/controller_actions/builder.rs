@@ -47,6 +47,8 @@ pub struct ControllerActionBuilder {
     // the closure function for the controller action (if the route type is a closure with a model)
     closure_fn_validated: RefCell<Option<Rc<dyn Fn(ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>>,
     // the closure function for the controller action (if the route type is a closure without a model)
+    member_fn_validated_typed: RefCell<Option<Rc<dyn Fn(ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>>,
+    // the closure function for the controller action (if the route type is a closure without a model)
     closure_fn_novalidation: RefCell<Option<&'static dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     // member_fn: RefCell<Option<Rc<fn(self_arg: T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     // the member function for the controller action (if the route type is a member function)
@@ -66,6 +68,7 @@ impl ControllerActionBuilder {
             action_name: RefCell::new(None),
             should_validate_model: RefCell::new(None),
             closure_fn_validated: RefCell::new(None),
+            member_fn_validated_typed: RefCell::new(None),
             closure_fn_novalidation: RefCell::new(None),
             member_fn_action: RefCell::new(None),
         }
@@ -91,7 +94,6 @@ impl ControllerActionBuilder {
     // set the function for the controller action as a member function.
     pub fn set_member_fn<T:'static + IController>(
         self: &Self, 
-        // self_arg: T, 
         member_fn_validated: Option<fn(self_arg: &T, model: ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
         member_fn_not_validated: Option<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
     ) -> &Self {
@@ -146,6 +148,38 @@ impl ControllerActionBuilder {
             )
         );
         self
+    }
+
+    pub fn set_member_fn_specific_model_type<T: 'static + IController, TModel: 'static + IModel>(
+        &self,
+        member_fn_validated_typed: Box<fn(&T, ModelValidationResult<Rc<TModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
+    ) {
+        self.route_type.replace(Some(RouteType::MemberFn));
+        let need_to_set_should_validate = if let Some(to_validate_or_not_to_validate) = *self.should_validate_model.borrow() {
+            if !to_validate_or_not_to_validate {
+                panic!("Cannot use set_member_fn_specific_model_type with a non-validated member function");
+            } else {
+                false
+            }
+        } else {
+            true
+        };
+
+        if need_to_set_should_validate {
+            self.should_validate_model.replace(Some(true));
+        }
+
+        let fn2 = ControllerActionMemberFn::new_validated_typed(
+            self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
+            None,
+            self.route_pattern.clone(),
+            self.action_name.borrow().as_ref().unwrap().clone(),
+            self.controller_name.borrow().as_ref().unwrap().clone(),
+            self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
+            member_fn_validated_typed,
+        );
+
+        self.member_fn_action.replace(Some(Rc::new(fn2)));
     }
 
     // set the HTTP methods allowed for the controller action.

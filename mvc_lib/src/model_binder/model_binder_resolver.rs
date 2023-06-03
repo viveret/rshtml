@@ -8,14 +8,16 @@ use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions, ServiceCollection};
 
 use super::imodel_binder::IModelBinder;
-use super::model_validation_result::ModelValidationResult;
 
-
+// this trait is used to resolve the correct IModelBinder for a given content type and context.
 pub trait IModelBinderResolver {
     // resolves the correct IModelBinder for the given content type.
     // content_type: the content type to resolve the IModelBinder for.
     // returns: the resolved IModelBinder if found, otherwise None.
     fn resolve_for_request(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IModelBinder>>;
+
+    // get the IModelBinder instances used by this IModelBinderResolver.
+    fn get_binders(self: &Self) -> Vec<Rc<dyn IModelBinder>>;
 }
 
 // this struct is used to resolve the correct IModelBinder for a given content type and context.
@@ -53,16 +55,15 @@ impl ModelBinderResolver {
 
 impl IModelBinderResolver for ModelBinderResolver {
     fn resolve_for_request(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IModelBinder>> {
-        // // expecting content-length in order to read, decode, and parse the body.
-        // let mut found_content_length = request_context.get_content_length();
-
-        // let mut found_content_type = request_context.get_content_type();
-
         for it in self.model_binders.iter() {
             if it.matches(request_context) {
                 return Some(it.clone());
             }
         }
         None
+    }
+
+    fn get_binders(self: &Self) -> Vec<Rc<dyn IModelBinder>> {
+        self.model_binders.clone()
     }
 }

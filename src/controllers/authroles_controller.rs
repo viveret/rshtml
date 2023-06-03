@@ -36,6 +36,7 @@ use mvc_lib::controller_action_features::local_host_only::LocalHostOnlyControlle
 use mvc_lib::controller_action_features::authorize::AuthorizeControllerActionFeature;
 
 use crate::view_models::authroles::{ IndexViewModel, AddViewModel };
+use crate::view_models::dev::LogAddInputModel;
 
 
 // this is the controller for authenticaion roles management (dev/auth-roles).
@@ -83,20 +84,20 @@ impl AuthRolesController {
     }
 
     // get the index view, which shows all the roles.
-    pub fn get_index(controller: &AuthRolesController, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
-        let roles = controller.get_roles();
+    pub fn get_index(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+        let roles = self.get_roles();
         let view_model = Box::new(Rc::new(IndexViewModel::new(roles)));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/index.rs".to_string(), view_model))))
     }
 
     // get the add role view, which allows the user to add a new role.
-    pub fn get_add(controller: &AuthRolesController, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn get_add(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let view_model = Box::new(Rc::new(AddViewModel::new(String::new(), None)));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/add.rs".to_string(), view_model))))
     }
 
     // post the add role view, which allows the user to add a new role.
-    pub fn post_add(controller: &AuthRolesController, _: ModelValidationResult<Rc<dyn IModel>>, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn post_add(self: &Self, _: ModelValidationResult<Rc<LogAddInputModel>>, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let input_model = controller_ctx.get_request_context().get_model_validation_result();
         let new_role = controller_ctx.get_request_context().get_query().get("role"); // to do: this needs to use query parameter
         let view_model = Box::new(Rc::new(
@@ -105,7 +106,7 @@ impl AuthRolesController {
                     AddViewModel::new_error(new_role, "Role is blank")
                 } else {
                     let role = JsonAuthRole::parse_str(&new_role);
-                    let current_roles = controller.get_roles();
+                    let current_roles = self.get_roles();
                     if current_roles.contains(&role) {
                         AddViewModel::new_error(new_role, "Role already exists")
                     } else {
@@ -150,7 +151,7 @@ impl IController for AuthRolesController {
                 .methods(&[Method::POST])
                 .set_name("add_post")
                 .set_controller_name(Cow::Owned(controller_name.clone()))
-                .set_member_fn(Some(Self::post_add), None);
+                .set_member_fn_specific_model_type(Box::new(Self::post_add));
 
         actions_builder.build()
     }

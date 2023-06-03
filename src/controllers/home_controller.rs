@@ -41,7 +41,7 @@ impl HomeController {
 
     // this is the index action for the home controller.
     // this is the home page for the site.
-    pub fn get_index(controller: &HomeController, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn get_index(controller: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let view_model = Box::new(Rc::new(IndexViewModel::new()));
         Ok(Some(Rc::new(ViewResult::new("views/home/index.rs".to_string(), view_model))))
     }

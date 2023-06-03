@@ -94,4 +94,7 @@ pub trait IRequestContext {
     fn get_content_type(self: &Self) -> Option<ContentType>;
     // get the content length of the request
     fn get_content_length(self: &Self) -> Option<usize>;
+
+    // get uuid of the request
+    fn get_uuid(self: &Self) -> &uuid::Uuid;
 }

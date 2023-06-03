@@ -25,6 +25,7 @@ use mvc_lib::options::logging_services_options::{ ILogHttpRequestsOptions, LogHt
 
 use mvc_lib::view::iview::IView;
 
+use crate::view_models::dev::LogAddInputModelBinder;
 use crate::views::authroles::index::view_authroles_index;
 use crate::views::authroles::add::view_authroles_add;
 use crate::views::dev::index::view_dev_index;
@@ -130,6 +131,8 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
 
     DefaultServices::add_request_decoders(services);
     DefaultServices::add_response_encoders(services);
+
+    LogAddInputModelBinder::add_to_services(services);
     DefaultServices::add_model_validators(services);
 
     add_views(services);

@@ -8,7 +8,7 @@ use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions, ServiceCollection};
 
 use super::iviewmodel_encoder::IViewModelEncoder;
-use super::view_model_result::ViewModelResult;
+use super::model_validation_result::ModelValidationResult;
 
 
 // this struct is used to resolve the correct IViewModelEncoder for a given content type and context.
@@ -59,12 +59,12 @@ impl ModelEncoderResolver {
     // model: the view model to encode.
     // response_context: the response context to encode the view model for.
     // returns: the result of the encoding.
-    pub fn encode_view_model(self: &Self, model: Box<dyn Any>, response_context: &dyn IResponseContext) -> ViewModelResult<Vec<u8>> {
+    pub fn encode_view_model(self: &Self, model: Box<dyn Any>, response_context: &dyn IResponseContext) -> ModelValidationResult<Vec<u8>> {
         let headers = response_context.get_headers();
         let content_type = headers.get("Content-Type").unwrap().to_str().unwrap();
         if let Some(binder) = self.resolve_for_content_type(content_type) {
             return binder.encode_model(model, response_context);
         }
-        ViewModelResult::<Vec<u8>>::OkNone
+        ModelValidationResult::<Vec<u8>>::OkNone
     }
 }

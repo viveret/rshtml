@@ -7,9 +7,10 @@ use crate::services::service_collection::{IServiceCollection, ServiceCollection,
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
 
+use super::imodel::IModel;
 use super::imodelbinder_service::IModelBinderService;
 use super::model_binder_resolver::IModelBinderResolver;
-use super::view_model_result::ViewModelResult;
+use super::model_validation_result::ModelValidationResult;
 
 
 
@@ -39,12 +40,18 @@ impl ModelBinderService {
 }
 
 impl IModelBinderService for ModelBinderService {
-    fn bind_model(&self, request_context: &dyn IRequestContext, model_type: &TypeInfo) -> ViewModelResult<Rc<dyn Any>> {
+    fn bind_model(&self, request_context: &dyn IRequestContext, model_type: &TypeInfo) -> ModelValidationResult<Rc<dyn IModel>> {
         for resolver in self.resolvers.iter() {
             if let Some(binder) = resolver.resolve_for_request(request_context) {
-                return binder.bind_view_model(request_context);
+                return binder.bind_model(request_context);
             }
         }
-        ViewModelResult::<Rc<dyn Any>>::OkNone
+
+        println!("No model binder found for model type: {}", model_type.type_name);
+        // should also be able to check type for default instantiation function (constructor)
+        // and then check if the model implements an interface that accepts the body content as a parameter
+        // such that the type can be instantiated with defaults then the interface can be used to get values
+        // from the body content and bind them to the model.
+        ModelValidationResult::<Rc<dyn IModel>>::OkNone
     }
 }

@@ -16,11 +16,12 @@ use crate::core::type_info::TypeInfo;
 use crate::http::http_body_content::ContentType;
 use crate::http::http_body_content::IBodyContent;
 use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
+use crate::model_binder::imodel::IModel;
 use crate::model_binder::imodelbinder_service::IModelBinderService;
 use crate::routing::route_data::RouteData;
 
 use crate::services::authorization_service::IAuthClaim;
-use crate::model_binder::view_model_result::ViewModelResult;
+use crate::model_binder::model_validation_result::ModelValidationResult;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
@@ -56,9 +57,9 @@ pub struct RequestContext<'a> {
     // the decoded body content of the request
     body_content: RefCell<Option<Rc<dyn IBodyContent>>>,
     // the model validation result of the request
-    model_validation_result: RefCell<Option<ViewModelResult<Rc<dyn Any>>>>,
+    model_validation_result: RefCell<Option<ModelValidationResult<Rc<dyn IModel>>>>,
     // the body model of the request
-    body_model: RefCell<Option<Box<dyn Any>>>,
+    body_model: RefCell<Option<Rc<dyn IModel>>>,
     // the route data of the request
     route_data: RefCell<RouteData>,
     // the authorization claims of the request
@@ -345,22 +346,22 @@ impl<'a> IRequestContext for RequestContext<'a> {
         &self.route_data
     }
 
-    fn get_model_validation_result(self: &Self) -> Option<ViewModelResult<Rc<dyn Any>>> {
+    fn get_model_validation_result(self: &Self) -> Option<ModelValidationResult<Rc<dyn IModel>>> {
         self.model_validation_result.borrow().clone()
     }
 
-    fn set_model_validation_result(self: &Self, v: Option<ViewModelResult<Rc<dyn Any>>>) {
+    fn set_model_validation_result(self: &Self, v: Option<ModelValidationResult<Rc<dyn IModel>>>) {
         if let Some(ref v2) = v {
             self.model_validation_result.replace(Some(v2.clone()));
             match v2 {
-                ViewModelResult::OkNone => {
+                ModelValidationResult::OkNone => {
                 },
-                ViewModelResult::Ok(model) => {
-                    self.body_model.replace(Some(Box::new(model.clone())));
+                ModelValidationResult::Ok(model) => {
+                    self.body_model.replace(Some(model.clone()));
                 },
-                ViewModelResult::ModelError(..) => {
+                ModelValidationResult::ModelError(..) => {
                 },
-                ViewModelResult::PropertyError(..) => {
+                ModelValidationResult::PropertyError(..) => {
                 },
             }
         }
@@ -432,21 +433,31 @@ impl<'a> IRequestContext for RequestContext<'a> {
         if let Some(action) = self.get_controller_action_optional() {
             if let Some(model_type) = action.get_model_type() {
                 println!("decode_and_bind_body: {} has model type {}", self.get_path(), model_type.to_string());
-                let model_binder_service: Rc<dyn IModelBinderService> = ServiceCollectionExtensions::get_required_single(services);
-                
-                let final_stream = self.connection_context.get_stream();
-                for decoder in self.decoders.borrow().iter() {
-                    let decoded_stream = decoder.decode(final_stream.borrow().clone(), self.get_content_type().as_ref().unwrap());
-                    final_stream.replace(decoded_stream);
+                // check if model has been bound yet
+                if let Some(_) = self.body_model.borrow().as_ref() {
+                    println!("decode_and_bind_body: {} already has model bound", self.get_path());
+                    return None;
+                } else {
+                    println!("decode_and_bind_body: {} does not have model bound", self.get_path());
+
+                    let model_binder_service: Rc<dyn IModelBinderService> = ServiceCollectionExtensions::get_required_single(services);
+                    
+                    let final_stream = self.connection_context.get_stream();
+                    for decoder in self.decoders.borrow().iter() {
+                        let decoded_stream = decoder.decode(final_stream.borrow().clone(), self.get_content_type().as_ref().unwrap());
+                        final_stream.replace(decoded_stream);
+                    }
+            
+                    // use model binder to try and read stream into model
+                    let bind_result = model_binder_service.bind_model(self, model_type.as_ref());
+                    println!("decode_and_bind_body: bind_result: {}", bind_result.to_string());
+                    self.set_model_validation_result(Some(bind_result));
                 }
-        
-                // use model binder to try and read stream into model
-                self.set_model_validation_result(Some(model_binder_service.bind_model(self, model_type.as_ref())));
             } else {
-                println!("decode_and_bind_body: {} does not have model type", self.get_path());
+                // println!("decode_and_bind_body: {} does not have model type", self.get_path());
             }
         } else {
-            println!("decode_and_bind_body: {} does not have controller action", self.get_path());
+            // println!("decode_and_bind_body: {} does not have controller action", self.get_path());
         }
 
         None

@@ -3,8 +3,9 @@ use std::rc::Rc;
 
 use crate::contexts::irequest_context::IRequestContext;
 use crate::core::type_info::TypeInfo;
-use crate::model_binder::iviewmodel_binder::IViewModelBinder;
-use crate::model_binder::view_model_result::ViewModelResult;
+use crate::model_binder::imodel::IModel;
+use crate::model_binder::imodel_binder::IModelBinder;
+use crate::model_binder::model_validation_result::ModelValidationResult;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_collection::{IServiceCollection, ServiceCollection};
 use crate::services::service_scope::ServiceScope;
@@ -27,22 +28,22 @@ impl JsonDecoder {
     // returns: a Vec of Box<dyn Any> containing the JsonDecoder as a service.
     pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
-        )) as Rc<dyn IViewModelBinder>)]
+        )) as Rc<dyn IModelBinder>)]
     }
 
     // adds the JsonDecoder to the given IServiceCollection.
     // services: the IServiceCollection to add the JsonDecoder to.
     pub fn add_to_services(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IViewModelBinder>(), Self::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IModelBinder>(), Self::new_service, ServiceScope::Singleton));
     }
 }
 
-impl IViewModelBinder for JsonDecoder {
+impl IModelBinder for JsonDecoder {
     fn matches(self: &Self, request_context: &dyn IRequestContext) -> bool {
         false
     }
 
-    fn bind_view_model(self: &Self, request_context: &dyn IRequestContext) -> ViewModelResult<Rc<dyn Any>> {
+    fn bind_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<Rc<dyn IModel>> {
         todo!()
 
         // let mut body_bytes = vec![];

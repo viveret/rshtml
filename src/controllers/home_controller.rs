@@ -64,7 +64,7 @@ impl IController for HomeController {
             .methods(&[Method::GET])
             .set_name("index")
             .set_controller_name(controller_name)
-            .set_member_fn(Self::get_index);
+            .set_member_fn(None, Some(Self::get_index));
 
         actions_builder.build()
     }

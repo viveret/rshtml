@@ -1,7 +1,6 @@
 use crate::core::type_info::TypeInfo;
 
-use crate::app::http_request_pipeline::{ IHttpRequestPipeline, HttpRequestPipeline };
-
+use crate::app::http_request_pipeline::HttpRequestPipeline;
 use crate::diagnostics::logging::log_http_requests::LogHttpRequestsMiddleware;
 use crate::diagnostics::logging::logging_service::{LoggingService, ILoggingService};
 use crate::diagnostics::performance::iperformance_logger_service::IPerformanceLoggerService;
@@ -15,20 +14,20 @@ use crate::model_binder::decoders::url_encoded_model_decoder::UrlEncodedFormatRe
 use crate::model_binder::model_binder_middleware::ModelBinderMiddleware;
 use crate::model_binder::model_binder_resolver::ModelBinderResolver;
 use crate::model_binder::model_serializer_resolver::ModelEncoderResolver;
+use crate::model_binder::modelbinder_service::ModelBinderService;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
-use crate::services::file_provider_service::{IFileProviderService, FileProviderService };
-use crate::services::service_collection::{ ServiceCollection };
+use crate::services::file_provider_service::FileProviderService;
+use crate::services::service_collection::ServiceCollection;
 use crate::services::request_middleware_service::IRequestMiddlewareService;
 use crate::services::controller_action_execute_service::ControllerActionExecuteService;
 use crate::services::routing_service::RoutingService;
 use crate::services::routemap_service::RouteMapService;
 
-use crate::view::view_renderer::{ IViewRenderer, ViewRenderer };
+use crate::view::view_renderer::ViewRenderer;
 
 use crate::controllers::icontroller::IController;
 use crate::controllers::file_provider_controller::FileProviderController;
-use crate::model_binder::view_model_binder_resolver::ViewModelBinderResolver;
 
 
 
@@ -128,7 +127,7 @@ impl DefaultServices {
         
         // add resolvers
         ModelBinderResolver::add_to_services(services);
-        ViewModelBinderResolver::add_to_services(services);
+        ModelBinderService::add_to_services(services);
     }
 
     // add the default model validation middleware to the service collection.

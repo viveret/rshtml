@@ -8,6 +8,8 @@ use http::Method;
 
 use crate::action_results::iaction_result::IActionResult;
 use crate::controllers::icontroller::IController;
+use crate::model_binder::imodel::IModel;
+use crate::model_binder::model_validation_result::ModelValidationResult;
 use crate::services::service_collection::IServiceCollection;
 use crate::contexts::controller_context::{ControllerContext, IControllerContext};
 
@@ -42,8 +44,10 @@ pub struct ControllerActionBuilder {
     action_name: RefCell<Option<String>>,
     // whether or not the model should be validated for the controller action
     should_validate_model: RefCell<Option<bool>>,
-    // the closure function for the controller action (if the route type is a closure)
-    closure_fn: RefCell<Option<Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>>,
+    // the closure function for the controller action (if the route type is a closure with a model)
+    closure_fn_validated: RefCell<Option<Rc<dyn Fn(ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>>,
+    // the closure function for the controller action (if the route type is a closure without a model)
+    closure_fn_novalidation: RefCell<Option<&'static dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     // member_fn: RefCell<Option<Rc<fn(self_arg: T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     // the member function for the controller action (if the route type is a member function)
     member_fn_action: RefCell<Option<Rc<dyn IControllerAction>>>,
@@ -61,7 +65,8 @@ impl ControllerActionBuilder {
             controller_name: RefCell::new(None),
             action_name: RefCell::new(None),
             should_validate_model: RefCell::new(None),
-            closure_fn: RefCell::new(None),
+            closure_fn_validated: RefCell::new(None),
+            closure_fn_novalidation: RefCell::new(None),
             member_fn_action: RefCell::new(None),
         }
     }
@@ -87,23 +92,56 @@ impl ControllerActionBuilder {
     pub fn set_member_fn<T:'static + IController>(
         self: &Self, 
         // self_arg: T, 
-        member_fn: fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn_validated: Option<fn(self_arg: &T, model: ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
+        member_fn_not_validated: Option<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
     ) -> &Self {
         self.route_type.replace(Some(RouteType::MemberFn));
         self.member_fn_action.replace(
             Some(
                 Rc::new(
-                    ControllerActionMemberFn::new(
-                        self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
-                    None,
-                    self.route_pattern.clone(),
-                    self.action_name.borrow().as_ref().unwrap().clone(),
-                    self.controller_name.borrow().as_ref().unwrap().clone(),
-                    self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
-                    self.should_validate_model.borrow().unwrap_or(false),
-                    // self_arg,
-                    member_fn
-                    )
+                    if let Some(to_validate_or_not_to_validate) = *self.should_validate_model.borrow() {
+                        if to_validate_or_not_to_validate {
+                            ControllerActionMemberFn::new_validated(
+                                self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
+                                None,
+                                self.route_pattern.clone(),
+                                self.action_name.borrow().as_ref().unwrap().clone(),
+                                self.controller_name.borrow().as_ref().unwrap().clone(),
+                                self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
+                                member_fn_validated.unwrap(),
+                            )
+                        } else {
+                            ControllerActionMemberFn::new_not_validated(
+                                self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
+                                None,
+                                self.route_pattern.clone(),
+                                self.action_name.borrow().as_ref().unwrap().clone(),
+                                self.controller_name.borrow().as_ref().unwrap().clone(),
+                                self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
+                                member_fn_not_validated.unwrap(),
+                            )
+                        }
+                    } else if let Some(member_fn_validated) = member_fn_validated {
+                        ControllerActionMemberFn::new_validated(
+                            self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
+                            None,
+                            self.route_pattern.clone(),
+                            self.action_name.borrow().as_ref().unwrap().clone(),
+                            self.controller_name.borrow().as_ref().unwrap().clone(),
+                            self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
+                            member_fn_validated,
+                        )
+                    } else {
+                        ControllerActionMemberFn::new_not_validated(
+                            self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
+                            None,
+                            self.route_pattern.clone(),
+                            self.action_name.borrow().as_ref().unwrap().clone(),
+                            self.controller_name.borrow().as_ref().unwrap().clone(),
+                            self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
+                            member_fn_not_validated.unwrap(),
+                        )
+                    }
                 )
             )
         );
@@ -133,16 +171,27 @@ impl ControllerActionBuilder {
     // build the controller action as a closure function.
     fn build_closure(self: &Self) -> Rc<dyn IControllerAction> {
         Rc::new(
-            ControllerActionClosure::new(
-                self.http_methods.borrow().as_ref().unwrap().clone(),
-            None,
-            self.route_pattern.clone(),
-            self.action_name.borrow().as_ref().unwrap().clone(),
-            self.controller_name.borrow().as_ref().unwrap().clone(),
-            self.area_name.borrow().as_ref().unwrap().clone(),
-            self.should_validate_model.borrow().unwrap(),
-            self.closure_fn.borrow().as_ref().unwrap().clone()
-            )
+            if self.should_validate_model.borrow().unwrap_or(false) {
+                ControllerActionClosure::new_validated(
+                    self.http_methods.borrow().as_ref().unwrap().clone(),
+                None,
+                self.route_pattern.clone(),
+                self.action_name.borrow().as_ref().unwrap().clone(),
+                self.controller_name.borrow().as_ref().unwrap().clone(),
+                self.area_name.borrow().as_ref().unwrap().clone(),
+                self.closure_fn_validated.borrow().as_ref().unwrap().clone(),
+                )
+            } else {
+                ControllerActionClosure::new_not_validated(
+                    self.http_methods.borrow().as_ref().unwrap().clone(),
+                None,
+                self.route_pattern.clone(),
+                self.action_name.borrow().as_ref().unwrap().clone(),
+                self.controller_name.borrow().as_ref().unwrap().clone(),
+                self.area_name.borrow().as_ref().unwrap().clone(),
+                self.closure_fn_novalidation.borrow().as_ref().unwrap().clone(),
+                )
+            }
         )
     }
 }

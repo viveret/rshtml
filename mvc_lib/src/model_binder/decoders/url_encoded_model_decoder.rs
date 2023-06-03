@@ -93,18 +93,18 @@ impl IHttpBodyStreamFormat for UrlEncodedFormatResolver {
     }
 }
 
-// impl IViewModelBinder for UrlEncodedDecoder {
+// impl IModelBinder for UrlEncodedDecoder {
 //     fn matches_content_type(self: &Self, content_type: &str) -> bool {
 //         content_type.starts_with("application/x-www-form-urlencoded")
 //     }
 
-//     fn bind_view_model(self: &Self, request_context: Rc<dyn IRequestContext>) -> ViewModelResult<Rc<dyn Any>> {
+//     fn bind_model(self: &Self, request_context: Rc<dyn IRequestContext>) -> ModelValidationResult<Rc<dyn Any>> {
 //         todo!()
 //     }
 
-//     // fn bind_model(self: &Self, request_context: Rc<dyn IRequestContext>) -> ViewModelResult<Rc<dyn Any>> {
+//     // fn bind_model(self: &Self, request_context: Rc<dyn IRequestContext>) -> ModelValidationResult<Rc<dyn Any>> {
 //     //     if let Some(body) = request_context.get_body() {
-//     //         ViewModelResult::<Rc<dyn Any>>::Ok(Rc::new(Rc::new(UrlEncodedModel::new(body)) as Rc<dyn IViewModel>))
+//     //         ModelValidationResult::<Rc<dyn Any>>::Ok(Rc::new(Rc::new(UrlEncodedModel::new(body)) as Rc<dyn IViewModel>))
 //     //     } else {
 //     //         panic!("UrlEncodedDecoder::decode_model: request_context.get_body() returned None.");
 //     //     }

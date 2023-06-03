@@ -68,7 +68,7 @@ impl IRequestMiddlewareService for ModelBinderMiddleware {
     fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn std::error::Error>> {
         let model_binder = self.model_binder_service.resolve_for_request(request_context);
         if let Some(model_binder) = model_binder {
-            let model_result = model_binder.bind_view_model(request_context);
+            let model_result = model_binder.bind_model(request_context);
             request_context.set_model_validation_result(Some(model_result));
         }
 

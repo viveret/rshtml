@@ -9,10 +9,12 @@ use http::Method;
 use crate::action_results::iaction_result::IActionResult;
 
 use crate::contexts::controller_context::IControllerContext;
-use crate::contexts::controller_context::ControllerContext;
 use crate::contexts::irequest_context::IRequestContext;
 
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
+use crate::core::type_info::TypeInfo;
+use crate::model_binder::imodel::IModel;
+use crate::model_binder::model_validation_result::ModelValidationResult;
 use crate::routing::action_path::ActionPath;
 use crate::routing::path_builder::ActionPathBuilder;
 use crate::services::service_collection::IServiceCollection;
@@ -27,7 +29,7 @@ use crate::controller_actions::route_pattern::ControllerActionRoutePattern;
 // this struct is also useful for creating controller actions that just need to do something simple.
 pub struct ControllerActionClosure {
     // the closure that implements the controller action.
-    pub closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
+    pub closure_fn: Rc<dyn Fn(ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
     // the name of the controller action.
     pub name: String,
     // the name of the controller.
@@ -62,7 +64,7 @@ impl ControllerActionClosure {
         controller_name: Cow<'static, str>,
         area_name: String,
         should_validate_model: bool,
-        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>) -> Self {
+        closure_fn: Rc<dyn Fn(ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>) -> Self {
         Self {
             name: name,
             controller_name: controller_name,
@@ -90,7 +92,7 @@ impl ControllerActionClosure {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
+        closure_fn: Rc<dyn Fn(ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
         Self::new(
             http_methods_allowed,
@@ -119,7 +121,7 @@ impl ControllerActionClosure {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
+        closure_fn: &'static dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self::new(
             http_methods_allowed,
@@ -129,7 +131,7 @@ impl ControllerActionClosure {
             controller_name,
             area_name,
             false,
-            closure_fn,
+            Rc::new(|_, a, b| (closure_fn)(a, b)),
         )
     }
     
@@ -148,7 +150,7 @@ impl ControllerActionClosure {
         name: String,
         controller_name: Cow<'static, str>,
         should_validate_model: bool,
-        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
+        closure_fn: Rc<dyn Fn(ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
         Self {
             name: name,
@@ -175,7 +177,7 @@ impl ControllerActionClosure {
         route_pattern: String,
         name: String,
         controller_name: Cow<'static, str>,
-        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
+        closure_fn: Rc<dyn Fn(ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
         Self {
             name: name,
@@ -202,14 +204,14 @@ impl ControllerActionClosure {
         route_pattern: String,
         name: String,
         controller_name: Cow<'static, str>,
-        closure_fn: Rc<dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
+        closure_fn: &'static dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self {
             name: name,
             controller_name: controller_name,
             area_name: String::new(),
             route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
-            closure_fn: closure_fn,
+            closure_fn: Rc::new(|_, x, y| (closure_fn)(x, y)),
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or(vec![]),
             should_validate_model: false,
@@ -220,7 +222,18 @@ impl ControllerActionClosure {
 
 impl IControllerAction for ControllerActionClosure {
     fn invoke(self: &Self, controller_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
-        let result_option = (self.closure_fn)(controller_context, services)?;
+        let model = if self.should_validate_model {
+            controller_context.get_request_context().get_model_validation_result()
+        } else {
+            None
+        };
+
+        let result_option = if let Some(model) = model {
+            (self.closure_fn)(model, controller_context, services)
+        } else {
+            (self.closure_fn)(ModelValidationResult::OkNone, controller_context, services)
+        }?;
+
         if let Some(result) = result_option {
             controller_context.set_action_result(Some(result));
         }
@@ -291,6 +304,6 @@ impl IControllerAction for ControllerActionClosure {
     }
 
     fn get_model_type(self: &Self) -> Option<Box<crate::core::type_info::TypeInfo>> {
-        todo!()
+        Some(Box::new(TypeInfo::of::<dyn IModel>()))
     }
 }

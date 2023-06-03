@@ -14,6 +14,8 @@ use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
 use mvc_lib::core::type_info;
 use mvc_lib::core::type_info::TypeInfo;
 use mvc_lib::diagnostics::logging::logging_service::LoggingService;
+use mvc_lib::model_binder::imodel::IModel;
+use mvc_lib::model_binder::model_validation_result::ModelValidationResult;
 use mvc_lib::services::routemap_service::IRouteMapService;
 use mvc_lib::services::service_collection::IServiceCollection;
 use mvc_lib::services::service_collection::ServiceCollectionExtensions;
@@ -126,7 +128,7 @@ impl DevController {
         Ok(Some(Rc::new(ViewResult::new("views/dev/log.rs".to_string(), view_model))))
     }
 
-    pub fn log_add(controller: &DevController, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn log_add(controller: &DevController, model_result: ModelValidationResult<Rc<dyn IModel>>, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let logger = LoggingService::get_service(services).get_logger();
         let supports_read = logger.supports_read();
 
@@ -135,20 +137,35 @@ impl DevController {
             Ok(Some(Rc::new(ViewResult::new("views/dev/log_add.rs".to_string(), view_model))))
         } else {
             println!("POST");
-            let input_model_any = controller_ctx.bind_view_model(TypeInfo::of::<LogAddInputModel>(), services).unwrap();
-            let input_model = input_model_any.downcast_ref::<LogAddInputModel>().unwrap();
-            let level = match input_model.level.as_str() {
-                "Trace" => log::Level::Trace,
-                "Debug" => log::Level::Debug,
-                "Info" => log::Level::Info,
-                "Warn" => log::Level::Warn,
-                "Error" => log::Level::Error,
-                "Fatal" => log::Level::Error,
-                _ => log::Level::Info
-            };
+            match model_result {
+                ModelValidationResult::Ok(model) => {
+                    let input_model_any = model.get_underlying_value();// (TypeInfo::of::<LogAddInputModel>(), services).unwrap();
+                    let input_model = input_model_any.downcast_ref::<LogAddInputModel>().unwrap();
+                    let level = match input_model.level.as_str() {
+                        "Trace" => log::Level::Trace,
+                        "Debug" => log::Level::Debug,
+                        "Info" => log::Level::Info,
+                        "Warn" => log::Level::Warn,
+                        "Error" => log::Level::Error,
+                        "Fatal" => log::Level::Error,
+                        _ => log::Level::Info
+                    };
 
-            logger.log(level, input_model.message.as_str());
-            Ok(Some(Rc::new(RedirectActionResult::new(false, Some(false), None, Some("log".to_string()), Some("Dev".to_string()), None, None))))
+                    logger.log(level, input_model.message.as_str());
+                    Ok(Some(Rc::new(RedirectActionResult::new(false, Some(false), None, Some("log".to_string()), Some("Dev".to_string()), None, None))))
+                },
+                ModelValidationResult::OkNone => {
+                    panic!("ModelValidationResult::OkNone() should not be possible");
+                },
+                ModelValidationResult::ModelError(a, b) => {
+                    // re-render view and let user correct input or cancel.
+                    todo!("re-render view and let user correct input or cancel.")
+                },
+                ModelValidationResult::PropertyError(a, b, c) => {
+                    // re-render view and let user correct input or cancel.
+                    todo!("re-render view and let user correct input or cancel.")
+                },
+            }
         }
     }
 
@@ -184,16 +201,16 @@ impl IController for DevController {
         let controller_name = IControllerExtensions::get_name_ref(self);
 
         vec![
-            Rc::new(ControllerActionMemberFn::new_validated(vec![], None, "/dev".to_string(), nameof_member_fn!(Self::index).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::index)),
-            Rc::new(ControllerActionMemberFn::new_validated(vec![], None, "/dev/views".to_string(), nameof_member_fn!(Self::views).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::views)),
-            Rc::new(ControllerActionMemberFn::new_validated(vec![], None, "/dev/views/..".to_string(), nameof_member_fn!(Self::view_details).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::view_details)),
-            Rc::new(ControllerActionMemberFn::new_validated(vec![], None, "/dev/routes".to_string(), nameof_member_fn!(Self::routes).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::routes)),
-            Rc::new(ControllerActionMemberFn::new_validated(vec![], None, "/dev/routes/..".to_string(), nameof_member_fn!(Self::route_details).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::route_details)),
-            Rc::new(ControllerActionMemberFn::new_validated(vec![], None, "/dev/sys-info".to_string(), nameof_member_fn!(Self::sys_info).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::sys_info)),
-            Rc::new(ControllerActionMemberFn::new_validated(vec![], None, "/dev/log".to_string(), nameof_member_fn!(Self::log).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::log)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev".to_string(), nameof_member_fn!(Self::index).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::index)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/views".to_string(), nameof_member_fn!(Self::views).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::views)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/views/..".to_string(), nameof_member_fn!(Self::view_details).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::view_details)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/routes".to_string(), nameof_member_fn!(Self::routes).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::routes)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/routes/..".to_string(), nameof_member_fn!(Self::route_details).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::route_details)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/sys-info".to_string(), nameof_member_fn!(Self::sys_info).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::sys_info)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/log".to_string(), nameof_member_fn!(Self::log).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::log)),
             Rc::new(ControllerActionMemberFn::new_validated(vec![], None, "/dev/log/add".to_string(), nameof_member_fn!(Self::log_add).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::log_add)),
-            Rc::new(ControllerActionMemberFn::new_validated(vec![], None, "/dev/log/clear".to_string(), nameof_member_fn!(Self::log_clear).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::log_clear)),
-            Rc::new(ControllerActionMemberFn::new_validated(vec![], None, "/dev/perf-log".to_string(), nameof_member_fn!(Self::perf_log).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::perf_log)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/log/clear".to_string(), nameof_member_fn!(Self::log_clear).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::log_clear)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/perf-log".to_string(), nameof_member_fn!(Self::perf_log).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::perf_log)),
         ]
     }
 

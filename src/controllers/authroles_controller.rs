@@ -15,6 +15,8 @@ use mvc_lib::auth::auth_role_json_file_dbset::JsonAuthRole;
 use mvc_lib::auth::iauthroles_dbset_provider::IAuthRolesDbSetProvider;
 use mvc_lib::entity::idbset::IDbSet;
 use mvc_lib::entity::json_file_dbset::JsonFileDbSet;
+use mvc_lib::model_binder::imodel::IModel;
+use mvc_lib::model_binder::model_validation_result::ModelValidationResult;
 use mvc_lib::services::authorization_service::IAuthorizationService;
 use mvc_lib::services::service_collection::IServiceCollection;
 use mvc_lib::services::service_collection::ServiceCollectionExtensions;
@@ -94,7 +96,7 @@ impl AuthRolesController {
     }
 
     // post the add role view, which allows the user to add a new role.
-    pub fn post_add(controller: &AuthRolesController, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn post_add(controller: &AuthRolesController, _: ModelValidationResult<Rc<dyn IModel>>, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let input_model = controller_ctx.get_request_context().get_model_validation_result();
         let new_role = controller_ctx.get_request_context().get_query().get("role"); // to do: this needs to use query parameter
         let view_model = Box::new(Rc::new(
@@ -135,20 +137,20 @@ impl IController for AuthRolesController {
             .methods(&[Method::GET])
             .set_name("index")
             .set_controller_name(Cow::Owned(controller_name.clone()))
-            .set_member_fn(Self::get_index);
+            .set_member_fn(None, Some(Self::get_index));
 
 
         actions_builder.add("/dev/auth-roles/add")
             .methods(&[Method::GET])
             .set_name("add")
             .set_controller_name(Cow::Owned(controller_name.clone()))
-            .set_member_fn(Self::get_add);
+            .set_member_fn(None, Some(Self::get_add));
 
         actions_builder.add("/dev/auth-roles/add")
                 .methods(&[Method::POST])
                 .set_name("add_post")
                 .set_controller_name(Cow::Owned(controller_name.clone()))
-                .set_member_fn(Self::post_add);
+                .set_member_fn(Some(Self::post_add), None);
 
         actions_builder.build()
     }

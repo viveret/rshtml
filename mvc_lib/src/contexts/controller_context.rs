@@ -12,9 +12,9 @@ use crate::controllers::icontroller::IController;
 use crate::controllers::icontroller_extensions::IControllerExtensions;
 
 use crate::core::type_info::TypeInfo;
-use crate::model_binder::iviewmodel_binder::IViewModelBinder;
-use crate::model_binder::view_model_binder_resolver::IViewModelBinderResolver;
-use crate::model_binder::view_model_result::ViewModelResult;
+use crate::model_binder::imodel::IModel;
+use crate::model_binder::imodelbinder_service::IModelBinderService;
+use crate::model_binder::model_validation_result::ModelValidationResult;
 use crate::routing::route_data::RouteData;
 use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions};
 
@@ -47,9 +47,12 @@ pub trait IControllerContext {
     // insert a string into the context data.
     fn insert_str(self: &Self, key: &str, value: String) -> String;
 
-    // bind the view model type to the request context body content.
-    fn bind_view_model(self: &Self, type_info: TypeInfo, services: &dyn IServiceCollection) -> Result<Box<dyn Any>, Rc<dyn Error>>;
-    //fn bind_view_model<T: 'static>(self: &Self, services: &dyn IServiceCollection) -> Result<Rc<T>, Rc<dyn Error>>;
+    // bind the action model type to the request context body content.
+    // fn bind_model(self: &Self, type_info: TypeInfo, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>>;
+
+    // fn set_model(self: &Self, model: Rc<dyn IModel>);
+    // fn get_model(self: &Self, expected_type: &TypeInfo) -> Option<Rc<dyn IModel>>;
+    //fn bind_model<T: 'static>(self: &Self, services: &dyn IServiceCollection) -> Result<Rc<T>, Rc<dyn Error>>;
 }
 
 // this struct implements IControllerContext.
@@ -163,28 +166,55 @@ impl <'a> IControllerContext for ControllerContext<'a> {
         self.action_result.replace(action_result);
     }
 
-    fn bind_view_model(self: &Self, type_info: TypeInfo, services: &dyn IServiceCollection) -> Result<Box<dyn Any>, Rc<dyn Error>> {
-        todo!()
-    }
+    // fn bind_model(self: &Self, type_info: TypeInfo, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
+    //     if let Some(body) = self.request_context.get_body_content() {
+    //         let model_binder_service = ServiceCollectionExtensions::get_required_single::<dyn IModelBinderService>(services);
+    //         match model_binder_service.bind_model(self.request_context, &type_info) {
+    //             ModelValidationResult::Ok(model) => {
+    //                 self.set_model(model);
+    //                 Ok(())
+    //             },
+    //             ModelValidationResult::OkNone => {
+    //                 Ok(())
+    //             },
+    //             ModelValidationResult::ModelError(property, error) => {
+    //                 Err(error)
+    //             },
+    //             ModelValidationResult::PropertyError(x, t, error) => {
+    //                 Err(error)
+    //             }
+    //         }
+    //     } else {
+    //         Ok(())
+    //     }
+    // }
+
+    // fn get_model(self: &Self, expected_type: &TypeInfo) -> Option<Rc<dyn IModel>> {
+    //     self.model.borrow().clone()
+    // }
+
+    // fn set_model(self: &Self, model: Rc<dyn IModel>) {
+    //     self.model.borrow_mut().replace(model);
+    // }
 
     // new_fn: fn() -> Box<dyn Any>
-    // fn bind_view_model<T: 'static>(self: &Self, services: &dyn IServiceCollection) -> Result<Rc<T>, Rc<dyn Error>> {
-    //     let binder_resolver = ServiceCollectionExtensions::get_required_single::<dyn IViewModelBinderResolver>(services);
+    // fn bind_model<T: 'static>(self: &Self, services: &dyn IServiceCollection) -> Result<Rc<T>, Rc<dyn Error>> {
+    //     let binder_resolver = ServiceCollectionExtensions::get_required_single::<dyn IModelBinderResolver>(services);
     //     let binder = binder_resolver.resolve_for_content_type(self.request_context).unwrap();
-    //     let model = binder.bind_view_model(self.request_context);
+    //     let model = binder.bind_model(self.request_context);
     //     println!("binder: {:?}", binder.type_info());
     //     match model {
-    //         ViewModelResult::Ok(model) => {
+    //         ModelValidationResult::Ok(model) => {
     //             let model = model.downcast::<T>().unwrap();
     //             Ok(model)
     //         },
-    //         ViewModelResult::OkNone => {
-    //             panic!("ViewModelResult::OkNone")
+    //         ModelValidationResult::OkNone => {
+    //             panic!("ModelValidationResult::OkNone")
     //         },
-    //         ViewModelResult::ModelError(err, err2) => {
+    //         ModelValidationResult::ModelError(err, err2) => {
     //             Err(err2)
     //         },
-    //         ViewModelResult::PropertyError(a, err, err2) => {
+    //         ModelValidationResult::PropertyError(a, err, err2) => {
     //             Err(err2)
     //         },
     //     }

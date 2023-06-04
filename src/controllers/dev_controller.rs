@@ -134,11 +134,14 @@ impl DevController {
     pub fn log_add(&self, model_result: ModelValidationResult<Rc<LogAddInputModel>>, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let logger = LoggingService::get_service(services).get_logger();
         let supports_read = logger.supports_read();
+        println!("model_result: {:?}", model_result);
+        
         let model = match model_result {
             ModelValidationResult::Ok(model) => model.clone(),
-            ModelValidationResult::OkNone => Rc::new(LogAddInputModel::default()),
-            ModelValidationResult::ModelError(a, b) => Rc::new(LogAddInputModel::default()),
-            ModelValidationResult::PropertyError(a, b, c) => Rc::new(LogAddInputModel::default()),
+            ModelValidationResult::OkNone |
+            ModelValidationResult::ModelError(..) |
+            ModelValidationResult::PropertyError(..) |
+            ModelValidationResult::OtherError(..) => Rc::new(LogAddInputModel::default()),
         };
         let method = controller_ctx.get_request_context().get_method();
         println!("{} model: {}", method, model.to_string());

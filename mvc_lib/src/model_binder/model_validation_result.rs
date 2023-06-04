@@ -15,6 +15,8 @@ pub enum ModelValidationResult<T: 'static + Downcast + Clone> {
     ModelError(T, Rc<dyn Error>),
     // this value indicates that a property of the model was not successfully validated and the error is returned.
     PropertyError(T, String, Rc<dyn Error>),
+    // this value indicates something else went wrong and the model could not be validated.
+    OtherError(Rc<dyn Error>),
 }
 
 impl <T> std::fmt::Display for ModelValidationResult<T> where T: 'static + Downcast + Clone {
@@ -24,6 +26,7 @@ impl <T> std::fmt::Display for ModelValidationResult<T> where T: 'static + Downc
             ModelValidationResult::Ok(_) => write!(f, "Ok"),
             ModelValidationResult::ModelError(_, _) => write!(f, "ModelError"),
             ModelValidationResult::PropertyError(_, _, _) => write!(f, "PropertyError"),
+            ModelValidationResult::OtherError(_) => write!(f, "OtherError"),
         }
     }
 }
@@ -36,6 +39,7 @@ impl <T> ModelValidationResult<T> where T: 'static + Downcast + Clone {
             ModelValidationResult::Ok(_) => true,
             ModelValidationResult::ModelError(_, _) => false,
             ModelValidationResult::PropertyError(_, _, _) => false,
+            ModelValidationResult::OtherError(_) => false,
         }
     }
 
@@ -47,9 +51,15 @@ impl <T> ModelValidationResult<T> where T: 'static + Downcast + Clone {
     pub fn downcast<U: 'static + Downcast + Clone>(self: Self) -> ModelValidationResult<U> {
         match self {
             ModelValidationResult::OkNone => ModelValidationResult::OkNone,
-            ModelValidationResult::Ok(model) => ModelValidationResult::Ok(model.downcast_ref::<U>().unwrap().clone()),
+            ModelValidationResult::Ok(model) => {
+                match model.downcast_ref::<U>() {
+                    None => ModelValidationResult::OtherError(Rc::new(std::io::Error::new(std::io::ErrorKind::Other, "Could not downcast model."))),
+                    Some(downcasted_model) => ModelValidationResult::Ok(downcasted_model.clone()),
+                }
+            },
             ModelValidationResult::ModelError(model, error) => ModelValidationResult::ModelError(model.downcast_ref::<U>().unwrap().clone(), error),
             ModelValidationResult::PropertyError(model, property_name, error) => ModelValidationResult::PropertyError(model.downcast_ref::<U>().unwrap().clone(), property_name, error),
+            ModelValidationResult::OtherError(error) => ModelValidationResult::OtherError(error),
         }
     }
 }

@@ -228,7 +228,8 @@ impl IModelBinder for LogAddInputModelBinder {
     fn bind_model(self: &Self, request_context: &dyn mvc_lib::contexts::irequest_context::IRequestContext) -> ModelValidationResult<Rc<dyn IModel>> {
         let mut model = LogAddInputModel::default();
         if let Some(body) = request_context.get_body_content() {
-            let form_encoded = body.downcast_ref::<UrlEncodedModel>().unwrap();
+            let content_type = request_context.get_content_type().unwrap();
+            let form_encoded = UrlEncodedModel::new_from_body(content_type, body);
             let form = &form_encoded.0.entries;
             
             if let Some(message) = form.get("message") {
@@ -245,7 +246,11 @@ impl IModelBinder for LogAddInputModelBinder {
             
             ModelValidationResult::Ok(Rc::new(model))
         } else {
-            ModelValidationResult::OkNone
+            // if no body then decode from request query string
+            // let query_string = request_context.get_query_string();
+            // let form = &query_string.entries;
+            // request_context.decode_and_bind_body(services, &mut model, form)
+            ModelValidationResult::OtherError(Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Missing request body.".to_string())))
         }
     }
 }

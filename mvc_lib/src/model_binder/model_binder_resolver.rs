@@ -43,13 +43,13 @@ impl ModelBinderResolver {
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_multiple::<dyn IModelBinder>(services)
-        )))]
+        )) as Rc<dyn IModelBinderResolver>)]
     }
 
     // adds the ModelBinderResolver to the given IServiceCollection.
     // services: the IServiceCollection to add the ModelBinderResolver to.
     pub fn add_to_services(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<ModelBinderResolver>(), Self::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IModelBinderResolver>(), Self::new_service, ServiceScope::Singleton));
     }
 }
 

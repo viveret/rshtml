@@ -47,6 +47,7 @@ impl IModelBinderService for ModelBinderService {
     fn bind_model(&self, request_context: &dyn IRequestContext, model_type: &TypeInfo) -> ModelValidationResult<Rc<dyn IModel>> {
         for resolver in self.resolvers.iter() {
             if let Some(binder) = resolver.resolve_for_request(request_context) {
+                println!("Found model binder for type: {}", model_type.type_name);
                 return binder.bind_model(request_context);
             }
         }

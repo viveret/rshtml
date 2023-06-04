@@ -184,8 +184,6 @@ impl <'a> ServiceCollection<'a> {
     // might need methods for creating derived service collections with instantiated non-singleton scoped services
 }
 
-// FIXME: fix nesting collections because currently it cannot find a service when we know it exists
-// in a parent context. this is because the parent context is not searched when the child context is called.
 impl <'a> IServiceCollection for ServiceCollection<'a> {
     // should implement get_at_index, contains, index_of, insert, clear, remove, make_readonly
     // if it is possible to add extension methods, should add them as helpers.
@@ -375,7 +373,7 @@ impl ServiceCollectionExtensions {
     pub fn get_required_one_or_more<T: 'static + ?Sized>(services: &dyn IServiceCollection) -> Vec<Rc<T>> {
         let found = Self::get_required_multiple::<T>(services);
         if found.len() == 0 {
-            println!("Available services ({}): {}", services.get_items().len(), services.get_items().iter().map(|x| x.type_info.type_name.as_ref()).collect::<Vec<&str>>().join(", "));
+            println!("Available services ({}):\n\t{}", services.get_items().len(), services.get_items().iter().map(|x| x.to_string()).collect::<Vec<String>>().join("\n\t"));
             let type_info = TypeInfo::rc_of::<T>();
             panic!("No services found for type {}", type_info.type_name);
         } else {

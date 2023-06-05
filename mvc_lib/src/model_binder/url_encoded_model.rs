@@ -8,6 +8,7 @@ use super::imodel::IModel;
 
 // this struct is used to parse the body content of a form url encoded request.
 // it is used by the FormUrlEncodedBinder.
+#[derive(Clone, Debug)]
 pub struct UrlEncodedModel(pub QueryString);
 impl UrlEncodedModel {
     // parse the body content of a form url encoded request.
@@ -68,7 +69,7 @@ impl IModel for UrlEncodedModel {
         todo!()
     }
 
-    fn get_underlying_value(&self) -> Box<dyn std::any::Any> {
+    fn get_underlying_value(&self) -> &dyn std::any::Any {
         todo!()
     }
 

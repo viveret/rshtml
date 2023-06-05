@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 // this struct holds the query string key/value pairs.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct QueryString {
     pub raw_str: String,
 

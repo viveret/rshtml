@@ -131,7 +131,7 @@ impl DevController {
         Ok(Some(Rc::new(ViewResult::new("views/dev/log.rs".to_string(), view_model))))
     }
 
-    pub fn log_add(&self, model_result: ModelValidationResult<Rc<LogAddInputModel>>, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn log_add(&self, model_result: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let logger = LoggingService::get_service(services).get_logger();
         let supports_read = logger.supports_read();
         println!("model_result: {:?}", model_result);
@@ -141,13 +141,13 @@ impl DevController {
             ModelValidationResult::OkNone |
             ModelValidationResult::ModelError(..) |
             ModelValidationResult::PropertyError(..) |
-            ModelValidationResult::OtherError(..) => Rc::new(LogAddInputModel::default()),
+            ModelValidationResult::OtherError(..) => LogAddInputModel::default(),
         };
         let method = controller_ctx.get_request_context().get_method();
         println!("{} model: {}", method, model.to_string());
 
         if method == http::Method::GET || !model.is_valid() {
-            let view_model = Box::new(Rc::new(LogAddViewModel::new(supports_read, model)));
+            let view_model = Box::new(Rc::new(LogAddViewModel::new(supports_read, Rc::new(model))));
             Ok(Some(Rc::new(ViewResult::new("views/dev/log_add.rs".to_string(), view_model))))
         } else {
             self.log_service.log(model.parse_level(), model.message.as_str());            

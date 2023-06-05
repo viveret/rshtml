@@ -8,7 +8,7 @@ use crate::services::service_scope::ServiceScope;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions, ServiceCollection};
 
-use super::imodel::IModel;
+use super::imodel::{IModel, AnyIModel};
 use super::imodel_binder::IModelBinder;
 use super::model_validation_result::ModelValidationResult;
 
@@ -21,7 +21,7 @@ pub trait IModelBinderResolver {
     // binds and validates the view model for the given request context.
     // request_context: the request context to bind and validate the view model for.
     // returns: the result of the binding and validation.
-    fn bind_and_validate_view_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<Rc<dyn IModel>>;
+    fn bind_and_validate_view_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel>;
 }
 
 
@@ -69,10 +69,10 @@ impl IModelBinderResolver for ModelBinderResolver {
         None
     }
 
-    fn bind_and_validate_view_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<Rc<dyn IModel>> {
+    fn bind_and_validate_view_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
         if let Some(binder) = self.resolve_for_content_type(request_context.clone()) {
             return binder.bind_model(request_context);
         }
-        ModelValidationResult::<Rc<dyn IModel>>::OkNone
+        ModelValidationResult::<AnyIModel>::OkNone
     }
 }

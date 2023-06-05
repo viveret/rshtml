@@ -7,7 +7,7 @@ use crate::services::service_collection::{IServiceCollection, ServiceCollection,
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
 
-use super::imodel::IModel;
+use super::imodel::{IModel, AnyIModel};
 use super::imodelbinder_service::IModelBinderService;
 use super::model_binder_resolver::IModelBinderResolver;
 use super::model_validation_result::ModelValidationResult;
@@ -44,7 +44,7 @@ impl ModelBinderService {
 }
 
 impl IModelBinderService for ModelBinderService {
-    fn bind_model(&self, request_context: &dyn IRequestContext, model_type: &TypeInfo) -> ModelValidationResult<Rc<dyn IModel>> {
+    fn bind_model(&self, request_context: &dyn IRequestContext, model_type: &TypeInfo) -> ModelValidationResult<AnyIModel> {
         for resolver in self.resolvers.iter() {
             if let Some(binder) = resolver.resolve_for_request(request_context) {
                 println!("Found model binder for type: {}", model_type.type_name);
@@ -66,6 +66,6 @@ impl IModelBinderService for ModelBinderService {
         // and then check if the model implements an interface that accepts the body content as a parameter
         // such that the type can be instantiated with defaults then the interface can be used to get values
         // from the body content and bind them to the model.
-        ModelValidationResult::<Rc<dyn IModel>>::OkNone
+        ModelValidationResult::<AnyIModel>::OkNone
     }
 }

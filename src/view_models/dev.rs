@@ -4,11 +4,12 @@ use std::rc::Rc;
 
 use as_any::Downcast;
 use core_macro_lib::nameof_member_fn;
+use mvc_lib::contexts::irequest_context::IRequestContext;
 use mvc_lib::controller_actions::controller_action::IControllerAction;
 use mvc_lib::controllers::icontroller::IController;
 
 use mvc_lib::core::type_info::TypeInfo;
-use mvc_lib::model_binder::imodel::IModel;
+use mvc_lib::model_binder::imodel::{IModel, AnyIModel};
 use mvc_lib::model_binder::imodel_binder::IModelBinder;
 use mvc_lib::model_binder::model_validation_result::ModelValidationResult;
 use mvc_lib::model_binder::url_encoded_model::UrlEncodedModel;
@@ -114,9 +115,9 @@ impl LogAddInputModel {
         Self { message: String::default(), level: String::default() }
     }
 
-    fn as_any(&self) -> Box<dyn Any> {
-        Box::new(self.clone())
-    }
+    // fn as_any(&self) -> Box<dyn Any> {
+    //     Box::new(self.clone())
+    // }
 
     pub fn is_valid(&self) -> bool {
         if self.message.is_empty() {
@@ -179,8 +180,8 @@ impl IModel for LogAddInputModel {
         Box::new(TypeInfo::of::<LogAddInputModel>())
     }
 
-    fn get_underlying_value(&self) -> Box<dyn std::any::Any> {
-        self.as_any()
+    fn get_underlying_value(&self) -> &dyn std::any::Any {
+        self
     }
 
     fn to_string(&self) -> String {
@@ -221,11 +222,11 @@ impl IModelBinder for LogAddInputModelBinder {
         Box::new(TypeInfo::of::<LogAddInputModel>())
     }
 
-    fn matches(self: &Self, request_context: &dyn mvc_lib::contexts::irequest_context::IRequestContext) -> bool {
+    fn matches(self: &Self, request_context: &dyn IRequestContext) -> bool {
         true
     }
 
-    fn bind_model(self: &Self, request_context: &dyn mvc_lib::contexts::irequest_context::IRequestContext) -> ModelValidationResult<Rc<dyn IModel>> {
+    fn bind_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
         let mut model = LogAddInputModel::default();
         if let Some(body) = request_context.get_body_content() {
             let content_type = request_context.get_content_type().unwrap();
@@ -235,16 +236,16 @@ impl IModelBinder for LogAddInputModelBinder {
             if let Some(message) = form.get("message") {
                 model.message = message.first().unwrap().to_string();
             } else {
-                return ModelValidationResult::PropertyError(Rc::new(model), "message".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Message is required.".to_string())));
+                return ModelValidationResult::PropertyError(AnyIModel::new(Rc::new(model)), "message".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Message is required.".to_string())));
             }
     
             if let Some(level) = form.get("level") {
                 model.level = level.first().unwrap().to_string();
             } else {
-                return ModelValidationResult::PropertyError(Rc::new(model), "level".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Level is required.".to_string())));
+                return ModelValidationResult::PropertyError(AnyIModel::new(Rc::new(model)), "level".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Level is required.".to_string())));
             }
             
-            ModelValidationResult::Ok(Rc::new(model))
+            ModelValidationResult::Ok(AnyIModel::new(Rc::new(model)))
         } else {
             // if no body then decode from request query string
             // let query_string = request_context.get_query_string();

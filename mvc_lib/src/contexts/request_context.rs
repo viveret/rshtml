@@ -19,6 +19,7 @@ use crate::http::http_body_content::ContentType;
 use crate::http::http_body_content::IBodyContent;
 use crate::http::http_body_content::StreamBodyContent;
 use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
+use crate::model_binder::imodel::AnyIModel;
 use crate::model_binder::imodel::IModel;
 use crate::model_binder::imodelbinder_service::IModelBinderService;
 use crate::routing::route_data::RouteData;
@@ -64,9 +65,9 @@ pub struct RequestContext<'a> {
     // the body stream of the request
     body_stream: RefCell<Option<Rc<dyn ITcpStreamWrapper>>>,
     // the model validation result of the request
-    model_validation_result: RefCell<Option<ModelValidationResult<Rc<dyn IModel>>>>,
+    model_validation_result: RefCell<Option<ModelValidationResult<AnyIModel>>>,
     // the body model of the request
-    body_model: RefCell<Option<Rc<dyn IModel>>>,
+    body_model: RefCell<Option<AnyIModel>>,
     // the route data of the request
     route_data: RefCell<RouteData>,
     // the authorization claims of the request
@@ -355,11 +356,11 @@ impl<'a> IRequestContext for RequestContext<'a> {
         &self.route_data
     }
 
-    fn get_model_validation_result(self: &Self) -> Option<ModelValidationResult<Rc<dyn IModel>>> {
+    fn get_model_validation_result(self: &Self) -> Option<ModelValidationResult<AnyIModel>> {
         self.model_validation_result.borrow().clone()
     }
 
-    fn set_model_validation_result(self: &Self, v: Option<ModelValidationResult<Rc<dyn IModel>>>) {
+    fn set_model_validation_result(self: &Self, v: Option<ModelValidationResult<AnyIModel>>) {
         if let Some(ref v2) = v {
             self.model_validation_result.replace(Some(v2.clone()));
             match v2 {

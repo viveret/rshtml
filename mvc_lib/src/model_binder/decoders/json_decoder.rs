@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use crate::contexts::irequest_context::IRequestContext;
 use crate::core::type_info::TypeInfo;
-use crate::model_binder::imodel::IModel;
+use crate::model_binder::imodel::{IModel, AnyIModel};
 use crate::model_binder::imodel_binder::IModelBinder;
 use crate::model_binder::model_validation_result::ModelValidationResult;
 use crate::services::service_descriptor::ServiceDescriptor;
@@ -43,7 +43,7 @@ impl IModelBinder for JsonDecoder {
         false
     }
 
-    fn bind_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<Rc<dyn IModel>> {
+    fn bind_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
         todo!()
 
         // let mut body_bytes = vec![];

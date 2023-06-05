@@ -9,7 +9,7 @@ use crate::core::query_string::QueryString;
 use crate::core::type_info::TypeInfo;
 use crate::http::http_body_content::{IBodyContent, ContentType};
 use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
-use crate::model_binder::imodel::IModel;
+use crate::model_binder::imodel::{IModel, AnyIModel};
 use crate::model_binder::imodelbinder_service::IModelBinderService;
 use crate::model_binder::model_validation_result::ModelValidationResult;
 use crate::routing::route_data::RouteData;
@@ -45,9 +45,9 @@ pub trait IRequestContext {
     fn get_body_content(self: &Self) -> Option<Rc<dyn IBodyContent>>;
     
     // get the model validation result of the request
-    fn get_model_validation_result(self: &Self) -> Option<ModelValidationResult<Rc<dyn IModel>>>;
+    fn get_model_validation_result(self: &Self) -> Option<ModelValidationResult<AnyIModel>>;
     // set the model validation result of the request
-    fn set_model_validation_result(self: &Self, v: Option<ModelValidationResult<Rc<dyn IModel>>>);
+    fn set_model_validation_result(self: &Self, v: Option<ModelValidationResult<AnyIModel>>);
 
     // get the body model of the request
     fn get_connection_context(self: &Self) -> &dyn IHttpConnectionContext;

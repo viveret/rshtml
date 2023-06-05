@@ -1,10 +1,9 @@
-use std::any::Any;
 use std::rc::Rc;
 
 use crate::contexts::irequest_context::IRequestContext;
 use crate::core::type_info::TypeInfo;
 
-use super::imodel::IModel;
+use super::imodel::{IModel, AnyIModel};
 use super::model_validation_result::ModelValidationResult;
 
 
@@ -22,5 +21,5 @@ pub trait IModelBinder {
     // bind and validate the model for the given request context.
     // request_context: the request context to bind and validate the model for.
     // returns: the result of the binding and validation.
-    fn bind_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<Rc<dyn IModel>>;
+    fn bind_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel>;
 }

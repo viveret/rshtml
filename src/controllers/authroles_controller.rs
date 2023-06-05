@@ -97,7 +97,7 @@ impl AuthRolesController {
     }
 
     // post the add role view, which allows the user to add a new role.
-    pub fn post_add(self: &Self, _: ModelValidationResult<Rc<LogAddInputModel>>, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn post_add(self: &Self, _: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let input_model = controller_ctx.get_request_context().get_model_validation_result();
         let new_role = controller_ctx.get_request_context().get_query().get("role"); // to do: this needs to use query parameter
         let view_model = Box::new(Rc::new(

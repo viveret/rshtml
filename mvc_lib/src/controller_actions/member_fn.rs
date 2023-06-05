@@ -3,6 +3,7 @@ use std::borrow::Borrow;
 use std::error::Error;
 use std::rc::Rc;
 
+use as_any::Downcast;
 use http::Method;
 
 use crate::action_results::iaction_result::IActionResult;
@@ -13,6 +14,7 @@ use crate::contexts::irequest_context::IRequestContext;
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controllers::icontroller::IController;
 use crate::core::type_info::TypeInfo;
+use crate::model_binder::imodel::AnyIModel;
 use crate::model_binder::imodel::IModel;
 use crate::model_binder::model_validation_result::ModelValidationResult;
 use crate::routing::action_path::ActionPath;
@@ -32,8 +34,8 @@ pub struct ControllerActionMemberFn<T: 'static + IController> {
     // the first argument is the controller instance, the second argument is the controller context, and the third argument is the service collection.
     // the return value is an optional action result.
     // the function pointer is wrapped in an Rc so that it can be cloned.
-    pub member_fn_validated: Option<fn(self_arg: &T, model: ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
-    pub member_fn_validated_typed: Option<Rc<dyn Fn(&T, ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
+    pub member_fn_validated: Option<fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
+    pub member_fn_validated_typed: Option<Rc<dyn Fn(&T, ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     pub member_fn_not_validated: Option<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
     // the name of the action (the name of the member function).
     pub name: String,
@@ -71,7 +73,7 @@ impl<T: IController> ControllerActionMemberFn<T> {
         controller_name: Cow<'static, str>,
         area_name: String,
         should_validate_model: bool,
-        member_fn_validated: Option<fn(self_arg: &T, model: ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
+        member_fn_validated: Option<fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
         member_fn_not_validated: Option<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
     ) -> Self {
         Self {
@@ -104,7 +106,7 @@ impl<T: IController> ControllerActionMemberFn<T> {
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        member_fn: fn(self_arg: &T, model: ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn: fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self::new(
             http_methods_allowed,
@@ -149,15 +151,20 @@ impl<T: IController> ControllerActionMemberFn<T> {
         )
     }
 
-    pub fn new_validated_typed<TModel: 'static + IModel>(
+    pub fn new_validated_typed<TModel: 'static + IModel + Clone>(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
         route_pattern: String,
         name: String,
         controller_name: Cow<'static, str>,
         area_name: String,
-        member_fn: Box<fn(&T, ModelValidationResult<Rc<TModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
+        member_fn: Box<fn(&T, ModelValidationResult<TModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
+        // let x = move |self_arg, model: ModelValidationResult<AnyIModel>, a, services| {
+        //     // match model
+        //     (member_fn.as_ref())(self_arg, model.downcast(), a, services)
+        // };
+
         Self {
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or_default(),
@@ -167,7 +174,10 @@ impl<T: IController> ControllerActionMemberFn<T> {
             area_name: area_name,
             should_validate_model: true,
             member_fn_validated: None,
-            member_fn_validated_typed: Some(Rc::new(move |self_arg, model: ModelValidationResult<Rc<dyn IModel>>, a, services| (member_fn.as_ref())(self_arg, model.downcast(), a, services))),
+            member_fn_validated_typed: Some(Rc::new(move |self_arg, model: ModelValidationResult<AnyIModel>, a, services| {
+                // match model
+                (member_fn.as_ref())(self_arg, model.downcast(), a, services)
+            })),
             member_fn_not_validated: None,
             model_type: Some(Box::new(TypeInfo::of::<TModel>())), // might need to be rc_of
         }
@@ -188,7 +198,7 @@ impl<T: IController> ControllerActionMemberFn<T> {
         name: String,
         controller_name: Cow<'static, str>,
         should_validate_model: bool,
-        member_fn: fn(self_arg: &T, model: ModelValidationResult<Rc<dyn IModel>>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn: fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
         Self::new(http_methods_allowed, features, route_pattern, name, controller_name, String::new(), should_validate_model, Some(member_fn), None)
         //     name: name,
@@ -207,18 +217,19 @@ impl<T: IController> ControllerActionMemberFn<T> {
 impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T> {
     fn invoke(self: &Self, controller_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
         let base_controller = controller_context.get_controller();
-        let downcasted = base_controller.as_ref().as_any().downcast_ref::<T>().expect("Could not downcast base_controller to T where T: IController.");
+        let controller = base_controller.as_ref().as_any().downcast_ref::<T>().expect("Could not downcast base_controller to T where T: IController.");
 
         let result_option = if self.should_validate_model {
             if let Some(member_fn_validated) = self.member_fn_validated {
                 if let Some(model) = controller_context.get_request_context().get_model_validation_result() {
-                    (member_fn_validated)(downcasted, model, controller_context, services)
+                    (member_fn_validated)(controller, model, controller_context, services)
                 } else {
                     Err(format!("Could not get model {:?} from request context for action {}", self.model_type, self.name).into())
                 }
             } else if let Some(member_fn_validated_typed) = &self.member_fn_validated_typed {
                 if let Some(model) = controller_context.get_request_context().get_model_validation_result() {
-                    (member_fn_validated_typed)(downcasted, model, controller_context, services)
+                    // let model_typed = model.downcast_ref::<&dyn IModel>().expect("Could not downcast model to TModel.");
+                    (member_fn_validated_typed)(controller, model, controller_context, services)
                 } else {
                     Err(format!("Could not get model {:?} from request context for action {}", self.model_type, self.name).into())
                 }
@@ -226,12 +237,12 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
                 Err(format!("Could not find member_fn_validated for action {}", self.name).into())
             }
         } else {
-            (self.member_fn_not_validated.unwrap())(downcasted, controller_context, services)
+            (self.member_fn_not_validated.unwrap())(controller, controller_context, services)
         }?;
 
         // let result_option = 
         // } else {
-        //     (self.member_fn_not_validated.unwrap())(downcasted, controller_context, services)
+        //     (self.member_fn_not_validated.unwrap())(controller, controller_context, services)
         // }?;
         if let Some(result) = result_option {
             controller_context.set_action_result(Some(result));

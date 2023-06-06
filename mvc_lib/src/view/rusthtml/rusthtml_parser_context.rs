@@ -73,6 +73,8 @@ pub trait IRustHtmlParserContext {
     fn mut_use_statements(self: &Self) -> RefMut<Vec<TokenStream>>;
     // get the inject statements as mutable.
     fn mut_inject_statements(self: &Self) -> RefMut<Vec<TokenStream>>;
+    // get the inject statements as a token stream.
+    fn get_inject_statements_stream(self: &Self) -> proc_macro2::TokenStream;
     // get the params as mutable.
     fn mut_params(self: &Self) -> RefMut<HashMap<String, String>>;
     // get the environment name.
@@ -181,6 +183,9 @@ impl RustHtmlParserContext {
                     use std::sync::{Arc, RwLock};
 
                     use chrono::{DateTime, TimeZone, Utc};
+                    use proc_macro2::TokenStream;
+
+                    use core_macro_lib::{ * };
 
                     use mvc_lib::core::html_buffer::IHtmlBuffer;
                     use mvc_lib::core::html_buffer::HtmlBuffer;
@@ -202,7 +207,7 @@ impl RustHtmlParserContext {
             inject_statements: RefCell::new(vec![
                 quote::quote!{
                     let render = RenderHelpers::new(view_context, services);
-                    let html = HtmlHelpers::new(view_context, services);
+                    // let html = HtmlHelpers::<#model_type>::new(view_context, services);
                     let url = UrlHelpers::new(view_context, services);
                 }.into(),
             ]),
@@ -436,5 +441,49 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
 
     fn mut_inject_statements(self: &Self) -> RefMut<Vec<TokenStream>> {
         self.inject_statements.borrow_mut()
+    }
+
+    fn get_inject_statements_stream(self: &Self) -> proc_macro2::TokenStream {
+        let mut model_based_injections = vec![];
+
+        if let Some(model_type) = self.model_type.borrow().as_ref() {
+            if model_type.len() > 0 {
+                    let model_type_stream = 
+                    proc_macro2::TokenStream::from(
+                        model_type.into_iter()
+                            .cloned()
+                            .collect::<TokenStream>()
+                    );
+                    model_based_injections.push(quote::quote!{
+                        let html = HtmlHelpers::<#model_type_stream>::new(view_context, services);
+                    });
+            } else {
+                panic!("model type must be a single type, not {}: {}", model_type.len(), self.get_model_type_name());
+            }
+        } else {
+            model_based_injections.push(quote::quote!{
+                let html = HtmlHelpers::<AnyIModel>::new(view_context, services);
+            });
+        }
+
+        model_based_injections.push(
+            proc_macro2::TokenStream::from(
+                TokenStream::from_iter(
+                    self.mut_inject_statements()
+                        .iter()
+                        .cloned()
+                        .map(|s| s.into_iter())
+                        .flatten()
+                )
+            )
+        );
+        
+        proc_macro2::TokenStream::from_iter(
+            model_based_injections
+                .iter()
+                .cloned()
+                .map(|s| s.into_iter())
+                .flatten()
+        )
     }
 }

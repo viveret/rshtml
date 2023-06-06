@@ -1007,10 +1007,45 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                             return self.panic_or_return_error(format!("unexpected colon count: {}", colons.len()));
                         }
                     }
+
+                    // check that this is not a generic type
+                    // if it is, then add to output.
+                    let peek_token = it.peek();
+                    if let Some(token) = peek_token {
+                        match token {
+                            TokenTree::Punct(punct) => {
+                                if punct.as_char() == '<' {
+                                    type_parts.push(it.next().unwrap().clone());
+                                    loop {
+                                        let peek_token = it.peek();
+                                        if let Some(token) = peek_token {
+                                            match token {
+                                                TokenTree::Punct(punct) => {
+                                                    if punct.as_char() == '>' {
+                                                        type_parts.push(it.next().unwrap().clone());
+                                                        break;
+                                                    } else {
+                                                        type_parts.push(it.next().unwrap().clone());
+                                                    }
+                                                },
+                                                _ => {
+                                                    type_parts.push(it.next().unwrap().clone());
+                                                }
+                                            }
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                }
+                            },
+                            _ => {
+                            }
+                        }
+                    }
                 },
                 TokenTree::Punct(punct) => {
                     match punct.as_char() {
-                        '_' => type_parts.push(it.next().unwrap().clone()),
+                        '_' | '<' | '>' => type_parts.push(it.next().unwrap().clone()),
                         _ =>  break,
                     }
                 },
@@ -1019,6 +1054,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                 }
             }
         }
+        // println!("type_parts: {:?}", type_parts);
         Ok(type_parts)
     }
 

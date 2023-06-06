@@ -20,6 +20,8 @@ log = "0.4.17"
 mime = "0.3.16"
 nameof = "1.2.2"
 phf = { version = "0.11", features = ["macros"] }
+proc-macro2 = "1.0.51"
+quote = "1.0.23"
 regex = "1.7.1"
 rustc_lexer = "0.1.0"
 sysinfo = "0.28.4"
@@ -35,6 +37,7 @@ path = "mvc_macro_lib"
 
 [workspace]
 members = [
+  "core_macro_lib",
   "mvc_macro_lib",
   "mvc_lib",
 ]

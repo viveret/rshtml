@@ -62,7 +62,7 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
             };
 
             let use_statements = proc_macro2::TokenStream::from(TokenStream::from_iter(parser.parse_context.mut_use_statements().iter().cloned().map(|s| s.into_iter()).flatten()));
-            let inject_tokens = proc_macro2::TokenStream::from(TokenStream::from_iter(parser.parse_context.mut_inject_statements().iter().cloned().map(|s| s.into_iter()).flatten()));
+            let inject_tokens = parser.parse_context.get_inject_statements_stream();
             let when_compiled = chrono::prelude::Utc::now().to_rfc2822();
 
             quote! {

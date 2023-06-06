@@ -49,3 +49,56 @@ pub fn nameof_member_fn(input: TokenStream) -> TokenStream {
         _ => panic!("Expected member fn name."),
     }
 }
+
+
+#[proc_macro]
+pub fn expr_quote(input: TokenStream) -> TokenStream {
+    let mut expr_tokens = vec![];
+    // expecting anonymous function
+    let mut it = proc_macro2::TokenStream::from(input).into_iter().peekable();
+    // expecting closure ||
+    for _ in 0..3 {
+        let closure_pipe_or_model_ident = it.next().unwrap();
+        match closure_pipe_or_model_ident {
+            proc_macro2::TokenTree::Punct(punct) => {
+                if punct.as_char() != '|' {
+                    panic!("Expected closure pipe |, not {}.", punct.as_char());
+                } else {
+                    expr_tokens.push(punct.into());
+                }
+            },
+            proc_macro2::TokenTree::Ident(_) => {
+                // start of identitifer for model argument
+                expr_tokens.push(closure_pipe_or_model_ident);
+            },
+            _ => panic!("Expected closure pipe |"),
+        }
+    }
+
+    // expecting closure body, a basic identifier
+    loop {
+        if let Some(next) = it.peek() {
+            match next {
+                proc_macro2::TokenTree::Ident(_) => {
+                    expr_tokens.push(it.next().unwrap());
+                },
+                proc_macro2::TokenTree::Punct(punct) => {
+                    if punct.as_char() == '.' {
+                        expr_tokens.push(it.next().unwrap());
+                    } else {
+                        // break;
+                        panic!("Expected dot / period between identifier parts, not {}.", punct.as_char());
+                    }
+                },
+                _ => break,
+            }
+        } else {
+            break;
+        }
+    }
+
+    let expr_stream = proc_macro2::TokenStream::from_iter(expr_tokens);
+    TokenStream::from(quote! {
+        (#expr_stream, quote::quote! { #expr_stream })
+    })
+}

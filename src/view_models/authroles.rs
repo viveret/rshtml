@@ -1,4 +1,4 @@
-use mvc_lib::auth::auth_role_json_file_dbset::JsonAuthRole;
+use mvc_lib::{auth::auth_role_json_file_dbset::JsonAuthRole, model_binder::imodel::IModel};
 
 // this is the view model for the index view
 pub struct IndexViewModel {
@@ -63,5 +63,35 @@ impl AddViewModel {
     // message: the message to display to the user
     pub fn new_error(role: String, message: &str) -> Self {
         Self::new(role, Some(Box::new(ViewModelValidationResult::new(true, message.to_string()))))
+    }
+}
+
+impl IModel for AddViewModel {
+    fn get_properties(&self) -> std::collections::HashMap<String, Box<dyn std::any::Any>> {
+        todo!()
+    }
+
+    fn get_property(&self, name: &str) -> Option<Box<dyn std::any::Any>> {
+        todo!()
+    }
+
+    fn get_attributes(&self) -> Vec<Box<dyn std::any::Any>> {
+        todo!()
+    }
+
+    fn get_attribute(&self, typeinfo: &mvc_lib::core::type_info::TypeInfo) -> Option<Box<dyn std::any::Any>> {
+        todo!()
+    }
+
+    fn get_type_info(&self) -> Box<mvc_lib::core::type_info::TypeInfo> {
+        todo!()
+    }
+
+    fn get_underlying_value(&self) -> &dyn std::any::Any {
+        todo!()
+    }
+
+    fn to_string(&self) -> String {
+        todo!()
     }
 }

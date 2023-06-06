@@ -61,12 +61,15 @@ impl IRustHtmlDirective for InjectDirective {
                         }
                     },
                     TokenTree::Punct(punct) => {
-                        if punct.as_char() == ':' {
-                            it.next();
-                            // next token should be identifier for the injected variable
-                            self.parse_identifier_for_variable_name(type_ident_tokens, parser, output, &it)
-                        } else {
-                            Err(RustHtmlError::from_string(format!("Unexpected punct after inject directive: {:?}", punct)))
+                        match punct.as_char() {
+                            ':' => {
+                                it.next();
+                                // next token should be identifier for the injected variable
+                                self.parse_identifier_for_variable_name(type_ident_tokens, parser, output, &it)
+                            },
+                            _ => {
+                                Err(RustHtmlError::from_string(format!("Unexpected punct after inject directive: {:?}", punct)))
+                            }
                         }
                     },
                     _ => Err(RustHtmlError::from_string(format!("Unexpected token after inject directive: {:?}", as_token))),

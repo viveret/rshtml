@@ -1,11 +1,14 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
+use proc_macro2::TokenStream;
+
+use crate::model_binder::imodel::IModel;
 use crate::view::rusthtml::html_string::HtmlString;
 
 
 // helpers for HTML views
-pub trait IHtmlHelpers<'a> {
+pub trait IHtmlHelpers<'a, TModel: 'static + IModel> {
     // create a link
     // text: the text to display for the link.
     // href: the href for the link.
@@ -106,4 +109,66 @@ pub trait IHtmlHelpers<'a> {
     // html_attrs: the map of String html attributes.
     // returns: the string representation of the html attributes.
     fn html_attrs_to_string(self: &Self, html_attrs: Option<&HashMap<String, String>>) -> String;
+
+
+
+
+
+    // helpers for HTML views that have a model
+
+    // create an input with the given name and value for a form.
+    // name: the name of the input.
+    // value: the value of the input.
+    // returns: the input HTML.
+    fn input_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), input_type: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
+
+    // create a hidden input with the given name and value for a form.
+    // name: the name of the input.
+    // value: the value of the input.
+    // returns: the input HTML.
+    fn hidden_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
+
+    // create a checkbox input with the given name and checked value for a form.
+    // name: the name of the input.
+    // checked: whether or not the checkbox is checked.
+    // returns: the input HTML.
+    fn checkbox_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
+
+    // create a textarea with the given name and value for a form.
+    // name: the name of the textarea.
+    // value: the value of the textarea.
+    // returns: the textarea HTML.
+    fn textarea_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
+
+    // create a label with the given for name and text for a form.
+    // for_name: the for name of the label.
+    // text: the text of the label.
+    // returns: the label HTML.
+    fn label_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
+
+    // create a label with the given for name and text for a form.
+    // name: the name of the select.
+    // options: the options for the select.
+    // returns: the select HTML.
+    fn select_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
+
+    // create a select with the given name and options for a form that allows multiple selections.
+    // name: the name of the select.
+    // options: the options for the select.
+    // returns: the select HTML.
+    fn select_multiple_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
+
+    // create a select option with the given value and text for a form.
+    // value: the value of the option.
+    // text: the text of the option.
+    // disabled: whether or not the option is disabled.
+    // returns: the option HTML.
+    fn option_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
+
+    // create a select option with the given value and text for a form that is selected.
+    // value: the value of the option.
+    // text: the text of the option.
+    // disabled: whether or not the option is disabled.
+    // returns: the option HTML.
+    fn option_selected_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
 }

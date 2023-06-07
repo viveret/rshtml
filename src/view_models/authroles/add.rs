@@ -1,15 +1,5 @@
 use mvc_lib::{auth::auth_role_json_file_dbset::JsonAuthRole, model_binder::imodel::IModel};
 
-// this is the view model for the index view
-pub struct IndexViewModel {
-    pub roles: Vec<JsonAuthRole>
-}
-
-impl IndexViewModel {
-    pub fn new(roles: Vec<JsonAuthRole>) -> Self {
-        Self { roles: roles }
-    }
-}
 
 // this is the view model for a validation result
 pub struct ViewModelValidationResult {

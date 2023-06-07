@@ -1,7 +1,7 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @viewstart "src/views/dev/_view_start.rshtml"
     @name "dev_route_details"
-    @model crate::view_models::dev::RouteDetailsViewModel
+    @model crate::view_models::dev::route_details::RouteDetailsViewModel
     @{
         let route_path = model.route.get_path();
         let title = format!("Route details of {}", route_path);

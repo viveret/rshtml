@@ -1,7 +1,7 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @viewstart "src/views/dev/_view_start.rshtml"
     @name "dev_views"
-    @model crate::view_models::dev::ViewsViewModel
+    @model crate::view_models::dev::views::ViewsViewModel
     @{
         view_context.insert_str("Title", "Compiled Views - Dev".to_string());
     }

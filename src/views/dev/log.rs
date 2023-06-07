@@ -1,7 +1,7 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @viewstart "src/views/dev/_view_start.rshtml"
     @name "dev_log"
-    @model crate::view_models::dev::LogViewModel
+    @model crate::view_models::dev::log::LogViewModel
     @{
         view_context.insert_str("Title", "Log - Dev".to_string());
     }

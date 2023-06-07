@@ -1,7 +1,7 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @viewstart "src/views/dev/_view_start.rshtml"
     @name "dev_perf_log"
-    @model crate::view_models::dev::PerfLogViewModel
+    @model crate::view_models::dev::perf_log::PerfLogViewModel
     @{
         view_context.insert_str("Title", "Performance Log - Dev".to_string());
     }

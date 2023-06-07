@@ -2,18 +2,18 @@ use std::any::Any;
 use std::collections::HashMap;
 
 use mvc_lib::model_binder::imodel::IModel;
+use mvc_lib::auth::auth_role_json_file_dbset::JsonAuthRole;
 
-// this is the view model for the home page
+// this is the view model for the index view
 pub struct IndexViewModel {
+    pub roles: Vec<JsonAuthRole>
 }
 
 impl IndexViewModel {
-    // create a new instance of the view model
-    pub fn new() -> Self {
-        Self { }
+    pub fn new(roles: Vec<JsonAuthRole>) -> Self {
+        Self { roles: roles }
     }
 }
-
 
 impl IModel for IndexViewModel {
     fn get_properties(&self) -> HashMap<String, Box<dyn Any>> {

@@ -83,7 +83,7 @@ pub fn expr_quote(input: TokenStream) -> TokenStream {
                     expr_tokens.push(it.next().unwrap());
                 },
                 proc_macro2::TokenTree::Punct(punct) => {
-                    if punct.as_char() == '.' {
+                    if punct.as_char() == '.' || punct.as_char() == '&' {
                         expr_tokens.push(it.next().unwrap());
                     } else {
                         // break;
@@ -99,6 +99,6 @@ pub fn expr_quote(input: TokenStream) -> TokenStream {
 
     let expr_stream = proc_macro2::TokenStream::from_iter(expr_tokens);
     TokenStream::from(quote! {
-        (#expr_stream, quote::quote! { #expr_stream })
+        (#expr_stream .to_string(), quote::quote! { #expr_stream })
     })
 }

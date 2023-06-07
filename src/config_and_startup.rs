@@ -25,7 +25,7 @@ use mvc_lib::options::logging_services_options::{ ILogHttpRequestsOptions, LogHt
 
 use mvc_lib::view::iview::IView;
 
-use crate::view_models::dev::LogAddInputModelBinder;
+use crate::view_models::dev::log_add::LogAddInputModelBinder;
 use crate::views::authroles::index::view_authroles_index;
 use crate::views::authroles::add::view_authroles_add;
 use crate::views::dev::index::view_dev_index;

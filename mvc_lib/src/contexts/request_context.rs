@@ -444,43 +444,71 @@ impl<'a> IRequestContext for RequestContext<'a> {
 
         if let Some(action) = self.get_controller_action_optional() {
             if let Some(model_type) = action.get_model_type() {
-                println!("decode_and_bind_body: {} has model type {}", self.get_path(), model_type.to_string());
-                // check if model has been bound yet
-                if let Some(_) = self.body_model.borrow().as_ref() {
-                    println!("decode_and_bind_body: {} already has model bound", self.get_path());
-                    return None;
-                }
-
-                println!("decode_and_bind_body: {} binding model, none bound", self.get_path());
-
-                let model_binder_service: Rc<dyn IModelBinderService> = ServiceCollectionExtensions::get_required_single(services);
-                
-                let final_stream = self.connection_context.get_stream();
-                for decoder in self.decoders.borrow().iter() {
-                    let decoded_stream = decoder.decode(final_stream.borrow().clone(), self.get_content_type().as_ref().unwrap());
-                    final_stream.replace(decoded_stream);
-                }
-                self.body_stream.replace(Some(final_stream.borrow().clone()));
-                self.body_content.replace(Some(Rc::new(StreamBodyContent::new(
-                    self.get_content_type().as_ref().unwrap().clone(),
-                    self.get_content_length().unwrap(),
-                    final_stream.borrow().clone()
-                ))));
+                // only decode request body if the method is post and if the content type is defined
+                if self.method == http::method::Method::POST {
+                    if let Some(content_type) = self.get_content_type().as_ref() {
+                        println!("decode_and_bind_body: {} has model type {}", self.get_path(), model_type.to_string());
+                        // check if model has been bound yet
+                        if let Some(_) = self.body_model.borrow().as_ref() {
+                            println!("decode_and_bind_body: {} already has model bound", self.get_path());
+                            return None;
+                        }
         
-                // use model binder to try and read stream into model
-                let bind_result = model_binder_service.bind_model(self, model_type.as_ref());
-                match &bind_result {
-                    ModelValidationResult::OtherError(e) => {
-                        println!("{} decode_and_bind_body: bind_result: {}", self.uuid, e);
-                    },
-                    ModelValidationResult::Ok(model) => {
-                        println!("{} decode_and_bind_body: bind_result: Ok({})", self.uuid, model.to_string());
-                    },
-                    _ => {
-                        println!("{} decode_and_bind_body: bind_result: {}", self.uuid, bind_result.to_string());
-                    },
+                        println!("decode_and_bind_body: {} binding model, none bound", self.get_path());
+        
+                        let model_binder_service: Rc<dyn IModelBinderService> = ServiceCollectionExtensions::get_required_single(services);
+                        
+                        let final_stream = self.connection_context.get_stream();
+                        for decoder in self.decoders.borrow().iter() {
+                            let decoded_stream = decoder.decode(final_stream.borrow().clone(), content_type);
+                            final_stream.replace(decoded_stream);
+                        }
+                        self.body_stream.replace(Some(final_stream.borrow().clone()));
+                        self.body_content.replace(Some(Rc::new(StreamBodyContent::new(
+                            content_type.clone(),
+                            self.get_content_length().unwrap(),
+                            final_stream.borrow().clone()
+                        ))));
+                
+                        // use model binder to try and read stream into model
+                        let bind_result = model_binder_service.bind_model(self, model_type.as_ref());
+                        match &bind_result {
+                            ModelValidationResult::OtherError(e) => {
+                                println!("{} decode_and_bind_body: bind_result: {}", self.uuid, e);
+                            },
+                            ModelValidationResult::Ok(model) => {
+                                println!("{} decode_and_bind_body: bind_result: Ok({})", self.uuid, model.to_string());
+                            },
+                            _ => {
+                                println!("{} decode_and_bind_body: bind_result: {}", self.uuid, bind_result.to_string());
+                            },
+                        }
+                        self.set_model_validation_result(Some(bind_result));
+                    } else {
+                        panic!("decode_and_bind_body: {} does not have content type", self.get_path());
+                    }
+                } else {
+                    // decode model from query string, since there is no request body.
+                    let query_string = self.get_query();
+                    if query_string.to_str().len() > 0 {
+                        let model_binder_service: Rc<dyn IModelBinderService> = ServiceCollectionExtensions::get_required_single(services);
+                        let bind_result = model_binder_service.bind_model(self, model_type.as_ref());
+                        match &bind_result {
+                            ModelValidationResult::OtherError(e) => {
+                                println!("{} decode_and_bind_body: bind_result: {}", self.uuid, e);
+                            },
+                            ModelValidationResult::Ok(model) => {
+                                println!("{} decode_and_bind_body: bind_result: Ok({})", self.uuid, model.to_string());
+                            },
+                            _ => {
+                                println!("{} decode_and_bind_body: bind_result: {}", self.uuid, bind_result.to_string());
+                            },
+                        }
+                        self.set_model_validation_result(Some(bind_result));
+                    } else {
+                        // panic!("decode_and_bind_body: {} does not have query string", self.get_path());
+                    }
                 }
-                self.set_model_validation_result(Some(bind_result));
             } else {
                 // println!("decode_and_bind_body: {} does not have model type", self.get_path());
             }

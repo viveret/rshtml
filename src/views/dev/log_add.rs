@@ -1,7 +1,7 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @viewstart "src/views/dev/_view_start.rshtml"
     @name "dev_log_add"
-    @model crate::view_models::dev::LogAddViewModel
+    @model crate::view_models::dev::log_add::LogAddViewModel
     @{
         view_context.insert_str("Title", "Add to Log - Dev".to_string());
          // "message", "Message", None
@@ -15,7 +15,7 @@ mvc_macro_lib::rusthtml_view_macro! {
         @html.label_for(expr_quote! { |m| m.input.message }, None)
         @html.input("message", "text", model.input.message.as_str(), None)
 
-        @html.label("level", "Log Level", None)
+        @html.label_for(expr_quote! { |m| m.input.level }, None)
         @html.input("level", "level", model.input.level.as_str(), None)
         
         @html.submit("Submit", None)

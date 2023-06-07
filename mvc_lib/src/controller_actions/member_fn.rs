@@ -224,14 +224,13 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
                 if let Some(model) = controller_context.get_request_context().get_model_validation_result() {
                     (member_fn_validated)(controller, model, controller_context, services)
                 } else {
-                    Err(format!("Could not get model {:?} from request context for action {}", self.model_type, self.name).into())
+                    (member_fn_validated)(controller, ModelValidationResult::OkNone, controller_context, services)
                 }
             } else if let Some(member_fn_validated_typed) = &self.member_fn_validated_typed {
                 if let Some(model) = controller_context.get_request_context().get_model_validation_result() {
-                    // let model_typed = model.downcast_ref::<&dyn IModel>().expect("Could not downcast model to TModel.");
                     (member_fn_validated_typed)(controller, model, controller_context, services)
                 } else {
-                    Err(format!("Could not get model {:?} from request context for action {}", self.model_type, self.name).into())
+                    (member_fn_validated_typed)(controller, ModelValidationResult::OkNone, controller_context, services)
                 }
             } else {
                 Err(format!("Could not find member_fn_validated for action {}", self.name).into())
@@ -240,10 +239,6 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
             (self.member_fn_not_validated.unwrap())(controller, controller_context, services)
         }?;
 
-        // let result_option = 
-        // } else {
-        //     (self.member_fn_not_validated.unwrap())(controller, controller_context, services)
-        // }?;
         if let Some(result) = result_option {
             controller_context.set_action_result(Some(result));
         }

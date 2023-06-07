@@ -238,7 +238,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
     }
 
     fn label_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        HtmlString::new_data_string(expr.1.into_iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" "))
     }
 
     fn select_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {

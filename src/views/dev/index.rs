@@ -1,7 +1,7 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @viewstart "src/views/dev/_view_start.rshtml"
     @name "dev_index"
-    @model crate::view_models::dev::IndexViewModel
+    @model crate::view_models::dev::index::IndexViewModel
     @{
         view_context.insert_str("Title", "Dev Routes".to_string());
     }

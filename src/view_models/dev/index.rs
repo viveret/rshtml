@@ -1,9 +1,10 @@
 use std::any::Any;
 use std::collections::HashMap;
 
+use mvc_lib::core::type_info::TypeInfo;
 use mvc_lib::model_binder::imodel::IModel;
 
-// this is the view model for the home page
+// this is the view model for the index view
 pub struct IndexViewModel {
 }
 
@@ -13,7 +14,6 @@ impl IndexViewModel {
         Self { }
     }
 }
-
 
 impl IModel for IndexViewModel {
     fn get_properties(&self) -> HashMap<String, Box<dyn Any>> {
@@ -28,11 +28,11 @@ impl IModel for IndexViewModel {
         todo!()
     }
 
-    fn get_attribute(&self, typeinfo: &mvc_lib::core::type_info::TypeInfo) -> Option<Box<dyn Any>> {
+    fn get_attribute(&self, typeinfo: &TypeInfo) -> Option<Box<dyn Any>> {
         todo!()
     }
 
-    fn get_type_info(&self) -> Box<mvc_lib::core::type_info::TypeInfo> {
+    fn get_type_info(&self) -> Box<TypeInfo> {
         todo!()
     }
 

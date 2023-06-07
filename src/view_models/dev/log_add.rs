@@ -2,11 +2,8 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use as_any::Downcast;
 use core_macro_lib::nameof_member_fn;
 use mvc_lib::contexts::irequest_context::IRequestContext;
-use mvc_lib::controller_actions::controller_action::IControllerAction;
-use mvc_lib::controllers::icontroller::IController;
 
 use mvc_lib::core::type_info::TypeInfo;
 use mvc_lib::model_binder::imodel::{IModel, AnyIModel};
@@ -16,103 +13,22 @@ use mvc_lib::model_binder::url_encoded_model::UrlEncodedModel;
 use mvc_lib::services::service_collection::IServiceCollection;
 use mvc_lib::services::service_descriptor::ServiceDescriptor;
 use mvc_lib::services::service_scope::ServiceScope;
-use mvc_lib::view::iview::IView;
 
-// this is the view model for the index view
-pub struct IndexViewModel {
-}
 
-impl IndexViewModel {
-    // create a new instance of the view model
-    pub fn new() -> Self {
-        Self { }
-    }
-}
-
-// this is the view model for the views view
-pub struct ViewsViewModel {
-    pub views: Vec<Rc<dyn IView>>,
-}
-
-impl ViewsViewModel {
-    // create a new instance of the view model
-    pub fn new(views: Vec<Rc<dyn IView>>) -> Self {
-        Self { views: views }
-    }
-}
-
-// this is the view model for the view details view
-pub struct ViewDetailsViewModel {
-    pub view: Rc<dyn IView>,
-}
-
-impl ViewDetailsViewModel {
-    // create a new instance of the view model
-    pub fn new(view: Rc<dyn IView>) -> Self {
-        Self { view: view }
-    }
-}
-
-// this is the view model for the routes view
-pub struct RoutesViewModel {
-    pub routes: Vec<Rc<dyn IControllerAction>>,
-}
-
-impl RoutesViewModel {
-    // create a new instance of the view model
-    pub fn new(routes: Vec<Rc<dyn IControllerAction>>) -> Self {
-        Self { routes: routes }
-    }
-}
-
-// this is the view model for the route details view
-pub struct RouteDetailsViewModel {
-    pub route: Rc<dyn IControllerAction>,
-    pub controller: Rc<dyn IController>,
-}
-
-impl RouteDetailsViewModel {
-    // create a new instance of the view model
-    pub fn new(route: Rc<dyn IControllerAction>, controller: Rc<dyn IController>) -> Self {
-        Self { route: route, controller: controller }
-    }
-}
-
-// this is the view model for the system info view
-pub struct SysInfoViewModel {
-}
-
-impl SysInfoViewModel {
-    // create a new instance of the view model
-    pub fn new() -> Self {
-        Self {  }
-    }
-}
-
-pub struct LogViewModel {
-    pub supports_read: bool,
-    pub logs: Vec<String>,
-}
-
-impl LogViewModel {
-    pub fn new(supports_read: bool, logs: Vec<String>) -> Self {
-        Self { supports_read: supports_read, logs: logs }
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct LogAddInputModel {
-    pub message: String,
-    pub level: String,
+    pub message: Box<String>,
+    pub level: Box<String>,
 }
 
 impl LogAddInputModel {
     pub fn new(message: String, level: String) -> Self {
-        Self { message: message, level: level }
+        Self { message: Box::new(message), level: Box::new(level) }
     }
 
     pub fn default() -> Self {
-        Self { message: String::default(), level: String::default() }
+        Self::new(String::default(), String::default())
     }
 
     // fn as_any(&self) -> Box<dyn Any> {
@@ -234,13 +150,13 @@ impl IModelBinder for LogAddInputModelBinder {
             let form = &form_encoded.0.entries;
             
             if let Some(message) = form.get("message") {
-                model.message = message.first().unwrap().to_string();
+                model.message = Box::new(message.first().unwrap().to_string());
             } else {
                 return ModelValidationResult::PropertyError(AnyIModel::new(Rc::new(model)), "message".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Message is required.".to_string())));
             }
     
             if let Some(level) = form.get("level") {
-                model.level = level.first().unwrap().to_string();
+                model.level = Box::new(level.first().unwrap().to_string());
             } else {
                 return ModelValidationResult::PropertyError(AnyIModel::new(Rc::new(model)), "level".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Level is required.".to_string())));
             }
@@ -258,31 +174,41 @@ impl IModelBinder for LogAddInputModelBinder {
 
 pub struct LogAddViewModel {
     pub supports_read: bool,
-    pub input: Rc<LogAddInputModel>,
+    pub input: LogAddInputModel,
 }
 
 impl LogAddViewModel {
     pub fn new(supports_read: bool, input: Rc<LogAddInputModel>) -> Self {
-        Self { supports_read: supports_read, input: input }
+        Self { supports_read: supports_read, input: input.as_ref().clone() }
     }
 }
 
-pub struct LogClearViewModel {
-    pub supports_clear: bool,
-}
-
-impl LogClearViewModel {
-    pub fn new(supports_clear: bool) -> Self {
-        Self { supports_clear: supports_clear }
+impl IModel for LogAddViewModel {
+    fn get_properties(&self) -> HashMap<String, Box<dyn Any>> {
+        todo!()
     }
-}
 
-pub struct PerfLogViewModel {
+    fn get_property(&self, name: &str) -> Option<Box<dyn Any>> {
+        todo!()
+    }
 
-}
+    fn get_attributes(&self) -> Vec<Box<dyn Any>> {
+        todo!()
+    }
 
-impl PerfLogViewModel {
-    pub fn new() -> Self {
-        Self { }
+    fn get_attribute(&self, typeinfo: &TypeInfo) -> Option<Box<dyn Any>> {
+        todo!()
+    }
+
+    fn get_type_info(&self) -> Box<TypeInfo> {
+        todo!()
+    }
+
+    fn get_underlying_value(&self) -> &dyn Any {
+        todo!()
+    }
+
+    fn to_string(&self) -> String {
+        todo!()
     }
 }

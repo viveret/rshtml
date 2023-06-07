@@ -3,19 +3,18 @@ use std::collections::HashMap;
 
 use mvc_lib::model_binder::imodel::IModel;
 
-// this is the view model for the home page
-pub struct IndexViewModel {
+
+pub struct PerfLogViewModel {
+
 }
 
-impl IndexViewModel {
-    // create a new instance of the view model
+impl PerfLogViewModel {
     pub fn new() -> Self {
         Self { }
     }
 }
 
-
-impl IModel for IndexViewModel {
+impl IModel for PerfLogViewModel {
     fn get_properties(&self) -> HashMap<String, Box<dyn Any>> {
         todo!()
     }

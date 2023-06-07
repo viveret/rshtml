@@ -4,7 +4,6 @@ mvc_macro_lib::rusthtml_view_macro! {
     @model crate::view_models::dev::log_add::LogAddViewModel
     @{
         view_context.insert_str("Title", "Add to Log - Dev".to_string());
-         // "message", "Message", None
     }
 
     @html.link(url.url_action(false, Some(false), None, Some("log"), Some("Dev"), None, None).as_str(), "< Back to log messages", None)

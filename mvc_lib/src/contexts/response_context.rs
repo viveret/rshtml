@@ -1,12 +1,12 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use http::{StatusCode, Version};
-use http::{ HeaderName, HeaderValue, HeaderMap };
+use http::StatusCode;
+use http::HeaderMap;
 
 use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
 
-use super::connection_context::{IConnectionContext, IHttpConnectionContext};
+use super::connection_context::IHttpConnectionContext;
 use super::irequest_context::IRequestContext;
 
 

@@ -5,7 +5,7 @@ use std::path::Path;
 use http::StatusCode;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::{ResponseContext, IResponseContext};
+use crate::contexts::response_context::IResponseContext;
 use crate::contexts::controller_context::IControllerContext;
 
 use crate::action_results::iaction_result::IActionResult;
@@ -64,7 +64,7 @@ impl IActionResult for FileResult {
                 response_context.set_status_code(StatusCode::OK);
                 response_context.add_header_str("Content-Type", &self.content_type);
                 let mut reader = std::io::BufReader::new(f);
-                let mut body_stream = response_context.get_connection_context();
+                let body_stream = response_context.get_connection_context();
                 let mut buffer = [0; 4096];
                 loop {
                     let num_read = reader.read(&mut buffer).unwrap();
@@ -73,11 +73,11 @@ impl IActionResult for FileResult {
                     }
                     match body_stream.write(&buffer[0..num_read]) {
                         Ok(_) => {},
-                        Err(error) => break,
+                        Err(_error) => break,
                     }
                 }
             },
-            Err(error) => {
+            Err(_error) => {
                 // println!("Error opening file: {}", error);
                 response_context.set_status_code(StatusCode::NOT_FOUND);
             }

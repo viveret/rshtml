@@ -1,7 +1,24 @@
 use std::any::Any;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::rc::Rc;
 
+use core_macro_lib::IHazAttributes;
+use core_macro_lib::IModel;
+use core_macro_lib::reflect_attributes;
+use core_macro_lib::reflect_methods;
+use core_macro_lib::reflect_properties;
+
+use crate::core::type_info::TypeInfo;
+
+use crate::model_binder::imodel_attribute::IAttribute;
+use crate::model_binder::ihaz_attributes::IHazAttributes;
+use crate::model_binder::imodel::IModel;
+use crate::model_binder::imodel_property::IModelProperty;
+use crate::model_binder::imodel_method::IModelMethod;
+use crate::model_binder::reflected_attribute::ReflectedAttribute;
+use crate::model_binder::reflected_method::ReflectedMethod;
+use crate::model_binder::reflected_property::ReflectedProperty;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
@@ -16,17 +33,20 @@ use super::icontroller_extensions::IControllerExtensions;
 
 
 // this controller is used to serve static files from the disk.
+#[derive(Clone, IHazAttributes, IModel)]
+#[reflect_attributes]
+#[reflect_properties]
 pub struct FileProviderController {
     // the options for the file provider controller.
-    pub options: Rc<dyn IFileProviderControllerOptions>,
+    options: Rc<dyn IFileProviderControllerOptions>,
 }
 
+#[reflect_methods]
 impl FileProviderController {
     // create a new instance of the controller.
     // options: the options for the file provider controller.
     pub fn new(options: Rc<dyn IFileProviderControllerOptions>) -> Self {
-        Self
-        { 
+        Self { 
             options: options
         }
     }
@@ -64,9 +84,5 @@ impl IController for FileProviderController {
 
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![]
-    }
-
-    fn as_any(self: &Self) -> &dyn Any {
-        self
     }
 }

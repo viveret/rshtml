@@ -18,7 +18,7 @@ impl InjectDirective {
         Self {}
     }
 
-    fn parse_identifier_for_variable_name(self: &Self, type_ident_tokens: Vec<TokenTree>, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: &Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
+    fn parse_identifier_for_variable_name(self: &Self, type_ident_tokens: Vec<TokenTree>, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: &Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
         if let Some(inject_name_token) = it.next() {
             match &inject_name_token {
                 TokenTree::Ident(_) => {

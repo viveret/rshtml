@@ -4,6 +4,14 @@ extern crate proc_macro2;
 use proc_macro::TokenStream;
 use quote::quote;
 
+mod ast;
+mod extend_derive;
+mod reflect_attributes_macro;
+mod reflect_methods_macro;
+mod reflect_properties_macro;
+mod ihaz_attributes_macro;
+mod imodel_macro;
+
 
 #[proc_macro]
 pub fn nameof_member_fn(input: TokenStream) -> TokenStream {
@@ -11,8 +19,8 @@ pub fn nameof_member_fn(input: TokenStream) -> TokenStream {
     // expect type name
     let type_name = it.next().unwrap();
     match type_name {
-        proc_macro2::TokenTree::Ident(ident) => {
-            let type_name = ident.to_string();
+        proc_macro2::TokenTree::Ident(_) => {
+            // let type_name = ident.to_string();
         },
         _ => panic!("Expected type name."),
     }
@@ -101,4 +109,32 @@ pub fn expr_quote(input: TokenStream) -> TokenStream {
     TokenStream::from(quote! {
         (#expr_stream .to_string(), quote::quote! { #expr_stream })
     })
+}
+
+#[proc_macro_derive(IModel)]
+pub fn imodel_derive(input: TokenStream) -> TokenStream {
+    let ast = syn::parse(input).unwrap();
+    imodel_macro::impl_imodel(&ast).into()
+}
+
+#[proc_macro_derive(IHazAttributes)]
+pub fn ihaz_attributes_derive(input: TokenStream) -> TokenStream {
+    let ast = syn::parse(input).unwrap();
+    ihaz_attributes_macro::impl_ihaz_attributes(&ast).into()
+}
+
+// proc macro for gathering all the attributes used in a type and storing them in a field.
+#[proc_macro_attribute]
+pub fn reflect_attributes(attr: TokenStream, item: TokenStream) -> TokenStream {
+    reflect_attributes_macro::reflect_attributes(attr.into(), item.into()).into()
+}
+
+#[proc_macro_attribute]
+pub fn reflect_properties(attr: TokenStream, item: TokenStream) -> TokenStream {
+    reflect_properties_macro::reflect_properties(attr.into(), item.into()).into()
+}
+
+#[proc_macro_attribute]
+pub fn reflect_methods(attr: TokenStream, item: TokenStream) -> TokenStream {
+    reflect_methods_macro::reflect_methods(attr.into(), item.into()).into()
 }

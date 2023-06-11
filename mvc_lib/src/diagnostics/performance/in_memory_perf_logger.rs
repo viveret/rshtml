@@ -23,9 +23,9 @@ impl IPerformanceLogger for InMemoryLogger {
         self.metrics.borrow_mut().push(metric_value);
     }
 
-    fn get_metrics(&self, request_id: Option<uuid::Uuid>, name: Option<&str>, metric_type: Option<super::iperformance_logger::PerformanceMetricType>, since: Option<uuid::Timestamp>) -> Vec<PerformanceMetricValue> {
+    fn get_metrics(&self, request_id: Option<uuid::Uuid>, _name: Option<&str>, metric_type: Option<super::iperformance_logger::PerformanceMetricType>, since: Option<uuid::Timestamp>) -> Vec<PerformanceMetricValue> {
         let src = self.metrics.borrow();
-        let mut iter: Box<dyn Iterator<Item = &PerformanceMetricValue>> = Box::new(src.iter().filter(|x| true));
+        let mut iter: Box<dyn Iterator<Item = &PerformanceMetricValue>> = Box::new(src.iter().filter(|_x| true));
 
         if let Some(_) = request_id {
             iter = Box::new(iter.filter(|x| x.request_id == request_id));

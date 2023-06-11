@@ -1,7 +1,6 @@
 use std::rc::Rc;
-use std::borrow::Cow;
 
-use proc_macro::{Ident, TokenTree, Delimiter, Group, TokenStream};
+use proc_macro::{Ident, Delimiter, Group, TokenStream};
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};

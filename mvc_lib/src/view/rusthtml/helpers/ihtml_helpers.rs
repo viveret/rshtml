@@ -1,8 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use proc_macro2::TokenStream;
-
 use crate::model_binder::imodel::IModel;
 use crate::view::rusthtml::html_string::HtmlString;
 

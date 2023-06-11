@@ -27,6 +27,11 @@ impl TypeInfo {
     pub fn rc_of<T: 'static + ?Sized>() -> Box<Self> {
         Box::new(Self::of::<Rc<T>>())
     }
+
+    // returns true if the type info is the same as the type info of the type.
+    pub fn is_same_as(&self, other: &Self) -> bool {
+        self.type_id == other.type_id
+    }
 }
 
 impl fmt::Display for TypeInfo {

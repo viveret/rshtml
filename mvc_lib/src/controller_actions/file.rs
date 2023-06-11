@@ -9,7 +9,6 @@ use http::Method;
 use crate::action_results::file_result::FileResult;
 
 use crate::contexts::controller_context::IControllerContext;
-use crate::contexts::controller_context::ControllerContext;
 use crate::contexts::irequest_context::IRequestContext;
 
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
@@ -82,7 +81,7 @@ impl ControllerActionFileResult {
 }
 
 impl IControllerAction for ControllerActionFileResult {
-    fn invoke(self: &Self, controller_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
+    fn invoke(self: &Self, controller_context: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
         let result_option = Some(Rc::new(FileResult::new(self.file_path.clone(), None)));
         if let Some(result) = result_option {
             controller_context.set_action_result(Some(result));

@@ -2,7 +2,9 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
+use crate::attributes::display_name_attribute::DisplayNameAttribute;
 use crate::core::html_buffer::{HtmlBuffer, IHtmlBuffer};
+use crate::core::type_info::TypeInfo;
 use crate::model_binder::imodel::IModel;
 use crate::services::service_collection::IServiceCollection;
 use crate::contexts::view_context::IViewContext;
@@ -13,16 +15,16 @@ use super::ihtml_helpers::IHtmlHelpers;
 
 // helpers for HTML views
 pub struct HtmlHelpers<'a, TModel: 'static + IModel> {
-    view_context: &'a dyn IViewContext,
-    services: &'a dyn IServiceCollection,
+    _view_context: &'a dyn IViewContext,
+    _services: &'a dyn IServiceCollection,
     x: PhantomData<TModel>,
 }
 
 impl <'a, TModel: 'static + IModel> HtmlHelpers<'a, TModel> {
     pub fn new(view_context: &'a dyn IViewContext, services: &'a dyn IServiceCollection) -> Self {
         Self {
-            view_context: view_context,
-            services: services,
+            _view_context: view_context,
+            _services: services,
             x: PhantomData {},
         }
     }
@@ -148,7 +150,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn option_group(self: &Self, label: &str, options: Vec<(String, String)>, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn option_group(self: &Self, label: &str, options: Vec<(String, String)>, disabled: bool, _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let mut html = format!("<optgroup label=\"{}\">", html_escape::encode_text(&label));
         for option in options {
             html = format!("{}<option value=\"{}\" {}>{}</option>", html, html_escape::encode_text(&option.0), if disabled { "disabled" } else { "" }, html_escape::encode_text(&option.1));
@@ -221,39 +223,59 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn input_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), input_type: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn input_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, _: (TFn, proc_macro2::TokenStream), _: &str, _: Option<&HashMap<String, String>>) -> HtmlString {
         todo!()
     }
 
-    fn hidden_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn hidden_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, _: (TFn, proc_macro2::TokenStream), _: Option<&HashMap<String, String>>) -> HtmlString {
         todo!()
     }
 
-    fn checkbox_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn checkbox_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, _: (TFn, proc_macro2::TokenStream), _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         todo!()
     }
 
-    fn textarea_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn textarea_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, _: (TFn, proc_macro2::TokenStream), _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         todo!()
     }
 
-    fn label_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        HtmlString::new_data_string(expr.1.into_iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" "))
+    fn label_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+        // first get property name
+        let property_name = extract_property_name(expr.1);
+
+        // then check for attribute on viewmodel if it exists
+        if let Some(viewmodel) = self._view_context.get_viewmodel().as_ref() {
+            let property = viewmodel.get_property(&property_name);
+            if let Some(property) = property {
+                let attribute = property.get_attribute(&TypeInfo::of::<DisplayNameAttribute>());
+                if let Some(attribute) = attribute {
+                    let label = attribute.get_name();
+                    return HtmlString::new_data_string(label);
+                }
+            }
+        }
+
+        // else return the property name
+        HtmlString::new_data_string(property_name)
     }
 
-    fn select_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn select_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, _: (TFn, proc_macro2::TokenStream), _options: Vec<(String, String)>, _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         todo!()
     }
 
-    fn select_multiple_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn select_multiple_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, _: (TFn, proc_macro2::TokenStream), _options: Vec<(String, String)>, _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         todo!()
     }
 
-    fn option_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn option_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, _: (TFn, proc_macro2::TokenStream), _disabled: bool, _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         todo!()
     }
 
-    fn option_selected_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn option_selected_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, _: (TFn, proc_macro2::TokenStream), _disabled: bool, _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         todo!()
     }
+}
+
+fn extract_property_name(expr: proc_macro2::TokenStream) -> String {
+    expr.into_iter().last().unwrap().to_string()
 }

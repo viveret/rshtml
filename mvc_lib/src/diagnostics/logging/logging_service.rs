@@ -15,7 +15,7 @@ pub trait ILoggingService: ILogger {
 
 pub struct LoggingService {
     // the options for the service.
-    options: Option<Rc<dyn ILogHttpRequestsOptions>>,
+    _options: Option<Rc<dyn ILogHttpRequestsOptions>>,
     logger: Rc<dyn ILogger>,
 }
 
@@ -24,7 +24,7 @@ impl LoggingService {
         options: Option<Rc<dyn ILogHttpRequestsOptions>>
     ) -> Self {
         Self { 
-            options: options,
+            _options: options,
             logger: Rc::new(super::logger::Logger::new(None)),
         }
     }

@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use std::rc::Rc;
 use std::str::FromStr;
 
-use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
+use proc_macro::{Delimiter, Group, Ident, Literal, Punct, TokenStream, TokenTree};
 
 use crate::core::panic_or_return_error::PanicOrReturnError;
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct, RustHtmlIdentAndPunctAndGroupOrLiteral, RustHtmlIdentOrPunctOrGroup };
@@ -49,7 +49,7 @@ impl RustToRustHtmlConverter {
         Ok(true)
     }
 
-    fn peek_reserved_char(self: &Self, expected_char: char, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError> {
+    fn peek_reserved_char(self: &Self, expected_char: char, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<bool, RustHtmlError> {
         if let Some(next_token) = it.peek() {
             match next_token {
                 TokenTree::Punct(next_punct) => {
@@ -238,7 +238,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // it: the iterator to use.
     // is_raw_tokenstream: whether the token stream is raw or not.
     // returns: nothing or an error.
-    fn convert_rust_entry_to_rusthtmltoken(self: &Self, c: char, punct: Punct, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
+    fn convert_rust_entry_to_rusthtmltoken(self: &Self, _c: char, _punct: Punct, _is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
         // if is_in_html_mode {
             let directive_token = it.next().unwrap();
             // println!("directive_token: {:?}", directive_token);
@@ -430,7 +430,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // output: the destination for the RustHtml tokens.
     // is_raw_tokenstream: whether the token stream is raw or not.
     // returns: nothing or an error.
-    fn convert_rust_directive_group_to_rusthtmltoken(self: &Self, group: Group, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
+    fn convert_rust_directive_group_to_rusthtmltoken(self: &Self, group: Group, _prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
         let mut inner_tokens = vec![];
         let it = Rc::new(PeekableTokenTree::new(group.stream()));
         self.loop_next_and_convert(false, &mut inner_tokens, it, is_raw_tokenstream)?;
@@ -496,7 +496,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // identifier: the identifier to convert.
     // it: the iterator to use.
     // returns: the path string or an error.
-    fn convert_path_str(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
+    fn convert_path_str(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
         let mut path = std::path::PathBuf::new();
 
         let cwd = std::env::current_dir().unwrap();
@@ -746,7 +746,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
         parse_ctx: &mut HtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>, 
         it: Rc<dyn IPeekableTokenTree>,
-        is_raw_tokenstream: bool,
+        _is_raw_tokenstream: bool,
     ) -> Result<(), RustHtmlError> {
         if parse_ctx.parse_attrs {
             if parse_ctx.parse_attr_val {
@@ -793,7 +793,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
         literal: &Literal,
         parse_ctx: &mut HtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>, 
-        is_raw_tokenstream: bool,
+        _is_raw_tokenstream: bool,
     ) -> Result<(), RustHtmlError> {
         if parse_ctx.parse_attrs {
             // println!("literal.to_string(): {}", literal.to_string());

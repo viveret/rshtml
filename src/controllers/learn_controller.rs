@@ -1,31 +1,47 @@
 use std::any::Any;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::rc::Rc;
 
+use core_macro_lib::IHazAttributes;
+use core_macro_lib::IModel;
+use core_macro_lib::reflect_attributes;
+use core_macro_lib::reflect_methods;
+use core_macro_lib::reflect_properties;
 use glob::glob;
 
 use mvc_lib::action_results::http_result::HttpRedirectResult;
-
-use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
-use mvc_lib::services::service_collection::IServiceCollection;
-
 use mvc_lib::action_results::view_result::ViewResult;
-
+use mvc_lib::core::type_info::TypeInfo;
 use mvc_lib::controllers::icontroller::IController;
-
+use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
 use mvc_lib::controller_action_features::controller_action_feature::IControllerActionFeature;
 use mvc_lib::controller_actions::controller_action::IControllerAction;
 use mvc_lib::controller_actions::closure::ControllerActionClosure;
+use mvc_lib::services::service_collection::IServiceCollection;
+
+use mvc_lib::model_binder::imodel_attribute::IAttribute;
+use mvc_lib::model_binder::ihaz_attributes::IHazAttributes;
+use mvc_lib::model_binder::imodel::IModel;
+use mvc_lib::model_binder::imodel_method::IModelMethod;
+use mvc_lib::model_binder::imodel_property::IModelProperty;
+use mvc_lib::model_binder::reflected_attribute::ReflectedAttribute;
+use mvc_lib::model_binder::reflected_property::ReflectedProperty;
+use mvc_lib::model_binder::reflected_method::ReflectedMethod;
 
 use crate::view_models::learn::IndexViewModel;
 use crate::view_models::learn::DetailsViewModel;
 
 
 // this is the controller for the learn section of the site.
+#[reflect_attributes]
+#[reflect_properties]
+#[derive(Clone, IHazAttributes, IModel)]
 pub struct LearnController {
 
 }
 
+#[reflect_methods]
 impl LearnController {
     // create a new instance of the controller.
     pub fn new() -> Self {
@@ -64,7 +80,7 @@ impl IController for LearnController {
                     .filter(|x| x.as_str() != "README")
                     .collect();
 
-                let view_model = Box::new(Rc::new(IndexViewModel::new(learn_docs)));
+                let view_model = Box::new(IndexViewModel::new(learn_docs));
                 Ok(Some(Rc::new(ViewResult::new("views/learn/index.rs".to_string(), view_model))))
             })),
             Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn/..".to_string(), "details".to_string(), Cow::Owned(controller_name), Rc::new(|model, controller_ctx, _services| {
@@ -75,7 +91,7 @@ impl IController for LearnController {
                     return Ok(Some(Rc::new(HttpRedirectResult::new("/learn".to_string()))))
                 }
 
-                let view_model = Box::new(Rc::new(DetailsViewModel::new(format!("docs/learn/{}.md", path))));
+                let view_model = Box::new(DetailsViewModel::new(format!("docs/learn/{}.md", path)));
                 Ok(Some(Rc::new(ViewResult::new("views/learn/details.rs".to_string(), view_model))))
             }))),
         ]
@@ -83,9 +99,5 @@ impl IController for LearnController {
 
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![]
-    }
-
-    fn as_any(self: &Self) -> &dyn Any {
-        self
     }
 }

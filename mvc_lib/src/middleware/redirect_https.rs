@@ -6,7 +6,6 @@ use std::rc::Rc;
 use crate::action_results::http_result::HttpRedirectResult;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::IResponseContext;
-use crate::contexts::response_context::ResponseContext;
 use crate::services::request_middleware_service::IRequestMiddlewareService;
 use crate::services::request_middleware_service::MiddlewareResult;
 use crate::services::service_collection::IServiceCollection;
@@ -31,7 +30,7 @@ impl RedirectHttpsMiddlewareService {
     }
 
     // this is the function that will be called by the service collection to create a new instance of the middleware
-    pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new()) as Rc<dyn IRequestMiddlewareService>)]
     }
 }

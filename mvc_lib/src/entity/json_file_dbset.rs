@@ -187,11 +187,11 @@ impl<TEntity: 'static + Clone> IDbSet<TEntity> for JsonFileDbSet<TEntity> {
             .collect()
     }
 
-    fn remove(self: &Self, item: &TEntity) {
+    fn remove(self: &Self, _item: &TEntity) {
 
     }
 
-    fn remove_range(self: &Self, item: Vec<TEntity>) {
+    fn remove_range(self: &Self, _item: Vec<TEntity>) {
 
     }
 

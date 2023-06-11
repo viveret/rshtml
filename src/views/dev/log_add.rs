@@ -13,7 +13,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     @html.form(http::method::Method::POST, url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).into(), Some(&HashMap::new()) /* optional attributes, takes precedent over route values */, || -> HtmlString {
         @html.label_for(expr_quote! { |m| m.input.message }, None)
         @html.input("message", "text", model.input.message.as_str(), None)
-
+        
         @html.label_for(expr_quote! { |m| m.input.level }, None)
         @html.input("level", "level", model.input.level.as_str(), None)
         

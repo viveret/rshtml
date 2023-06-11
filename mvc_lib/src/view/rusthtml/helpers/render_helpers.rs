@@ -24,11 +24,11 @@ impl <'a> RenderHelpers<'a> {
 }
 
 impl <'a> IRenderHelpers<'a> for RenderHelpers<'a> {
-    fn section<'b, 'c, 'd>(self: &Self, section_name: &'b str) -> Result<HtmlString, RustHtmlError<'d>> {
+    fn section<'b, 'c, 'd>(self: &Self, _: &'b str) -> Result<HtmlString, RustHtmlError<'d>> {
         Ok(HtmlString::new_from_html("".to_string()))
     }
 
-    fn section_optional<'b, 'c, 'd>(self: &Self, section_name: &'b str) -> Result<HtmlString, RustHtmlError<'d>> {
+    fn section_optional<'b, 'c, 'd>(self: &Self, _: &'b str) -> Result<HtmlString, RustHtmlError<'d>> {
         Ok(HtmlString::new_from_html("".to_string()))
     }
 

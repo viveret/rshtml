@@ -1,5 +1,7 @@
 
 pub mod index;
+pub mod controllers;
+pub mod controller_details;
 pub mod log;
 pub mod log_add;
 pub mod log_clear;

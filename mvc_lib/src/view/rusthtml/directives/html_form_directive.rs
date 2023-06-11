@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::vec;
 
-use proc_macro::{Ident, TokenTree, Punct, Group};
+use proc_macro::{Ident, TokenTree, Group};
 
 use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 use crate::view::rusthtml::peekable_tokentree::{IPeekableTokenTree, PeekableTokenTree};
@@ -40,7 +40,7 @@ impl HtmlFormDirective {
                         it.next();
                         ident.to_string()
                     },
-                    TokenTree::Group(group) => {
+                    TokenTree::Group(_group) => {
                         // this is the main form render closure function.
                         // just use default method and action.
                         "POST".to_string()
@@ -53,10 +53,10 @@ impl HtmlFormDirective {
 
         // println!("method: {}", method);
 
-        let mut form_render_fn_tokens: Option<Vec<RustHtmlToken>> = None;
+        let mut _form_render_fn_tokens: Option<Vec<RustHtmlToken>> = None;
         let mut attributes: Option<HashMap<String, Vec<RustHtmlToken>>> = None;
         let mut action: Option<String> = None;
-        let mut route_values: Option<HashMap<String, Vec<RustHtmlToken>>> = None;
+        let mut _route_values: Option<HashMap<String, Vec<RustHtmlToken>>> = None;
 
         // check for comma separator between method and action
         if Self::check_for_comma(it) {
@@ -98,7 +98,7 @@ impl HtmlFormDirective {
                     it.next();
 
                     // parse action route values
-                    route_values = self.try_parse_object_route_values(it).clone()?;
+                    _route_values = self.try_parse_object_route_values(it).clone()?;
                     
                     // check for comma separator between action route values and form render closure.
                     if Self::check_for_comma(it) {
@@ -112,7 +112,7 @@ impl HtmlFormDirective {
         // parse form closure
         let mut form_render_fn_token_values = vec![];
         self.parse_form_render_closure(parser, &mut form_render_fn_token_values, it)?;
-        form_render_fn_tokens = Some(form_render_fn_token_values);
+        _form_render_fn_tokens = Some(form_render_fn_token_values);
 
         // add opening form tag
         output.extend_from_slice(&vec![
@@ -136,7 +136,7 @@ impl HtmlFormDirective {
         output.push(RustHtmlToken::HtmlTagCloseStartChildrenPunct('>', None));
 
         // add form render closure tokens if present
-        if let Some(form_render_tokens) = form_render_fn_tokens {
+        if let Some(form_render_tokens) = _form_render_fn_tokens {
             output.extend_from_slice(&form_render_tokens);
         }
 
@@ -336,7 +336,7 @@ impl IRustHtmlDirective for HtmlFormDirective {
         name == "form"
     }
 
-    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, _identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // parse form function parameter values
         // top level ()
         // print!("parsing form function call");

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::{ResponseContext, IResponseContext};
+use crate::contexts::response_context::IResponseContext;
 use crate::contexts::controller_context::IControllerContext;
 use crate::services::service_collection::IServiceCollection;
 
@@ -46,8 +46,8 @@ impl IActionResult for RedirectActionResult {
         todo!()
     }
 
-    fn configure_response(self: &Self, controller_ctx: &dyn IControllerContext, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) {
-        let url = crate::routing::url_helpers::UrlHelpers::url_action_static(
+    fn configure_response(self: &Self, _controller_ctx: &dyn IControllerContext, _response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) {
+        let _url = crate::routing::url_helpers::UrlHelpers::url_action_static(
             self.area_name.as_deref(),
             self.controller_name.as_deref(),
             self.action_name.as_deref(),

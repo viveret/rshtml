@@ -19,10 +19,11 @@ httparse = "1.8.0"
 http-bytes = "0.1.0"
 html-escape = "0.2.13"
 mime = "0.3.16"
-regex = "1.7.1"
-rustc_lexer = "0.1.0"
 proc-macro2 = "1.0.53"
 quote = "1.0.23"
+regex = "1.7.1"
+rustc_lexer = "0.1.0"
+syn = "2.0.17"
 
 mvc_lib = { path = "../mvc_lib" }
 

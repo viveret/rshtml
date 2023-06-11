@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::result::Result;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::{ResponseContext, IResponseContext};
+use crate::contexts::response_context::IResponseContext;
 
 use crate::controllers::route_data_controller_action_matcher::RouteDataControllerActionMatcher;
 

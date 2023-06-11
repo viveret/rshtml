@@ -25,7 +25,7 @@ impl GenericAuthRolesDbSetProvider {
         }
     }
 
-    pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new()) as Rc<dyn IAuthRolesDbSetProvider>)]
     }
 

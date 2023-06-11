@@ -1,11 +1,17 @@
 use std::any::Any;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::error::Error;
 use std::rc::Rc;
 
+use core_macro_lib::IHazAttributes;
+use core_macro_lib::IModel;
+
+use core_macro_lib::reflect_attributes;
+use core_macro_lib::reflect_methods;
+use core_macro_lib::reflect_properties;
 use http::Method;
 use mvc_lib::action_results::iaction_result::IActionResult;
-use mvc_lib::contexts::controller_context::ControllerContext;
 use mvc_lib::contexts::controller_context::IControllerContext;
 use mvc_lib::controller_action_features::authorize::BypassOnLocalActionFilter;
 use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
@@ -16,6 +22,13 @@ use mvc_lib::auth::iauthroles_dbset_provider::IAuthRolesDbSetProvider;
 use mvc_lib::entity::idbset::IDbSet;
 use mvc_lib::entity::json_file_dbset::JsonFileDbSet;
 use mvc_lib::model_binder::imodel::IModel;
+use mvc_lib::model_binder::ihaz_attributes::IHazAttributes;
+use mvc_lib::model_binder::imodel_attribute::IAttribute;
+use mvc_lib::model_binder::imodel_property::IModelProperty;
+use mvc_lib::model_binder::imodel_method::IModelMethod;
+use mvc_lib::model_binder::reflected_attribute::ReflectedAttribute;
+use mvc_lib::model_binder::reflected_property::ReflectedProperty;
+use mvc_lib::model_binder::reflected_method::ReflectedMethod;
 use mvc_lib::model_binder::model_validation_result::ModelValidationResult;
 use mvc_lib::services::authorization_service::IAuthorizationService;
 use mvc_lib::services::service_collection::IServiceCollection;
@@ -27,7 +40,7 @@ use mvc_lib::action_results::view_result::ViewResult;
 use mvc_lib::controllers::icontroller::IController;
 
 use mvc_lib::controller_action_features::controller_action_feature::IControllerActionFeature;
-use mvc_lib::controller_actions::builder::{ ControllerActionsBuilder, ControllerActionBuilder };
+use mvc_lib::controller_actions::builder::ControllerActionsBuilder;
 use mvc_lib::controller_actions::controller_action::IControllerAction;
 
 use mvc_lib::controller_action_features::local_host_only::LocalHostOnlyControllerActionFeature;
@@ -40,7 +53,9 @@ use crate::view_models::dev::log_add::LogAddInputModel;
 
 // this is the controller for authenticaion roles management (dev/auth-roles).
 // this controller is only available on localhost or using the admin, dev, or owner roles.
-#[derive(Clone)]
+#[reflect_attributes]
+#[reflect_properties]
+#[derive(Clone, IHazAttributes, IModel)]
 pub struct AuthRolesController {
     // this is the dbset for authentication roles
     authroles_dbset: Rc<dyn IAuthRolesDbSetProvider>,
@@ -48,6 +63,7 @@ pub struct AuthRolesController {
     auth_service: Rc<dyn IAuthorizationService>,
 }
 
+#[reflect_methods]
 impl AuthRolesController {
     // create a new instance of the controller.
     // authroles_dbset: the dbset for authentication roles
@@ -85,13 +101,13 @@ impl AuthRolesController {
     // get the index view, which shows all the roles.
     pub fn get_index(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let roles = self.get_roles();
-        let view_model = Box::new(Rc::new(IndexViewModel::new(roles)));
+        let view_model = Box::new(IndexViewModel::new(roles));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/index.rs".to_string(), view_model))))
     }
 
     // get the add role view, which allows the user to add a new role.
     pub fn get_add(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
-        let view_model = Box::new(Rc::new(AddViewModel::new(String::new(), None)));
+        let view_model = Box::new(AddViewModel::new(String::new(), None));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/add.rs".to_string(), view_model))))
     }
 
@@ -99,7 +115,7 @@ impl AuthRolesController {
     pub fn post_add(self: &Self, _: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let input_model = controller_ctx.get_request_context().get_model_validation_result();
         let new_role = controller_ctx.get_request_context().get_query().get("role"); // to do: this needs to use query parameter
-        let view_model = Box::new(Rc::new(
+        let view_model = Box::new(
             if let Some(new_role) = new_role {
                 if new_role.is_empty() {
                     AddViewModel::new_error(new_role, "Role is blank")
@@ -115,7 +131,7 @@ impl AuthRolesController {
             } else {
                 AddViewModel::new_error(String::new(), "Role missing from query string")
             }
-        ));
+        );
         Ok(Some(Rc::new(ViewResult::new("views/authroles/add.rs".to_string(), view_model))))
     }
 }
@@ -162,9 +178,5 @@ impl IController for AuthRolesController {
             ])),
             LocalHostOnlyControllerActionFeature::new_service()
         ]
-    }
-
-    fn as_any(self: &Self) -> &dyn Any {
-        self
     }
 }

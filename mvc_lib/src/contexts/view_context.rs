@@ -6,6 +6,7 @@ use std::rc::Rc;
 use crate::contexts::controller_context::IControllerContext;
 use crate::contexts::irequest_context::IRequestContext;
 
+use crate::model_binder::imodel::IModel;
 use crate::view::iview::IView;
 use crate::view::view_renderer::IViewRenderer;
 
@@ -21,7 +22,7 @@ pub trait IViewContext: Send + Sync {
     // get the view data for the view context.
     fn get_view_data(self: &Self) -> Rc<RefCell<HashMap<String, String>>>;
     // get the view model for the view context.
-    fn get_viewmodel(self: &Self) -> Rc<Option<Box<dyn Any>>>;
+    fn get_viewmodel(self: &Self) -> Option<Rc<dyn IModel>>;
     // get the view for the view context.
     fn get_view(self: &Self) -> Rc<dyn IView>;
     // get the view for the view context as a reference.
@@ -54,7 +55,7 @@ pub struct ViewContext<'a> {
     // the view data for the view context.
     viewdata: Rc<RefCell<HashMap<String, String>>>,
     // the view model for the view context.
-    viewmodel: Rc<Option<Box<dyn Any>>>,
+    viewmodel: Option<Rc<dyn IModel>>,
     // the view renderer for the view context.
     view_renderer: Rc<dyn IViewRenderer>,
     // the controller context for the view context.
@@ -78,7 +79,7 @@ impl <'a> ViewContext<'a> {
     // returns: a new ViewContext struct.
     pub fn new(
                 view: Rc<dyn IView>,
-                viewmodel: Rc<Option<Box<dyn Any>>>,
+                viewmodel: Option<Rc<dyn IModel>>,
                 view_renderer: Rc<dyn IViewRenderer>,
                 controller_ctx: &'a dyn IControllerContext,
                 response_context: &'a dyn IResponseContext
@@ -130,8 +131,11 @@ impl <'a> IViewContext for ViewContext<'a> {
         self.ctxdata.clone()
     }
 
-    fn get_viewmodel(self: &Self) -> Rc<Option<Box<dyn Any>>> {
-        self.viewmodel.clone()
+    fn get_viewmodel(self: &Self) -> Option<Rc<dyn IModel>> {
+        match self.viewmodel {
+            Some(ref vm) => Some(vm.clone()),
+            None => None,
+        }
     }
 
     fn get_view(self: &Self) -> Rc<dyn IView> {

@@ -7,7 +7,6 @@ use http::status::StatusCode;
 
 use crate::core::buffered_tcpstream::BufferedTcpStream;
 use crate::core::itcp_stream_wrapper::ITcpStreamWrapper;
-use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
 
 
 // this trait represents a TCP connection.

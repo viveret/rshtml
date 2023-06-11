@@ -7,7 +7,7 @@ use crate::services::service_collection::{IServiceCollection, ServiceCollection,
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
 
-use super::imodel::{IModel, AnyIModel};
+use super::imodel::AnyIModel;
 use super::imodelbinder_service::IModelBinderService;
 use super::model_binder_resolver::IModelBinderResolver;
 use super::model_validation_result::ModelValidationResult;

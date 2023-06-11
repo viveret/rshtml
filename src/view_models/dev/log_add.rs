@@ -2,11 +2,24 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use core_macro_lib::IHazAttributes;
+use core_macro_lib::reflect_attributes;
+use core_macro_lib::reflect_methods;
+use core_macro_lib::reflect_properties;
 use core_macro_lib::nameof_member_fn;
 use mvc_lib::contexts::irequest_context::IRequestContext;
 
 use mvc_lib::core::type_info::TypeInfo;
-use mvc_lib::model_binder::imodel::{IModel, AnyIModel};
+use mvc_lib::model_binder::imodel::AnyIModel;
+use mvc_lib::model_binder::imodel::IModel;
+use core_macro_lib::IModel;
+use mvc_lib::model_binder::ihaz_attributes::IHazAttributes;
+use mvc_lib::model_binder::imodel_attribute::IAttribute;
+use mvc_lib::model_binder::imodel_property::IModelProperty;
+use mvc_lib::model_binder::imodel_method::IModelMethod;
+use mvc_lib::model_binder::reflected_attribute::ReflectedAttribute;
+use mvc_lib::model_binder::reflected_property::ReflectedProperty;
+use mvc_lib::model_binder::reflected_method::ReflectedMethod;
 use mvc_lib::model_binder::imodel_binder::IModelBinder;
 use mvc_lib::model_binder::model_validation_result::ModelValidationResult;
 use mvc_lib::model_binder::url_encoded_model::UrlEncodedModel;
@@ -16,12 +29,15 @@ use mvc_lib::services::service_scope::ServiceScope;
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, IHazAttributes, IModel)]
+#[reflect_attributes]
+#[reflect_properties]
 pub struct LogAddInputModel {
     pub message: Box<String>,
     pub level: Box<String>,
 }
 
+#[reflect_methods]
 impl LogAddInputModel {
     pub fn new(message: String, level: String) -> Self {
         Self { message: Box::new(message), level: Box::new(level) }
@@ -66,54 +82,21 @@ impl LogAddInputModel {
     }
 }
 
-impl IModel for LogAddInputModel {
-    fn get_properties(&self) -> std::collections::HashMap<String, Box<dyn std::any::Any>> {
-        vec![
-            ("message".to_string(), Box::new(self.message.clone()) as Box<dyn std::any::Any>),
-            ("level".to_string(), Box::new(self.level.clone()) as Box<dyn std::any::Any>),
-        ]
-        .into_iter()
-        .collect::<HashMap<String, Box<dyn std::any::Any>>>()
-    }
-
-    fn get_property(&self, name: &str) -> Option<Box<dyn std::any::Any>> {
-        match name {
-            "message" => Some(Box::new(self.message.clone()) as Box<dyn std::any::Any>),
-            "level" => Some(Box::new(self.level.clone()) as Box<dyn std::any::Any>),
-            _ => None,
-        }
-    }
-
-    fn get_attributes(&self) -> Vec<Box<dyn std::any::Any>> {
-        vec![]
-    }
-
-    fn get_attribute(&self, typeinfo: &mvc_lib::core::type_info::TypeInfo) -> Option<Box<dyn std::any::Any>> {
-        None
-    }
-
-    fn get_type_info(&self) -> Box<mvc_lib::core::type_info::TypeInfo> {
-        Box::new(TypeInfo::of::<LogAddInputModel>())
-    }
-
-    fn get_underlying_value(&self) -> &dyn std::any::Any {
-        self
-    }
-
-    fn to_string(&self) -> String {
-        format!("LogAddInputModel {{ message: {}, level: {} }}", self.message, self.level)
-    }
-    // fn validate(&self) -> ModelValidationResult<()> {
-    //     let mut result = ModelValidationResult::new();
-    //     if self.message.is_empty() {
-    //         result.add_error("message", "Message is required.");
-    //     }
-    //     if self.level.is_empty() {
-    //         result.add_error("level", "Level is required.");
-    //     }
-    //     result
-    // }
-}
+// impl IModel for LogAddInputModel {
+//     fn to_string(&self) -> String {
+//         format!("LogAddInputModel {{ message: {}, level: {} }}", self.message, self.level)
+//     }
+//     // fn validate(&self) -> ModelValidationResult<()> {
+//     //     let mut result = ModelValidationResult::new();
+//     //     if self.message.is_empty() {
+//     //         result.add_error("message", "Message is required.");
+//     //     }
+//     //     if self.level.is_empty() {
+//     //         result.add_error("level", "Level is required.");
+//     //     }
+//     //     result
+//     // }
+// }
 
 pub struct LogAddInputModelBinder {
 
@@ -172,43 +155,18 @@ impl IModelBinder for LogAddInputModelBinder {
     }
 }
 
+
+#[derive(Clone, IHazAttributes, IModel)]
+#[reflect_attributes]
+#[reflect_properties]
 pub struct LogAddViewModel {
     pub supports_read: bool,
     pub input: LogAddInputModel,
 }
 
+#[reflect_methods]
 impl LogAddViewModel {
     pub fn new(supports_read: bool, input: Rc<LogAddInputModel>) -> Self {
         Self { supports_read: supports_read, input: input.as_ref().clone() }
-    }
-}
-
-impl IModel for LogAddViewModel {
-    fn get_properties(&self) -> HashMap<String, Box<dyn Any>> {
-        todo!()
-    }
-
-    fn get_property(&self, name: &str) -> Option<Box<dyn Any>> {
-        todo!()
-    }
-
-    fn get_attributes(&self) -> Vec<Box<dyn Any>> {
-        todo!()
-    }
-
-    fn get_attribute(&self, typeinfo: &TypeInfo) -> Option<Box<dyn Any>> {
-        todo!()
-    }
-
-    fn get_type_info(&self) -> Box<TypeInfo> {
-        todo!()
-    }
-
-    fn get_underlying_value(&self) -> &dyn Any {
-        todo!()
-    }
-
-    fn to_string(&self) -> String {
-        todo!()
     }
 }

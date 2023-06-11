@@ -1,5 +1,4 @@
 use std::rc::Rc;
-use std::borrow::Cow;
 
 use proc_macro::Ident;
 

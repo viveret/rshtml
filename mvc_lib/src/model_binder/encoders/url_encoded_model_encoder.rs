@@ -1,6 +1,6 @@
 use std::{rc::Rc, any::Any};
 
-use crate::contexts::response_context::{ResponseContext, IResponseContext};
+use crate::contexts::response_context::IResponseContext;
 use crate::core::type_info::TypeInfo;
 use crate::model_binder::imodel::AnyIModel;
 use crate::model_binder::imodel_binder::IModelBinder;
@@ -42,7 +42,7 @@ impl IViewModelEncoder for FormUrlEncodedEncoder {
         content_type.starts_with("application/x-www-form-urlencoded") // Content-Type
     }
 
-    fn encode_model(self: &Self, model: Box<dyn Any>, response_context: &dyn IResponseContext) -> ModelValidationResult<AnyIModel> {
+    fn encode_model(self: &Self, _: Box<dyn Any>, _: &dyn IResponseContext) -> ModelValidationResult<AnyIModel> {
         panic!("not implemented");
     }
 }

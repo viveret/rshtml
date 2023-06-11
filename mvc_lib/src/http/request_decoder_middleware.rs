@@ -3,11 +3,9 @@ use std::cell::RefCell;
 use std::error::Error;
 use std::rc::Rc;
 
-use flate2::bufread::GzDecoder;
-use http::request;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::{ResponseContext, IResponseContext};
+use crate::contexts::response_context::IResponseContext;
 use crate::core::itcp_stream_wrapper::ITcpStreamWrapper;
 use crate::core::type_info::TypeInfo;
 use crate::services::request_middleware_service::{IRequestMiddlewareService, MiddlewareResult};
@@ -26,7 +24,7 @@ pub struct RequestDecoderMiddleware {
 }
 
 impl RequestDecoderMiddleware {
-    pub fn new(body_content_decoder_service: Rc<dyn IHttpBodyFormatService>) -> Self {
+    pub fn new(_body_content_decoder_service: Rc<dyn IHttpBodyFormatService>) -> Self {
         Self {
             next: RefCell::new(None),
         }
@@ -69,7 +67,7 @@ impl IRequestMiddlewareService for RequestDecoderMiddleware {
 }
 
 pub struct GzipBodyStream {
-    inner_stream: Rc<dyn ITcpStreamWrapper>
+    _inner_stream: Rc<dyn ITcpStreamWrapper>
 }
 
 impl GzipBodyStream {
@@ -80,13 +78,13 @@ impl GzipBodyStream {
         // d.read_to_string(&mut s).unwrap();
         // println!("{}", s);
         Self {
-            inner_stream: inner_stream,
+            _inner_stream: inner_stream,
         }
     }
 }
 
 impl ITcpStreamWrapper for GzipBodyStream {
-    fn shutdown(&self, how: std::net::Shutdown) -> std::io::Result<()> {
+    fn shutdown(&self, _how: std::net::Shutdown) -> std::io::Result<()> {
         todo!()
     }
 
@@ -94,7 +92,7 @@ impl ITcpStreamWrapper for GzipBodyStream {
         todo!()
     }
 
-    fn read(&self, b: &mut [u8]) -> std::io::Result<usize> {
+    fn read(&self, _b: &mut [u8]) -> std::io::Result<usize> {
         todo!()
     }
 
@@ -102,11 +100,11 @@ impl ITcpStreamWrapper for GzipBodyStream {
         todo!()
     }
 
-    fn write(&self, b: &[u8]) -> std::io::Result<usize> {
+    fn write(&self, _b: &[u8]) -> std::io::Result<usize> {
         todo!()
     }
 
-    fn write_line(&self, b: &String) -> std::io::Result<usize> {
+    fn write_line(&self, _b: &String) -> std::io::Result<usize> {
         todo!()
     }
 
@@ -133,11 +131,11 @@ impl IHttpBodyStreamFormat for GzipBodyStreamFormat {
         content_type.mime_type == "application/gzip" || content_type.mime_type == "gzip"
     }
 
-    fn decode(&self, stream: Rc<dyn ITcpStreamWrapper>, content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
+    fn decode(&self, stream: Rc<dyn ITcpStreamWrapper>, _content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
         Rc::new(GzipBodyStream::new(stream))
     }
 
-    fn encode(self: &Self, stream: Rc<dyn ITcpStreamWrapper>, content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
+    fn encode(self: &Self, stream: Rc<dyn ITcpStreamWrapper>, _content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
         Rc::new(GzipBodyStream::new(stream))
     }
 

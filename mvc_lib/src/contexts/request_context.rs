@@ -1,5 +1,4 @@
 
-use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -7,14 +6,12 @@ use std::str::FromStr;
 use regex::Regex;
 
 use http::{ HeaderName, HeaderValue, HeaderMap, Method };
-use syn::token::Ref;
 
 use crate::controller_actions::controller_action::IControllerAction;
 
 use crate::core::itcp_stream_wrapper::ITcpStreamWrapper;
 use crate::core::query_string::QueryString;
 
-use crate::core::type_info::TypeInfo;
 use crate::http::http_body_content::ContentType;
 use crate::http::http_body_content::IBodyContent;
 use crate::http::http_body_content::StreamBodyContent;
@@ -55,7 +52,7 @@ pub struct RequestContext<'a> {
     // the query string of the request
     query: QueryString,
     // the query string of the request as a string
-    query_string: Box<String>,
+    _query_string: Box<String>,
     // the headers of the request
     headers: HeaderMap,
     // decoders used to decode the request body
@@ -111,7 +108,7 @@ impl <'a> RequestContext<'a> {
             port: port,
             path: path,
             query: QueryString::parse(query_string.as_ref()),
-            query_string: query_string,
+            _query_string: query_string,
             headers: request_headers,
             body_content: RefCell::new(None),
             body_stream: RefCell::new(None),
@@ -357,7 +354,10 @@ impl<'a> IRequestContext for RequestContext<'a> {
     }
 
     fn get_model_validation_result(self: &Self) -> Option<ModelValidationResult<AnyIModel>> {
-        self.model_validation_result.borrow().clone()
+        match self.model_validation_result.borrow().as_ref() {
+            Some(v) => Some(v.clone()),
+            None => None,
+        }
     }
 
     fn set_model_validation_result(self: &Self, v: Option<ModelValidationResult<AnyIModel>>) {

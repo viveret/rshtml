@@ -1,9 +1,9 @@
 extern crate proc_macro;
 extern crate proc_macro2;
 
-
 pub mod action_results;
 pub mod app;
+pub mod attributes;
 pub mod auth;
 pub mod contexts;
 pub mod controller_action_features;

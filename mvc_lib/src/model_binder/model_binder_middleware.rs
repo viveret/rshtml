@@ -13,13 +13,12 @@ use crate::services::service_collection::ServiceCollection;
 use crate::services::service_collection::IServiceCollection;
 
 use super::imodelbinder_service::IModelBinderService;
-use super::model_validation_result::ModelValidationResult;
 
 
 // this struct represents a middleware that binds the model of the request.
 pub struct ModelBinderMiddleware {
     // the model binder service
-    model_binder_service: Rc<dyn IModelBinderService>,
+    _model_binder_service: Rc<dyn IModelBinderService>,
     // the next middleware in the pipeline
     next: Rc<RefCell<Option<Rc<dyn IRequestMiddlewareService>>>>,
 }
@@ -32,7 +31,7 @@ impl ModelBinderMiddleware {
         model_binder_service: Rc<dyn IModelBinderService>,
     ) -> Self {
         Self {
-            model_binder_service,
+            _model_binder_service: model_binder_service,
             next: Rc::new(RefCell::new(None)),
         }
     }

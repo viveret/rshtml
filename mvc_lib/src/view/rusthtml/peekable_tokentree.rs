@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::iter::Peekable;
 
 use proc_macro::{TokenTree, TokenStream};
 

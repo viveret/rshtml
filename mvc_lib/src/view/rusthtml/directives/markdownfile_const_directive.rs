@@ -1,7 +1,7 @@
 use std::io::Read;
-use std::{borrow::Cow, rc::Rc};
+use std::rc::Rc;
 
-use proc_macro::{Ident, TokenTree};
+use proc_macro::Ident;
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};

@@ -14,7 +14,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     
     @{
         if let Some(validation_result) = &model.validation_result {
-            let html_class = if validation_result.as_ref().has_errors { "fc-error" } else { "fc-success" };
+            let html_class = if validation_result.has_errors { "fc-error" } else { "fc-success" };
             <p class=@html_class>@validation_result.message.clone()</p>
         }
     }

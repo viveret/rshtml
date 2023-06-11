@@ -9,7 +9,7 @@ use crate::contexts::controller_context::IControllerContext;
 use crate::services::service_collection::IServiceCollection;
 
 // this trait is used to convert an IActionResult to a dyn Any
-pub trait IActionResultToAny: 'static {
+pub trait IActionResultToAny {
     // convert an IActionResult to a dyn Any
     fn as_any(&self) -> &dyn Any;
 }

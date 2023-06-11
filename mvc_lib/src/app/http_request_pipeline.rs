@@ -11,8 +11,6 @@ use crate::diagnostics::logging::logging_service::ILoggingService;
 use crate::diagnostics::logging::logging_service::LoggingService;
 use crate::errors::RequestError;
 
-use crate::contexts::connection_context::IConnectionContext;
-
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;

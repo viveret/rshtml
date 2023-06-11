@@ -11,7 +11,7 @@ use crate::controllers::icontroller::IController;
 use crate::model_binder::imodel::{IModel, AnyIModel};
 use crate::model_binder::model_validation_result::ModelValidationResult;
 use crate::services::service_collection::IServiceCollection;
-use crate::contexts::controller_context::{ControllerContext, IControllerContext};
+use crate::contexts::controller_context::IControllerContext;
 
 use super::controller_action::IControllerAction;
 use super::closure::ControllerActionClosure;
@@ -47,7 +47,7 @@ pub struct ControllerActionBuilder {
     // the closure function for the controller action (if the route type is a closure with a model)
     closure_fn_validated: RefCell<Option<Rc<dyn Fn(ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>>,
     // the closure function for the controller action (if the route type is a closure without a model)
-    member_fn_validated_typed: RefCell<Option<Rc<dyn Fn(ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>>,
+    _member_fn_validated_typed: RefCell<Option<Rc<dyn Fn(ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>>,
     // the closure function for the controller action (if the route type is a closure without a model)
     closure_fn_novalidation: RefCell<Option<&'static dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     // member_fn: RefCell<Option<Rc<fn(self_arg: T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
@@ -68,7 +68,7 @@ impl ControllerActionBuilder {
             action_name: RefCell::new(None),
             should_validate_model: RefCell::new(None),
             closure_fn_validated: RefCell::new(None),
-            member_fn_validated_typed: RefCell::new(None),
+            _member_fn_validated_typed: RefCell::new(None),
             closure_fn_novalidation: RefCell::new(None),
             member_fn_action: RefCell::new(None),
         }

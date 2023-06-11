@@ -1,14 +1,12 @@
 use std::error::Error;
 use std::rc::Rc;
 
-use as_any::Downcast;
-
 use super::imodel::IModel;
 
 
 // this enum represents the result of a model validation operation.
 #[derive(Clone, Debug)]
-pub enum ModelValidationResult<T: 'static + IModel> {
+pub enum ModelValidationResult<T: IModel> {
     // this value indicates that the model was successfully validated.
     OkNone,
     // this value indicates that the model was successfully validated and the validated model is returned.
@@ -21,7 +19,7 @@ pub enum ModelValidationResult<T: 'static + IModel> {
     OtherError(Rc<dyn Error>),
 }
 
-impl <T> std::fmt::Display for ModelValidationResult<T> where T: 'static + IModel {
+impl <T> std::fmt::Display for ModelValidationResult<T> where T: IModel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ModelValidationResult::OkNone => write!(f, "OkNone"),
@@ -33,7 +31,7 @@ impl <T> std::fmt::Display for ModelValidationResult<T> where T: 'static + IMode
     }
 }
 
-impl <T> ModelValidationResult<T> where T: 'static + IModel {
+impl <T> ModelValidationResult<T> where T: IModel {
     // get whether or not the model was successfully validated.
     pub fn is_ok(self: &Self) -> bool {
         match self {
@@ -76,7 +74,7 @@ impl <T> ModelValidationResult<T> where T: 'static + IModel {
     }
 }
 
-fn downcast_inner_value<T, U: 'static + IModel + Clone>(model: T) -> Result<U, ModelValidationResult<U>> where T: 'static + IModel {
+fn downcast_inner_value<T, U: 'static + IModel + Clone>(model: T) -> Result<U, ModelValidationResult<U>> where T: IModel {
     match model.get_underlying_value().downcast_ref::<U>() {
         Some(downcasted_model) => Ok(downcasted_model.clone()),
         None => Err(ModelValidationResult::OtherError(Rc::new(std::io::Error::new(std::io::ErrorKind::Other, "Could not downcast model.")))),

@@ -3,7 +3,6 @@ use std::rc::Rc;
 
 
 use crate::http::http_body_content::ContentType;
-use crate::http::http_body_content::IBodyContent;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;

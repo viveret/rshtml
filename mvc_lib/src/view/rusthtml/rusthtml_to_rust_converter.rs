@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
+use proc_macro::{Delimiter, Group, Literal, Span, TokenStream, TokenTree};
 use quote::quote;
 
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct };
@@ -133,13 +133,13 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 self.convert_rusthtmltagstart_to_tokentree(tag, tag_tokens.as_ref(), output, it)?,
             RustHtmlToken::HtmlTagEnd(tag, tag_tokens) =>
                 self.convert_rusthtmltagend_to_tokentree(tag, tag_tokens.as_ref(), output, it)?,
-            RustHtmlToken::HtmlTagCloseStartChildrenPunct(c, punct) =>
+            RustHtmlToken::HtmlTagCloseStartChildrenPunct(_c, _punct) =>
                 self.convert_rusthtmltagclosestartchildren_to_tokentree(output, it)?,
-            RustHtmlToken::HtmlTagCloseSelfContainedPunct(c, punct) =>
+            RustHtmlToken::HtmlTagCloseSelfContainedPunct(_c, _punct) =>
                 self.convert_rusthtmltagclosesselfcontained_to_tokentree(output, it)?,
-            RustHtmlToken::HtmlTagCloseVoidPunct(c, punct) =>
+            RustHtmlToken::HtmlTagCloseVoidPunct(_c, _punct) =>
                 self.convert_rusthtmltagclosevoid_to_tokentree(output, it)?,
-            RustHtmlToken::HtmlTagAttributeEquals(c, _punct) =>
+            RustHtmlToken::HtmlTagAttributeEquals(_c, _punct) =>
                 self.convert_rusthtmltagattributeequals_to_tokentree(output, it)?,
             RustHtmlToken::HtmlTagAttributeName(tag, tag_tokens) =>
                 self.convert_rusthtmltagattributename_to_tokentree(tag, tag_tokens, output, it)?,

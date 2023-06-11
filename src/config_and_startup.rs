@@ -16,7 +16,7 @@ use mvc_lib::middleware::authorize_controller_action_middleware::AuthorizeContro
 use mvc_lib::services::service_collection::{IServiceCollection, ServiceCollection};
 use mvc_lib::services::service_scope::ServiceScope;
 use mvc_lib::services::service_descriptor::ServiceDescriptor;
-use mvc_lib::services::default_services::{*, self};
+use mvc_lib::services::default_services::{*};
 use mvc_lib::services::authorization_service::AuthorizationService;
 
 use mvc_lib::options::http_options::{IHttpOptions, HttpOptions};
@@ -35,6 +35,8 @@ use crate::views::dev::log_clear::view_dev_log_clear;
 use crate::views::dev::perf_log::view_dev_perf_log;
 use crate::views::dev::views::view_dev_views;
 use crate::views::dev::view_details::view_dev_view_details;
+use crate::views::dev::controllers::view_dev_controllers;
+use crate::views::dev::controller_details::view_dev_controller_details;
 use crate::views::dev::routes::view_dev_routes;
 use crate::views::dev::route_details::view_dev_route_details;
 use crate::views::dev::sysinfo::view_dev_sysinfo;
@@ -63,6 +65,8 @@ pub fn add_views(services: &mut ServiceCollection) {
             view_dev_perf_log::new_service(),
             view_dev_views::new_service(),
             view_dev_view_details::new_service(),
+            view_dev_controllers::new_service(),
+            view_dev_controller_details::new_service(),
             view_dev_routes::new_service(),
             view_dev_route_details::new_service(),
             view_dev_sysinfo::new_service(),

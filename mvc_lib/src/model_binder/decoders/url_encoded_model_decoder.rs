@@ -2,9 +2,8 @@ use std::{rc::Rc, any::Any};
 
 use crate::core::itcp_stream_wrapper::ITcpStreamWrapper;
 use crate::core::type_info::TypeInfo;
-use crate::http::http_body_content::{IBodyContent, ContentType};
+use crate::http::http_body_content::ContentType;
 use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
-use crate::model_binder::url_encoded_model::UrlEncodedModel;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
@@ -80,7 +79,7 @@ impl IHttpBodyStreamFormat for UrlEncodedFormatResolver {
         content_type.mime_type.starts_with("application/x-www-form-urlencoded")
     }
 
-    fn decode(self: &Self, body: Rc<dyn ITcpStreamWrapper>, content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
+    fn decode(self: &Self, body: Rc<dyn ITcpStreamWrapper>, _content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
         Rc::new(UrlEncodedStream::new(body))
     }
 
@@ -88,7 +87,7 @@ impl IHttpBodyStreamFormat for UrlEncodedFormatResolver {
         TypeInfo::rc_of::<UrlEncodedStream>()
     }
 
-    fn encode(self: &Self, stream: Rc<dyn ITcpStreamWrapper>, content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
+    fn encode(self: &Self, stream: Rc<dyn ITcpStreamWrapper>, _content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
         Rc::new(UrlEncodedStream::new(stream))
     }
 }

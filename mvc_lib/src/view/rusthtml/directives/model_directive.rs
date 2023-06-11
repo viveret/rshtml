@@ -1,6 +1,6 @@
-use std::{borrow::Cow, rc::Rc};
+use std::rc::Rc;
 
-use proc_macro::{Ident, TokenTree};
+use proc_macro::Ident;
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
@@ -24,7 +24,7 @@ impl IRustHtmlDirective for ModelDirective {
         name == "model"
     }
 
-    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // expecting type identifier
         if let Ok(type_ident) = parser.parse_type_identifier(it) {
             parser.get_context().set_model_type(Some(type_ident));

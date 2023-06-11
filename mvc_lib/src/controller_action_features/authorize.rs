@@ -153,7 +153,7 @@ impl IControllerActionFeature for AuthorizeControllerActionFeature {
         format!("{} (roles: {:?}, policy: {:?})", self.get_name(), self.roles, self.policy)
     }
 
-    fn invoke(self: &Self, request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn invoke(self: &Self, _request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         Ok(MiddlewareResult::OkContinue)
     }
 

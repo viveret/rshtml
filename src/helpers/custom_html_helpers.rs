@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use proc_macro2::TokenStream;
-
 use mvc_lib::model_binder::imodel::IModel;
 use mvc_lib::services::service_collection::IServiceCollection;
 use mvc_lib::contexts::view_context::IViewContext;

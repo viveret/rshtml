@@ -1,5 +1,4 @@
 use std::rc::Rc;
-use std::borrow::Cow;
 
 use proc_macro::{Ident, TokenTree};
 
@@ -26,7 +25,7 @@ impl IRustHtmlDirective for ElseDirective {
         name == "else"
     }
 
-    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, _identifier: &Ident, _parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // output directive identifier and opening bracket to output.
         
         // check if the next token is a '{'

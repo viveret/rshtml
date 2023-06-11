@@ -6,7 +6,7 @@ use crate::services::service_descriptor::ServiceDescriptor;
 
 use super::ihttp_body_format_resolver::IHttpBodyFormatResolver;
 use super::ihttp_body_stream_format::IHttpBodyStreamFormat;
-use super::request_decoder_middleware::{GzipBodyStream, GzipBodyStreamFormat};
+use super::request_decoder_middleware::GzipBodyStreamFormat;
 use super::http_body_content::ContentType;
 
 

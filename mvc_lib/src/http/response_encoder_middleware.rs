@@ -3,15 +3,13 @@ use std::error::Error;
 use std::{rc::Rc, any::Any};
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::{ResponseContext, IResponseContext};
+use crate::contexts::response_context::IResponseContext;
 use crate::core::type_info::TypeInfo;
-use crate::auth::iauthroles_dbset_provider::IAuthRolesDbSetProvider;
 use crate::services::request_middleware_service::{IRequestMiddlewareService, MiddlewareResult};
 use crate::services::service_scope::ServiceScope;
 use crate::services::service_descriptor::ServiceDescriptor;
-use crate::services::service_collection::{IServiceCollection, ServiceCollection, ServiceCollectionExtensions};
+use crate::services::service_collection::{IServiceCollection, ServiceCollection};
 
-use super::ihttp_body_stream_format::IHttpBodyStreamFormat;
 
 // this middleware is used to encode the response body.
 pub struct ResponseEncoderMiddleware {
@@ -27,7 +25,7 @@ impl ResponseEncoderMiddleware {
     }
 
     // this is the function that will be called by the service collection to create a new instance of the middleware
-    pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new()) as Rc<dyn IRequestMiddlewareService>)]
     }
 
@@ -45,7 +43,7 @@ impl IRequestMiddlewareService for ResponseEncoderMiddleware {
     fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
         // get accept header from request
         let accept_header = request_context.get_headers().get("Accept").unwrap();
-        let accept_str = accept_header.to_str().unwrap();
+        let _accept_str = accept_header.to_str().unwrap();
         
         // get encoder from service collection
         // let encoder = ServiceCollectionExtensions::get_required_single::<dyn IHttpBodyStreamFormat>(services).get(accept_str);

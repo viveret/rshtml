@@ -1,6 +1,4 @@
 use std::any::Any;
-use std::rc::Rc;
-
 
 use crate::auth::iauth_role::IAuthRole;
 
@@ -104,7 +102,7 @@ impl IDbSetAny for AuthRoleJsonFileDbSet {
         self.json_dbset.remove_range_any(items)
     }
 
-    fn as_any(self: &Self, type_info: TypeInfo) -> &dyn Any {
+    fn as_any(self: &Self, _type_info: TypeInfo) -> &dyn Any {
         self
     }
 

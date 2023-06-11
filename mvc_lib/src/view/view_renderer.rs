@@ -11,6 +11,7 @@ use crate::contexts::view_context::ViewContext;
 use crate::contexts::response_context::IResponseContext;
 
 use crate::core::type_info::TypeInfo;
+use crate::model_binder::imodel::IModel;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
@@ -34,7 +35,7 @@ pub trait IViewRenderer {
     fn render_with_layout_if_specified(
         self: &Self,
         view_path: &String,
-        view_model: Rc<Option<Box<dyn Any>>>,
+        view_model: Option<Rc<dyn IModel>>,
         controller_ctx: &dyn IControllerContext,
         response_context: &dyn IResponseContext,
         services: &dyn IServiceCollection
@@ -91,13 +92,13 @@ impl IViewRenderer for ViewRenderer {
     fn render_with_layout_if_specified(
         self: &Self,
         view_path: &String,
-        view_model: Rc<Option<Box<dyn Any>>>,
+        view_model: Option<Rc<dyn IModel>>,
         controller_ctx: &dyn IControllerContext,
         response_context: &dyn IResponseContext,
         services: &dyn IServiceCollection
     ) -> Result<HtmlString, RustHtmlError> {
         let view_renderer_service_instance = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
-        let mut body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model.clone(), view_renderer_service_instance.clone(), controller_ctx, response_context);
+        let mut body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model, view_renderer_service_instance.clone(), controller_ctx, response_context);
         match body_view_ctx.get_view_as_ref().render(&body_view_ctx, services) {
             Ok(body_html) => {
 

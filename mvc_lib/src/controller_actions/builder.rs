@@ -94,8 +94,8 @@ impl ControllerActionBuilder {
     // set the function for the controller action as a member function.
     pub fn set_member_fn<T:'static + IController>(
         self: &Self, 
-        member_fn_validated: Option<fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
-        member_fn_not_validated: Option<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
+        member_fn_validated: Option<Box<fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
+        member_fn_not_validated: Option<Box<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     ) -> &Self {
         self.route_type.replace(Some(RouteType::MemberFn));
         self.member_fn_action.replace(

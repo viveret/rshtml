@@ -33,9 +33,9 @@ pub struct ControllerActionMemberFn<T: 'static + IController> {
     // the first argument is the controller instance, the second argument is the controller context, and the third argument is the service collection.
     // the return value is an optional action result.
     // the function pointer is wrapped in an Rc so that it can be cloned.
-    pub member_fn_validated: Option<fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
+    pub member_fn_validated: Option<Box<fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     pub member_fn_validated_typed: Option<Rc<dyn Fn(&T, ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
-    pub member_fn_not_validated: Option<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
+    pub member_fn_not_validated: Option<Box<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     // the name of the action (the name of the member function).
     pub name: Cow<'static, str>,
     // the name of the controller.
@@ -72,8 +72,8 @@ impl<T: IController> ControllerActionMemberFn<T> {
         controller_name: Cow<'static, str>,
         area_name: String,
         should_validate_model: bool,
-        member_fn_validated: Option<fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
-        member_fn_not_validated: Option<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
+        member_fn_validated: Option<Box<fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
+        member_fn_not_validated: Option<Box<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     ) -> Self {
         Self {
             name: name,
@@ -105,7 +105,7 @@ impl<T: IController> ControllerActionMemberFn<T> {
         name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         area_name: String,
-        member_fn: fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn: Box<fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
         Self::new(
             http_methods_allowed,
@@ -135,7 +135,7 @@ impl<T: IController> ControllerActionMemberFn<T> {
         name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         area_name: String,
-        member_fn: fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn: Box<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
         Self::new(
             http_methods_allowed,
@@ -197,7 +197,7 @@ impl<T: IController> ControllerActionMemberFn<T> {
         name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         should_validate_model: bool,
-        member_fn: fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
+        member_fn: Box<fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
         Self::new(http_methods_allowed, features, route_pattern, name, controller_name, String::new(), should_validate_model, Some(member_fn), None)
         //     name: name,
@@ -219,7 +219,7 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
         let controller = base_controller.as_ref().as_any().downcast_ref::<T>().expect("Could not downcast base_controller to T where T: IController.");
 
         let result_option = if self.should_validate_model {
-            if let Some(member_fn_validated) = self.member_fn_validated {
+            if let Some(member_fn_validated) = &self.member_fn_validated {
                 if let Some(model) = controller_context.get_request_context().get_model_validation_result() {
                     (member_fn_validated)(controller, model, controller_context, services)
                 } else {
@@ -235,7 +235,7 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
                 Err(format!("Could not find member_fn_validated for action {}", self.name).into())
             }
         } else {
-            (self.member_fn_not_validated.unwrap())(controller, controller_context, services)
+            (self.member_fn_not_validated.as_ref().unwrap())(controller, controller_context, services)
         }?;
 
         if let Some(result) = result_option {

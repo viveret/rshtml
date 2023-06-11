@@ -153,14 +153,14 @@ impl IController for AuthRolesController {
             .methods(&[Method::GET])
             .set_name("index")
             .set_controller_name(controller_name.clone().into())
-            .set_member_fn(None, Some(Self::get_index));
+            .set_member_fn(None, Some(Box::new(Self::get_index)));
 
 
         actions_builder.add("/dev/auth-roles/add")
             .methods(&[Method::GET])
             .set_name("add")
             .set_controller_name(controller_name.clone().into())
-            .set_member_fn(None, Some(Self::get_add));
+            .set_member_fn(None, Some(Box::new(Self::get_add)));
 
         actions_builder.add("/dev/auth-roles/add")
                 .methods(&[Method::POST])

@@ -4,6 +4,7 @@ extern crate proc_macro2;
 extern crate mvc_lib;
 
 use proc_macro::TokenStream;
+use proc_macro2::Ident;
 use quote::quote;
 
 use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
@@ -132,63 +133,14 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
 }
 
 
-#[proc_macro]
-pub fn rc_controller_action(input: TokenStream) -> TokenStream {
+fn rc_controller_action_impl(new_fn: &Ident, input: TokenStream) -> TokenStream {
     let action_name = match proc_macro2::TokenStream::from(input).into_iter().next().unwrap() {
         proc_macro2::TokenTree::Ident(ident) => ident.clone(),
         _ => panic!("expected ident"),
     };
     quote! {
         Rc::new(
-            ControllerActionMemberFn::new_not_validated(
-                vec![],
-                None,
-                action_name_to_path(
-                    IControllerExtensions::get_name_ref(self),
-                    nameof_member_fn!(Self::#action_name)
-                ),
-                nameof_member_fn!(Self::#action_name).into(),
-                IControllerExtensions::get_name(self).into(),
-                self.get_route_area(),
-                Self::#action_name
-            )
-        )
-    }.into()
-}
-
-#[proc_macro]
-pub fn rc_controller_action_validate(input: TokenStream) -> TokenStream {
-    let action_name = match proc_macro2::TokenStream::from(input).into_iter().next().unwrap() {
-        proc_macro2::TokenTree::Ident(ident) => ident.clone(),
-        _ => panic!("expected ident"),
-    };
-    quote! {
-        Rc::new(
-            ControllerActionMemberFn::new_validated(
-                vec![],
-                None,
-                action_name_to_path(
-                    IControllerExtensions::get_name_ref(self),
-                    nameof_member_fn!(Self::#action_name)
-                ),
-                nameof_member_fn!(Self::#action_name).into(),
-                IControllerExtensions::get_name(self).into(),
-                self.get_route_area(),
-                Self::#action_name
-            )
-        )
-    }.into()
-}
-
-#[proc_macro]
-pub fn rc_controller_action_validate_typed(input: TokenStream) -> TokenStream {
-    let action_name = match proc_macro2::TokenStream::from(input).into_iter().next().unwrap() {
-        proc_macro2::TokenTree::Ident(ident) => ident.clone(),
-        _ => panic!("expected ident"),
-    };
-    quote! {
-        Rc::new(
-            ControllerActionMemberFn::new_validated_typed(
+            ControllerActionMemberFn::#new_fn(
                 vec![],
                 None,
                 action_name_to_path(
@@ -202,4 +154,19 @@ pub fn rc_controller_action_validate_typed(input: TokenStream) -> TokenStream {
             )
         )
     }.into()
+}
+
+#[proc_macro]
+pub fn rc_controller_action(input: TokenStream) -> TokenStream {
+    rc_controller_action_impl(&Ident::new("new_not_validated", proc_macro2::Span::call_site()), input)
+}
+
+#[proc_macro]
+pub fn rc_controller_action_validate(input: TokenStream) -> TokenStream {
+    rc_controller_action_impl(&Ident::new("new_validated", proc_macro2::Span::call_site()), input)
+}
+
+#[proc_macro]
+pub fn rc_controller_action_validate_typed(input: TokenStream) -> TokenStream {
+    rc_controller_action_impl(&Ident::new("new_validated_typed", proc_macro2::Span::call_site()), input)
 }

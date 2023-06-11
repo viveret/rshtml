@@ -256,9 +256,9 @@ impl IController for DevController {
             rc_controller_action!(log_clear),
             rc_controller_action!(perf_log),
             
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/controllers/..".into(), nameof_member_fn!(Self::controller_details).into(), controller_name.clone().into(), self.get_route_area(), Self::controller_details)),
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/routes/..".into(), nameof_member_fn!(Self::route_details).into(), controller_name.clone().into(), self.get_route_area(), Self::route_details)),
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/views/..".into(), nameof_member_fn!(Self::view_details).into(), controller_name.clone().into(), self.get_route_area(), Self::view_details)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/controllers/..".into(), nameof_member_fn!(Self::controller_details).into(), controller_name.clone().into(), self.get_route_area(), Box::new(Self::controller_details))),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/routes/..".into(), nameof_member_fn!(Self::route_details).into(), controller_name.clone().into(), self.get_route_area(), Box::new(Self::route_details))),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/views/..".into(), nameof_member_fn!(Self::view_details).into(), controller_name.clone().into(), self.get_route_area(), Box::new(Self::view_details))),
         ]
     }
 

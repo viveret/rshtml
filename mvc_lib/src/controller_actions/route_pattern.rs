@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, borrow::Cow};
 
 // this struct represents a route pattern for a controller action.
 // a route pattern is a string that looks like a url path, but with capture groups.
@@ -11,7 +11,7 @@ use std::collections::HashMap;
 // the captures map would have a key of "id" and a value of "123".
 pub struct ControllerActionRoutePattern {
     // the raw string that was parsed to create this route pattern
-    pub raw: String,
+    pub raw: Cow<'static, str>,
     // the parts of the route pattern, split by slashes
     pub parts: Vec<String>,
     // the capture groups of the route pattern, with the name of the capture group as the key and the type of the capture group as the value
@@ -19,13 +19,13 @@ pub struct ControllerActionRoutePattern {
 }
 
 impl ControllerActionRoutePattern {
-    pub fn to_string(self: &Self) -> String {
+    pub fn to_string(self: &Self) -> Cow<'static, str> {
         self.raw.clone()
     }
 
     // parse a string into a route pattern.
     // s: the string to parse
-    pub fn parse(s: &String) -> Self {
+    pub fn parse(s: Cow<'static, str>) -> Self {
         let mut parts = Vec::new();
         let mut captures = HashMap::new();
         for route_dir in s.split('/') {
@@ -110,7 +110,7 @@ impl ControllerActionRoutePattern {
         }
         // println!("Parts: {:?}", parts);
         // println!("captures: {:?}", captures);
-        Self { raw: s.clone(), parts: parts, captures: captures }
+        Self { raw: s, parts: parts, captures: captures }
     }
 
     // generate a url from the route pattern and the route values.

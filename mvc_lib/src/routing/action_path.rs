@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, borrow::Cow};
 
 pub struct ActionPath(pub String);
 
@@ -12,6 +12,10 @@ impl ActionPath {
 
     pub fn as_str(self: &Self) -> &str {
         self.0.as_str()
+    }
+
+    pub fn to_cow_str(self: &Self) -> Cow<'static, str> {
+        Cow::Owned(self.0.clone())
     }
 
     pub fn ends_with(self: &Self, other: &str) -> bool {

@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -14,7 +15,7 @@ use crate::services::service_collection::IServiceCollection;
 
 // this is a struct that holds the file path and the content type
 pub struct FileResult {
-    pub path: String,
+    pub path: Cow<'static, str>,
     pub content_type: String,
 }
 
@@ -24,8 +25,8 @@ impl FileResult {
     // path: String - the path to the file
     // content_type: Option<String> - the content type of the file
     // returns: FileResult - the FileResult
-    pub fn new(path: String, content_type: Option<String>) -> Self {
-        Self { path: path.clone(), content_type: content_type.unwrap_or(Self::extension_to_content_type(&path).to_string()) }
+    pub fn new(path: Cow<'static, str>, content_type: Option<String>) -> Self {
+        Self { path: path.clone(), content_type: content_type.unwrap_or(Self::extension_to_content_type(path).to_string()) }
     }
 
     // this function takes a path and returns the content type based on the extension
@@ -34,8 +35,8 @@ impl FileResult {
     // this function is also used by the static file provider to set the content type of the response.
     // path: &String - the path to the file
     // returns: mime::Mime - the content type
-    pub fn extension_to_content_type(path: &String) -> mime::Mime {
-        match Path::new(&path)
+    pub fn extension_to_content_type(path: Cow<'static, str>) -> mime::Mime {
+        match Path::new(path.as_ref())
             .extension()
             .and_then(std::ffi::OsStr::to_str)
             .expect("Could not get extension") {
@@ -59,7 +60,7 @@ impl IActionResult for FileResult {
     }
 
     fn configure_response(self: &Self, _controller_ctx: &dyn IControllerContext, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) {
-        match File::open(self.path.clone()) {
+        match File::open(self.path.as_ref()) {
             Ok(f) => {
                 response_context.set_status_code(StatusCode::OK);
                 response_context.add_header_str("Content-Type", &self.content_type);

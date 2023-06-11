@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::path::Path;
 use std::rc::Rc;
@@ -13,7 +14,7 @@ pub trait IFileProviderControllerOptions {
 
     // get the mapped paths with the alias as the key and the path as the value.
     // recursive: whether to get the paths recursively.
-    fn get_mapped_paths(self: &Self, recursive: bool) -> HashMap<String, String>;
+    fn get_mapped_paths(self: &Self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>>;
 }
 
 // this struct implements IFileProviderControllerOptions.
@@ -90,7 +91,7 @@ impl IFileProviderControllerOptions for FileProviderControllerOptions {
         return None;
     }
 
-    fn get_mapped_paths(self: &Self, recursive: bool) -> HashMap<String, String> {
+    fn get_mapped_paths(self: &Self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>> {
         let all_paths = self.serving_directories
             .iter()
             .map(|path| {
@@ -104,13 +105,14 @@ impl IFileProviderControllerOptions for FileProviderControllerOptions {
 
                 glob(&glob_path)
                     .expect("Failed to read glob pattern")
-                    .map(|x| x.unwrap().to_str().unwrap().to_string())
-                    .map(|x| (x[parent_dir.len() - 1..].to_string(), x))
-                    .collect::<Vec<(String, String)>>()
+                    .map(|x| x.unwrap())
+                    .map(|x| x.to_str().unwrap().to_string())
+                    .map(|x| (Cow::Owned(x[parent_dir.len() - 1..].to_string()), Cow::Owned(x)))
+                    .collect::<Vec<(Cow<'static, str>, Cow<'static, str>)>>()
             })
             .flatten()
             .chain(
-                self.serving_files.entries().map(|x| (x.0.to_string(), x.1.to_string()))
+                self.serving_files.entries().map(|x| (Cow::Borrowed(*x.0), Cow::Borrowed(*x.1)))
             )
             .collect();
 

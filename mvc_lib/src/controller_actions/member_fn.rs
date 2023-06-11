@@ -37,7 +37,7 @@ pub struct ControllerActionMemberFn<T: 'static + IController> {
     pub member_fn_validated_typed: Option<Rc<dyn Fn(&T, ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>>,
     pub member_fn_not_validated: Option<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
     // the name of the action (the name of the member function).
-    pub name: String,
+    pub name: Cow<'static, str>,
     // the name of the controller.
     pub controller_name: Cow<'static, str>,
     // the name of the area.
@@ -67,8 +67,8 @@ impl<T: IController> ControllerActionMemberFn<T> {
     pub fn new(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
-        route_pattern: String,
-        name: String,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         area_name: String,
         should_validate_model: bool,
@@ -79,7 +79,7 @@ impl<T: IController> ControllerActionMemberFn<T> {
             name: name,
             controller_name: controller_name,
             area_name: area_name,
-            route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
+            route_pattern: Rc::new(ControllerActionRoutePattern::parse(route_pattern)),
             member_fn_validated: member_fn_validated,
             member_fn_not_validated: member_fn_not_validated,
             member_fn_validated_typed: None,
@@ -101,8 +101,8 @@ impl<T: IController> ControllerActionMemberFn<T> {
     pub fn new_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
-        route_pattern: String,
-        name: String,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         area_name: String,
         member_fn: fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
@@ -131,8 +131,8 @@ impl<T: IController> ControllerActionMemberFn<T> {
     pub fn new_not_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
-        route_pattern: String,
-        name: String,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         area_name: String,
         member_fn: fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
@@ -153,8 +153,8 @@ impl<T: IController> ControllerActionMemberFn<T> {
     pub fn new_validated_typed<TModel: 'static + IModel + Clone>(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
-        route_pattern: String,
-        name: String,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         area_name: String,
         member_fn: Box<fn(&T, ModelValidationResult<TModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
@@ -167,7 +167,7 @@ impl<T: IController> ControllerActionMemberFn<T> {
         Self {
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or_default(),
-            route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
+            route_pattern: Rc::new(ControllerActionRoutePattern::parse(route_pattern)),
             name: name,
             controller_name: controller_name,
             area_name: area_name,
@@ -193,8 +193,8 @@ impl<T: IController> ControllerActionMemberFn<T> {
     pub fn new_default_area(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
-        route_pattern: String,
-        name: String,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         should_validate_model: bool,
         member_fn: fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
@@ -263,7 +263,7 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
         }
     }
 
-    fn get_name(self: &Self) -> String {
+    fn get_name(self: &Self) -> Cow<'static, str> {
         self.name.clone()
     }
 

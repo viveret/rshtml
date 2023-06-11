@@ -96,7 +96,7 @@ impl <'a> ControllerContext<'a> {
         
         let mut controller_name = self.get_str("ControllerName");
         if controller_name.len() == 0 {
-            controller_name = IControllerExtensions::get_name(self.controller.clone());
+            controller_name = IControllerExtensions::get_name(self.controller.as_ref());
         }
         route_data.map.insert("controller".to_string(), controller_name);
 

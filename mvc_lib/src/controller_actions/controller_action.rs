@@ -28,7 +28,7 @@ pub trait IControllerAction {
     // get the path for the controller action.
     fn get_path(self: &Self) -> ActionPath;
     // get the name of the controller action (the name of the member function, the name of the static function, or the name of the closure).
-    fn get_name(self: &Self) -> String;
+    fn get_name(self: &Self) -> Cow<'static, str>;
     // get the name of the controller.
     fn get_controller_name(self: &Self) -> Cow<'static, str>;
     // get the name of the area.

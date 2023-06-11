@@ -71,12 +71,13 @@ impl IController for FileProviderController {
     }
 
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
-        self.options.as_ref()
-            .get_mapped_paths(true)
-            .iter()
+        let mapped_paths = self.options.as_ref().get_mapped_paths(true);
+
+        mapped_paths
+            .into_iter()
             .map(|x|
                 Rc::new(ControllerActionFileResult::new(
-                    x.1.clone(), x.0.clone(), String::new(), Cow::Owned(IControllerExtensions::get_name_ref(self)), self.get_route_area(),
+                    x.1, x.0, Cow::Owned(String::default()), IControllerExtensions::get_name(self).into(), self.get_route_area(),
                 )) as Rc<dyn IControllerAction>
             )
             .collect()

@@ -147,25 +147,25 @@ impl IController for AuthRolesController {
 
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         let actions_builder = ControllerActionsBuilder::new(self);
-        let controller_name = IControllerExtensions::get_name_ref(self);
+        let controller_name = IControllerExtensions::get_name(self);
         
         actions_builder.add("/dev/auth-roles")
             .methods(&[Method::GET])
             .set_name("index")
-            .set_controller_name(Cow::Owned(controller_name.clone()))
+            .set_controller_name(controller_name.clone().into())
             .set_member_fn(None, Some(Self::get_index));
 
 
         actions_builder.add("/dev/auth-roles/add")
             .methods(&[Method::GET])
             .set_name("add")
-            .set_controller_name(Cow::Owned(controller_name.clone()))
+            .set_controller_name(controller_name.clone().into())
             .set_member_fn(None, Some(Self::get_add));
 
         actions_builder.add("/dev/auth-roles/add")
                 .methods(&[Method::POST])
                 .set_name("add_post")
-                .set_controller_name(Cow::Owned(controller_name.clone()))
+                .set_controller_name(controller_name.clone().into())
                 .set_member_fn_specific_model_type(Box::new(Self::post_add));
 
         actions_builder.build()

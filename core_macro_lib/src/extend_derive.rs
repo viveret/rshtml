@@ -213,7 +213,7 @@ impl<'a> ExtendDerive<'a> {
                                     }
                                 } else {
                                     // struct_semi = Some(Punct::new(';', proc_macro2::Spacing::Alone).clone());
-                                    println!("Expected semi colon but reached end of stream.");
+                                    // println!("Expected semi colon but reached end of stream.");
                                 }
                             }
                         },
@@ -423,6 +423,13 @@ impl<'a> ExtendDerive<'a> {
                                     panic!("Expected punct or ident for property name, not {:?}.", token)
                                 }
                             },
+                            '\'' => {
+                                if property_name.is_some() {
+                                    property_type.push(token.clone());
+                                } else {
+                                    panic!("Expected punct or ident for property name, not {:?}.", token)
+                                }
+                            },
                             _ => {
                                 panic!("Expected semicolon or comma after property, not {:?}.", token);
                             }
@@ -581,6 +588,13 @@ impl<'a> ExtendDerive<'a> {
                                                 method_arg_type.push(token.clone());
                                             } else {
                                                 method_arg_colon = Some(punct.clone());
+                                            }
+                                        },
+                                        '\'' => {
+                                            if method_arg_colon.is_some() {
+                                                method_arg_type.push(token.clone());
+                                            } else {
+                                                panic!("Expected punct or ident for property name, not {:?}.", token)
                                             }
                                         },
                                         '&' => {

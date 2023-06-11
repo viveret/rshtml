@@ -88,7 +88,7 @@ impl IControllerActionsMap for ControllerActionsMap  {
 
         self.controllers
             .iter()
-            .filter(|x| x.get_type_name() == name || IControllerExtensions::get_name(x.clone().clone()) == name)
+            .filter(|x| x.get_type_name() == name || IControllerExtensions::get_name(x.as_ref()) == name)
             .take(1)
             .cloned()
             .collect::<Vec<Rc<dyn IController>>>()

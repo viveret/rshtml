@@ -57,10 +57,10 @@ mvc_macro_lib::rusthtml_view_macro! {
     <h3>@format!("Actions ({}):", actions.len())</h3>
     <ol>
     @for route in actions {
-        let link_text = route.0.as_str();
-        let link_href = url.url_action(false, Some(false), None, Some("route_details"), Some("Dev"), None, Some(&RouteValuesBuilder::build_area(route.1.as_str())));
+        let link_text = route.0;
+        let link_href = url.url_action(false, Some(false), None, Some("route_details"), Some("Dev"), None, Some(&RouteValuesBuilder::build_area(&route.1)));
         <li>
-            @html.link(&link_href, link_text, None)
+            @html.link(&link_href, &link_text, None)
         </li>
     }
     </ol>

@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -19,8 +20,8 @@ use mvc_lib::model_binder::reflected_method::ReflectedMethod;
 #[reflect_attributes]
 #[reflect_properties]
 pub struct ControllerDetailsViewModel {
-    pub name: String,
-    pub actions: Vec<(String,String)>,
+    pub name: Cow<'static, str>,
+    pub actions: Vec<(Cow<'static, str>, Cow<'static, str>)>,
     pub features: Vec<String>,
     pub attributes: Vec<String>,
     pub properties: Vec<(String,String)>,
@@ -30,8 +31,8 @@ pub struct ControllerDetailsViewModel {
 #[reflect_methods]
 impl ControllerDetailsViewModel {
     pub fn new(
-        name: String,
-        actions: Vec<(String,String)>,
+        name: Cow<'static, str>,
+        actions: Vec<(Cow<'static, str>, Cow<'static, str>)>,
         features: Vec<String>,
         attributes: Vec<String>,
         properties: Vec<(String,String)>,
@@ -68,7 +69,7 @@ impl ControllersViewModel {
         for controller in get_controllers {
             let mut actions = vec![];
             for action in controller.get_actions() {
-                actions.push((action.get_name(), action.get_path().to_string()));
+                actions.push((action.get_name(), action.get_path().to_cow_str()));
             }
             let mut attrs = vec![];
             for attr in controller.get_attributes() {
@@ -86,7 +87,7 @@ impl ControllersViewModel {
                     method.1.get_return_type().to_string()
                 ));
             }
-            controllers.push(ControllerDetailsViewModel::new(controller.get_type_name().to_string(), actions, vec![], attrs, properties, methods));
+            controllers.push(ControllerDetailsViewModel::new(controller.get_type_name().into(), actions, vec![], attrs, properties, methods));
         }
         Self::new(controllers)
     }

@@ -73,12 +73,12 @@ impl IController for HomeController {
 
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
         let actions_builder = ControllerActionsBuilder::new(self);
-        let controller_name = Cow::Owned(IControllerExtensions::get_name_ref(self));
+        let controller_name = IControllerExtensions::get_name(self);
         
         actions_builder.add("/")
             .methods(&[Method::GET])
             .set_name("index")
-            .set_controller_name(controller_name)
+            .set_controller_name(controller_name.into())
             .set_member_fn(None, Some(Self::get_index));
 
         actions_builder.build()

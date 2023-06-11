@@ -24,15 +24,15 @@ impl IControllerExtensions {
     // gets the name of the controller without the "Controller" suffix.
     // controller: the controller.
     // returns: the name of the controller without the "Controller" suffix.
-    pub fn get_name_ref(controller: &dyn IController) -> String {
+    pub fn get_name_ref(controller: &dyn IController) -> &str {
         let type_name = controller.get_type_name();
-        type_name[..type_name.len() - "Controller".len()].to_string()
+        &type_name[..type_name.len() - "Controller".len()]
     }
 
     // gets the name of the controller without the "Controller" suffix.
     // controller: the controller.
     // returns: the name of the controller without the "Controller" suffix.
-    pub fn get_name(controller: Rc<dyn IController>) -> String {
+    pub fn get_name(controller: &dyn IController) -> String {
         let type_name = controller.get_type_name();
         type_name[..type_name.len() - "Controller".len()].to_string()
     }

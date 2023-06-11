@@ -25,9 +25,9 @@ use crate::services::service_collection::IServiceCollection;
 // this struct is useful for serving files from the disk.
 pub struct ControllerActionFileResult {
     // the path to the file to serve.
-    pub file_path: String,
+    pub file_path: Cow<'static, str>,
     // the name of the controller action.
-    pub name: String,
+    pub name: Cow<'static, str>,
     // the name of the controller.
     pub controller_name: Cow<'static, str>,
     // the name of the area.
@@ -44,9 +44,9 @@ impl ControllerActionFileResult {
     // controller_name: the name of the controller.
     // area_name: the name of the area.
     pub fn new(
-        file_path: String,
-        route_pattern: String,
-        name: String,
+        file_path: Cow<'static, str>,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         area_name: String,
         ) -> Self {
@@ -55,7 +55,7 @@ impl ControllerActionFileResult {
             name: name,
             controller_name: controller_name,
             area_name: area_name,
-            route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
+            route_pattern: Rc::new(ControllerActionRoutePattern::parse(route_pattern)),
         }
     }
     
@@ -65,9 +65,9 @@ impl ControllerActionFileResult {
     // name: the name of the controller action.
     // controller_name: the name of the controller.
     pub fn new_default_area(
-        file_path: String,
-        route_pattern: String,
-        name: String,
+        file_path: Cow<'static, str>,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         ) -> Self {
         Self {
@@ -75,7 +75,7 @@ impl ControllerActionFileResult {
             name: name,
             controller_name: controller_name,
             area_name: String::new(),
-            route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
+            route_pattern: Rc::new(ControllerActionRoutePattern::parse(route_pattern)),
         }
     }
 }
@@ -109,7 +109,7 @@ impl IControllerAction for ControllerActionFileResult {
         }
     }
 
-    fn get_name(self: &Self) -> String {
+    fn get_name(self: &Self) -> Cow<'static, str> {
         self.name.clone()
     }
 

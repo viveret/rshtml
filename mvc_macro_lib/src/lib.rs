@@ -130,3 +130,76 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
         },
     })
 }
+
+
+#[proc_macro]
+pub fn rc_controller_action(input: TokenStream) -> TokenStream {
+    let action_name = match proc_macro2::TokenStream::from(input).into_iter().next().unwrap() {
+        proc_macro2::TokenTree::Ident(ident) => ident.clone(),
+        _ => panic!("expected ident"),
+    };
+    quote! {
+        Rc::new(
+            ControllerActionMemberFn::new_not_validated(
+                vec![],
+                None,
+                action_name_to_path(
+                    IControllerExtensions::get_name_ref(self),
+                    nameof_member_fn!(Self::#action_name)
+                ),
+                nameof_member_fn!(Self::#action_name).into(),
+                IControllerExtensions::get_name(self).into(),
+                self.get_route_area(),
+                Self::#action_name
+            )
+        )
+    }.into()
+}
+
+#[proc_macro]
+pub fn rc_controller_action_validate(input: TokenStream) -> TokenStream {
+    let action_name = match proc_macro2::TokenStream::from(input).into_iter().next().unwrap() {
+        proc_macro2::TokenTree::Ident(ident) => ident.clone(),
+        _ => panic!("expected ident"),
+    };
+    quote! {
+        Rc::new(
+            ControllerActionMemberFn::new_validated(
+                vec![],
+                None,
+                action_name_to_path(
+                    IControllerExtensions::get_name_ref(self),
+                    nameof_member_fn!(Self::#action_name)
+                ),
+                nameof_member_fn!(Self::#action_name).into(),
+                IControllerExtensions::get_name(self).into(),
+                self.get_route_area(),
+                Self::#action_name
+            )
+        )
+    }.into()
+}
+
+#[proc_macro]
+pub fn rc_controller_action_validate_typed(input: TokenStream) -> TokenStream {
+    let action_name = match proc_macro2::TokenStream::from(input).into_iter().next().unwrap() {
+        proc_macro2::TokenTree::Ident(ident) => ident.clone(),
+        _ => panic!("expected ident"),
+    };
+    quote! {
+        Rc::new(
+            ControllerActionMemberFn::new_validated_typed(
+                vec![],
+                None,
+                action_name_to_path(
+                    IControllerExtensions::get_name_ref(self),
+                    nameof_member_fn!(Self::#action_name)
+                ),
+                nameof_member_fn!(Self::#action_name).into(),
+                IControllerExtensions::get_name(self).into(),
+                self.get_route_area(),
+                Box::new(Self::#action_name)
+            )
+        )
+    }.into()
+}

@@ -31,7 +31,7 @@ pub enum RouteType {
 // this struct is used to build a controller action.
 pub struct ControllerActionBuilder {
     // use this to pass in input model type for binding and validation
-    route_pattern: String,
+    route_pattern: Cow<'static, str>,
     // used to determine the type of route when building the controller action
     route_type: RefCell<Option<RouteType>>,
     // the HTTP methods allowed for the controller action
@@ -41,7 +41,7 @@ pub struct ControllerActionBuilder {
     // the name of the controller
     controller_name: RefCell<Option<Cow<'static, str>>>,
     // the name of the action (name of the member, static, or closure function)
-    action_name: RefCell<Option<String>>,
+    action_name: RefCell<Option<Cow<'static, str>>>,
     // whether or not the model should be validated for the controller action
     should_validate_model: RefCell<Option<bool>>,
     // the closure function for the controller action (if the route type is a closure with a model)
@@ -60,7 +60,7 @@ impl ControllerActionBuilder {
     // route_pattern: the route pattern for the controller action.
     pub fn new(route_pattern: &'static str) -> Self {
         Self {
-            route_pattern: route_pattern.to_string(),
+            route_pattern: route_pattern.into(),
             route_type: RefCell::new(None),
             http_methods: RefCell::new(None),
             area_name: RefCell::new(None),
@@ -87,7 +87,7 @@ impl ControllerActionBuilder {
 
     // set the action name for the controller action.
     pub fn set_name(self: &Self, name: &'static str) -> &Self {
-        self.action_name.replace(Some(name.to_string()));
+        self.action_name.replace(Some(name.into()));
         self
     }
 

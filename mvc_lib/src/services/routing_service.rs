@@ -66,7 +66,7 @@ impl IRequestMiddlewareService for RoutingService {
                 controller_name = controller_name[..controller_name.len() - "Controller".len()].to_string();
             }
             
-            request_context.mut_route_data().borrow_mut().map.insert("ActionName".to_string(), action.get_name());
+            request_context.mut_route_data().borrow_mut().map.insert("ActionName".to_string(), action.get_name().into_owned());
             request_context.mut_route_data().borrow_mut().map.insert("ControllerName".to_string(), controller_name);
             request_context.mut_route_data().borrow_mut().map.insert("AreaName".to_string(), action.get_area_name());
             request_context.set_controller_action(Some(action.clone()));

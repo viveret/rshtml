@@ -31,7 +31,7 @@ pub struct ControllerActionClosure {
     // the closure that implements the controller action.
     pub closure_fn: Rc<dyn Fn(ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>,
     // the name of the controller action.
-    pub name: String,
+    pub name: Cow<'static, str>,
     // the name of the controller.
     pub controller_name: Cow<'static, str>,
     // the name of the area.
@@ -59,8 +59,8 @@ impl ControllerActionClosure {
     pub fn new(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
-        route_pattern: String,
-        name: String,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         area_name: String,
         should_validate_model: bool,
@@ -69,7 +69,7 @@ impl ControllerActionClosure {
             name: name,
             controller_name: controller_name,
             area_name: area_name,
-            route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
+            route_pattern: Rc::new(ControllerActionRoutePattern::parse(route_pattern)),
             closure_fn: closure_fn,
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or(vec![]),
@@ -88,8 +88,8 @@ impl ControllerActionClosure {
     pub fn new_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
-        route_pattern: String,
-        name: String,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         area_name: String,
         closure_fn: Rc<dyn Fn(ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
@@ -117,8 +117,8 @@ impl ControllerActionClosure {
     pub fn new_not_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
-        route_pattern: String,
-        name: String,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         area_name: String,
         closure_fn: &'static dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
@@ -146,8 +146,8 @@ impl ControllerActionClosure {
     pub fn new_default_area(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
-        route_pattern: String,
-        name: String,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         should_validate_model: bool,
         closure_fn: Rc<dyn Fn(ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
@@ -156,7 +156,7 @@ impl ControllerActionClosure {
             name: name,
             controller_name: controller_name,
             area_name: String::new(),
-            route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
+            route_pattern: Rc::new(ControllerActionRoutePattern::parse(route_pattern)),
             closure_fn: closure_fn,
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or(vec![]),
@@ -174,8 +174,8 @@ impl ControllerActionClosure {
     pub fn new_default_area_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
-        route_pattern: String,
-        name: String,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         closure_fn: Rc<dyn Fn(ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>>
     ) -> Self {
@@ -183,7 +183,7 @@ impl ControllerActionClosure {
             name: name,
             controller_name: controller_name,
             area_name: String::new(),
-            route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
+            route_pattern: Rc::new(ControllerActionRoutePattern::parse(route_pattern)),
             closure_fn: closure_fn,
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or(vec![]),
@@ -201,8 +201,8 @@ impl ControllerActionClosure {
     pub fn new_default_area_not_validated(
         http_methods_allowed: Vec<Method>,
         features: Option<Vec<Rc<dyn IControllerActionFeature>>>,
-        route_pattern: String,
-        name: String,
+        route_pattern: Cow<'static, str>,
+        name: Cow<'static, str>,
         controller_name: Cow<'static, str>,
         closure_fn: &'static dyn Fn(&dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>>
     ) -> Self {
@@ -210,7 +210,7 @@ impl ControllerActionClosure {
             name: name,
             controller_name: controller_name,
             area_name: String::new(),
-            route_pattern: Rc::new(ControllerActionRoutePattern::parse(&route_pattern)),
+            route_pattern: Rc::new(ControllerActionRoutePattern::parse(route_pattern)),
             closure_fn: Rc::new(|_, x, y| (closure_fn)(x, y)),
             http_methods_allowed: http_methods_allowed,
             features: features.unwrap_or(vec![]),
@@ -260,7 +260,7 @@ impl IControllerAction for ControllerActionClosure {
         }
     }
 
-    fn get_name(self: &Self) -> String {
+    fn get_name(self: &Self) -> Cow<'static, str> {
         self.name.clone()
     }
 

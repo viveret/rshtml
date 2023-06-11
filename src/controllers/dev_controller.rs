@@ -13,6 +13,7 @@ use core_macro_lib::nameof_member_fn;
 
 use mvc_lib::action_results::iaction_result::IActionResult;
 use mvc_lib::action_results::redirect_action_result::RedirectActionResult;
+use mvc_lib::core::string_extensions::action_name_to_path;
 use mvc_lib::core::type_info::TypeInfo;
 use mvc_lib::controller_actions::member_fn::ControllerActionMemberFn;
 use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
@@ -45,6 +46,9 @@ use mvc_lib::controller_action_features::local_host_only::LocalHostOnlyControlle
 use mvc_lib::controller_action_features::authorize::AuthorizeControllerActionFeature;
 
 use mvc_lib::view::view_renderer::IViewRenderer;
+use mvc_macro_lib::rc_controller_action;
+use mvc_macro_lib::rc_controller_action_validate;
+use mvc_macro_lib::rc_controller_action_validate_typed;
 
 use crate::view_models::dev::controllers::ControllerDetailsViewModel;
 use crate::view_models::dev::controllers::ControllersViewModel;
@@ -134,8 +138,8 @@ impl DevController {
         let route_map_service = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
         let controller = route_map_service.as_ref().get_mapper().get_controller(path.to_string());
         let view_model = Box::new(ControllerDetailsViewModel::new(
-            controller.get_type_name().to_string(),
-            controller.get_actions().iter().map(|a| (a.get_name(), a.get_path().to_string())).collect(),
+            controller.get_type_name().into(),
+            controller.get_actions().iter().map(|a| (a.get_name(), a.get_path().to_cow_str())).collect(),
             controller.get_features().iter().map(|f| f.get_name()).collect(),
             controller.get_attributes().iter().map(|a| a.to_string()).collect(),
             controller.get_properties().iter().map(|a| (a.0.clone(), a.1.get_type_string().clone())).collect(),
@@ -239,25 +243,22 @@ impl IController for DevController {
     }
 
     fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
-        let controller_name = IControllerExtensions::get_name_ref(self);
+        let controller_name = IControllerExtensions::get_name(self);
 
         vec![
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev".to_string(), nameof_member_fn!(Self::index).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::index)),
+            rc_controller_action!(index),
+            rc_controller_action!(controllers),
+            rc_controller_action!(routes),
+            rc_controller_action!(views),
+            rc_controller_action!(sys_info),
+            rc_controller_action!(log),
+            rc_controller_action_validate_typed!(log_add),
+            rc_controller_action!(log_clear),
+            rc_controller_action!(perf_log),
             
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/controllers".to_string(), nameof_member_fn!(Self::controllers).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::controllers)),
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/controllers/..".to_string(), nameof_member_fn!(Self::controller_details).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::controller_details)),
-            
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/routes".to_string(), nameof_member_fn!(Self::routes).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::routes)),
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/routes/..".to_string(), nameof_member_fn!(Self::route_details).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::route_details)),
-            
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/views".to_string(), nameof_member_fn!(Self::views).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::views)),
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/views/..".to_string(), nameof_member_fn!(Self::view_details).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::view_details)),
-            
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/sys-info".to_string(), nameof_member_fn!(Self::sys_info).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::sys_info)),
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/log".to_string(), nameof_member_fn!(Self::log).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::log)),
-            Rc::new(ControllerActionMemberFn::new_validated_typed(vec![], None, "/dev/log/add".to_string(), nameof_member_fn!(Self::log_add).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Box::new(Self::log_add))),
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/log/clear".to_string(), nameof_member_fn!(Self::log_clear).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::log_clear)),
-            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/perf-log".to_string(), nameof_member_fn!(Self::perf_log).to_string(), Cow::Owned(controller_name.clone()), self.get_route_area(), Self::perf_log)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/controllers/..".into(), nameof_member_fn!(Self::controller_details).into(), controller_name.clone().into(), self.get_route_area(), Self::controller_details)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/routes/..".into(), nameof_member_fn!(Self::route_details).into(), controller_name.clone().into(), self.get_route_area(), Self::route_details)),
+            Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/views/..".into(), nameof_member_fn!(Self::view_details).into(), controller_name.clone().into(), self.get_route_area(), Self::view_details)),
         ]
     }
 

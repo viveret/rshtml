@@ -138,3 +138,11 @@ pub fn reflect_properties(attr: TokenStream, item: TokenStream) -> TokenStream {
 pub fn reflect_methods(attr: TokenStream, item: TokenStream) -> TokenStream {
     reflect_methods_macro::reflect_methods(attr.into(), item.into()).into()
 }
+
+#[proc_macro_attribute]
+pub fn display_name(attr: TokenStream, item: TokenStream) -> TokenStream {
+    // let display_name: String = attr.into_iter().next().unwrap().to_string();
+    println!("attr: \"{}\"", attr.to_string());
+    println!("item: \"{}\"", item.to_string());
+    item
+}

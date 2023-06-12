@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use core_macro_lib::IHazAttributes;
+use core_macro_lib::display_name;
 use core_macro_lib::reflect_attributes;
 use core_macro_lib::reflect_methods;
 use core_macro_lib::reflect_properties;
@@ -33,7 +34,15 @@ use mvc_lib::services::service_scope::ServiceScope;
 #[reflect_properties]
 #[derive(Clone, Debug, IHazAttributes, IModel)]
 pub struct LogAddInputModel {
+    // attribute macros are currently not possible on struct fields because of the way attribute macros are implemented.
+    // might be able to do it with a proc macro instead of an attribute macro but that would be complicated.
+    // another way to do it would be to have a separate attribute macro that is applied to the struct that
+    // extracts the attributes from the struct fields and adds them to the struct AST but removes them from the struct fields
+    // before the struct is returned to the compiler.
+    // #[display_name(x: "Message: ")]
     pub message: Box<String>,
+    
+    // #[display_name(x: "Level: ")]
     pub level: Box<String>,
 }
 

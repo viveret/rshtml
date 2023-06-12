@@ -72,7 +72,6 @@ impl<'a> ExtendDerive<'a> {
     ) -> Result<Self, std::io::Error> {
         let mut it = TokenStream::from(item).into_iter().peekable();
         let mut struct_attrs_tokens = vec![];
-        let mut struct_vis: Option<Ident> = None;
         let mut struct_type: Option<Ident> = None;
         let mut struct_name: Option<Ident> = None;
         let mut struct_generics = vec![];
@@ -112,9 +111,7 @@ impl<'a> ExtendDerive<'a> {
                         let mut it = group.stream().into_iter().peekable();
                         let name = if let Some(name_token) = it.next() {
                             match name_token.clone() {
-                                TokenTree::Ident(name_ident) => {
-                                    name_ident
-                                },
+                                TokenTree::Ident(name_ident) => name_ident,
                                 _ => {
                                     panic!("Expected attribute name, not {:?}.", name_token);
                                 }
@@ -123,9 +120,7 @@ impl<'a> ExtendDerive<'a> {
                         
                         let contents_group = if let Some(contents_token) = it.peek() {
                             match contents_token {
-                                TokenTree::Group(group) => {
-                                    Some(group)
-                                },
+                                TokenTree::Group(group) => Some(group),
                                 _ => {
                                     panic!("Expected attribute contents group, not {:?}.", contents_token);
                                 }
@@ -146,7 +141,7 @@ impl<'a> ExtendDerive<'a> {
         }
     
         // check for visibility
-        struct_vis = Self::get_property_visibility(&mut it);
+        let struct_vis = Self::get_property_visibility(&mut it);
     
         // expecting either struct or function
         if let Some(token) = it.next() {
@@ -421,6 +416,7 @@ impl<'a> ExtendDerive<'a> {
 
     pub(crate) fn get_struct_properties(&self) -> Vec<AstProperty> {
         let mut properties = vec![];
+        let mut property_attributes: Vec<AstAttribute> = vec![];
         let mut property_name: Option<Ident> = None;
         let mut property_colon: Option<Punct> = None;
         let mut property_type: Vec<TokenTree> = vec![];
@@ -441,11 +437,12 @@ impl<'a> ExtendDerive<'a> {
                                 if punct_stack.len() > 0 {
                                     property_type.push(token.clone());
                                 } else {
-                                    properties.push(AstProperty::new(property_visibility, property_name.unwrap().clone(), property_colon.unwrap(), property_type.clone()));
+                                    properties.push(AstProperty::new(property_attributes, property_visibility, property_name.unwrap().clone(), property_colon, property_type.clone()));
                                     property_name = None;
                                     property_colon = None;
                                     property_type = vec![];
                                     property_visibility = Self::get_property_visibility(&mut it);
+                                    property_attributes = vec![];
                                 }
                             },
                             ':' => {
@@ -477,8 +474,49 @@ impl<'a> ExtendDerive<'a> {
                                     panic!("Expected punct or ident for property name, not {:?}.", token)
                                 }
                             },
+                            '#' => {
+                                if property_name.is_none() && property_visibility.is_none() {
+                                    // get attribute
+                                    let attrib_token = match it.next().unwrap() {
+                                        TokenTree::Group(group) => {
+                                            group
+                                        },
+                                        _ => {
+                                            panic!("Expected attribute group, not {:?}.", token)
+                                        }
+                                    };
+                                    
+                                    let mut it = attrib_token.stream().into_iter().peekable();
+                                    
+                                    let attrib_name = match it.next().unwrap() {
+                                        TokenTree::Ident(ident) => {
+                                            ident
+                                        },
+                                        _ => {
+                                            panic!("Expected attribute name, not {:?}.", token)
+                                        }
+                                    };
+
+                                    let attrib_contents = if let Some(token) = it.next() {
+                                        match token {
+                                            TokenTree::Group(group) => {
+                                                Some(group)
+                                            },
+                                            _ => {
+                                                None
+                                            }
+                                        }
+                                    } else {
+                                        None
+                                    };
+
+                                    property_attributes.push(AstAttribute::new(punct.clone(), attrib_name, attrib_contents));
+                                } else {
+                                    panic!("Expected something other than {:?}.", token)
+                                }
+                            },
                             _ => {
-                                panic!("Expected semicolon or comma after property, not {:?}.", token);
+                                panic!("Expected semicolon or comma for property, not {:?}.", token);
                             }
                         }
                     },
@@ -506,6 +544,10 @@ impl<'a> ExtendDerive<'a> {
             }
         }
 
+        if property_name.is_some() {
+            properties.push(AstProperty::new(property_attributes, property_visibility, property_name.unwrap().clone(), property_colon, property_type.clone()));
+        }
+
         properties
     }
 
@@ -522,6 +564,64 @@ impl<'a> ExtendDerive<'a> {
         let mut method_arg_type: Vec<TokenTree> = vec![];
 
         let mut punct_stack = vec![];
+
+        let mut method_attributes: Vec<AstAttribute> = vec![];
+        loop {
+            let start_punct = if let Some(token) = it.peek() {
+                match token {
+                    TokenTree::Punct(punct) => {
+                        let c = punct.as_char();
+                        if c == '#' {
+                            punct.clone()
+                        } else {
+                            break;
+                        }
+                    },
+                    _ => break,
+                }
+            } else {
+                break;
+            };
+            it.next();
+
+            // get attribute
+            let attrib_token = it.next().unwrap();
+            let attrib_group = match attrib_token {
+                TokenTree::Group(group) => {
+                    group
+                },
+                _ => {
+                    panic!("Expected attribute group, not {:?}.", attrib_token)
+                }
+            };
+            
+            let mut it = attrib_group.stream().into_iter().peekable();
+            
+            let name_token = it.next().unwrap();
+            let attrib_name = match name_token {
+                TokenTree::Ident(ident) => {
+                    ident
+                },
+                _ => {
+                    panic!("Expected attribute name, not {:?}.", name_token)
+                }
+            };
+
+            let attrib_contents = if let Some(token) = it.next() {
+                match token {
+                    TokenTree::Group(group) => {
+                        Some(group)
+                    },
+                    _ => {
+                        None
+                    }
+                }
+            } else {
+                None
+            };
+
+            method_attributes.push(AstAttribute::new(start_punct, attrib_name, attrib_contents));
+        }
 
         let method_visibility = Self::get_property_visibility(it);
         // should be fn
@@ -603,7 +703,7 @@ impl<'a> ExtendDerive<'a> {
                                             if punct_stack.len() > 0 {
                                                 method_arg_type.push(token.clone());
                                             } else {
-                                                method_args.push(AstProperty::new(None, method_arg_name.unwrap(), method_arg_colon.unwrap(), method_arg_type.clone()));
+                                                method_args.push(AstProperty::new(vec![], None, method_arg_name.unwrap(), method_arg_colon, method_arg_type.clone()));
                                                 method_arg_name = None;
                                                 method_arg_colon = None;
                                                 method_arg_type = vec![];
@@ -636,7 +736,7 @@ impl<'a> ExtendDerive<'a> {
                                             }
                                         },
                                         '\'' => {
-                                            if method_arg_colon.is_some() {
+                                            if method_arg_name.is_some() {
                                                 method_arg_type.push(token.clone());
                                             } else {
                                                 panic!("Expected punct or ident for property name, not {:?}.", token)
@@ -652,8 +752,6 @@ impl<'a> ExtendDerive<'a> {
                                                         TokenTree::Ident(ident) => {
                                                             if ident.to_string() == "self" {
                                                                 method_arg_name = Some(ident.clone());
-                                                                method_arg_colon = Some(Punct::new(':', Spacing::Alone));
-                                                                method_arg_type.push(Ident::new("Self", Span::call_site()).into());
                                                             } else {
                                                                 panic!("Expected self, not {:?}.", token);
                                                             }
@@ -705,7 +803,7 @@ impl<'a> ExtendDerive<'a> {
         }
 
         if method_arg_name.is_some() {
-            method_args.push(AstProperty::new(None, method_arg_name.unwrap().clone(), method_arg_colon.unwrap(), method_arg_type.clone()));
+            method_args.push(AstProperty::new(vec![], None, method_arg_name.unwrap().clone(), method_arg_colon, method_arg_type.clone()));
         }
 
         // check for return type
@@ -762,6 +860,7 @@ impl<'a> ExtendDerive<'a> {
         }
 
         AstMethod::new(
+            method_attributes,
             method_visibility, method_name, method_generics, method_args, method_return_type
         )
     }

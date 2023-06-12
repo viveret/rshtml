@@ -10,7 +10,7 @@ pub(crate) fn reflect_properties(attr: TokenStream, item: TokenStream) -> TokenS
         let mut reflected_properties_tokens = vec![];
         extend_derive.get_struct_properties().iter().for_each(|x| {
             let name = x.1.to_string();
-            let value = TokenStream::from_iter(x.2.clone().into_iter());
+            let value = TokenStream::from_iter(x.3.clone().into_iter());
             // println!("value: {}", value.to_string());
             reflected_properties_tokens.push(quote::quote! {
                 Rc::new(ReflectedProperty::new(

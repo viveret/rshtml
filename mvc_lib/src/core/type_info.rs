@@ -32,6 +32,10 @@ impl TypeInfo {
     pub fn is_same_as(&self, other: &Self) -> bool {
         self.type_id == other.type_id
     }
+
+    pub fn is_compatible_with(&self, other: &Self) -> bool {
+        self.type_id == other.type_id
+    }
 }
 
 impl fmt::Display for TypeInfo {

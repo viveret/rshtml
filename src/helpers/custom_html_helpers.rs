@@ -9,12 +9,11 @@ use mvc_lib::view::rusthtml::helpers::ihtml_helpers::IHtmlHelpers;
 use mvc_lib::view::rusthtml::html_string::HtmlString;
 
 
-
-
+// this is the custom html helpers for the site. this is where you can add your own custom html helpers or override the default ones.
 pub struct CustomHtmlHelpers<'a, TModel: 'static + IModel> {
     html_helpers: HtmlHelpers<'a, TModel>,
-    view_context: &'a dyn IViewContext,
-    services: &'a dyn IServiceCollection,
+    _view_context: &'a dyn IViewContext,
+    _services: &'a dyn IServiceCollection,
     x: PhantomData<TModel>
 }
 
@@ -22,8 +21,8 @@ impl <'a, TModel: 'static + IModel> CustomHtmlHelpers<'a, TModel> {
     pub fn new(view_context: &'a dyn IViewContext, services: &'a dyn IServiceCollection) -> Self {
         Self {
             html_helpers: HtmlHelpers::new(view_context, services),
-            view_context: view_context,
-            services: services,
+            _view_context: view_context,
+            _services: services,
             x: PhantomData {}
         }
     }
@@ -49,15 +48,15 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for CustomHtmlHelpe
     }
 
     fn hidden(self: &Self, name: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.hidden(name, value, html_attrs)
     }
 
     fn checkbox(self: &Self, name: &str, checked: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.checkbox(name, checked, html_attrs)
     }
 
     fn textarea(self: &Self, name: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.textarea(name, value, html_attrs)
     }
 
     fn label(self: &Self, for_name: &str, text: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
@@ -67,23 +66,23 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for CustomHtmlHelpe
     }
 
     fn select(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.select(name, options, html_attrs)
     }
 
     fn select_multiple(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.select_multiple(name, options, html_attrs)
     }
 
     fn option(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.option(value, text, disabled, html_attrs)
     }
 
     fn option_selected(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.option_selected(value, text, disabled, html_attrs)
     }
 
     fn option_group(self: &Self, label: &str, options: Vec<(String, String)>, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.option_group(label, options, disabled, html_attrs)
     }
 
     fn append_html_attrs_into_first(self: &Self, html_attrs_first: Option<&HashMap<String, String>>, html_attrs_second: Option<&HashMap<String, String>>) -> Option<HashMap<String, String>> {
@@ -91,7 +90,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for CustomHtmlHelpe
     }
 
     fn append_html_attrs_into_new(self: &Self, html_attrs_first: Option<&HashMap<String, String>>, html_attrs_second: Option<&HashMap<String, String>>) -> HashMap<String, String> {
-        todo!()
+        self.html_helpers.append_html_attrs_into_new(html_attrs_first, html_attrs_second)
         // <CustomHtmlHelpers<'_> as IHtmlHelpers<'_, TModel>>::html_attrs_array_tuple_str_to_string(&self.html_helpers, html_attrs_first, html_attrs_second)
     }
 
@@ -114,38 +113,38 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for CustomHtmlHelpe
     }
 
     fn input_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), input_type: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.input_for(expr, input_type, html_attrs)
     }
 
     fn label_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.label_for(expr, html_attrs)
     }
 
     fn hidden_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.hidden_for(expr, html_attrs)
     }
 
     fn checkbox_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.checkbox_for(expr, html_attrs)
     }
 
     fn textarea_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.textarea_for(expr, html_attrs)
     }
 
     fn select_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.select_for(expr, options, html_attrs)
     }
 
     fn select_multiple_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.select_multiple_for(expr, options, html_attrs)
     }
 
     fn option_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.option_for(expr, disabled, html_attrs)
     }
 
     fn option_selected_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
-        todo!()
+        self.html_helpers.option_selected_for(expr, disabled, html_attrs)
     }
 }

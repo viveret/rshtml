@@ -29,9 +29,9 @@ use mvc_lib::services::service_scope::ServiceScope;
 
 
 
-#[derive(Clone, Debug, IHazAttributes, IModel)]
 #[reflect_attributes]
 #[reflect_properties]
+#[derive(Clone, Debug, IHazAttributes, IModel)]
 pub struct LogAddInputModel {
     pub message: Box<String>,
     pub level: Box<String>,
@@ -46,10 +46,6 @@ impl LogAddInputModel {
     pub fn default() -> Self {
         Self::new(String::default(), String::default())
     }
-
-    // fn as_any(&self) -> Box<dyn Any> {
-    //     Box::new(self.clone())
-    // }
 
     pub fn is_valid(&self) -> bool {
         if self.message.is_empty() {
@@ -121,7 +117,7 @@ impl IModelBinder for LogAddInputModelBinder {
         Box::new(TypeInfo::of::<LogAddInputModel>())
     }
 
-    fn matches(self: &Self, request_context: &dyn IRequestContext) -> bool {
+    fn matches(self: &Self, _request_context: &dyn IRequestContext) -> bool {
         true
     }
 
@@ -156,9 +152,9 @@ impl IModelBinder for LogAddInputModelBinder {
 }
 
 
-#[derive(Clone, IHazAttributes, IModel)]
 #[reflect_attributes]
 #[reflect_properties]
+#[derive(Clone, IHazAttributes, IModel)]
 pub struct LogAddViewModel {
     pub supports_read: bool,
     pub input: LogAddInputModel,

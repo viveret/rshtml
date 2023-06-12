@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::error::Error;
 use std::rc::Rc;
@@ -60,7 +59,7 @@ pub struct AuthRolesController {
     // this is the dbset for authentication roles
     authroles_dbset: Rc<dyn IAuthRolesDbSetProvider>,
     // this is the authorization service
-    auth_service: Rc<dyn IAuthorizationService>,
+    _auth_service: Rc<dyn IAuthorizationService>,
 }
 
 #[reflect_methods]
@@ -74,7 +73,7 @@ impl AuthRolesController {
     ) -> Self {
         Self {
             authroles_dbset: authroles_dbset,
-            auth_service: auth_service,
+            _auth_service: auth_service,
         }
     }
 
@@ -113,7 +112,7 @@ impl AuthRolesController {
 
     // post the add role view, which allows the user to add a new role.
     pub fn post_add(self: &Self, _: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
-        let input_model = controller_ctx.get_request_context().get_model_validation_result();
+        let _input_model = controller_ctx.get_request_context().get_model_validation_result();
         let new_role = controller_ctx.get_request_context().get_query().get("role"); // to do: this needs to use query parameter
         let view_model = Box::new(
             if let Some(new_role) = new_role {
@@ -161,6 +160,7 @@ impl IController for AuthRolesController {
             .set_name("add")
             .set_controller_name(controller_name.clone().into())
             .set_member_fn(None, Some(Box::new(Self::get_add)));
+
 
         actions_builder.add("/dev/auth-roles/add")
                 .methods(&[Method::POST])

@@ -33,9 +33,9 @@ use super::icontroller_extensions::IControllerExtensions;
 
 
 // this controller is used to serve static files from the disk.
-#[derive(Clone, IHazAttributes, IModel)]
 #[reflect_attributes]
 #[reflect_properties]
+#[derive(Clone, IHazAttributes, IModel)]
 pub struct FileProviderController {
     // the options for the file provider controller.
     options: Rc<dyn IFileProviderControllerOptions>,

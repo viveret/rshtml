@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -83,7 +82,7 @@ impl IController for LearnController {
                 let view_model = Box::new(IndexViewModel::new(learn_docs));
                 Ok(Some(Rc::new(ViewResult::new("views/learn/index.rs".to_string(), view_model))))
             })),
-            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn/..".into(), "details".into(), controller_name.clone().into(), Rc::new(|model, controller_ctx, _services| {
+            Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn/..".into(), "details".into(), controller_name.clone().into(), Rc::new(|_model, controller_ctx, _services| {
                 let request_context = controller_ctx.get_request_context();
                 let path = &request_context.get_path()["/learn/".len()..];
 

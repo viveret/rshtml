@@ -1,16 +1,20 @@
 use crate::core::type_info::TypeInfo;
 
-use super::{imodel_property::IModelProperty, ihaz_attributes::IHazAttributes};
+use super::ihaz_attributes::IHazAttributes;
+use super::imodel_property::IModelProperty;
 
 
-
+// this struct is used to represent a reflected property during execution / runtime.
 pub struct ReflectedProperty {
     pub name: String,
     typeinfo: Box<TypeInfo>,
 }
 
 impl ReflectedProperty {
-    pub fn new(name: String, typeinfo: Box<TypeInfo>) -> Self {
+    pub fn new(
+        name: String,
+        typeinfo: Box<TypeInfo>
+    ) -> Self {
         Self {
             name: name,
             typeinfo: typeinfo,
@@ -99,67 +103,67 @@ impl IModelProperty for ReflectedProperty {
         todo!()
     }
 
-    fn set_value(&mut self, value: String) {
+    fn set_value(&mut self, _value: String) {
         todo!()
     }
 
-    fn set_value_as_string(&mut self, value: String) {
+    fn set_value_as_string(&mut self, _value: String) {
         todo!()
     }
 
-    fn set_value_as_str(&mut self, value: &str) {
+    fn set_value_as_str(&mut self, _value: &str) {
         todo!()
     }
 
-    fn set_value_as_bool(&mut self, value: bool) {
+    fn set_value_as_bool(&mut self, _value: bool) {
         todo!()
     }
 
-    fn set_value_as_i32(&mut self, value: i32) {
+    fn set_value_as_i32(&mut self, _value: i32) {
         todo!()
     }
 
-    fn set_value_as_i64(&mut self, value: i64) {
+    fn set_value_as_i64(&mut self, _value: i64) {
         todo!()
     }
 
-    fn set_value_as_f32(&mut self, value: f32) {
+    fn set_value_as_f32(&mut self, _value: f32) {
         todo!()
     }
 
-    fn set_value_as_f64(&mut self, value: f64) {
+    fn set_value_as_f64(&mut self, _value: f64) {
         todo!()
     }
 
-    fn set_value_as_char(&mut self, value: char) {
+    fn set_value_as_char(&mut self, _value: char) {
         todo!()
     }
 
-    fn set_value_as_u8(&mut self, value: u8) {
+    fn set_value_as_u8(&mut self, _value: u8) {
         todo!()
     }
 
-    fn set_value_as_u16(&mut self, value: u16) {
+    fn set_value_as_u16(&mut self, _value: u16) {
         todo!()
     }
 
-    fn set_value_as_u32(&mut self, value: u32) {
+    fn set_value_as_u32(&mut self, _value: u32) {
         todo!()
     }
 
-    fn set_value_as_u64(&mut self, value: u64) {
+    fn set_value_as_u64(&mut self, _value: u64) {
         todo!()
     }
 
-    fn set_value_as_usize(&mut self, value: usize) {
+    fn set_value_as_usize(&mut self, _value: usize) {
         todo!()
     }
 
-    fn set_value_as_i8(&mut self, value: i8) {
+    fn set_value_as_i8(&mut self, _value: i8) {
         todo!()
     }
 
-    fn set_value_as_i16(&mut self, value: i16) {
+    fn set_value_as_i16(&mut self, _value: i16) {
         todo!()
     }
 }
@@ -169,7 +173,7 @@ impl IHazAttributes for ReflectedProperty {
         todo!()
     }
 
-    fn get_attribute(&self, typeinfo: &crate::core::type_info::TypeInfo) -> Option<std::rc::Rc<dyn super::imodel_attribute::IAttribute>> {
+    fn get_attribute(&self, _typeinfo: &crate::core::type_info::TypeInfo) -> Option<std::rc::Rc<dyn super::imodel_attribute::IAttribute>> {
         todo!()
     }
 }

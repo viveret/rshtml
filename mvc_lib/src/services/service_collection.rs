@@ -172,6 +172,7 @@ impl <'a> ServiceCollection<'a> {
     }
     
     // get a message that a service could not be found for a type id
+    #[allow(dead_code)]
     fn get_could_not_find_type_id_message(self: &Self, type_id: TypeId) -> String {
         let mut message = String::new();
         message.push_str(format!("Could not get service for type {:?}", type_id).as_str());

@@ -10,17 +10,17 @@ use mvc_lib::model_binder::imodel_attribute::IAttribute;
 use mvc_lib::model_binder::imodel_property::IModelProperty;
 use mvc_lib::model_binder::imodel_method::IModelMethod;
 use mvc_lib::model_binder::reflected_attribute::ReflectedAttribute;
-use mvc_lib::model_binder::reflected_property::ReflectedProperty;
+use mvc_lib::model_binder::reflected_method::ReflectedMethod;
 
 
 // this is the view model for the home page
-#[derive(Clone, IHazAttributes, IModel)]
 #[reflect_attributes]
 #[reflect_properties]
-#[reflect_methods]
+#[derive(Clone, IHazAttributes, IModel)]
 pub struct IndexViewModel {
 }
 
+#[reflect_methods]
 impl IndexViewModel {
     // create a new instance of the view model
     pub fn new() -> Self {

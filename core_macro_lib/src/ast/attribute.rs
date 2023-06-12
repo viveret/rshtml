@@ -1,6 +1,7 @@
 use proc_macro2::{Ident, Punct, Group};
 
 
+// this is used to represent an attribute in the ast, not in the final code.
 pub(crate) struct AstAttribute {
     start_punct: Punct,
     pub name: Ident,

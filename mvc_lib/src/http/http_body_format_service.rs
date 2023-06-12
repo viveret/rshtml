@@ -112,6 +112,7 @@ impl HttpBodyFormatService {
         ));
     }
 
+    #[allow(dead_code)]
     fn resolve(&self, get_content_type: ContentType) -> Option<Rc<dyn IHttpBodyStreamFormat>> {
         for resolver in &self.resolvers {
             if let Some(decoder) = resolver.resolve(&get_content_type) {

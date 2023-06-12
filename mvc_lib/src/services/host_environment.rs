@@ -15,21 +15,25 @@ struct IHostEnvironmentExtensions {}
 
 impl IHostEnvironmentExtensions {
     // is_development returns true if the environment name is "Development".
+    #[allow(dead_code)]
     pub fn is_development(env: &dyn IHostEnvironment) -> bool {
         Self::is_environment(env, "Development")
     }
 
     // is_environment returns true if the environment name is the specified name.
+    #[allow(dead_code)]
     pub fn is_environment(env: &dyn IHostEnvironment, env_name: &str) -> bool {
         env.get_environment_name() == env_name
     }
 
     // is_production returns true if the environment name is "Production".
+    #[allow(dead_code)]
     pub fn is_production(env: &dyn IHostEnvironment) -> bool {
         Self::is_environment(env, "Production")
     }
 
     // is_staging returns true if the environment name is "Staging".
+    #[allow(dead_code)]
     pub fn is_staging(env: &dyn IHostEnvironment) -> bool {
         Self::is_environment(env, "Staging")
     }

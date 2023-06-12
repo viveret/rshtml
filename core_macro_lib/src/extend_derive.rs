@@ -2,8 +2,11 @@ use std::cell::RefCell;
 use std::iter::Peekable;
 use std::vec;
 
+use proc_macro2::Delimiter;
 use proc_macro2::Group;
 use proc_macro2::Punct;
+use proc_macro2::Spacing;
+use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use proc_macro2::Ident;
 use proc_macro2::TokenTree;
@@ -13,6 +16,9 @@ use crate::ast::method::AstMethod;
 use crate::ast::property::AstProperty;
 
 
+// this is the struct that will be used to extend the derive macro,
+// but does not use the derive macro itself. This is so that we can
+// do some pre-processing before or after the derive macro is called.
 pub struct ExtendDerive<'a> {
     pub struct_attrs_tokens: Vec<TokenTree>,
     struct_attrs: Vec<AstAttribute>,
@@ -81,7 +87,7 @@ impl<'a> ExtendDerive<'a> {
             let attr_start_punct = if let Some(token) = it.peek() {
                 // println!("peek attributes: {:?}", token);
                 match token {
-                    proc_macro2::TokenTree::Punct(punct) => {
+                    TokenTree::Punct(punct) => {
                         if punct.as_char() == '#' {
                             struct_attrs_tokens.push(token.clone());
                             punct.clone()
@@ -101,12 +107,12 @@ impl<'a> ExtendDerive<'a> {
             // enter into attribute group
             if let Some(token) = it.next() {
                 match &token {
-                    proc_macro2::TokenTree::Group(group) => {
+                    TokenTree::Group(group) => {
                         struct_attrs_tokens.push(token.clone());
                         let mut it = group.stream().into_iter().peekable();
                         let name = if let Some(name_token) = it.next() {
                             match name_token.clone() {
-                                proc_macro2::TokenTree::Ident(name_ident) => {
+                                TokenTree::Ident(name_ident) => {
                                     name_ident
                                 },
                                 _ => {
@@ -117,7 +123,7 @@ impl<'a> ExtendDerive<'a> {
                         
                         let contents_group = if let Some(contents_token) = it.peek() {
                             match contents_token {
-                                proc_macro2::TokenTree::Group(group) => {
+                                TokenTree::Group(group) => {
                                     Some(group)
                                 },
                                 _ => {
@@ -140,28 +146,13 @@ impl<'a> ExtendDerive<'a> {
         }
     
         // check for visibility
-        if let Some(token) = it.peek() {
-            // println!("peek visibility: {:?}", token);
-            match token {
-                proc_macro2::TokenTree::Ident(ident) => {
-                    let ident_str = ident.to_string();
-                    match ident_str.as_str() {
-                        "pub" | "protected" => {
-                            struct_vis = Some(ident.clone());
-                            it.next();
-                        },
-                        _ => {},
-                    }
-                },
-                _ => {},
-            }
-        }
+        struct_vis = Self::get_property_visibility(&mut it);
     
         // expecting either struct or function
         if let Some(token) = it.next() {
             // println!("checking for struct, function, or impl: {:?}", token);
             match token {
-                proc_macro2::TokenTree::Ident(ident) => {
+                TokenTree::Ident(ident) => {
                     let ident_str = ident.to_string();
                     struct_type = Some(ident.clone());
 
@@ -170,7 +161,7 @@ impl<'a> ExtendDerive<'a> {
                             // get name
                             let token = it.next().unwrap();
                             match token {
-                                proc_macro2::TokenTree::Ident(ident) => {
+                                TokenTree::Ident(ident) => {
                                     struct_name = Some(ident.clone());
                                 },
                                 _ => {
@@ -181,7 +172,7 @@ impl<'a> ExtendDerive<'a> {
                             // check for generics
                             if let Some(token) = it.peek() {
                                 match token {
-                                    proc_macro2::TokenTree::Punct(punct) => {
+                                    TokenTree::Punct(punct) => {
                                         let c = punct.as_char();
                                         if c == '<' {
                                             struct_generics.push(it.next().unwrap());
@@ -190,7 +181,7 @@ impl<'a> ExtendDerive<'a> {
                                                 if let Some(token) = it.next() {
                                                     struct_generics.push(token.clone());
                                                     match &token {
-                                                        proc_macro2::TokenTree::Punct(punct) => {
+                                                        TokenTree::Punct(punct) => {
                                                             let c = punct.as_char();
                                                             match c {
                                                                 '<' => {
@@ -225,7 +216,7 @@ impl<'a> ExtendDerive<'a> {
                             // check for where clause
                             if let Some(token) = it.peek() {
                                 match token {
-                                    proc_macro2::TokenTree::Ident(ident) => {
+                                    TokenTree::Ident(ident) => {
                                         let ident_str = ident.to_string();
                                         if ident_str == "where" {
                                             struct_where_clause.push(it.next().unwrap());
@@ -233,8 +224,8 @@ impl<'a> ExtendDerive<'a> {
                                                 if let Some(token) = it.peek() {
                                                     struct_where_clause.push(token.clone());
                                                     match &token {
-                                                        proc_macro2::TokenTree::Group(group) => {
-                                                            if group.delimiter() == proc_macro2::Delimiter::Brace {
+                                                        TokenTree::Group(group) => {
+                                                            if group.delimiter() == Delimiter::Brace {
                                                                 break;
                                                             } else {
                                                                 struct_where_clause.push(token.clone());
@@ -257,7 +248,7 @@ impl<'a> ExtendDerive<'a> {
                             // get inner
                             let token = it.next().unwrap();
                             match token {
-                                proc_macro2::TokenTree::Group(group) => {
+                                TokenTree::Group(group) => {
                                     // println!("struct_inner: {}", group.to_string());
                                     struct_inner = Some(group);
                                 },
@@ -270,7 +261,7 @@ impl<'a> ExtendDerive<'a> {
                                 // check for semi colon
                                 if let Some(token) = it.next() {
                                     match &token {
-                                        proc_macro2::TokenTree::Punct(punct) => {
+                                        TokenTree::Punct(punct) => {
                                             if punct.as_char() == ';' {
                                                 struct_semi = Some(punct.clone());
                                             } else {
@@ -282,7 +273,7 @@ impl<'a> ExtendDerive<'a> {
                                         }
                                     }
                                 } else {
-                                    // struct_semi = Some(Punct::new(';', proc_macro2::Spacing::Alone).clone());
+                                    // struct_semi = Some(Punct::new(';', Spacing::Alone).clone());
                                     // println!("Expected semi colon but reached end of stream.");
                                 }
                             }
@@ -293,7 +284,7 @@ impl<'a> ExtendDerive<'a> {
                             // get name
                             let token = it.next().unwrap();
                             match token {
-                                proc_macro2::TokenTree::Ident(ident) => {
+                                TokenTree::Ident(ident) => {
                                     struct_name = Some(ident.clone());
                                 },
                                 _ => {
@@ -304,7 +295,7 @@ impl<'a> ExtendDerive<'a> {
                             // get inner
                             let token = it.next().unwrap();
                             match token {
-                                proc_macro2::TokenTree::Group(group) => {
+                                TokenTree::Group(group) => {
                                     // println!("struct_inner: {}", group.to_string());
                                     struct_inner = Some(group);
                                 },
@@ -328,41 +319,22 @@ impl<'a> ExtendDerive<'a> {
     }
 
     pub fn finalize(&self) -> TokenStream {
-        let struct_attrs = proc_macro2::TokenStream::from_iter(self.struct_attrs_tokens.clone());
-
         let struct_vis = &self.struct_vis;
         let struct_type = &self.struct_type;
         let struct_name = &self.struct_name;
-        let struct_generics = &self.struct_generics;
-        let struct_where_clause = &self.struct_where_clause;
-        let struct_inner = self.generate_struct_inner();
         let struct_semi = &self.struct_semi;
 
-        let tokens_to_prepend = TokenStream::from_iter(self.generate_prepend_code().iter().cloned());
-        let tokens_to_append = TokenStream::from_iter(self.generate_append_code().iter().cloned());
-
-        let generics = TokenStream::from_iter(struct_generics.clone().into_iter());
-        let where_clause = TokenStream::from_iter(struct_where_clause.clone().into_iter());
-        let prepend = TokenStream::from_iter(tokens_to_prepend.into_iter());
-        let append_to_end = TokenStream::from_iter(tokens_to_append.into_iter().chain(self.tokens_to_append.borrow().clone().into_iter()));
-
-        // println!("prepend: {}", tokens_to_prepend.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(""));
-        // println!("struct_attrs: {}", self.struct_attrs_tokens.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(""));
-        // println!("struct_vis: {:?}", struct_vis);
-        // println!("struct_type: {:?}", struct_type);
-        // println!("struct_name: {:?}", struct_name);
-        // println!("struct_generics: {}", struct_generics.to_string());
-        // println!("struct_where_clause: {}", struct_where_clause.to_string());
-        // println!("struct_inner: {}", struct_inner.to_string());
-        // println!("struct_semi: {:?}", struct_semi);
-        // println!("append: {}", tokens_to_append.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(""));
-
-        quote::quote! {
-            #prepend
-            #struct_attrs
-            #struct_vis #struct_type #struct_name #generics #where_clause #struct_inner #struct_semi
-            #append_to_end
-        }
+        TokenStream::from_iter(
+            self.generate_prepend_code().into_iter()
+                .chain(self.struct_attrs_tokens.clone().into_iter())
+                .chain(vec![struct_vis.clone(), struct_type.clone(), struct_name.clone()].into_iter().filter(|x| x.is_some()).map(|x|TokenTree::Ident(x.unwrap())))
+                .chain(self.struct_generics.clone().into_iter())
+                .chain(self.struct_where_clause.clone().into_iter())
+                .chain(vec![self.generate_struct_inner()].into_iter().map(|x|TokenTree::Group(x))
+                .chain(vec![struct_semi.clone()].into_iter().filter(|x| x.is_some()).map(|x|TokenTree::Punct(x.unwrap()))))
+                .chain(self.generate_append_code().into_iter())
+                .chain(self.tokens_to_append.borrow().clone().into_iter())
+        )
     }
 
     pub fn generate_append_code(&self) -> Vec<TokenTree> {
@@ -422,7 +394,7 @@ impl<'a> ExtendDerive<'a> {
     }
 
     // closure function for checking property visibility
-    pub fn get_property_visibility<T>(&self, it: &mut Peekable<T>) -> Option<Ident> where T: Iterator<Item=TokenTree> {
+    pub fn get_property_visibility<T>(it: &mut Peekable<T>) -> Option<Ident> where T: Iterator<Item=TokenTree> {
         let vis = if let Some(vis_token) = it.peek() {
             match vis_token {
                 TokenTree::Ident(ident) => {
@@ -447,7 +419,7 @@ impl<'a> ExtendDerive<'a> {
         vis
     }
 
-    pub(crate) fn get_struct_properties(&self) -> Vec<(Option<Ident>, Ident, Punct, Vec<TokenTree>)> {
+    pub(crate) fn get_struct_properties(&self) -> Vec<AstProperty> {
         let mut properties = vec![];
         let mut property_name: Option<Ident> = None;
         let mut property_colon: Option<Punct> = None;
@@ -455,7 +427,7 @@ impl<'a> ExtendDerive<'a> {
         let mut it = self.struct_inner.as_ref().unwrap().stream().into_iter().peekable();
         let mut punct_stack = vec![];
 
-        let mut property_visibility = self.get_property_visibility(&mut it);
+        let mut property_visibility = Self::get_property_visibility(&mut it);
         loop {
             if let Some(token) = it.next() {
                 match &token {
@@ -469,11 +441,11 @@ impl<'a> ExtendDerive<'a> {
                                 if punct_stack.len() > 0 {
                                     property_type.push(token.clone());
                                 } else {
-                                    properties.push((property_visibility, property_name.unwrap().clone(), property_colon.unwrap(), property_type.clone()));
+                                    properties.push(AstProperty::new(property_visibility, property_name.unwrap().clone(), property_colon.unwrap(), property_type.clone()));
                                     property_name = None;
                                     property_colon = None;
                                     property_type = vec![];
-                                    property_visibility = self.get_property_visibility(&mut it);
+                                    property_visibility = Self::get_property_visibility(&mut it);
                                 }
                             },
                             ':' => {
@@ -551,7 +523,7 @@ impl<'a> ExtendDerive<'a> {
 
         let mut punct_stack = vec![];
 
-        let method_visibility = self.get_property_visibility(it);
+        let method_visibility = Self::get_property_visibility(it);
         // should be fn
         if let Some(token) = it.next() {
             match &token {
@@ -631,7 +603,7 @@ impl<'a> ExtendDerive<'a> {
                                             if punct_stack.len() > 0 {
                                                 method_arg_type.push(token.clone());
                                             } else {
-                                                method_args.push(AstProperty::new(method_arg_name.unwrap().clone(), method_arg_type.clone()));
+                                                method_args.push(AstProperty::new(None, method_arg_name.unwrap(), method_arg_colon.unwrap(), method_arg_type.clone()));
                                                 method_arg_name = None;
                                                 method_arg_colon = None;
                                                 method_arg_type = vec![];
@@ -680,8 +652,8 @@ impl<'a> ExtendDerive<'a> {
                                                         TokenTree::Ident(ident) => {
                                                             if ident.to_string() == "self" {
                                                                 method_arg_name = Some(ident.clone());
-                                                                method_arg_colon = Some(Punct::new(':', proc_macro2::Spacing::Alone));
-                                                                method_arg_type.push(Ident::new("Self", proc_macro2::Span::call_site()).into());
+                                                                method_arg_colon = Some(Punct::new(':', Spacing::Alone));
+                                                                method_arg_type.push(Ident::new("Self", Span::call_site()).into());
                                                             } else {
                                                                 panic!("Expected self, not {:?}.", token);
                                                             }
@@ -733,7 +705,7 @@ impl<'a> ExtendDerive<'a> {
         }
 
         if method_arg_name.is_some() {
-            method_args.push(AstProperty::new(method_arg_name.unwrap().clone(), method_arg_type.clone()));
+            method_args.push(AstProperty::new(None, method_arg_name.unwrap().clone(), method_arg_colon.unwrap(), method_arg_type.clone()));
         }
 
         // check for return type
@@ -757,9 +729,9 @@ impl<'a> ExtendDerive<'a> {
                                                 },
                                                 TokenTree::Group(group) => {
                                                     match group.delimiter() {
-                                                        proc_macro2::Delimiter::Parenthesis |
-                                                        proc_macro2::Delimiter::Bracket |
-                                                        proc_macro2::Delimiter::None => {
+                                                        Delimiter::Parenthesis |
+                                                        Delimiter::Bracket |
+                                                        Delimiter::None => {
                                                             method_return_type.push(token.clone());
                                                         },
                                                         _ => {
@@ -772,7 +744,7 @@ impl<'a> ExtendDerive<'a> {
                                                 }
                                             }
                                         } else {
-                                            panic!("Expected ;, not end of stream.");
+                                            panic!("Expected ';', not end of stream.");
                                         }
                                     }
                                 } else {

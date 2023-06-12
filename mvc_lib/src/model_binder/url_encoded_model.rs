@@ -21,9 +21,9 @@ use crate::model_binder::reflected_method::ReflectedMethod;
 
 // this struct is used to parse the body content of a form url encoded request.
 // it is used by the FormUrlEncodedBinder.
-#[derive(Clone, Debug, IHazAttributes, IModel)]
 #[reflect_attributes]
 #[reflect_properties]
+#[derive(Clone, Debug, IHazAttributes, IModel)]
 pub struct UrlEncodedModel(pub QueryString);
 
 #[reflect_methods]

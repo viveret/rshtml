@@ -6,37 +6,44 @@ use super::imodel_property::IModelProperty;
 
 // this struct is used to represent a reflected property during execution / runtime.
 pub struct ReflectedProperty {
+    pub name_ampersand: bool,
     pub name: String,
-    typeinfo: Box<TypeInfo>,
+    pub return_type: Option<Box<TypeInfo>>,
 }
 
 impl ReflectedProperty {
     pub fn new(
+        name_ampersand: bool,
         name: String,
-        typeinfo: Box<TypeInfo>
+        return_type: Option<Box<TypeInfo>>
     ) -> Self {
         Self {
+            name_ampersand: name_ampersand,
             name: name,
-            typeinfo: typeinfo,
+            return_type: return_type,
         }
     }
 }
 
 impl IModelProperty for ReflectedProperty {
+    fn get_has_name_ampersand(&self) -> bool {
+        self.name_ampersand
+    }
+
+    fn get_return_type(&self) -> Option<Box<TypeInfo>> {
+        self.return_type.clone()
+    }
+
     fn get_name(self: &Self) -> String {
         self.name.clone()
     }
 
-    fn get_type(&self) -> Box<TypeInfo> {
-        self.typeinfo.clone()
-    }
-
-    fn get_type_string(&self) -> String {
-        self.typeinfo.to_string()
+    fn get_type_info(&self) -> Box<TypeInfo> {
+        Box::new(TypeInfo::of::<Self>())
     }
 
     fn to_string(&self) -> String {
-        format!("{}: {}", self.get_name(), self.get_type_string())
+        format!("{}: {}", self.get_name(), self.return_type.as_ref().map(|x| x.to_string()).unwrap_or("void".to_string()))
     }
 
     fn get_value(&self) -> String {

@@ -49,7 +49,8 @@ mvc_macro_lib::rusthtml_view_macro! {
     <ol>
     @for f in controller_methods {
         <li>
-            <b>@f.0</b>@"("<span>@f.1</span>@") -> "<span>@f.2</span>
+            <small>@f.0</small>
+            <b>@f.1</b>@"("<span>@f.2</span>@") -> "<span>@f.3</span>
         </li>
     }
     </ol>

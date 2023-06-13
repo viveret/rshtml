@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 use core_macro_lib::IHazAttributes;
 use core_macro_lib::IModel;
+use core_macro_lib::fake_property_attribute;
 use core_macro_lib::reflect_attributes;
 use core_macro_lib::reflect_methods;
 use core_macro_lib::reflect_properties;
@@ -125,6 +126,7 @@ impl DevController {
         Ok(Some(Rc::new(ViewResult::new("views/dev/controllers.rs".to_string(), view_model))))
     }
 
+    #[fake_property_attribute]
     pub fn controller_details(&self, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
         let request_context = controller_ctx.get_request_context();
         let path = &request_context.get_path()["/dev/controllers/".len()..];
@@ -140,11 +142,12 @@ impl DevController {
             controller.get_actions().iter().map(|a| (a.get_name(), a.get_path().to_cow_str())).collect(),
             controller.get_features().iter().map(|f| f.get_name()).collect(),
             controller.get_attributes().iter().map(|a| a.to_string()).collect(),
-            controller.get_properties().iter().map(|a| (a.0.clone(), a.1.get_type_string().clone())).collect(),
+            controller.get_properties().iter().map(|a| (a.0.clone(), a.1.get_return_type().map(|x| x.to_string()).unwrap_or("void".to_string()))).collect(),
             controller.get_methods().iter().map(|a| (
+                a.1.get_attributes().iter().map(|a| a.to_string()).collect::<Vec<String>>().join(", "),
                 format!("{} {}", a.1.get_visibility(), a.0.clone()), 
                 a.1.get_arguments().iter().map(|p| p.to_string()).collect::<Vec<String>>().join(", "),
-                a.1.get_return_type().to_string()
+                a.1.get_return_type().map(|x| x.to_string()).unwrap_or("void".to_string()),
             )).collect(),
         ));
         return Ok(Some(Rc::new(ViewResult::new("views/dev/controller_details.rs".to_string(), view_model))));

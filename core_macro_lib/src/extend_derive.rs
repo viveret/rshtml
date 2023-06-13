@@ -417,6 +417,7 @@ impl<'a> ExtendDerive<'a> {
     pub(crate) fn get_struct_properties(&self) -> Vec<AstProperty> {
         let mut properties = vec![];
         let mut property_attributes: Vec<AstAttribute> = vec![];
+        let mut property_name_amp: Option<Punct> = None;
         let mut property_name: Option<Ident> = None;
         let mut property_colon: Option<Punct> = None;
         let mut property_type: Vec<TokenTree> = vec![];
@@ -437,7 +438,8 @@ impl<'a> ExtendDerive<'a> {
                                 if punct_stack.len() > 0 {
                                     property_type.push(token.clone());
                                 } else {
-                                    properties.push(AstProperty::new(property_attributes, property_visibility, property_name.unwrap().clone(), property_colon, property_type.clone()));
+                                    properties.push(AstProperty::new(property_attributes, property_visibility, property_name_amp, property_name.unwrap().clone(), property_colon, property_type.clone()));
+                                    property_name_amp = None;
                                     property_name = None;
                                     property_colon = None;
                                     property_type = vec![];
@@ -545,7 +547,7 @@ impl<'a> ExtendDerive<'a> {
         }
 
         if property_name.is_some() {
-            properties.push(AstProperty::new(property_attributes, property_visibility, property_name.unwrap().clone(), property_colon, property_type.clone()));
+            properties.push(AstProperty::new(property_attributes, property_visibility, property_name_amp, property_name.unwrap().clone(), property_colon, property_type.clone()));
         }
 
         properties
@@ -559,6 +561,7 @@ impl<'a> ExtendDerive<'a> {
         let mut method_return_type: Vec<TokenTree> = vec![];
 
         let mut method_args = vec![];
+        let mut method_arg_name_amp: Option<Punct> = None;
         let mut method_arg_name: Option<Ident> = None;
         let mut method_arg_colon: Option<Punct> = None;
         let mut method_arg_type: Vec<TokenTree> = vec![];
@@ -703,7 +706,8 @@ impl<'a> ExtendDerive<'a> {
                                             if punct_stack.len() > 0 {
                                                 method_arg_type.push(token.clone());
                                             } else {
-                                                method_args.push(AstProperty::new(vec![], None, method_arg_name.unwrap(), method_arg_colon, method_arg_type.clone()));
+                                                method_args.push(AstProperty::new(vec![], None, method_arg_name_amp, method_arg_name.unwrap(), method_arg_colon, method_arg_type.clone()));
+                                                method_arg_name_amp = None;
                                                 method_arg_name = None;
                                                 method_arg_colon = None;
                                                 method_arg_type = vec![];
@@ -746,18 +750,22 @@ impl<'a> ExtendDerive<'a> {
                                             if method_arg_name.is_some() {
                                                 method_arg_type.push(token.clone());
                                             } else {
+                                                method_arg_name_amp = Some(punct.clone());
                                                 // check if next token is self
-                                                if let Some(token) = it.next() {
-                                                    match &token {
+                                                if let Some(self_token) = it.next() {
+                                                    match &self_token {
                                                         TokenTree::Ident(ident) => {
                                                             if ident.to_string() == "self" {
                                                                 method_arg_name = Some(ident.clone());
+                                                                method_arg_colon = Some(Punct::new(':', Spacing::Joint));
+                                                                method_arg_type.push(token.clone());
+                                                                method_arg_type.push(Ident::new("Self", Span::call_site()).into());
                                                             } else {
-                                                                panic!("Expected self, not {:?}.", token);
+                                                                panic!("Expected self, not {:?}.", self_token);
                                                             }
                                                         },
                                                         _ => {
-                                                            panic!("Expected self, not {:?}.", token);
+                                                            panic!("Expected self, not {:?}.", self_token);
                                                         }
                                                     }
                                                 } else {
@@ -803,7 +811,7 @@ impl<'a> ExtendDerive<'a> {
         }
 
         if method_arg_name.is_some() {
-            method_args.push(AstProperty::new(vec![], None, method_arg_name.unwrap().clone(), method_arg_colon, method_arg_type.clone()));
+            method_args.push(AstProperty::new(vec![], None, method_arg_name_amp, method_arg_name.unwrap().clone(), method_arg_colon, method_arg_type.clone()));
         }
 
         // check for return type
@@ -882,21 +890,7 @@ impl<'a> ExtendDerive<'a> {
         self.struct_attrs
             .iter()
             .flat_map(|x| {
-                let name = &x.name;
-                let name_str = name.to_string();
-                let value = if let Some(a) = &x.content {
-                    a.to_string()
-                } else {
-                    String::new()
-                };
-
-                quote::quote! {
-                    Rc::new(ReflectedAttribute::new(
-                        #name_str.to_string(),
-                        #value.to_string(),
-                        None,
-                    )),
-                }.into_iter()
+                x.finalize()
             })
             .collect::<Vec<TokenTree>>()
     }

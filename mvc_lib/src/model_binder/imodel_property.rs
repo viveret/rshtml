@@ -4,9 +4,10 @@ use super::ihaz_attributes::IHazAttributes;
 
 
 pub trait IModelProperty: IHazAttributes {
+    fn get_has_name_ampersand(&self) -> bool;
     fn get_name(&self) -> String;
-    fn get_type(&self) -> Box<TypeInfo>;
-    fn get_type_string(&self) -> String;
+    fn get_return_type(&self) -> Option<Box<TypeInfo>>;
+    fn get_type_info(&self) -> Box<TypeInfo>;
     fn to_string(&self) -> String;
 
 

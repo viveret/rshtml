@@ -15,8 +15,8 @@ impl DisplayNameAttribute {
 }
 
 impl IAttribute for DisplayNameAttribute {
-    fn get_type_info(&self) -> Box<TypeInfo> {
-        Box::new(TypeInfo::of::<Self>())
+    fn get_type_info(&self) -> Option<Box<TypeInfo>> {
+        Some(Box::new(TypeInfo::of::<Self>()))
     }
 
     fn get_name(&self) -> String {

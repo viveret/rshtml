@@ -14,7 +14,7 @@ pub struct ReflectedMethod {
     pub name: String,
     pub generics: Vec<Rc<dyn IModelProperty>>,
     pub parameters: Vec<Rc<dyn IModelProperty>>,
-    pub return_type: Box<TypeInfo>,
+    pub return_type: Option<Box<TypeInfo>>,
 }
 
 impl ReflectedMethod {
@@ -24,7 +24,7 @@ impl ReflectedMethod {
         name: String,
         generics: Vec<Rc<dyn IModelProperty>>,
         parameters: Vec<Rc<dyn IModelProperty>>,
-        return_type: Box<TypeInfo>
+        return_type: Option<Box<TypeInfo>>,
     ) -> Self {
         Self {
             attributes: attributes,
@@ -42,7 +42,7 @@ impl IModelMethod for ReflectedMethod {
         self.name.clone()
     }
 
-    fn get_return_type(&self) -> Box<TypeInfo> {
+    fn get_return_type(&self) -> Option<Box<TypeInfo>> {
         self.return_type.clone()
     }
 
@@ -55,7 +55,7 @@ impl IModelMethod for ReflectedMethod {
     }
 
     fn to_string(&self) -> String {
-        format!("{}: {}", self.get_name(), self.get_return_type().to_string())
+        format!("{}: {}", self.get_name(), self.get_return_type().map(|x| x.to_string()).unwrap_or("void".to_string()))
     }
 
     fn get_type_info(&self) -> Box<TypeInfo> {
@@ -67,7 +67,7 @@ impl IModelMethod for ReflectedMethod {
     }
 
     fn get_attribute(&self, typeinfo: &TypeInfo) -> Option<Rc<dyn IAttribute>> {
-        self.get_attributes().iter().find(|x| x.get_type_info().as_ref().is_compatible_with(typeinfo)).map(|x| x.clone())
+        self.get_attributes().iter().find(|x| x.get_type_info().is_some() && x.get_type_info().as_ref().unwrap().is_compatible_with(typeinfo)).map(|x| x.clone())
     }
 
     fn get_visibility(&self) -> String {

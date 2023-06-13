@@ -36,7 +36,16 @@ impl AstMethod {
     pub fn finalize(&self) -> TokenStream {
         let attributes = TokenStream::from_iter(self.attributes.iter().flat_map(|x| x.finalize()));
         let name = self.name.to_string();
-        let return_type = TokenStream::from_iter(self.safe_return_type().into_iter());
+        // let return_type = TokenStream::from_iter(self.return_type.clone().into_iter());
+        // Box::new(TypeInfo::of::<#return_type>()),
+        let return_type_tokens = if self.return_type.len() > 0 {
+            let return_type = TokenStream::from_iter(self.return_type.clone().into_iter());
+            quote::quote! {
+                Some(Box::new(TypeInfo::of::<#return_type>()))
+            }
+        } else {
+            quote::quote! { None }
+        };
         let vis = self.vis.clone().unwrap_or(Ident::new("private", Span::call_site())).to_string();
         let parameters = TokenStream::from_iter(self.args.iter().flat_map(|x| x.finalize()));
         quote::quote! {
@@ -46,7 +55,7 @@ impl AstMethod {
                 #name.to_string(),
                 vec![],
                 vec![#parameters],
-                Box::new(TypeInfo::of::<#return_type>()),
+                #return_type_tokens,
             )),
         }
     }
@@ -63,11 +72,11 @@ impl AstMethod {
         )
     }
 
-    fn safe_return_type(&self) -> Vec<TokenTree> {
-        if self.return_type.len() == 0 {
-            vec![TokenTree::Group(Group::new(proc_macro2::Delimiter::Parenthesis, TokenStream::new()))]
-        } else {
-            self.return_type.clone()
-        }
-    }
+    // fn safe_return_type(&self) -> Vec<TokenTree> {
+    //     if self.return_type.len() == 0 {
+    //         vec![TokenTree::Group(Group::new(proc_macro2::Delimiter::Parenthesis, TokenStream::new()))]
+    //     } else {
+    //         self.return_type.clone()
+    //     }
+    // }
 }

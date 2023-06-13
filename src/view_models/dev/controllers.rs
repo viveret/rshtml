@@ -25,7 +25,7 @@ pub struct ControllerDetailsViewModel {
     pub features: Vec<String>,
     pub attributes: Vec<String>,
     pub properties: Vec<(String,String)>,
-    pub methods: Vec<(String,String,String)>,
+    pub methods: Vec<(String,String,String,String)>,
 }
 
 #[reflect_methods]
@@ -36,7 +36,7 @@ impl ControllerDetailsViewModel {
         features: Vec<String>,
         attributes: Vec<String>,
         properties: Vec<(String,String)>,
-        methods: Vec<(String,String,String)>,
+        methods: Vec<(String,String,String,String)>,
     ) -> Self {
         Self {
             name: name,
@@ -77,14 +77,15 @@ impl ControllersViewModel {
             }
             let mut properties = vec![];
             for prop in controller.get_properties() {
-                properties.push((prop.0.clone(), prop.1.get_type_string().clone()));
+                properties.push((prop.0.clone(), prop.1.get_return_type().map(|x| x.to_string()).unwrap_or("void".to_string())));
             }
             let mut methods = vec![];
             for method in controller.get_methods() {
                 methods.push((
+                    method.1.get_attributes().iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", "),
                     method.0.clone(), 
-                    method.1.get_arguments().iter().map(|p| p.get_type_string()).collect::<Vec<String>>().join(", "),
-                    method.1.get_return_type().to_string()
+                    method.1.get_arguments().iter().map(|p| p.get_return_type().map(|x| x.to_string()).unwrap_or("void".to_string())).collect::<Vec<String>>().join(", "),
+                    method.1.get_return_type().map(|x| x.to_string()).unwrap_or("void".to_string())
                 ));
             }
             controllers.push(ControllerDetailsViewModel::new(controller.get_type_name().into(), actions, vec![], attrs, properties, methods));

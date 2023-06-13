@@ -13,7 +13,7 @@ pub(crate) fn impl_ihaz_attributes(ast: &syn::DeriveInput) -> TokenStream {
             }
         
             fn get_attribute(&self, typeinfo: &TypeInfo) -> Option<Rc<dyn IAttribute>> {
-                self.get_attributes().iter().filter(|a| (&a).get_type_info().is_same_as(typeinfo)).nth(0).cloned()
+                self.get_attributes().iter().filter(|a| (&a).get_type_info().is_some() && (&a).get_type_info().unwrap().is_same_as(typeinfo)).nth(0).cloned()
             }
         }
     }

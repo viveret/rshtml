@@ -11,7 +11,7 @@ use super::imodel_property::IModelProperty;
 pub trait IModelMethod {
     fn get_name(&self) -> String;
     fn get_visibility(&self) -> String;
-    fn get_return_type(&self) -> Box<TypeInfo>;
+    fn get_return_type(&self) -> Option<Box<TypeInfo>>;
     fn get_arguments(&self) -> Vec<Rc<dyn IModelProperty>>;
     fn get_argument(&self, name: &str) -> Option<Rc<dyn IModelProperty>>;
     

@@ -27,12 +27,12 @@ impl IAttribute for ReflectedAttribute {
         self.name.clone()
     }
 
-    fn get_type_info(&self) -> Box<TypeInfo> {
-        self.typeinfo.clone().unwrap_or(Box::new(TypeInfo::of::<Self>()))
+    fn get_type_info(&self) -> Option<Box<TypeInfo>> {
+        Some(self.typeinfo.clone().unwrap_or(Box::new(TypeInfo::of::<Self>())))
     }
 
     fn to_string(&self) -> String {
-        format!("{}{}", self.name, self.contents)
+        format!("#[{}{}]", self.name, self.contents)
     }
 
     fn get_contents(&self) -> String {

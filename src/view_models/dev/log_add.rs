@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use core_macro_lib::IHazAttributes;
 use core_macro_lib::display_name;
+use core_macro_lib::fake_property_attribute;
 use core_macro_lib::reflect_attributes;
 use core_macro_lib::reflect_methods;
 use core_macro_lib::reflect_properties;
@@ -56,6 +57,7 @@ impl LogAddInputModel {
         Self::new(String::default(), String::default())
     }
 
+    #[fake_property_attribute]
     pub fn is_valid(&self) -> bool {
         if self.message.is_empty() {
             false

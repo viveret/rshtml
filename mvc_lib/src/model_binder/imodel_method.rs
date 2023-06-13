@@ -6,8 +6,9 @@ use super::imodel_attribute::IAttribute;
 use super::imodel_property::IModelProperty;
 
 
-
-
+// this trait represents a rust method that is reflected.
+// it is used to generate code for the method and during runtime
+// to get information about the method.
 pub trait IModelMethod {
     fn get_name(&self) -> String;
     fn get_visibility(&self) -> String;

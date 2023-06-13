@@ -82,7 +82,7 @@ impl ControllersViewModel {
             let mut methods = vec![];
             for method in controller.get_methods() {
                 methods.push((
-                    method.1.get_attributes().iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", "),
+                    method.1.get_attributes().iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" "),
                     method.0.clone(), 
                     method.1.get_arguments().iter().map(|p| p.get_return_type().map(|x| x.to_string()).unwrap_or("void".to_string())).collect::<Vec<String>>().join(", "),
                     method.1.get_return_type().map(|x| x.to_string()).unwrap_or("void".to_string())

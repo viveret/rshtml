@@ -69,6 +69,10 @@ use crate::view_models::dev::sys_info::SysInfoViewModel;
 #[reflect_properties]
 #[derive(IHazAttributes, Clone, IModel)]
 pub struct DevController {
+    // this needs to be fixed such that reflect_properties will
+    // extract attributes on data so they don't appear in final code.
+    // Rust does not allow attributes on data properties by default.
+    #[fake_property_attribute] 
     pub log_service: Rc<dyn ILoggingService>,
 }
 

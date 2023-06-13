@@ -1,11 +1,15 @@
+use std::rc::Rc;
+
 use crate::core::type_info::TypeInfo;
 
 use super::ihaz_attributes::IHazAttributes;
+use super::imodel_attribute::IAttribute;
 use super::imodel_property::IModelProperty;
 
 
 // this struct is used to represent a reflected property during execution / runtime.
 pub struct ReflectedProperty {
+    pub attributes: Vec<Rc<dyn IAttribute>>,
     pub name_ampersand: bool,
     pub name: String,
     pub return_type: Option<Box<TypeInfo>>,
@@ -13,11 +17,13 @@ pub struct ReflectedProperty {
 
 impl ReflectedProperty {
     pub fn new(
+        attributes: Vec<Rc<dyn IAttribute>>,
         name_ampersand: bool,
         name: String,
         return_type: Option<Box<TypeInfo>>
     ) -> Self {
         Self {
+            attributes: attributes,
             name_ampersand: name_ampersand,
             name: name,
             return_type: return_type,
@@ -43,7 +49,12 @@ impl IModelProperty for ReflectedProperty {
     }
 
     fn to_string(&self) -> String {
-        format!("{}: {}", self.get_name(), self.return_type.as_ref().map(|x| x.to_string()).unwrap_or("void".to_string()))
+        format!(
+            "{}{}: {}", 
+            self.attributes.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" "),
+            self.get_name(),
+            self.return_type.as_ref().map(|x| x.to_string()).unwrap_or("void".to_string())
+        )
     }
 
     fn get_value(&self) -> String {

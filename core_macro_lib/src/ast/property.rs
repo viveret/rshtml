@@ -1,6 +1,6 @@
 use proc_macro2::{TokenTree, Ident, Punct, TokenStream, Group};
 
-use super::attribute::AstAttribute;
+use super::attribute::{AstAttribute, self};
 
 
 // this is a property of a struct or a parameter of a method or a function.
@@ -56,8 +56,14 @@ impl AstProperty {
         } else {
             quote::quote! { None }
         };
+        let attribute_tokens = self.attributes.iter().flat_map(|x| {
+            let tokens = x.finalize();
+            tokens
+        }).collect::<Vec<TokenTree>>();
+        let attributes = TokenStream::from_iter(attribute_tokens.into_iter());
         quote::quote! {
             Rc::new(ReflectedProperty::new(
+                vec![#attributes],
                 #has_name_ampersand,
                 #name.to_string(),
                 #return_type_tokens,

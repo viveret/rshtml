@@ -251,13 +251,13 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
                 let attribute = property.get_attribute(&TypeInfo::of::<DisplayNameAttribute>());
                 if let Some(attribute) = attribute {
                     let label = attribute.get_name();
-                    return HtmlString::new_data_string(label);
+                    return self.label(property_name.as_str(), label.as_str(), None);
                 }
             }
         }
 
         // else return the property name
-        HtmlString::new_data_string(property_name)
+        self.label(property_name.as_str(), property_name.as_str(), None)
     }
 
     fn select_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, _: (TFn, proc_macro2::TokenStream), _options: Vec<(String, String)>, _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {

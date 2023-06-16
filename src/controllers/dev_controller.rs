@@ -72,7 +72,12 @@ pub struct DevController {
     // this needs to be fixed such that reflect_properties will
     // extract attributes on data so they don't appear in final code.
     // Rust does not allow attributes on data properties by default.
-    #[fake_property_attribute] 
+    // another fact is that Rust does not support attributes on struct properties.
+    // this is because attributes are only allowed on structs, enums, and functions.
+    // these are valid AST nodes, but properties are not because they are separated by commas,
+    // unless it is the last property. the only way to get around this is to use a regular macro function
+    // instead of a proc macro attribute.
+    // #[fake_property_attribute]
     pub log_service: Rc<dyn ILoggingService>,
 }
 
@@ -196,6 +201,7 @@ impl DevController {
     }
 
     pub fn log_add(&self, model_result: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+        let mut model_result = model_result; // remut
         let logger = LoggingService::get_service(services).get_logger();
         let supports_read = logger.supports_read();
         println!("model_result: {:?}", model_result);
@@ -205,12 +211,18 @@ impl DevController {
             ModelValidationResult::OkNone |
             ModelValidationResult::ModelError(..) |
             ModelValidationResult::PropertyError(..) |
+            ModelValidationResult::MultipleErrors(..) |
             ModelValidationResult::OtherError(..) => LogAddInputModel::default(),
         };
         let method = controller_ctx.get_request_context().get_method();
         println!("{} model: {}", method, model.to_string());
 
         if method == http::Method::GET || !model.is_valid() {
+            if !model.is_valid() {
+                model_result = model.get_validation_result();
+                controller_ctx.get_request_context().set_model_validation_result(Some(model_result.as_anyimodel()));
+            }
+
             let view_model = Box::new(LogAddViewModel::new(supports_read, Rc::new(model)));
             Ok(Some(Rc::new(ViewResult::new("views/dev/log_add.rs".to_string(), view_model))))
         } else {

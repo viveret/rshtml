@@ -6,6 +6,7 @@ use crate::attributes::display_name_attribute::DisplayNameAttribute;
 use crate::core::html_buffer::{HtmlBuffer, IHtmlBuffer};
 use crate::core::type_info::TypeInfo;
 use crate::model_binder::imodel::IModel;
+use crate::model_binder::model_validation_result::ModelValidationResult;
 use crate::services::service_collection::IServiceCollection;
 use crate::contexts::view_context::IViewContext;
 use crate::view::rusthtml::html_string::HtmlString;
@@ -273,6 +274,35 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
 
     fn option_selected_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, _: (TFn, proc_macro2::TokenStream), _disabled: bool, _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         todo!()
+    }
+
+    fn validation_summary(self: &Self) -> HtmlString {
+        if let Some(result) = self._view_context.get_request_context().get_model_validation_result() {
+            match result {
+                ModelValidationResult::Ok(_) |
+                ModelValidationResult::OkNone => {
+                    HtmlString::empty()
+                },
+                ModelValidationResult::PropertyError(_, property_name, error) => {
+                    HtmlString::new_data_string(format!("{}: {}", property_name, error.to_string()))
+                },
+                ModelValidationResult::MultipleErrors(_, errors) => {
+                    let mut html = String::new();
+                    for error in errors {
+                        html.push_str(&format!("{}: {}<br/>", error.0, error.1.to_string()));
+                    }
+                    HtmlString::new_data_string(html)
+                },
+                ModelValidationResult::ModelError(_, e) => {
+                    HtmlString::new_data_string(e.to_string())
+                },
+                ModelValidationResult::OtherError(e) => {
+                    HtmlString::new_data_string(e.to_string())
+                },
+            }
+        } else {
+            HtmlString::empty()
+        }
     }
 }
 

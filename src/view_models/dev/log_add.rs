@@ -87,23 +87,24 @@ impl LogAddInputModel {
             _ => log::Level::Info
         }
     }
-}
 
-// impl IModel for LogAddInputModel {
-//     fn to_string(&self) -> String {
-//         format!("LogAddInputModel {{ message: {}, level: {} }}", self.message, self.level)
-//     }
-//     // fn validate(&self) -> ModelValidationResult<()> {
-//     //     let mut result = ModelValidationResult::new();
-//     //     if self.message.is_empty() {
-//     //         result.add_error("message", "Message is required.");
-//     //     }
-//     //     if self.level.is_empty() {
-//     //         result.add_error("level", "Level is required.");
-//     //     }
-//     //     result
-//     // }
-// }
+    pub fn get_validation_result(&self) -> ModelValidationResult<LogAddInputModel> {
+        let mut errors: Vec<(String, Rc<dyn std::error::Error>)> = vec![];
+        if self.message.is_empty() {
+            errors.push(("message".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Message is required."))));
+        }
+        if self.level.is_empty() {
+            errors.push(("level".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Level is required."))));
+        }
+        
+
+        match errors.len() {
+            0 => ModelValidationResult::Ok(self.clone()),
+            1 => ModelValidationResult::PropertyError(self.clone(), errors[0].0.clone(), errors[0].1.clone()),
+            _ => ModelValidationResult::MultipleErrors(self.clone(), errors)
+        }
+    }
+}
 
 pub struct LogAddInputModelBinder {
 

@@ -148,7 +148,7 @@ pub fn display_name(attr: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn fake_property_attribute(attr: TokenStream, item: TokenStream) -> TokenStream {
     // let display_name: String = attr.into_iter().next().unwrap().to_string();
-    println!("attr: \"{}\"", attr.to_string());
-    println!("item: \"{}\"", item.to_string());
+    // println!("attr: \"{}\"", attr.to_string());
+    // println!("item: \"{}\"", item.to_string());
     item
 }

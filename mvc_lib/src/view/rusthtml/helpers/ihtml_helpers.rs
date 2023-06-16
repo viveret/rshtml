@@ -108,8 +108,8 @@ pub trait IHtmlHelpers<'a, TModel: 'static + IModel> {
     // returns: the string representation of the html attributes.
     fn html_attrs_to_string(self: &Self, html_attrs: Option<&HashMap<String, String>>) -> String;
 
-
-
+    // return an HTML string that contains the validation summary.
+    fn validation_summary(self: &Self) -> HtmlString;
 
 
     // helpers for HTML views that have a model

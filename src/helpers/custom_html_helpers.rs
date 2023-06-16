@@ -147,4 +147,8 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for CustomHtmlHelpe
     fn option_selected_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         self.html_helpers.option_selected_for(expr, disabled, html_attrs)
     }
+
+    fn validation_summary(self: &Self) -> HtmlString {
+        self.html_helpers.validation_summary()
+    }
 }

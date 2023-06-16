@@ -1,6 +1,6 @@
-use proc_macro2::{TokenTree, Ident, Punct, TokenStream, Group};
+use proc_macro2::{TokenTree, Ident, Punct, TokenStream};
 
-use super::attribute::{AstAttribute, self};
+use super::attribute::AstAttribute;
 
 
 // this is a property of a struct or a parameter of a method or a function.

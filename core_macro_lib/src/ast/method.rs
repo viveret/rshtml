@@ -1,4 +1,4 @@
-use proc_macro2::{Ident, Span, TokenTree, TokenStream, Group};
+use proc_macro2::{Ident, Span, TokenTree, TokenStream};
 
 use super::attribute::AstAttribute;
 use super::property::AstProperty;

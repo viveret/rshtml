@@ -1,11 +1,11 @@
 ## The step by step guide to using the different parts of this framework
 
 Covers a lot of the same topics as in here:
-- https://learn.microsoft.com/en-us/aspnet/core/fundamentals/?view=aspnetcore-7.0&tabs=linux
-- https://learn.microsoft.com/en-us/aspnet/core/mvc/overview?view=aspnetcore-7.0
-- https://learn.microsoft.com/en-us/aspnet/core/mvc/views/razor?view=aspnetcore-7.0
-- https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?source=recommendations&view=aspnetcore-7.0
-- https://learn.microsoft.com/en-us/aspnet/core/fundamentals/best-practices?view=aspnetcore-7.0
+- [ASP.NET Core fundamentals overview](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/?view=aspnetcore-7.0&tabs=linux)
+- [Overview of ASP.NET Core MVC](https://learn.microsoft.com/en-us/aspnet/core/mvc/overview?view=aspnetcore-7.0)
+- [Razor syntax reference for ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/views/razor?view=aspnetcore-7.0)
+- [ASP.NET Core Middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?source=recommendations&view=aspnetcore-7.0)
+- [ASP.NET Core Best Practices](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/best-practices?view=aspnetcore-7.0)
 
 
 ### Outline

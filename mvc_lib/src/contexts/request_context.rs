@@ -373,6 +373,8 @@ impl<'a> IRequestContext for RequestContext<'a> {
                 },
                 ModelValidationResult::PropertyError(..) => {
                 },
+                ModelValidationResult::MultipleErrors(..) => {
+                },
                 ModelValidationResult::OtherError(..) => {
                 },
             }

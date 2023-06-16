@@ -130,7 +130,7 @@ pub trait IHtmlHelpers<'a, TModel: 'static + IModel> {
     // name: the name of the input.
     // checked: whether or not the checkbox is checked.
     // returns: the input HTML.
-    fn checkbox_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
+    fn checkbox_for<TFn: 'static + Fn(&TModel) -> bool>(&self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
 
     // create a textarea with the given name and value for a form.
     // name: the name of the textarea.

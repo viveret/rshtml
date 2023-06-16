@@ -30,6 +30,10 @@ impl ServiceDescriptor {
         Self { type_info: type_info, type_factory: None, type_factory_closure: Some(Box::new(type_factory)), scope: scope }
     }
 
+    pub fn new_from<TService: 'static + ?Sized, TImplementation>(type_factory: fn(&dyn IServiceCollection) -> Vec<Box<dyn Any>>, scope: ServiceScope) -> Self {
+        Self::new(TypeInfo::rc_of::<TService>(), type_factory, scope)
+    }
+
     // pub fn new_singleton<T, TInterface: ?Sized>(type_info: Box<TypeInfo>, item: &'static T) -> Self {
     //     Self { type_info: type_info, type_factory: None, type_factory_closure: Some(Box::new(move |_| -> Vec<Box<dyn Any>> { vec![Box::new(Rc::new(*item))] })), scope: ServiceScope::Singleton }
     // }

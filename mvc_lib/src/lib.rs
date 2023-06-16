@@ -12,6 +12,7 @@ pub mod controllers;
 pub mod core;
 pub mod diagnostics;
 pub mod entity;
+pub mod error;
 pub mod errors;
 pub mod http;
 pub mod model_binder;

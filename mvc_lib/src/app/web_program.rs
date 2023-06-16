@@ -92,10 +92,13 @@ impl <'a> WebProgram<'a> {
 
         // invoke the request pipeline to process the request and get the response.
         match request_pipeline.as_ref().process_request(&connection_context, &connection_services) {
-            Ok(_) => {},
+            Ok(_) => {
+                // the request was processed successfully, call response written event listeners.
+                // todo: call response written event listeners.
+            },
             Err(e) => {
-                // send the error back to the client.
-                println!("could not process request: {}", e);
+                // unhandled error, panic. if the application shouldn't panic, then add middleware to handle the error.
+                panic!("unhandled error occurred while processing request: {}", e);
             }
         }
 

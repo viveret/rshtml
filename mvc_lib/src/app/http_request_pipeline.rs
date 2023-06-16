@@ -57,7 +57,7 @@ impl HttpRequestPipeline {
 
     // adds the HTTP request pipeline to the given service collection.
     pub fn add_to_services(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IHttpRequestPipeline>(), HttpRequestPipeline::new_service, ServiceScope::Request));
+        services.add(ServiceDescriptor::new_from::<dyn IHttpRequestPipeline, Self>(Self::new_service, ServiceScope::Request));
     }
 
     /// Process the request using the middleware.

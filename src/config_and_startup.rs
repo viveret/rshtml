@@ -128,6 +128,7 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::add_logging(services);
     DefaultServices::add_performance_logging(services);
     DefaultServices::add_file_provider(services);
+    DefaultServices::add_error_handling(services);
 
     GenericAuthRolesDbSetProvider::add_to_services(services);
 
@@ -146,6 +147,7 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::add_routing(services);
 
     // configure middleware
+    DefaultServices::use_error_handling(services);
     DefaultServices::use_routing(services);
     DefaultServices::use_request_decoders(services);
     DefaultServices::use_response_encoders(services);

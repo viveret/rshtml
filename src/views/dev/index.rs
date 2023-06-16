@@ -15,5 +15,6 @@ mvc_macro_lib::rusthtml_view_macro! {
         <li>@html.link(url.url_action(false, Some(false), None, Some("views"), Some("Dev"), None, None).as_str(), "Compiled views", None)</li>
         <li>@html.link(url.url_action(false, Some(false), None, Some("sys_info"), Some("Dev"), None, None).as_str(), "Sys Info", None)</li>
         <li>@html.link(url.url_action(false, Some(false), None, Some("index"), Some("AuthRoles"), None, None).as_str(), "Auth Roles", None)</li>
+        <li>@html.link(url.url_action(false, Some(false), None, Some("error"), Some("Dev"), None, None).as_str(), "Return Error", None)</li>
     </ul>
 }

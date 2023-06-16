@@ -30,7 +30,7 @@ impl GenericAuthRolesDbSetProvider {
     }
 
     pub fn add_to_services(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IAuthRolesDbSetProvider>(), Self::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new_from::<dyn IAuthRolesDbSetProvider, Self>(Self::new_service, ServiceScope::Singleton));
     }
 }
 

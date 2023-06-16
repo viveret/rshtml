@@ -5,6 +5,8 @@ use crate::diagnostics::logging::log_http_requests::LogHttpRequestsMiddleware;
 use crate::diagnostics::logging::logging_service::{LoggingService, ILoggingService};
 use crate::diagnostics::performance::iperformance_logger_service::IPerformanceLoggerService;
 use crate::diagnostics::performance::performance_logger_service::PerformanceLoggerService;
+use crate::error::error_handling_middleware::ErrorHandlingMiddleware;
+use crate::error::error_handling_service::ErrorHandlingService;
 use crate::http::http_body_format_resolver::HttpBodyFormatResolver;
 use crate::http::http_body_format_service::HttpBodyFormatService;
 use crate::http::request_decoder_middleware::RequestDecoderMiddleware;
@@ -133,5 +135,13 @@ impl DefaultServices {
     // add the default model validation middleware to the service collection.
     pub fn use_model_validation(services: &mut ServiceCollection) {
         ModelBinderMiddleware::add_to_services(services);
+    }
+
+    pub fn add_error_handling(services: &mut ServiceCollection) {
+        ErrorHandlingService::add_to_services(services);
+    }
+
+    pub fn use_error_handling(services: &mut ServiceCollection) {
+        ErrorHandlingMiddleware::add_to_services(services);
     }
 }

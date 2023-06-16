@@ -248,6 +248,10 @@ impl DevController {
         let view_model = Box::new(PerfLogViewModel::new());
         Ok(Some(Rc::new(ViewResult::new("views/dev/perf_log.rs".to_string(), view_model))))
     }
+
+    pub fn error(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+        Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "This is a test error.")))
+    }
 }
 
 impl IController for DevController {
@@ -272,6 +276,7 @@ impl IController for DevController {
             rc_controller_action_validate_typed!(log_add),
             rc_controller_action!(log_clear),
             rc_controller_action!(perf_log),
+            rc_controller_action!(error),
             
             Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/controllers/..".into(), nameof_member_fn!(Self::controller_details).into(), controller_name.clone().into(), self.get_route_area(), Box::new(Self::controller_details))),
             Rc::new(ControllerActionMemberFn::new_not_validated(vec![], None, "/dev/routes/..".into(), nameof_member_fn!(Self::route_details).into(), controller_name.clone().into(), self.get_route_area(), Box::new(Self::route_details))),

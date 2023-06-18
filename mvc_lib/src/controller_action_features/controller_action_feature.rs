@@ -33,7 +33,7 @@ pub trait IControllerActionFeature {
     // response_context: the response context for the controller action.
     // services: the service collection for the controller action.
     // returns: the middleware result for the controller action or an error.
-    fn invoke(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>>;
+    fn invoke(self: &Self, request_context: Rc<dyn IRequestContext>, response_context: Rc<ResponseContext>, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>>;
 
     // get the controller action feature as an Any for downcasting.
     fn as_any(&self) -> &dyn Any;

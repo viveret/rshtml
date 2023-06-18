@@ -18,7 +18,8 @@ use mvc_lib::controller_action_features::controller_action_feature::IControllerA
 use mvc_lib::controller_actions::controller_action::IControllerAction;
 use mvc_lib::controller_actions::builder::ControllerActionsBuilder;
 use mvc_lib::model_binder::imodel::IModel;
-use core_macro_lib::{IModel, IHazAttributes, reflect_attributes, reflect_properties, reflect_methods};
+use mvc_lib::model_binder::iviewmodel::IViewModel;
+use core_macro_lib::{IModel, IViewModel, IHazAttributes, reflect_attributes, reflect_properties, reflect_methods};
 use mvc_lib::model_binder::ihaz_attributes::IHazAttributes;
 use mvc_lib::model_binder::imodel_attribute::IAttribute;
 use mvc_lib::model_binder::imodel_property::IModelProperty;
@@ -55,8 +56,8 @@ impl HomeController {
 
     // this is the index action for the home controller.
     // this is the home page for the site.
-    pub fn get_index(_controller: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
-        let view_model = Box::new(IndexViewModel::new());
+    pub fn get_index(_controller: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
+        let view_model = Rc::new(IndexViewModel::new());
         Ok(Some(Rc::new(ViewResult::new("views/home/index.rs".to_string(), view_model))))
     }
 }

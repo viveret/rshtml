@@ -44,9 +44,9 @@ pub trait IControllerAction {
     // get the controller action features for the controller action.
     fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>>;
     // get whether or not the action matches the request.
-    fn is_route_match(self: &Self, request_context: &dyn IRequestContext) -> Result<bool, Box<dyn Error>>;
+    fn is_route_match(self: &Self, request_context: &dyn IRequestContext) -> Result<bool, Rc<dyn Error>>;
     // invoke the controller action for the request and context.
-    fn invoke(self: &Self, request_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>>;
+    fn invoke(self: &Self, request_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>>;
 }
 
 // extension methods for IControllerAction

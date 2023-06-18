@@ -79,7 +79,7 @@ impl IController for LearnController {
                     .filter(|x| x.as_str() != "README")
                     .collect();
 
-                let view_model = Box::new(IndexViewModel::new(learn_docs));
+                let view_model = Rc::new(IndexViewModel::new(learn_docs));
                 Ok(Some(Rc::new(ViewResult::new("views/learn/index.rs".to_string(), view_model))))
             })),
             Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn/..".into(), "details".into(), controller_name.clone().into(), Rc::new(|_model, controller_ctx, _services| {
@@ -90,7 +90,7 @@ impl IController for LearnController {
                     return Ok(Some(Rc::new(HttpRedirectResult::new("/learn".to_string()))))
                 }
 
-                let view_model = Box::new(DetailsViewModel::new(format!("docs/learn/{}.md", path)));
+                let view_model = Rc::new(DetailsViewModel::new(format!("docs/learn/{}.md", path)));
                 Ok(Some(Rc::new(ViewResult::new("views/learn/details.rs".to_string(), view_model))))
             }))),
         ]

@@ -4,7 +4,9 @@ use std::rc::Rc;
 use http::StatusCode;
 use http::HeaderMap;
 
+use crate::action_results::iaction_result::IActionResult;
 use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
+use crate::services::service_collection::IServiceCollection;
 
 use super::connection_context::IHttpConnectionContext;
 use super::irequest_context::IRequestContext;
@@ -31,6 +33,10 @@ pub trait IResponseContext {
     // get the status code of the response.
     fn get_status_code(&self) -> StatusCode;
 
+    // invoke the action result for the controller context by setting the status code of the response and then
+    // configuring the response with the action result, and finally writing the response body.
+    fn invoke_action_result(self: &Self, request_context: &dyn IRequestContext, services: &dyn IServiceCollection);
+
     // set the status code of the response.
     fn set_status_code(&self, status_code: StatusCode);
 
@@ -42,6 +48,30 @@ pub trait IResponseContext {
 
     // use an encoder for the response body.
     fn use_encoder(self: &Self, encoder: Rc<dyn IHttpBodyStreamFormat>);
+
+    // get the action result for the controller context.
+    fn get_action_result(self: &Self) -> Option<Rc<dyn IActionResult>>;
+
+    // set the action result for the controller context.
+    fn set_action_result(self: &Self, action_result: Option<Rc<dyn IActionResult>>);
+
+    fn get_has_started_writing(self: &Self) -> bool;
+
+    fn set_result_500_if_not_started_writing(self: &Self);
+
+
+    // get the context data of the request
+    fn get_str(self: &Self, key: &str) -> Option<String>;
+    // get the context data of the request
+    fn get_string(self: &Self, key: String) -> Option<String>;
+    // insert a value into the context data of the request
+    fn insert_str(self: &mut Self, key: &str, value: String);
+    // insert a value into the context data of the request
+    fn insert_string(self: &mut Self, key: String, value: String);
+    // remove a value from the context data of the request
+    fn remove_str(self: &mut Self, key: &str);
+    // remove a value from the context data of the request
+    fn remove_string(self: &mut Self, key: String);
 }
 
 // this trait represents a HTTP response and its context.
@@ -59,6 +89,8 @@ pub struct ResponseContext<'a> {
     pub connection_context: &'a dyn IHttpConnectionContext,
     // the encoders to use for the response body.
     encoders: RefCell<Vec<Rc<dyn IHttpBodyStreamFormat>>>,
+    // the action result to use for the response.
+    pub action_result: RefCell<Option<Rc<dyn IActionResult>>>,
 }
 
 impl <'a> ResponseContext<'a> {
@@ -78,6 +110,7 @@ impl <'a> ResponseContext<'a> {
             request_context: request_context,
             connection_context: http_context,
             encoders: RefCell::new(Vec::new()),
+            action_result: RefCell::new(None),
         }
     }
 }
@@ -117,5 +150,57 @@ impl <'a> IResponseContext for ResponseContext<'a> {
 
     fn use_encoder(self: &Self, encoder: Rc<dyn IHttpBodyStreamFormat>) {
         self.encoders.borrow_mut().push(encoder);
+    }
+
+    fn get_action_result(self: &Self) -> Option<Rc<dyn IActionResult>> {
+        match self.action_result.borrow().clone() {
+            Some(action_result) => Some(action_result),
+            None => None,
+        }
+    }
+
+    fn set_action_result(self: &Self, action_result: Option<Rc<dyn IActionResult>>) {
+        if let Some(action_result) = action_result.as_ref() {
+            self.set_status_code(action_result.get_statuscode());
+        }
+        self.action_result.replace(action_result);
+    }
+
+    fn get_str(self: &Self, key: &str) -> Option<String> {
+        None
+    }
+
+    fn get_string(self: &Self, key: String) -> Option<String> {
+        None
+    }
+
+    fn insert_str(self: &mut Self, key: &str, value: String) {
+    }
+
+    fn insert_string(self: &mut Self, key: String, value: String) {
+    }
+
+    fn remove_str(self: &mut Self, key: &str) {
+    }
+
+    fn remove_string(self: &mut Self, key: String) {
+    }
+
+    fn get_has_started_writing(self: &Self) -> bool {
+        self.connection_context.get_has_started_writing()
+    }
+
+    fn set_result_500_if_not_started_writing(self: &Self) {
+        if !self.get_has_started_writing() && self.get_action_result().is_none() {
+            println!("Writing 500 because no response was written to the client.");
+            self.set_action_result(Some(Rc::new(crate::action_results::http_result::InternalServerErrorResult::new("No response was written to the client.".to_string()))));
+        }
+    }
+
+    fn invoke_action_result(self: &Self, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) {
+        if let Some(action_result) = self.action_result.borrow().as_ref() {
+            self.set_status_code(action_result.get_statuscode());
+            action_result.configure_response(self, request_context, services);
+        }
     }
 }

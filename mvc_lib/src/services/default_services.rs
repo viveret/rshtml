@@ -5,8 +5,8 @@ use crate::diagnostics::logging::log_http_requests::LogHttpRequestsMiddleware;
 use crate::diagnostics::logging::logging_service::{LoggingService, ILoggingService};
 use crate::diagnostics::performance::iperformance_logger_service::IPerformanceLoggerService;
 use crate::diagnostics::performance::performance_logger_service::PerformanceLoggerService;
-use crate::error::error_handling_middleware::ErrorHandlingMiddleware;
-use crate::error::error_handling_service::ErrorHandlingService;
+use crate::error::error_handler_middleware::ErrorHandlerMiddleware;
+use crate::error::error_handler_service::ErrorHandlerService;
 use crate::http::http_body_format_resolver::HttpBodyFormatResolver;
 use crate::http::http_body_format_service::HttpBodyFormatService;
 use crate::http::request_decoder_middleware::RequestDecoderMiddleware;
@@ -22,7 +22,6 @@ use crate::services::service_scope::ServiceScope;
 use crate::services::file_provider_service::FileProviderService;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::request_middleware_service::IRequestMiddlewareService;
-use crate::services::controller_action_execute_service::ControllerActionExecuteService;
 use crate::services::routing_service::RoutingService;
 use crate::services::routemap_service::RouteMapService;
 
@@ -30,6 +29,9 @@ use crate::view::view_renderer::ViewRenderer;
 
 use crate::controllers::icontroller::IController;
 use crate::controllers::file_provider_controller::FileProviderController;
+
+use super::action_result_handler_middleware::ActionResultHandlerMiddleware;
+use super::controller_action_execute_service::ControllerActionExecuteService;
 
 
 
@@ -92,6 +94,11 @@ impl DefaultServices {
         ControllerActionExecuteService::add_to_services(services);
     }
 
+    pub fn add_action_result_handler(services: &mut ServiceCollection) {
+        // the thing that executes the request controller action from routing and other middleware
+        ActionResultHandlerMiddleware::add_to_services(services);
+    }
+
     // add the default request pipeline services to the service collection.
     pub fn add_request_decoders(services: &mut ServiceCollection) {
         HttpBodyFormatResolver::add_to_services(services);
@@ -138,10 +145,10 @@ impl DefaultServices {
     }
 
     pub fn add_error_handling(services: &mut ServiceCollection) {
-        ErrorHandlingService::add_to_services(services);
+        ErrorHandlerService::add_to_services(services);
     }
 
     pub fn use_error_handling(services: &mut ServiceCollection) {
-        ErrorHandlingMiddleware::add_to_services(services);
+        ErrorHandlerMiddleware::add_to_services(services);
     }
 }

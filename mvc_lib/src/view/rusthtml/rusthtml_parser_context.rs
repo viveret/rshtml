@@ -172,6 +172,7 @@ impl RustHtmlParserContext {
             model_type: RefCell::new(None),
             use_statements: RefCell::new(vec![
                 quote::quote!{
+                    use as_any::Downcast;
                     use std::any::Any;
                     use std::borrow::Cow;
                     use std::cell::RefCell;
@@ -186,11 +187,13 @@ impl RustHtmlParserContext {
                     use proc_macro2::TokenStream;
 
                     use core_macro_lib::{ * };
-
+                    
+                    use mvc_lib::core::type_info::TypeInfo;
                     use mvc_lib::core::html_buffer::IHtmlBuffer;
                     use mvc_lib::core::html_buffer::HtmlBuffer;
                     use mvc_lib::contexts::controller_context::IControllerContext;
                     use mvc_lib::contexts::view_context::IViewContext;
+                    use mvc_lib::model_binder::imodel::IModel;
                     use mvc_lib::model_binder::imodel::AnyIModel;
                     use mvc_lib::services::service_collection::IServiceCollection;
                     use mvc_lib::view::rusthtml::helpers::ihtml_helpers::IHtmlHelpers;

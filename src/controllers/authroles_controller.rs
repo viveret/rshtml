@@ -98,23 +98,23 @@ impl AuthRolesController {
     }
 
     // get the index view, which shows all the roles.
-    pub fn get_index(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn get_index(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let roles = self.get_roles();
-        let view_model = Box::new(IndexViewModel::new(roles));
+        let view_model = Rc::new(IndexViewModel::new(roles));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/index.rs".to_string(), view_model))))
     }
 
     // get the add role view, which allows the user to add a new role.
-    pub fn get_add(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
-        let view_model = Box::new(AddViewModel::new(String::new(), None));
+    pub fn get_add(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
+        let view_model = Rc::new(AddViewModel::new(String::new(), None));
         Ok(Some(Rc::new(ViewResult::new("views/authroles/add.rs".to_string(), view_model))))
     }
 
     // post the add role view, which allows the user to add a new role.
-    pub fn post_add(self: &Self, _: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn post_add(self: &Self, _: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let _input_model = controller_ctx.get_request_context().get_model_validation_result();
         let new_role = controller_ctx.get_request_context().get_query().get("role"); // to do: this needs to use query parameter
-        let view_model = Box::new(
+        let view_model = Rc::new(
             if let Some(new_role) = new_role {
                 if new_role.is_empty() {
                     AddViewModel::new_error(new_role, "Role is blank")

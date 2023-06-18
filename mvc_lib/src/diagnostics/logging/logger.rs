@@ -1,6 +1,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::contexts::irequest_context::IRequestContext;
+use crate::contexts::request_context;
+
 use super::ilogger::ILogger;
 use super::ilogging_context::ILoggingContext;
 use super::sinks::consoleloggersink::ConsoleLoggerSink;
@@ -22,6 +25,25 @@ impl ILoggingContext for TimestampLoggingContext {
         format!("{} {}", chrono::Local::now().to_rfc3339(), message)
     }
 }
+struct RequestIdLoggingContext {
+    request_id: uuid::Uuid,
+}
+
+impl RequestIdLoggingContext {
+    pub fn new(
+        request_context: &dyn IRequestContext,
+    ) -> Self {
+        Self {
+            request_id: request_context.get_uuid().clone(),
+        }
+    }
+}
+
+impl ILoggingContext for RequestIdLoggingContext {
+    fn wrap_log(&self, _: log::Level, message: &str) -> String {
+        format!("{} {}", self.request_id, message)
+    }
+}
 
 // this struct implements ILogger.
 pub struct Logger {
@@ -40,13 +62,14 @@ impl Logger {
                     }),
                 ]),
             },
-            contexts: RefCell::new(vec![
+            contexts: RefCell::new(vec![ // this is not going to work as expected, might need a different solution to inject new contexts.
                 Rc::new(TimestampLoggingContext::new())
             ]),
         }
     }
 
     pub fn send_through_contexts(&self, level: log::Level, message: &str) -> String {
+        // contexts need to be retrieved from services. 
         let mut message = String::from(message);
         for context in self.contexts.borrow().iter() {
             message = context.wrap_log(level, &message);

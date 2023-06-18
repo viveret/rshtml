@@ -6,7 +6,6 @@ use std::rc::Rc;
 use crate::contexts::connection_context::IHttpConnectionContext;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::IResponseContext;
-use crate::core::type_info::TypeInfo;
 use crate::diagnostics::logging::logging_service::ILoggingService;
 use crate::diagnostics::logging::logging_service::LoggingService;
 use crate::errors::RequestError;
@@ -26,7 +25,7 @@ use crate::services::service_scope::ServiceScope;
 // this is a trait for a class that can process an HTTP request and return an HTTP response.
 // the way requests are processed is by using a pipeline of middleware services.
 pub trait IHttpRequestPipeline {
-    fn process_request(self: &Self, connection_context: &dyn IHttpConnectionContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>>;
+    fn process_request(self: &Self, connection_context: &dyn IHttpConnectionContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>>;
 }
 
 // this is a struct that implements IHttpRequestPipeline.
@@ -34,6 +33,7 @@ pub struct HttpRequestPipeline {
     #[allow(dead_code)]
     options: Rc<dyn IHttpOptions>,
     logger_service: Rc<dyn ILoggingService>,
+    // times_called: RefCell<i32>,
 }
 
 impl HttpRequestPipeline {
@@ -44,6 +44,7 @@ impl HttpRequestPipeline {
         Self { 
             options: options,
             logger_service: logger_service,
+            // times_called: RefCell::new(0),
         }
     }
 
@@ -68,13 +69,15 @@ impl HttpRequestPipeline {
     /// 
     /// # Returns
     /// * The result of processing the request.
-    fn process_request_using_middleware(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
+    fn process_request_using_middleware(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
         // Get the middleware services
         let middleware = ServiceCollectionExtensions::get_required_multiple::<dyn IRequestMiddlewareService>(services);
         // Throw an error if there are no middleware services
         if middleware.len() == 0 {
-            return Err(Box::new(RequestError(format!("No middleware configured"))));
+            return Err(Rc::new(RequestError(format!("No middleware configured"))));
         }
+        // println!("{} Count of middleware services: {}", request_context.get_path(), middleware.len());
+        // println!("{} middleware: {:?}", request_context.get_path(), middleware.iter().map(|x| x.get_type_info().type_name.to_string()).collect::<Vec<String>>());
 
         self.for_each_set_next(&middleware);
 
@@ -112,18 +115,22 @@ impl HttpRequestPipeline {
 }
 
 impl IHttpRequestPipeline for HttpRequestPipeline {
-    fn process_request<'a>(self: &Self, connection_context: &dyn IHttpConnectionContext, services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
+    fn process_request<'a>(self: &Self, connection_context: &dyn IHttpConnectionContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
+        // println!("HttpRequestPipeline::process_request {}", self.times_called.borrow());
+        // *self.times_called.borrow_mut() += 1;
+        
         let request_result = RequestContext::parse(connection_context);
         match request_result {
             Ok(request_context) => {
                 let response_context = ResponseContext::new(&request_context);
-
                 self.process_request_using_middleware(&response_context, &request_context, services)?;
+                response_context.set_result_500_if_not_started_writing();
+                response_context.connection_context.end_reading_begin_writing();
                 return Ok(());
             },
             Err(err) => {
                 self.logger_service.log_error(&format!("Error parsing request: {}", err));
-                return Err(Box::new(err));
+                return Err(Rc::new(err));
             }
         }
     }

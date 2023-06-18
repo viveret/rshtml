@@ -973,6 +973,53 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
 
                     type_parts.push(it.next().unwrap().clone());
 
+                    // might have generics
+                    if let Some(generic_start_token) = it.peek() {
+                        match generic_start_token {
+                            TokenTree::Punct(punct) => {
+                                if punct.as_char() == '<' {
+                                    type_parts.push(it.next().unwrap().clone());
+
+                                    let mut punct_stack = vec![];
+                                    loop {
+                                        let peek_token = it.peek();
+                                        if let Some(token) = peek_token {
+                                            match token {
+                                                TokenTree::Punct(punct) => {
+                                                    let c = punct.as_char();
+                                                    match c {
+                                                        '<' => {
+                                                            punct_stack.push(punct.clone());
+                                                            type_parts.push(it.next().unwrap().clone());
+                                                        },
+                                                        '>' => {
+                                                            type_parts.push(it.next().unwrap().clone());
+                                                            if punct_stack.len() > 0 {
+                                                                punct_stack.pop();
+                                                            } else {
+                                                                break;
+                                                            }
+                                                        },
+                                                        _ => {
+                                                            type_parts.push(it.next().unwrap().clone());
+                                                        }
+                                                    }
+                                                },
+                                                _ => {
+                                                    type_parts.push(it.next().unwrap().clone());
+                                                }
+                                            }
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                }
+                            },
+                            _ => {
+                            }
+                        }
+                    }
+
                     // peek for next 3 punct tokens
                     // if it is a colon, then push it
                     let mut colons = vec![];

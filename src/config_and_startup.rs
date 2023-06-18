@@ -2,6 +2,9 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::rc::Rc;
 
+use mvc_lib::error::error_view_middleware::ErrorViewMiddleware;
+use mvc_lib::error::error_viewmodel_service::ErrorViewModelService;
+use mvc_lib::error::http500_error_handler::Http500ErrorHandler;
 use phf::phf_map;
 
 use mvc_lib::auth::iauthroles_dbset_provider::GenericAuthRolesDbSetProvider;
@@ -44,6 +47,7 @@ use crate::views::home::index::view_home_index;
 use crate::views::learn::index::view_learn_index;
 use crate::views::learn::details::view_learn_details;
 use crate::views::shared::_layout::view_shared__layout;
+use crate::views::shared::error::view_error;
 
 use crate::controllers::home_controller::HomeController;
 use crate::controllers::learn_controller::LearnController;
@@ -74,6 +78,7 @@ pub fn add_views(services: &mut ServiceCollection) {
             view_learn_index::new_service(),
             view_learn_details::new_service(),
             view_shared__layout::new_service(),
+            view_error::new_service(),
         ]
     }
     services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IView>(), new_dev_views_service, ServiceScope::Singleton));
@@ -128,6 +133,10 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::add_logging(services);
     DefaultServices::add_performance_logging(services);
     DefaultServices::add_file_provider(services);
+
+    // add error handlers
+    Http500ErrorHandler::add_to_services(services);
+    ErrorViewModelService::add_to_services(services);
     DefaultServices::add_error_handling(services);
 
     GenericAuthRolesDbSetProvider::add_to_services(services);
@@ -157,7 +166,10 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     AuthorizeControllerActionFeatureMiddleware::add_to_services(services);
     LocalHostOnlyControllerActionFeatureMiddleware::add_to_services(services);
 
+    ErrorViewMiddleware::add_to_services(services);
     DefaultServices::add_execute_controller_action(services);
+
+    DefaultServices::add_action_result_handler(services);
 }
 
 // this is called when the program is starting (after it is configured).

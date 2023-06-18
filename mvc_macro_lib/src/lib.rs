@@ -51,10 +51,25 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
             let raw = parser.parse_context.get_raw();
 
             let view_model_tokens = if model_type_name.len() > 0 {
+                let concrete_type_tokens = if model_type_name != "dyn IModel" {
+                    // println!("model_type_name: {}", model_type_name);
+                    Some(quote! {
+                        m.as_ref().as_any().downcast_ref::<#model_type>().expect(
+                            format!("could not downcast model from Rc<dyn IModel>({:?}) to {:?}", m.get_type_info(), TypeInfo::of::<#model_type>()).as_str()
+                        ).clone()
+                    })
+                } else {
+                    Some(quote! {
+                        m.as_ref()
+                    })
+                };
+                
                 quote! {
                     let vm = view_context.get_viewmodel();
-                    let model: #model_type = match vm {
-                        Some(m) => m.as_any().downcast_ref::<#model_type>().expect(format!("could not downcast model from Box<dyn Any> to {}", std::any::type_name::<#model_type>()).as_str()).clone(),
+                    let model = match vm {
+                        Some(m) => {
+                            #concrete_type_tokens
+                        },
                         None => panic!("No model set")
                     };
                 }

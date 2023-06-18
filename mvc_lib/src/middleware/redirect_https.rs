@@ -6,6 +6,7 @@ use std::rc::Rc;
 use crate::action_results::http_result::HttpRedirectResult;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::IResponseContext;
+use crate::core::type_info::TypeInfo;
 use crate::services::request_middleware_service::IRequestMiddlewareService;
 use crate::services::request_middleware_service::MiddlewareResult;
 use crate::services::service_collection::IServiceCollection;
@@ -15,7 +16,7 @@ use crate::services::service_collection::IServiceCollection;
 
 // this trait is for a middleware service that redirects HTTP requests to HTTPS.
 pub trait IRedirectHttpsMiddlewareService: IRequestMiddlewareService {
-    fn redirect_to_https(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext) -> Result<MiddlewareResult, Box<dyn Error>>;
+    fn redirect_to_https(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext) -> Result<MiddlewareResult, Rc<dyn Error>>;
 }
 
 // define the middleware service that redirects HTTP requests to HTTPS.
@@ -36,10 +37,10 @@ impl RedirectHttpsMiddlewareService {
 }
 
 impl IRedirectHttpsMiddlewareService for RedirectHttpsMiddlewareService {
-    fn redirect_to_https(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn redirect_to_https(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext) -> Result<MiddlewareResult, Rc<dyn Error>> {
         let mut url = request_context.get_url().clone();
         if let Err(_) = url.set_scheme("https") {
-            return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("Error setting scheme to https"))));
+            return Err(Rc::new(std::io::Error::new(std::io::ErrorKind::Other, format!("Error setting scheme to https"))));
         }
         HttpRedirectResult::config_response(response_context, url.to_string());
         Ok(MiddlewareResult::OkBreak)
@@ -51,7 +52,7 @@ impl IRequestMiddlewareService for RedirectHttpsMiddlewareService {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         if request_context.get_scheme() == "http" {
             return self.redirect_to_https(response_context, request_context);
         }
@@ -68,5 +69,9 @@ impl IRequestMiddlewareService for RedirectHttpsMiddlewareService {
         }
 
         Ok(MiddlewareResult::OkContinue)
+    }
+
+    fn get_type_info(&self) -> Box<crate::core::type_info::TypeInfo> {
+        Box::new(TypeInfo::of::<RedirectHttpsMiddlewareService>())
     }
 }

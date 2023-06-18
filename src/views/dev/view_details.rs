@@ -4,12 +4,12 @@ mvc_macro_lib::rusthtml_view_macro! {
     @model crate::view_models::dev::view_details::ViewDetailsViewModel
     @{
         // Layout = "_Layout_Dev_Index";
-        let title = format!("Compiled Rust HTML View at {}", model.view.get_path());
+        let title = format!("Compiled Rust HTML View at {}", model.path);
         view_context.insert_str("Title", title.clone());
-        let raw = model.view.get_raw();
+        let raw = model.raw;
         let statements = raw.split([';', '{', '}',]);
 
-        let model_type_name = match model.view.get_model_type_name() {
+        let model_type_name = match model.model_type_name {
             Some(s) => format!("Requires model type {}", s),
             None => "No model type required".to_string(),
         };

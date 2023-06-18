@@ -100,20 +100,20 @@ impl DevController {
     }
 
     // this is the index action for the controller.
-    pub fn index(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
-        let view_model = Box::new(IndexViewModel::new());
+    pub fn index(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
+        let view_model = Rc::new(IndexViewModel::new());
         Ok(Some(Rc::new(ViewResult::new("views/dev/index.rs".to_string(), view_model))))
     }
 
     // this action returns a view of a list of all the views in the application.
-    pub fn views(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn views(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
-        let view_model = Box::new(ViewsViewModel::new(view_renderer.get_all_views(services)));
+        let view_model = Rc::new(ViewsViewModel::new(view_renderer.get_all_views(services)));
         Ok(Some(Rc::new(ViewResult::new("views/dev/views.rs".to_string(), view_model))))
     }
 
     // this action returns a view of the details of a view in the application.
-    pub fn view_details(&self, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn view_details(&self, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let request_context = controller_ctx.get_request_context();
 
         let path = &request_context.get_path()["/dev/views/".len()..];
@@ -124,19 +124,19 @@ impl DevController {
 
         // println!("Viewing view at path: {:?}", path);
         let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
-        let view_model = Box::new(ViewDetailsViewModel::new(view_renderer.get_view(&path.to_string(), services)));
+        let view_model = Rc::new(ViewDetailsViewModel::new(view_renderer.get_view(&path.to_string(), services)));
         return Ok(Some(Rc::new(ViewResult::new("views/dev/view_details.rs".to_string(), view_model))));
     }
 
     // this action returns a view of a list of all the controllers in the application.
-    pub fn controllers(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn controllers(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let route_map_service = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
-        let view_model = Box::new(ControllersViewModel::from_controllers(route_map_service.as_ref().get_mapper().as_ref().get_controllers()));
+        let view_model = Rc::new(ControllersViewModel::from_controllers(route_map_service.as_ref().get_mapper().as_ref().get_controllers()));
         Ok(Some(Rc::new(ViewResult::new("views/dev/controllers.rs".to_string(), view_model))))
     }
 
     #[fake_property_attribute]
-    pub fn controller_details(&self, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn controller_details(&self, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let request_context = controller_ctx.get_request_context();
         let path = &request_context.get_path()["/dev/controllers/".len()..];
 
@@ -146,7 +146,7 @@ impl DevController {
 
         let route_map_service = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
         let controller = route_map_service.as_ref().get_mapper().get_controller(path.to_string());
-        let view_model = Box::new(ControllerDetailsViewModel::new(
+        let view_model = Rc::new(ControllerDetailsViewModel::new(
             controller.get_type_name().into(),
             controller.get_actions().iter().map(|a| (a.get_name(), a.get_path().to_cow_str())).collect(),
             controller.get_features().iter().map(|f| f.get_name()).collect(),
@@ -163,14 +163,14 @@ impl DevController {
     }
 
     // this action returns a view of a list of all the routes in the application.
-    pub fn routes(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn routes(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let routes = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
-        let view_model = Box::new(RoutesViewModel::new(routes.as_ref().get_mapper().as_ref().get_all_actions()));
+        let view_model = Rc::new(RoutesViewModel::new(routes.as_ref().get_mapper().as_ref().get_all_actions()));
         Ok(Some(Rc::new(ViewResult::new("views/dev/routes.rs".to_string(), view_model))))
     }
 
     // this action returns a view of the details of a route in the application.
-    pub fn route_details(&self, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn route_details(&self, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let request_context = controller_ctx.get_request_context();
         let path = &request_context.get_path()["/dev/routes/".len()..];
 
@@ -182,25 +182,25 @@ impl DevController {
         let route = routes.as_ref().get_mapper().as_ref().get_action_at_area_controller_action_path(path.to_string());
         let controller = routes.as_ref().get_mapper().get_controller(route.get_controller_name().to_string());
 
-        let view_model = Box::new(RouteDetailsViewModel::new(route, controller));
+        let view_model = Rc::new(RouteDetailsViewModel::new(route, Some(controller)));
         return Ok(Some(Rc::new(ViewResult::new("views/dev/route_details.rs".to_string(), view_model))));
     }
 
     // this action returns a view of the system information.
-    pub fn sys_info(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
-        let view_model = Box::new(SysInfoViewModel::new());
+    pub fn sys_info(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
+        let view_model = Rc::new(SysInfoViewModel::new());
         Ok(Some(Rc::new(ViewResult::new("views/dev/sysinfo.rs".to_string(), view_model))))
     }
 
-    pub fn log(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn log(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let logger = LoggingService::get_service(services).get_logger();
         let supports_read = logger.supports_read();
         let logs = if supports_read { logger.read_logs() } else { vec![] };
-        let view_model = Box::new(LogViewModel::new(supports_read, logs));
+        let view_model = Rc::new(LogViewModel::new(supports_read, logs));
         Ok(Some(Rc::new(ViewResult::new("views/dev/log.rs".to_string(), view_model))))
     }
 
-    pub fn log_add(&self, model_result: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn log_add(&self, model_result: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let mut model_result = model_result; // remut
         let logger = LoggingService::get_service(services).get_logger();
         let supports_read = logger.supports_read();
@@ -223,7 +223,7 @@ impl DevController {
                 controller_ctx.get_request_context().set_model_validation_result(Some(model_result.as_anyimodel()));
             }
 
-            let view_model = Box::new(LogAddViewModel::new(supports_read, Rc::new(model)));
+            let view_model = Rc::new(LogAddViewModel::new(supports_read, Rc::new(model)));
             Ok(Some(Rc::new(ViewResult::new("views/dev/log_add.rs".to_string(), view_model))))
         } else {
             self.log_service.log(model.parse_level(), model.message.as_str());            
@@ -231,12 +231,12 @@ impl DevController {
         }
     }
 
-    pub fn log_clear(&self, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
+    pub fn log_clear(&self, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let logger = LoggingService::get_service(services).get_logger();
         let supports_clear = logger.supports_clear();
 
         if controller_ctx.get_request_context().get_method() == http::Method::GET {
-            let view_model = Box::new(LogClearViewModel::new(supports_clear));
+            let view_model = Rc::new(LogClearViewModel::new(supports_clear));
             Ok(Some(Rc::new(ViewResult::new("views/dev/log_clear.rs".to_string(), view_model))))
         } else {
             logger.clear_logs();
@@ -244,13 +244,13 @@ impl DevController {
         }
     }
 
-    pub fn perf_log(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
-        let view_model = Box::new(PerfLogViewModel::new());
+    pub fn perf_log(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
+        let view_model = Rc::new(PerfLogViewModel::new());
         Ok(Some(Rc::new(ViewResult::new("views/dev/perf_log.rs".to_string(), view_model))))
     }
 
-    pub fn error(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Box<dyn Error>> {
-        Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "This is a test error.")))
+    pub fn error(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
+        Err(Rc::new(std::io::Error::new(std::io::ErrorKind::Other, "This is a test error.")))
     }
 }
 

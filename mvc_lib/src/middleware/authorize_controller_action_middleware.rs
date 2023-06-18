@@ -58,7 +58,7 @@ impl IRequestMiddlewareService for AuthorizeControllerActionFeatureMiddleware {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         let auth_service = ServiceCollectionExtensions::get_required_single::<dyn IAuthorizationService>(services);
         let controller_name = request_context.get_str("ControllerName");
 
@@ -88,5 +88,9 @@ impl IRequestMiddlewareService for AuthorizeControllerActionFeatureMiddleware {
         }
 
         Ok(MiddlewareResult::OkContinue)
+    }
+
+    fn get_type_info(&self) -> Box<TypeInfo> {
+        Box::new(TypeInfo::of::<AuthorizeControllerActionFeatureMiddleware>())
     }
 }

@@ -6,6 +6,7 @@ use std::rc::Rc;
 use http::HeaderMap;
 
 use crate::contexts::irequest_context::IRequestContext;
+use crate::core::type_info::TypeInfo;
 use crate::options::logging_services_options::ILogHttpRequestsOptions;
 
 use crate::contexts::response_context::IResponseContext;
@@ -73,7 +74,7 @@ impl IRequestMiddlewareService for LogHttpRequestsMiddleware {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         if let Some(options) = &self.options {
             if options.get_log_request() {
                 println!("Inbound HTTP request: {:?} {} {}", request_context.get_http_version(), request_context.get_method(), request_context.get_path());
@@ -107,5 +108,9 @@ impl IRequestMiddlewareService for LogHttpRequestsMiddleware {
             }
         }
         Ok(MiddlewareResult::OkContinue)
+    }
+
+    fn get_type_info(&self) -> Box<crate::core::type_info::TypeInfo> {
+        Box::new(TypeInfo::of::<LogHttpRequestsMiddleware>())
     }
 }

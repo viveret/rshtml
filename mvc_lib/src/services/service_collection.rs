@@ -313,7 +313,7 @@ pub struct ServiceCollectionExtensions {}
 // extension methods for IServiceCollection
 impl ServiceCollectionExtensions {
     // try to get a service from the collection. if it is not found, return an error.
-    pub fn try_get_single<T: 'static + ?Sized>(services: &dyn IServiceCollection) -> Result<Option<Rc<T>>, Box<dyn Error>> {
+    pub fn try_get_single<T: 'static + ?Sized>(services: &dyn IServiceCollection) -> Result<Option<Rc<T>>, Rc<dyn Error>> {
         let type_info = TypeInfo::rc_of::<T>();
         Ok(services
             .try_get(type_info)
@@ -354,8 +354,8 @@ impl ServiceCollectionExtensions {
     }
 
     // try to get multiple services from the collection. if it is not found, return an error.
-    pub fn try_get_multiple<T: 'static>(_services: &dyn IServiceCollection) -> Result<Vec<Box<dyn Any>>, &str> {
-        Err("a")
+    pub fn try_get_multiple<T: 'static + ?Sized>(services: &dyn IServiceCollection) -> Result<Vec<Rc<T>>, &str> {
+        Ok(Self::get_required_multiple::<T>(services))
     }
 
     // get multiple services from the collection. if it is not found, panic.

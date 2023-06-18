@@ -55,24 +55,21 @@ impl IRequestMiddlewareService for ControllerActionExecuteService {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         if let Some(action) = request_context.get_controller_action_optional() {
             let controller = self.mapper_service.get_mapper().get_controller(action.get_controller_name().to_string());
-            let controller_context = IControllerExtensions::create_context(controller.clone(), request_context);
+            let controller_context = IControllerExtensions::create_context(controller.clone(), request_context, response_context);
             action.invoke(&controller_context, services)?;
-            let result = controller_context.get_action_result();
-
-            match result {
-                Some(action_result) => {
-                    response_context.set_status_code(action_result.get_statuscode());
-                    action_result.configure_response(&controller_context, response_context, request_context, services);
-                },
-                None => {
-                    // println!("Trying next path if available");
-                },
-            }
         }
-                
-        Ok(MiddlewareResult::OkContinue)
+
+        if let Some(next) = self.next.borrow().as_ref() {
+            next.handle_request(response_context, request_context, services)
+        } else {
+            Ok(MiddlewareResult::OkContinue)
+        }
+    }
+
+    fn get_type_info(&self) -> Box<TypeInfo> {
+        Box::new(TypeInfo::of::<ControllerActionExecuteService>())
     }
 }

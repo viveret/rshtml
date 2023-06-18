@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::{rc::Rc, any::Any, cell::RefCell};
 
 use crate::contexts::response_context::IResponseContext;
@@ -63,7 +64,7 @@ impl IRequestMiddlewareService for ModelBinderMiddleware {
         *self.next.borrow_mut() = next;
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn std::error::Error>> {
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         // println!("ModelBinderMiddleware.handle_request");
 
         // request_context.set_model_validation_result(Some(self.model_binder_service.bind_model(request_context, &request_context.get_type_info()));
@@ -81,5 +82,9 @@ impl IRequestMiddlewareService for ModelBinderMiddleware {
         }
 
         Ok(MiddlewareResult::OkContinue)
+    }
+
+    fn get_type_info(&self) -> Box<TypeInfo> {
+        Box::new(TypeInfo::of::<ModelBinderMiddleware>())
     }
 }

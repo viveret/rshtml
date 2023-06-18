@@ -4,10 +4,10 @@ use http::StatusCode;
 
 use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::IResponseContext;
-use crate::contexts::controller_context::IControllerContext;
 
 use crate::action_results::iaction_result::IActionResult;
 use crate::model_binder::imodel::IModel;
+use crate::model_binder::iviewmodel::IViewModel;
 use crate::view::view_renderer::IViewRenderer;
 use crate::view::rusthtml::html_string::HtmlString;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -15,13 +15,14 @@ use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions};
 
 // this struct holds the path to the view and the model to be rendered
-pub struct ViewResult<T: IModel> {
+#[derive(Clone)]
+pub struct ViewResult {
     pub path: String,
-    pub model: Option<Box<T>>,
+    pub model: Option<Rc<dyn IViewModel>>,
 }
 
-impl<T: IModel> ViewResult<T> {
-    pub fn new(path: String, model: Box<T>) -> Self {
+impl ViewResult {
+    pub fn new(path: String, model: Rc<dyn IViewModel>) -> Self {
         Self { path: path, model: Some(model) }
     }
 
@@ -31,7 +32,7 @@ impl<T: IModel> ViewResult<T> {
     }
 
     // this function creates a new ViewResult with a specified model and default path
-    pub fn new_default_path(model: Box<T>) -> Self {
+    pub fn new_default_path(model: Rc<dyn IViewModel>) -> Self {
         Self { path: "".to_string(), model: Some(model) }
     }
 
@@ -49,15 +50,23 @@ impl<T: IModel> ViewResult<T> {
     }
 }
 
-impl <T: 'static + IModel + Clone> IActionResult for ViewResult<T> {
+impl IActionResult for ViewResult {
     fn get_statuscode(self: &Self) -> StatusCode {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, controller_ctx: &dyn IControllerContext, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) {
         let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
-        let model = Some(Rc::new(*(self.model.as_ref().unwrap().clone())) as Rc<dyn IModel>);
-        let html = view_renderer.render_with_layout_if_specified(&self.path, model, controller_ctx, response_context.clone(), services);
+        let html = view_renderer.render_with_layout_if_specified(&self.path, self.model.clone(), response_context, request_context, services);
         self.write_response(html, response_context)
+    }
+}
+
+impl std::fmt::Debug for ViewResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.model {
+            Some(model) => write!(f, "ViewResult: path: {}, model: {:?}", self.path, model.as_ref().get_type_info()),
+            None => write!(f, "ViewResult: path: {}, model: None", self.path),
+        }
     }
 }

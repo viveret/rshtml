@@ -4,7 +4,8 @@ use std::rc::Rc;
 use mvc_lib::core::type_info::TypeInfo;
 
 use mvc_lib::model_binder::imodel::IModel;
-use core_macro_lib::{IModel, IHazAttributes, reflect_attributes, reflect_properties, reflect_methods};
+use mvc_lib::model_binder::iviewmodel::IViewModel;
+use core_macro_lib::{IModel, IViewModel, IHazAttributes, reflect_attributes, reflect_properties, reflect_methods};
 use mvc_lib::model_binder::ihaz_attributes::IHazAttributes;
 use mvc_lib::model_binder::imodel_attribute::IAttribute;
 use mvc_lib::model_binder::imodel_property::IModelProperty;
@@ -15,7 +16,7 @@ use mvc_lib::model_binder::reflected_method::ReflectedMethod;
 
 
 // this is the view model for a validation result
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ViewModelValidationResult {
     // whether or not there are errors
     pub has_errors: bool,
@@ -40,7 +41,7 @@ impl ViewModelValidationResult {
 
 
 // this is the view model for the add role view
-#[derive(Clone, IHazAttributes, IModel)]
+#[derive(Clone, Debug, IHazAttributes, IModel, IViewModel)]
 #[reflect_attributes]
 #[reflect_properties]
 pub struct AddViewModel {

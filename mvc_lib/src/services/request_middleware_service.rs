@@ -5,6 +5,7 @@ use std::result::Result;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::IResponseContext;
 
+use crate::core::type_info::TypeInfo;
 use crate::services::service_collection::IServiceCollection;
 
 // enum for the result of a middleware service.
@@ -18,6 +19,9 @@ pub enum MiddlewareResult {
 // this is a trait for a class that can process an HTTP request and return an HTTP response.
 // the way requests are processed is by using a pipeline of middleware services.
 pub trait IRequestMiddlewareService {
+    // gets the type info of the middleware service.
+    fn get_type_info(&self) -> Box<TypeInfo>;
+
     // sets the next middleware service in the pipeline.
     // next: the next middleware service.
     // returns: nothing.
@@ -28,5 +32,5 @@ pub trait IRequestMiddlewareService {
     // response_context: the response context.
     // services: the service collection.
     // returns: the result of the middleware service.
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>>;
+    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>>;
 }

@@ -1,4 +1,6 @@
+extern crate core_macro_lib;
 extern crate mvc_lib;
+extern crate mvc_macro_lib;
 
 pub mod controllers;
 pub mod helpers;

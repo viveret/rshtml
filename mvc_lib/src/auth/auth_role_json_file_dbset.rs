@@ -8,7 +8,7 @@ use crate::entity::idbset::{ IDbSet, IDbSetAny };
 use crate::entity::json_file_dbset::JsonFileDbSet;
 
 // this struct is used to store a single role in the authrole_dbset.json file
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct JsonAuthRole {
     // the name of the role.
     pub name: String,

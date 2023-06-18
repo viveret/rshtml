@@ -33,7 +33,7 @@ impl RouteDataControllerActionMatcher {
     // response_context: the response context for the controller action.
     // services: the service collection for the controller action.
     // returns: the controller action or an error.
-    pub fn get_action_for_request(self: &Self, _response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IControllerAction>>, Box<dyn Error>> {
+    pub fn get_action_for_request(self: &Self, _response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IControllerAction>>, Rc<dyn Error>> {
         let all_actions = self.actions_map.get_all_actions();
         let actions: Vec<Rc<dyn IControllerAction>> = all_actions
             .iter()

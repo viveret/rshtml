@@ -13,11 +13,15 @@ use crate::controllers::icontroller_extensions::IControllerExtensions;
 
 use crate::routing::route_data::RouteData;
 
+use super::response_context::IResponseContext;
+
 // this trait represents a controller context which is used to invoke a controller action.
 // a controller context is created for each controller that is created.
 pub trait IControllerContext {
     // get the request context for the controller context.
     fn get_request_context(self: &Self) -> &dyn IRequestContext;
+    // get the response context for the controller context.
+    fn get_response_context(self: &Self) -> &dyn IResponseContext;
     // get the context data for the controller context.
     fn get_context_data(self: &Self) -> HashMap<String, Rc<Box<dyn Any>>>;
     // get the view data for the controller context.
@@ -25,12 +29,7 @@ pub trait IControllerContext {
     // get the controller for the controller context.
     fn get_controller(self: &Self) -> Rc<dyn IController>;
     // get the route data for the controller context.
-    fn get_route_data_result(self: &Self) -> Result<Box<RouteData>, Box<dyn Error>>;
-
-    // get the action result for the controller context.
-    fn get_action_result(self: &Self) -> Option<Rc<dyn IActionResult>>;
-    // set the action result for the controller context.
-    fn set_action_result(self: &Self, action_result: Option<Rc<dyn IActionResult>>);
+    fn get_route_data_result(self: &Self) -> Result<Box<RouteData>, Rc<dyn Error>>;
 
     // get a string from the context.
     fn get_string(self: &Self, key: String) -> String;
@@ -54,14 +53,14 @@ pub trait IControllerContext {
 pub struct ControllerContext<'a> {
     // the request context for the controller context.
     pub request_context: &'a dyn IRequestContext,
+    // the response context for the controller context.
+    pub response_context: &'a dyn IResponseContext,
     // the context data for the controller context.
     pub context_data: RefCell<HashMap<String, Rc<Box<dyn Any>>>>,
     // the view data for the controller context.
     pub view_data: RefCell<HashMap<String, String>>,
     // the controller for the controller context.
     pub controller: Rc<dyn IController>,
-    // the action result for the controller context.
-    pub action_result: RefCell<Option<Rc<dyn IActionResult>>>,
 }
 
 impl <'a> ControllerContext<'a> {
@@ -70,14 +69,15 @@ impl <'a> ControllerContext<'a> {
     // request_context: the request context for the controller context.
     pub fn new(
         controller: Rc<dyn IController>,
-        request_context: &'a dyn IRequestContext
+        request_context: &'a dyn IRequestContext,
+        response_context: &'a dyn IResponseContext,
     ) -> Self {
         Self {
             request_context: request_context,
+            response_context: response_context,
             context_data: RefCell::new(HashMap::new()),
             view_data: RefCell::new(HashMap::new()),
             controller: controller.clone(),
-            action_result: RefCell::new(None),
         }
     }
 
@@ -85,7 +85,7 @@ impl <'a> ControllerContext<'a> {
     // returns: the route data for the controller context or an error if the route data could not be parsed.
     pub fn parse_route_data(
         self: &Self,
-    ) -> Result<Box<RouteData>, Box<dyn Error>> {
+    ) -> Result<Box<RouteData>, Rc<dyn Error>> {
         let mut route_data = RouteData::new();
         
         let mut area_name = self.get_str("AreaName");
@@ -112,6 +112,10 @@ impl <'a> IControllerContext for ControllerContext<'a> {
         self.request_context
     }
 
+    fn get_response_context(self: &Self) -> &dyn IResponseContext {
+        self.response_context
+    }
+
     fn get_context_data(self: &Self) -> HashMap<String, Rc<Box<dyn Any>>> {
         self.context_data.borrow().clone()
     }
@@ -124,7 +128,7 @@ impl <'a> IControllerContext for ControllerContext<'a> {
         self.controller.clone()
     }
 
-    fn get_route_data_result(self: &Self) -> Result<Box<RouteData>, Box<dyn Error>> {
+    fn get_route_data_result(self: &Self) -> Result<Box<RouteData>, Rc<dyn Error>> {
         self.parse_route_data()
     }
 
@@ -148,17 +152,6 @@ impl <'a> IControllerContext for ControllerContext<'a> {
 
     fn insert_str(self: &Self, key: &str, value: String) -> String {
         self.insert_string(key.to_string(), value)
-    }
-
-    fn get_action_result(self: &Self) -> Option<Rc<dyn IActionResult>> {
-        match self.action_result.borrow().clone() {
-            Some(action_result) => Some(action_result),
-            None => None,
-        }
-    }
-
-    fn set_action_result(self: &Self, action_result: Option<Rc<dyn IActionResult>>) {
-        self.action_result.replace(action_result);
     }
 
     // fn bind_model(self: &Self, type_info: TypeInfo, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {

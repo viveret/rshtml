@@ -7,13 +7,13 @@ use http::StatusCode;
 
 use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::IResponseContext;
-use crate::contexts::controller_context::IControllerContext;
 
 use crate::action_results::iaction_result::IActionResult;
 
 use crate::services::service_collection::IServiceCollection;
 
 // this is a struct that holds the file path and the content type
+#[derive(Debug)]
 pub struct FileResult {
     pub path: Cow<'static, str>,
     pub content_type: String,
@@ -59,7 +59,7 @@ impl IActionResult for FileResult {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, _controller_ctx: &dyn IControllerContext, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) {
         match File::open(self.path.as_ref()) {
             Ok(f) => {
                 response_context.set_status_code(StatusCode::OK);

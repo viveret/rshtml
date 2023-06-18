@@ -1,3 +1,4 @@
+pub mod action_result_handler_middleware;
 pub mod controller_action_execute_service;
 pub mod authorization_service;
 pub mod default_services;

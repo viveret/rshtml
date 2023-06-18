@@ -68,7 +68,7 @@ impl IControllerActionFeature for AllowAnonymous {
         format!("{}", self.get_name())
     }
 
-    fn invoke(self: &Self, request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn invoke(self: &Self, request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         println!("Allow Anonymous {:?}", request_context.get_connection_context().get_tcp_context().get_remote_addr());
         Ok(MiddlewareResult::OkContinue)
     }
@@ -153,7 +153,7 @@ impl IControllerActionFeature for AuthorizeControllerActionFeature {
         format!("{} (roles: {:?}, policy: {:?})", self.get_name(), self.roles, self.policy)
     }
 
-    fn invoke(self: &Self, _request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Box<dyn Error>> {
+    fn invoke(self: &Self, _request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         Ok(MiddlewareResult::OkContinue)
     }
 

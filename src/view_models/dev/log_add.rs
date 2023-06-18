@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use core_macro_lib::IHazAttributes;
-use core_macro_lib::display_name;
+use core_macro_lib::IViewModel;
 use core_macro_lib::fake_property_attribute;
 use core_macro_lib::reflect_attributes;
 use core_macro_lib::reflect_methods;
@@ -14,6 +14,7 @@ use mvc_lib::contexts::irequest_context::IRequestContext;
 use mvc_lib::core::type_info::TypeInfo;
 use mvc_lib::model_binder::imodel::AnyIModel;
 use mvc_lib::model_binder::imodel::IModel;
+use mvc_lib::model_binder::iviewmodel::IViewModel;
 use core_macro_lib::IModel;
 use mvc_lib::model_binder::ihaz_attributes::IHazAttributes;
 use mvc_lib::model_binder::imodel_attribute::IAttribute;
@@ -33,7 +34,7 @@ use mvc_lib::services::service_scope::ServiceScope;
 
 #[reflect_attributes]
 #[reflect_properties]
-#[derive(Clone, Debug, IHazAttributes, IModel)]
+#[derive(Clone, Debug, IHazAttributes, IModel, IViewModel)]
 pub struct LogAddInputModel {
     // attribute macros are currently not possible on struct fields because of the way attribute macros are implemented.
     // might be able to do it with a proc macro instead of an attribute macro but that would be complicated.
@@ -166,7 +167,7 @@ impl IModelBinder for LogAddInputModelBinder {
 
 #[reflect_attributes]
 #[reflect_properties]
-#[derive(Clone, IHazAttributes, IModel)]
+#[derive(Clone, Debug, IHazAttributes, IModel, IViewModel)]
 pub struct LogAddViewModel {
     pub supports_read: bool,
     pub input: LogAddInputModel,

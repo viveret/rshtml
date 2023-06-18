@@ -11,6 +11,7 @@ mod reflect_methods_macro;
 mod reflect_properties_macro;
 mod ihaz_attributes_macro;
 mod imodel_macro;
+mod iviewmodel_macro;
 
 
 #[proc_macro]
@@ -115,6 +116,12 @@ pub fn expr_quote(input: TokenStream) -> TokenStream {
 pub fn imodel_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
     imodel_macro::impl_imodel(&ast).into()
+}
+
+#[proc_macro_derive(IViewModel)]
+pub fn iviewmodel_derive(input: TokenStream) -> TokenStream {
+    let ast = syn::parse(input).unwrap();
+    iviewmodel_macro::impl_iviewmodel(&ast).into()
 }
 
 #[proc_macro_derive(IHazAttributes)]

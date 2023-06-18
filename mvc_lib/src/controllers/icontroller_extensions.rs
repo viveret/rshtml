@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use crate::contexts::response_context::IResponseContext;
 use crate::controllers::icontroller::IController;
 
 use crate::contexts::controller_context::ControllerContext;
@@ -17,8 +18,9 @@ impl IControllerExtensions {
     pub fn create_context<'a>(
         controller: Rc<dyn IController>,
         request_context: &'a dyn IRequestContext,
-    ) -> ControllerContext {
-        ControllerContext::new(controller, request_context)
+        response_context: &'a dyn IResponseContext,
+    ) -> ControllerContext<'a> {
+        ControllerContext::new(controller, request_context, response_context)
     }
 
     // gets the name of the controller without the "Controller" suffix.

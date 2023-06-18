@@ -38,6 +38,7 @@ pub struct WebProgram<'a> {
     on_configure_services_fn: Option<fn(&mut ServiceCollection)>,
     onstart_fn: Option<fn(&dyn IServiceCollection)>,
     services_builder: RefCell<ServiceCollection<'a>>,
+    next_client_connection_id: RefCell<u32>,
 }
 
 impl <'a> WebProgram<'a> {
@@ -47,6 +48,7 @@ impl <'a> WebProgram<'a> {
             on_configure_fn: None,
             on_configure_services_fn: None,
             onstart_fn: None,
+            next_client_connection_id: RefCell::new(0),
         }
     }
 
@@ -66,6 +68,8 @@ impl <'a> WebProgram<'a> {
     }
 
     pub fn client_connected(self: &Self, client: Result<TcpStream, std::io::Error>) {
+        let next_client_connection_id = self.next_client_connection_id.borrow().clone();
+        *self.next_client_connection_id.borrow_mut() += 1;
         match client {
             Ok(stream) => {
                 // stream.set_ttl(100).unwrap();
@@ -73,7 +77,7 @@ impl <'a> WebProgram<'a> {
                 // stream.set_nonblocking(true).unwrap();
                 // stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
                 // stream.set_write_timeout(Some(Duration::from_secs(2))).unwrap();
-                self.client_ready(stream);
+                self.client_ready(stream, next_client_connection_id);
             },
             Err(e) => {
                 panic!("Error: {}", e);
@@ -81,8 +85,8 @@ impl <'a> WebProgram<'a> {
         }
     }
 
-    fn client_ready(&self, stream: TcpStream) {
-        let connection_context = HttpConnectionContext::new_from_stream(stream);
+    fn client_ready(&self, stream: TcpStream, connection_id: u32) {
+        let connection_context = HttpConnectionContext::new_from_stream(stream, connection_id);
 
         let self_services = self.services_builder.borrow().clone();
         let connection_services = ServiceCollection::new(ServiceScope::Request, &self_services, self_services.get_root().unwrap_or(&self_services));

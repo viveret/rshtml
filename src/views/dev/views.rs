@@ -13,9 +13,13 @@ mvc_macro_lib::rusthtml_view_macro! {
     <p>@format!("In total there are {} views:", model.views.len())</p>
     <ul>
     @for compiled_view in model.views.iter() {
-        let href = url.url_action(false, Some(false), None, Some("view_details"), Some("Dev"), None, Some(&RouteValuesBuilder::build_area(compiled_view.get_path().to_string().as_str())));
+        let href = url.url_action(false, Some(false), None, Some("view_details"), Some("Dev"), None, Some(&RouteValuesBuilder::build_area(compiled_view.path.as_str())));
+        let model_type_name = match &compiled_view.model_type_name {
+            Some(s) => format!("Requires model type {}", s),
+            None => "No model type required".to_string(),
+        };
         <li>
-            <a href=@href>@compiled_view.get_path() <span>@" requires "</span> @compiled_view.get_model_type_name()</a>
+            <a href=@href>@compiled_view.path.as_str() <span>@" "</span> @model_type_name</a>
         </li>
     }
     </ul>

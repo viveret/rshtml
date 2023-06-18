@@ -39,7 +39,7 @@ impl LoggingService {
         ServiceCollectionExtensions::get_required_single::<dyn ILoggingService>(services)
     }
 
-    pub fn try_get_service<'a>(services: &'a (dyn IServiceCollection + 'a)) -> Result<Option<Rc<dyn ILoggingService + 'a>>, Box<dyn Error>> {
+    pub fn try_get_service<'a>(services: &'a (dyn IServiceCollection + 'a)) -> Result<Option<Rc<dyn ILoggingService + 'a>>, Rc<dyn Error>> {
         ServiceCollectionExtensions::try_get_single::<dyn ILoggingService>(services)
     }
 }

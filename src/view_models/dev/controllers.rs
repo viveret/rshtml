@@ -2,11 +2,12 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use core_macro_lib::{IModel, IHazAttributes, reflect_properties, reflect_attributes, reflect_methods};
+use core_macro_lib::{IModel, IViewModel, IHazAttributes, reflect_properties, reflect_attributes, reflect_methods};
 
 use mvc_lib::core::type_info::TypeInfo;
 use mvc_lib::controllers::icontroller::IController;
 use mvc_lib::model_binder::imodel::IModel;
+use mvc_lib::model_binder::iviewmodel::IViewModel;
 use mvc_lib::model_binder::imodel_attribute::IAttribute;
 use mvc_lib::model_binder::ihaz_attributes::IHazAttributes;
 use mvc_lib::model_binder::imodel_method::IModelMethod;
@@ -16,7 +17,7 @@ use mvc_lib::model_binder::reflected_property::ReflectedProperty;
 use mvc_lib::model_binder::reflected_method::ReflectedMethod;
 
 
-#[derive(Clone, Debug, IHazAttributes, IModel)]
+#[derive(Clone, Debug, IHazAttributes, IModel, IViewModel)]
 #[reflect_attributes]
 #[reflect_properties]
 pub struct ControllerDetailsViewModel {
@@ -49,7 +50,7 @@ impl ControllerDetailsViewModel {
     }
 }
 
-#[derive(Clone, Debug, IHazAttributes, IModel)]
+#[derive(Clone, Debug, IHazAttributes, IModel, IViewModel)]
 #[reflect_attributes]
 #[reflect_properties]
 pub struct ControllersViewModel {

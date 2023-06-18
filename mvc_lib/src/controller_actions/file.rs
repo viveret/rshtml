@@ -81,16 +81,16 @@ impl ControllerActionFileResult {
 }
 
 impl IControllerAction for ControllerActionFileResult {
-    fn invoke(self: &Self, controller_context: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<(), Box<dyn Error>> {
+    fn invoke(self: &Self, controller_context: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
         let result_option = Some(Rc::new(FileResult::new(self.file_path.clone(), None)));
         if let Some(result) = result_option {
-            controller_context.set_action_result(Some(result));
+            controller_context.get_response_context().set_action_result(Some(result));
         }
 
         Ok(())
     }
 
-    fn is_route_match(self: &Self, request_context: &dyn IRequestContext) -> Result<bool, Box<dyn Error>> {
+    fn is_route_match(self: &Self, request_context: &dyn IRequestContext) -> Result<bool, Rc<dyn Error>> {
         if !IControllerActionExtensions::is_method_match(self, request_context) {
             return Ok(false);
         }

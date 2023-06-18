@@ -17,12 +17,14 @@ without referencing the dotnet core source code.
 - Authentication
 - Automatic route pattern capturing and building
 - Areas
+- Logging / error handling
+- Model binding / validation
+- Property, method, attribute reflection
 
 
 ### To Do / In Progress Features
 - Constraints
 - HTTPS
-- Logging / error handling
 - Automatic area / controller / action discovery 
 
 
@@ -66,9 +68,7 @@ enough similarities and differences that they should be mentioned here.
 - Display and editor templates
 - Sessions or state management
 - Explicit HTML mode by using @:
-- Any kind of reflection
 - Automatic controller / action route discovery (might be able to use https://stackoverflow.com/a/74573771/11765486)
-- Model binding / validation
 - General configuration
 - Localization
 - Background tasks / hosted services

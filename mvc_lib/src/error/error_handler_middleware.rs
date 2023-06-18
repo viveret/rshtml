@@ -60,7 +60,7 @@ impl IRequestMiddlewareService for ErrorHandlerMiddleware {
                         Ok(result)
                     },
                     Err(error) => {
-                        let result = self.error_handling_service.handle_error(error, request_context, response_context);
+                        let result = self.error_handling_service.handle_error(error, Some(request_context), Some(response_context));
                         match result {
                             Ok(_) => {
                                 Ok(MiddlewareResult::OkBreak)

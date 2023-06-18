@@ -100,7 +100,7 @@ impl ITcpStreamWrapper for GzipBodyStream {
         todo!()
     }
 
-    fn read_line(&self) -> Result<String, std::string::FromUtf8Error> {
+    fn read_line(&self) -> std::io::Result<String> {
         todo!()
     }
 

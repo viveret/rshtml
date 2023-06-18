@@ -1,11 +1,11 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::rc::Rc;
+use phf::phf_map;
 
 use mvc_lib::error::error_view_middleware::ErrorViewMiddleware;
 use mvc_lib::error::error_viewmodel_service::ErrorViewModelService;
-use mvc_lib::error::http500_error_handler::Http500ErrorHandler;
-use phf::phf_map;
+use mvc_lib::error::log_error_handler::LogErrorHandler;
 
 use mvc_lib::auth::iauthroles_dbset_provider::GenericAuthRolesDbSetProvider;
 
@@ -135,7 +135,7 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::add_file_provider(services);
 
     // add error handlers
-    Http500ErrorHandler::add_to_services(services);
+    LogErrorHandler::add_to_services(services);
     ErrorViewModelService::add_to_services(services);
     DefaultServices::add_error_handling(services);
 

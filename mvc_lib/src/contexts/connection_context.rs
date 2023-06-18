@@ -50,27 +50,27 @@ impl ConnectionContext {
         Self::new(buf_reader, connection_id)
     }
 
-    fn shutdown(&self, how: std::net::Shutdown) -> Result<(), std::io::Error> {
+    fn shutdown(&self, how: std::net::Shutdown) -> std::io::Result<()> {
         self.source_stream.borrow().shutdown(how)
     }
 
-    fn flush(&self) -> Result<(), std::io::Error> {
+    fn flush(&self) -> std::io::Result<()> {
         self.source_stream.borrow_mut().flush()
     }
 
-    fn write(&self, b: &[u8]) -> Result<usize, std::io::Error> {
+    fn write(&self, b: &[u8]) -> std::io::Result<usize> {
         self.source_stream.borrow_mut().write(b)
     }
 
-    fn write_line(&self, b: &String) -> Result<usize, std::io::Error> {
+    fn write_line(&self, b: &String) -> std::io::Result<usize> {
         self.source_stream.borrow_mut().write_line(b)
     }
 
-    fn read(&self, b: &mut [u8]) -> Result<usize, std::io::Error> {
+    fn read(&self, b: &mut [u8]) -> std::io::Result<usize> {
         self.source_stream.borrow_mut().read(b)
     }
 
-    fn read_line(&self) -> Result<String, std::string::FromUtf8Error> {
+    fn read_line(&self) -> std::io::Result<String> {
         self.source_stream.borrow_mut().read_line()
     }
 }
@@ -106,11 +106,11 @@ pub trait IHttpConnectionContext {
     fn add_header_string(&self, name: String, value: String);
     fn add_header_str(&self, name: &str, value: &str);
 
-    fn begin_reading(&self);
-    fn end_reading(self: &Self);
-    fn end_reading_begin_writing(&self);
-    fn begin_writing(&self);
-    fn end_writing(self: &Self);
+    fn begin_reading(&self) -> std::io::Result<()>;
+    fn end_reading(self: &Self) -> std::io::Result<()>;
+    fn end_reading_begin_writing(&self) -> std::io::Result<()>;
+    fn begin_writing(&self) -> std::io::Result<()>;
+    fn end_writing(self: &Self) -> std::io::Result<()>;
 
     fn write(&self, b: &[u8]) -> std::io::Result<usize>;
     fn write_str(&self, b: &str) -> std::io::Result<usize>;
@@ -186,45 +186,50 @@ impl IHttpConnectionContext for HttpConnectionContext {
         self.tcp_connection_context.write_line(b)
     }
 
-    fn begin_reading(&self) {
+    fn begin_reading(&self) -> std::io::Result<()> {
+        Ok(())
     }
 
-    fn end_reading(self: &Self) {
+    fn end_reading(self: &Self) -> std::io::Result<()> {
+        Ok(())
     }
 
-    fn end_reading_begin_writing(&self) {
-        self.end_reading();
-        self.begin_writing();
+    fn end_reading_begin_writing(&self) -> std::io::Result<()> {
+        self.end_reading()?;
+        self.begin_writing()?;
+        Ok(())
     }
 
-    fn begin_writing(&self) {
+    fn begin_writing(&self) -> std::io::Result<()> {
         if !self.get_has_started_writing() {
             self.has_started_writing.replace(true);
             
             // write the http version, status code, and status message
             let status_code = self.get_pending_status_code();
 
-            self.tcp_connection_context.source_stream.borrow_mut().write_line(&format!("HTTP/1.1 {} {}", status_code.as_str(), self.get_pending_status_message())).unwrap();
+            self.tcp_connection_context.source_stream.borrow_mut().write_line(&format!("HTTP/1.1 {} {}", status_code.as_str(), self.get_pending_status_message()))?;
 
             // write the headers
             for header in self.get_pending_headers().iter() {
                 // write the header name
-                self.tcp_connection_context.source_stream.borrow_mut().write(header.0.as_str().as_bytes()).unwrap();
-                self.tcp_connection_context.source_stream.borrow_mut().write(b": ").unwrap();
+                self.tcp_connection_context.source_stream.borrow_mut().write(header.0.as_str().as_bytes())?;
+                self.tcp_connection_context.source_stream.borrow_mut().write(b": ")?;
                 // write the header value
-                self.tcp_connection_context.source_stream.borrow_mut().write(&header.1.as_bytes()).unwrap();
+                self.tcp_connection_context.source_stream.borrow_mut().write(&header.1.as_bytes())?;
                 // write the header new line
-                self.tcp_connection_context.source_stream.borrow_mut().write(b"\r\n").unwrap();
+                self.tcp_connection_context.source_stream.borrow_mut().write(b"\r\n")?;
             }
             // marker for end of headers and start of body
-            self.tcp_connection_context.source_stream.borrow_mut().write(b"\r\n").unwrap();
+            self.tcp_connection_context.source_stream.borrow_mut().write(b"\r\n")?;
 
-            self.flush().unwrap();
+            self.flush()?;
         }
+
+        Ok(())
     }
 
-    fn end_writing(self: &Self) {
-        // todo!()
+    fn end_writing(self: &Self) -> std::io::Result<()> {
+        Ok(())
     }
 
     fn get_pending_status_code(&self) -> StatusCode {
@@ -254,7 +259,7 @@ impl IHttpConnectionContext for HttpConnectionContext {
     }
 
     fn read_line(&self) -> std::io::Result<String> {
-        Ok(self.tcp_connection_context.read_line().unwrap())
+        Ok(self.tcp_connection_context.read_line()?)
     }
 
     fn set_pending_status_code(&self, status_code: StatusCode) {

@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::string::FromUtf8Error;
 
 use super::itcp_stream_wrapper::ITcpStreamWrapper;
 
@@ -34,25 +33,62 @@ impl BufferedTcpStream {
 
 impl ITcpStreamWrapper for BufferedTcpStream {
     fn shutdown(&self, how: std::net::Shutdown) -> std::io::Result<()> {
-        self.stream.borrow_mut().shutdown(how)
+        match self.stream.borrow_mut().take_error() {
+            Ok(Some(e)) => {
+                println!("TcpStream::take_error: {:?}", e);
+            },
+            Ok(None) => {
+                // println!("TcpStream::take_error: None");
+            },
+            Err(e) => {
+                println!("TcpStream::take_error: {:?}", e);
+            },
+        }
+        match self.stream.borrow_mut().shutdown(how) {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                if e.kind() == std::io::ErrorKind::NotConnected ||
+                    e.kind() == std::io::ErrorKind::BrokenPipe || 
+                    e.raw_os_error().unwrap_or_default() == 104 || 
+                    e.raw_os_error().unwrap_or_default() == 32 {
+                    return Ok(());
+                }
+                Err(std::io::Error::new(e.kind(), format!("TcpStream::shutdown: {:?}", e)))
+            },
+        }
     }
 
     // flush if writer is set, otherwise flush stream
     fn flush(&self) -> std::io::Result<()> {
-        self.stream.borrow_mut().flush()
+        match self.stream.borrow_mut().flush() {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                Err(std::io::Error::new(e.kind(), format!("TcpStream::flush: {:?}", e)))
+            },
+        }
     }
 
     fn read(&self, b: &mut [u8]) -> std::io::Result<usize> {
-        self.stream.borrow_mut().read(b)
+        match self.stream.borrow_mut().read(b) {
+            Ok(n) => Ok(n),
+            Err(e) => {
+                Err(std::io::Error::new(e.kind(), format!("TcpStream::read: {:?}", e)))
+            },
+        }
     }
 
-    fn read_line(&self) -> Result<String, FromUtf8Error> {
+    fn read_line(&self) -> std::io::Result<String> {
         // read until \r\n
         let mut s: Vec<char> = vec![];
         let mut last_char = '\0';
         loop {
             let mut buf = [0; 1];
-            let read = self.stream.borrow_mut().read(&mut buf).unwrap_or_default();
+            let read = match self.stream.borrow_mut().read(&mut buf) {
+                Ok(n) => n,
+                Err(e) => {
+                    return Err(std::io::Error::new(e.kind(), format!("TcpStream::read_line: {:?}", e)));
+                },
+            };
             let c = buf[0] as char;
             if read == 0 {
                 break;
@@ -87,7 +123,12 @@ impl ITcpStreamWrapper for BufferedTcpStream {
         
         let mut i = 0;
         while i < b.len() {
-            let num_written = self.stream.borrow_mut().write(&b[i..])?;
+            let num_written = match self.stream.borrow_mut().write(&b[i..]) {
+                Ok(n) => n,
+                Err(e) => {
+                    return Err(std::io::Error::new(e.kind(), format!("TcpStream::write: {:?}", e)));
+                },
+            };
             if num_written == 0 {
                 break;
             }
@@ -102,7 +143,12 @@ impl ITcpStreamWrapper for BufferedTcpStream {
     }
 
     fn write_line(&self, b: &String) -> std::io::Result<usize> {
-        self.write(format!("{}\r\n", b).as_bytes())
+        match self.write(format!("{}\r\n", b).as_bytes()) {
+            Ok(n) => Ok(n),
+            Err(e) => {
+                Err(std::io::Error::new(e.kind(), format!("TcpStream::write_line: {:?}", e)))
+            },
+        }
     }
 
     fn remote_addr(&self) -> std::net::SocketAddr {

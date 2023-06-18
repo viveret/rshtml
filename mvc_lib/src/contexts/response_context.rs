@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::error::Error;
 use std::rc::Rc;
 
 use http::StatusCode;
@@ -35,7 +36,7 @@ pub trait IResponseContext {
 
     // invoke the action result for the controller context by setting the status code of the response and then
     // configuring the response with the action result, and finally writing the response body.
-    fn invoke_action_result(self: &Self, request_context: &dyn IRequestContext, services: &dyn IServiceCollection);
+    fn invoke_action_result(self: &Self, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>>;
 
     // set the status code of the response.
     fn set_status_code(&self, status_code: StatusCode);
@@ -197,10 +198,13 @@ impl <'a> IResponseContext for ResponseContext<'a> {
         }
     }
 
-    fn invoke_action_result(self: &Self, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) {
-        if let Some(action_result) = self.action_result.borrow().as_ref() {
+    fn invoke_action_result(self: &Self, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
+        if let Some(action_result) = self.get_action_result() {
             self.set_status_code(action_result.get_statuscode());
-            action_result.configure_response(self, request_context, services);
+            action_result.configure_response(self, request_context, services)?;
+            Ok(())
+        } else {
+            Err(Rc::new(std::io::Error::new(std::io::ErrorKind::NotFound, "No action result was set for the response.")))
         }
     }
 }

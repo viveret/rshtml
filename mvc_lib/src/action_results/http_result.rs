@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use http::StatusCode;
 
@@ -23,8 +24,9 @@ impl HttpRedirectResult {
     }
 
     // this function configures the response to redirect to the redirect target.
-    pub fn config_response(response_context: &dyn IResponseContext, redirect_target: String) {
+    pub fn config_response(response_context: &dyn IResponseContext, redirect_target: String) -> Result<(), Rc<dyn std::error::Error>> {
         response_context.add_header_string("Location".to_string(), redirect_target);
+        Ok(())
     }
 }
 
@@ -33,8 +35,8 @@ impl IActionResult for HttpRedirectResult {
         StatusCode::TEMPORARY_REDIRECT
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) {
-        Self::config_response(response_context, self.redirect_target.clone());
+    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
+        Self::config_response(response_context, self.redirect_target.clone())
     }
 }
 
@@ -58,7 +60,7 @@ impl IActionResult for RedirectToActionResult {
         StatusCode::TEMPORARY_REDIRECT
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
         // get the route map service and get the action from the route map.
         let route_map_service = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
         let action = route_map_service.get_mapper().get_action(self.action_name.as_str(), self.controller_name.as_str(), self.area_name.as_str());
@@ -66,6 +68,7 @@ impl IActionResult for RedirectToActionResult {
         let redirect_url = action.as_ref().get_route_pattern().gen_url(self.route_values.as_ref().unwrap());
         // configure the response to redirect to the redirect url.
         response_context.add_header_string("Location".to_string(), redirect_url);
+        Ok(())
     }
 }
 
@@ -89,7 +92,10 @@ impl IActionResult for InternalServerErrorResult {
         StatusCode::INTERNAL_SERVER_ERROR
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) {
-        response_context.get_connection_context().write_str(format!("Error: {}", self.error).as_str()).unwrap();
+    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
+        match response_context.get_connection_context().write_str(format!("Error: {}", self.error).as_str()) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(Rc::new(err)),
+        }
     }
 }

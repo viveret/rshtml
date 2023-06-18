@@ -45,7 +45,7 @@ impl IActionResult for RedirectActionResult {
         todo!()
     }
 
-    fn configure_response(self: &Self, _response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, _response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), std::rc::Rc<dyn std::error::Error>> {
         let _url = crate::routing::url_helpers::UrlHelpers::url_action_static(
             self.area_name.as_deref(),
             self.controller_name.as_deref(),
@@ -57,5 +57,6 @@ impl IActionResult for RedirectActionResult {
             Some(request_context),
             services,
         );
+        todo!()
     }
 }

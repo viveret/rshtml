@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::rc::Rc;
 
 use http::StatusCode;
 
@@ -31,5 +32,5 @@ pub trait IActionResult: IActionResultToAny {
     fn get_statuscode(self: &Self) -> StatusCode;
 
     // configure the response based on the action result
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection);
+    fn configure_response(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>>;
 }

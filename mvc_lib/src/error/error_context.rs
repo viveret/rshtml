@@ -12,15 +12,15 @@ use super::ierror_context::IErrorContext;
 pub struct ErrorContext<'a> {
     error: Rc<dyn Error>,
     handled: RefCell<bool>,
-    request_context: &'a dyn IRequestContext,
-    response_context: &'a dyn IResponseContext,
+    request_context: Option<&'a dyn IRequestContext>,
+    response_context: Option<&'a dyn IResponseContext>,
 }
 
 impl<'a> ErrorContext<'a> {
     pub fn new(
         error: Rc<dyn Error>,
-        request_context: &'a dyn IRequestContext,
-        response_context: &'a dyn IResponseContext,
+        request_context: Option<&'a dyn IRequestContext>,
+        response_context: Option<&'a dyn IResponseContext>,
     ) -> Self {
         Self {
             error,
@@ -44,11 +44,11 @@ impl<'a> IErrorContext for ErrorContext<'a> {
         self.error.clone()
     }
 
-    fn get_request_context(self: &Self) -> &dyn IRequestContext {
+    fn get_request_context(self: &Self) -> Option<&dyn IRequestContext> {
         self.request_context
     }
 
-    fn get_response_context(self: &Self) -> &dyn IResponseContext {
+    fn get_response_context(self: &Self) -> Option<&dyn IResponseContext> {
         self.response_context
     }
 }

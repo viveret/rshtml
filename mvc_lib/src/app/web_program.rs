@@ -4,7 +4,7 @@ use std::net::{TcpStream, TcpListener, Shutdown};
 use std::option::Option;
 use std::vec::Vec;
 
-use crate::app::http_request_pipeline::IHttpRequestPipeline;
+use crate::app::ihttp_request_pipeline::IHttpRequestPipeline;
 
 use crate::contexts::connection_context::{ HttpConnectionContext, IHttpConnectionContext };
 

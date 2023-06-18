@@ -37,7 +37,7 @@ impl ITcpStreamWrapper for UrlEncodedStream {
         self.inner_stream.read(b)
     }
 
-    fn read_line(&self) -> Result<String, std::string::FromUtf8Error> {
+    fn read_line(&self) -> std::io::Result<String> {
         self.inner_stream.read_line()
     }
 

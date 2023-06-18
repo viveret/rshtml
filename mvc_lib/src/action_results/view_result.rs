@@ -37,16 +37,17 @@ impl ViewResult {
     }
 
     // write the view result to the response body
-    pub fn write_response(self: &Self, view_render_result: Result<HtmlString, RustHtmlError>, response_context: &dyn IResponseContext) {
+    pub fn write_response(self: &Self, view_render_result: Result<HtmlString, RustHtmlError>, response_context: &dyn IResponseContext) -> std::io::Result<()> {
         response_context.add_header_str("Content-Type", "text/html");
         match view_render_result {
             Ok(ok_view_result) => {
-                response_context.get_connection_context().write_line(&ok_view_result.content).unwrap();
+                response_context.get_connection_context().write_line(&ok_view_result.content)?;
             },
             Err(err) => {
-                response_context.get_connection_context().write_str(format!("Error: {}", err).as_str()).unwrap();
+                response_context.get_connection_context().write_str(format!("Error: {}", err).as_str())?;
             }
         }
+        Ok(())
     }
 }
 
@@ -55,10 +56,13 @@ impl IActionResult for ViewResult {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
         let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
         let html = view_renderer.render_with_layout_if_specified(&self.path, self.model.clone(), response_context, request_context, services);
-        self.write_response(html, response_context)
+        match self.write_response(html, response_context) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(Rc::new(err)),
+        }
     }
 }
 

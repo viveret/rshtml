@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
+use std::rc::Rc;
 
 use http::StatusCode;
 
@@ -59,7 +60,7 @@ impl IActionResult for FileResult {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) {
+    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
         match File::open(self.path.as_ref()) {
             Ok(f) => {
                 response_context.set_status_code(StatusCode::OK);
@@ -68,19 +69,25 @@ impl IActionResult for FileResult {
                 let body_stream = response_context.get_connection_context();
                 let mut buffer = [0; 4096];
                 loop {
-                    let num_read = reader.read(&mut buffer).unwrap();
-                    if num_read == 0 {
-                        break;
-                    }
-                    match body_stream.write(&buffer[0..num_read]) {
-                        Ok(_) => {},
+                    match reader.read(&mut buffer) {
+                        Ok(num_read) => {
+                            if num_read == 0 {
+                                break;
+                            }
+                            match body_stream.write(&buffer[0..num_read]) {
+                                Ok(_) => {},
+                                Err(_error) => break,
+                            }
+                        },
                         Err(_error) => break,
                     }
                 }
+                Ok(())
             },
             Err(_error) => {
                 // println!("Error opening file: {}", error);
                 response_context.set_status_code(StatusCode::NOT_FOUND);
+                Ok(())
             }
         }
     }

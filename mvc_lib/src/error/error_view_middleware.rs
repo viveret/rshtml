@@ -18,10 +18,9 @@ use crate::services::request_middleware_service::IRequestMiddlewareService;
 
 use super::error_handler_service::IErrorHandlerService;
 use super::error_viewmodel_service::IErrorViewModelService;
-// use super::http500_error_handler::ErrorViewModel;
 
 
-
+// Renders an error view if an error occurs.
 pub struct ErrorViewMiddleware {
     next: RefCell<Option<Rc<dyn IRequestMiddlewareService>>>,
     error_handler_service: Rc<dyn IErrorHandlerService>,
@@ -61,16 +60,10 @@ impl IRequestMiddlewareService for ErrorViewMiddleware {
         if let Some(next) = self.next.borrow().as_ref() {
             let result = next.handle_request(response_context, request_context, services);
             match result {
-                Ok(result) => {
-                    Ok(result)
-                },
+                Ok(result) => Ok(result),
                 Err(error) => {
-                    println!("[{}] ErrorViewMiddleware: {:?}", request_context.get_connection_context().get_connection_id(), error);
+                    self.error_handler_service.handle_error(error.clone(), Some(request_context), Some(response_context))?;
                     response_context.set_action_result(Some(Rc::new(ViewResult::new("/shared/error".to_string(), self.error_viewmodel_service.create_error_viewmodel(error)))));
-
-                    // no longer a next delegate we can call since this current middleware is the last one in the pipeline if the next one returns.
-                    response_context.invoke_action_result(request_context, services);
-
                     Ok(MiddlewareResult::OkBreak)
                 },
             }

@@ -38,11 +38,11 @@ impl IRequestMiddlewareService for ActionResultHandlerMiddleware {
 
     fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         let result = response_context.get_action_result();
-        println!("ActionResultHandlerMiddleware::handle_request: result: {}", result.as_ref().map(|x| x.to_string()).unwrap_or("None".to_string()));
+        // println!("ActionResultHandlerMiddleware::handle_request: result: {}", result.as_ref().map(|x| x.to_string()).unwrap_or("None".to_string()));
 
         match result {
             Some(_) => {
-                response_context.invoke_action_result(request_context, services);
+                // response_context.invoke_action_result(request_context, services)?;
                 Ok(MiddlewareResult::OkBreak)
             },
             None => {

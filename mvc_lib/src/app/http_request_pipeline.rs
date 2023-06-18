@@ -3,11 +3,13 @@ use std::error::Error;
 use std::result::Result;
 use std::rc::Rc;
 
+use crate::app::ihttp_request_pipeline::IHttpRequestPipeline;
 use crate::contexts::connection_context::IHttpConnectionContext;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::IResponseContext;
 use crate::diagnostics::logging::logging_service::ILoggingService;
 use crate::diagnostics::logging::logging_service::LoggingService;
+use crate::error::error_handler_service::IErrorHandlerService;
 use crate::errors::RequestError;
 
 use crate::services::service_collection::IServiceCollection;
@@ -22,29 +24,28 @@ use crate::contexts::response_context::ResponseContext;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
 
-// this is a trait for a class that can process an HTTP request and return an HTTP response.
-// the way requests are processed is by using a pipeline of middleware services.
-pub trait IHttpRequestPipeline {
-    fn process_request(self: &Self, connection_context: &dyn IHttpConnectionContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>>;
-}
-
 // this is a struct that implements IHttpRequestPipeline.
 pub struct HttpRequestPipeline {
     #[allow(dead_code)]
     options: Rc<dyn IHttpOptions>,
     logger_service: Rc<dyn ILoggingService>,
     // times_called: RefCell<i32>,
+    error_handler_service: Rc<dyn IErrorHandlerService>,
 }
 
 impl HttpRequestPipeline {
     pub fn new(
         options: Rc<dyn IHttpOptions>,
         logger_service: Rc<dyn ILoggingService>,
+        // http_error_handlers: Vec<Rc<dyn IHttpErrorHandler>>,
+        error_handler_service: Rc<dyn IErrorHandlerService>,
     ) -> Self {
         Self { 
             options: options,
             logger_service: logger_service,
             // times_called: RefCell::new(0),
+            // http_error_handlers: http_error_handlers,
+            error_handler_service: error_handler_service,
         }
     }
 
@@ -53,6 +54,8 @@ impl HttpRequestPipeline {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::get_required_single::<dyn IHttpOptions>(services.clone()),
             LoggingService::get_service(services),
+            // ServiceCollectionExtensions::get_required_multiple::<dyn IHttpErrorHandler>(services),
+            ServiceCollectionExtensions::get_required_single::<dyn IErrorHandlerService>(services.clone()),
         )) as Rc<dyn IHttpRequestPipeline>)]
     }
 
@@ -111,7 +114,6 @@ impl HttpRequestPipeline {
             }
         }
     }
-
 }
 
 impl IHttpRequestPipeline for HttpRequestPipeline {
@@ -123,14 +125,34 @@ impl IHttpRequestPipeline for HttpRequestPipeline {
         match request_result {
             Ok(request_context) => {
                 let response_context = ResponseContext::new(&request_context);
-                self.process_request_using_middleware(&response_context, &request_context, services)?;
+                match self.process_request_using_middleware(&response_context, &request_context, services) {
+                    Ok(_) => {
+                    },
+                    Err(err) => {
+                        self.error_handler_service.handle_error(err, Some(&request_context), Some(&response_context))?;
+                    }
+                }
+
                 response_context.set_result_500_if_not_started_writing();
-                response_context.connection_context.end_reading_begin_writing();
-                return Ok(());
+                match response_context.invoke_action_result(&request_context, services) {
+                    Ok(_) => {
+                    },
+                    Err(err) => {
+                        self.error_handler_service.handle_error(err, Some(&request_context), Some(&response_context))?;
+                    }
+                }
+
+                match response_context.connection_context.end_reading_begin_writing() {
+                    Ok(_) => {
+                        Ok(())
+                    },
+                    Err(err) => {
+                        self.error_handler_service.handle_error(Rc::new(err), Some(&request_context), Some(&response_context))
+                    }
+                }
             },
             Err(err) => {
-                self.logger_service.log_error(&format!("Error parsing request: {}", err));
-                return Err(Rc::new(err));
+                self.error_handler_service.handle_error(Rc::new(err), None, None)
             }
         }
     }

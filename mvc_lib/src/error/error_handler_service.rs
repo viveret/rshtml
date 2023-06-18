@@ -18,7 +18,7 @@ use super::ierror_handler::IErrorHandler;
 
 // this is a trait for a class that can be used to handle errors by using any number of error handlers.
 pub trait IErrorHandlerService {
-    fn handle_error(self: &Self, error: Rc<dyn Error>, request_context: &dyn IRequestContext, response_context: &dyn IResponseContext) -> Result<(), Rc<dyn Error>>;
+    fn handle_error(self: &Self, error: Rc<dyn Error>, request_context: Option<&dyn IRequestContext>, response_context: Option<&dyn IResponseContext>) -> Result<(), Rc<dyn Error>>;
 }
 
 pub struct ErrorHandlerService {
@@ -50,13 +50,17 @@ impl ErrorHandlerService {
 }
 
 impl IErrorHandlerService for ErrorHandlerService {
-    fn handle_error(self: &Self, error: Rc<dyn Error>, request_context: &dyn IRequestContext, response_context: &dyn IResponseContext) -> Result<(), Rc<dyn Error>> {
-        self.logging_service.log_error(format!("ErrorHandlerService::handle_error: {:?}", error).as_str());
+    fn handle_error(self: &Self, error: Rc<dyn Error>, request_context: Option<&dyn IRequestContext>, response_context: Option<&dyn IResponseContext>) -> Result<(), Rc<dyn Error>> {
+        // self.logging_service.log_error(format!("[{}] ErrorHandlerService::handle_error: {:?}", request_context.get_connection_context().get_connection_id(), error).as_str());
 
         // try to handle the error with the error handlers. If at least one error handler handles the error, then return Ok(true).
         // if none of the error handlers handle the error, then return Err(error).
         let error_context = ErrorContext::new(error, request_context, response_context);
+        // println!("Count of self.error_handlers: {}", self.error_handlers.len());
+        // let mut i = 0;
         for error_handler in self.error_handlers.iter() {
+            // i += 1;
+            // println!("\t{}) {}", i, error_handler.as_ref().to_string());
             match error_handler.handle_error(&error_context) {
                 Ok(_) => error_context.set_handled(),
                 Err(e) => {

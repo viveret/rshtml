@@ -30,7 +30,6 @@ use crate::view::view_renderer::ViewRenderer;
 use crate::controllers::icontroller::IController;
 use crate::controllers::file_provider_controller::FileProviderController;
 
-use super::action_result_handler_middleware::ActionResultHandlerMiddleware;
 use super::controller_action_execute_service::ControllerActionExecuteService;
 
 
@@ -92,11 +91,6 @@ impl DefaultServices {
     pub fn add_execute_controller_action(services: &mut ServiceCollection) {
         // the thing that executes the request controller action from routing and other middleware
         ControllerActionExecuteService::add_to_services(services);
-    }
-
-    pub fn add_action_result_handler(services: &mut ServiceCollection) {
-        // the thing that executes the request controller action from routing and other middleware
-        ActionResultHandlerMiddleware::add_to_services(services);
     }
 
     // add the default request pipeline services to the service collection.

@@ -168,8 +168,6 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
 
     ErrorViewMiddleware::add_to_services(services);
     DefaultServices::add_execute_controller_action(services);
-
-    DefaultServices::add_action_result_handler(services);
 }
 
 // this is called when the program is starting (after it is configured).

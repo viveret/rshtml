@@ -42,7 +42,7 @@ impl IRedirectHttpsMiddlewareService for RedirectHttpsMiddlewareService {
         if let Err(_) = url.set_scheme("https") {
             return Err(Rc::new(std::io::Error::new(std::io::ErrorKind::Other, format!("Error setting scheme to https"))));
         }
-        HttpRedirectResult::config_response(response_context, url.to_string());
+        response_context.set_action_result(Some(Rc::new(HttpRedirectResult::new(url.to_string()))));
         Ok(MiddlewareResult::OkBreak)
     }
 }

@@ -70,3 +70,64 @@ pub enum RustHtmlToken {
 
     // CompileError(String), // this will output a compile error using quote!
 }
+
+impl RustHtmlToken {
+    pub fn to_string(&self) -> String {
+        match self {
+            RustHtmlToken::Space(c) => c.to_string(),
+            RustHtmlToken::HtmlTextNode(s, _) => s.to_string(),
+            RustHtmlToken::HtmlTagVoid(s, _) => format!("<{} />", s.to_string()),
+            RustHtmlToken::HtmlTagStart(s, _) => format!("<{}", s.to_string()),
+            RustHtmlToken::HtmlTagEnd(s, _) => format!("</{}>", s.to_string()),
+            RustHtmlToken::HtmlTagAttributeName(s, _) => s.to_string(),
+            RustHtmlToken::HtmlTagAttributeEquals(c, _) => c.to_string(),
+            RustHtmlToken::HtmlTagAttributeValue(s, _) => {
+                match s {
+                    Some(s) => s.to_string(),
+                    None => "".to_string()
+                }
+            },
+            RustHtmlToken::HtmlTagCloseVoidPunct(c, _) => c.to_string(),
+            RustHtmlToken::HtmlTagCloseSelfContainedPunct(c, _) => c.to_string(),
+            RustHtmlToken::HtmlTagCloseStartChildrenPunct(c, _) => c.to_string(),
+            RustHtmlToken::ExternalRustHtml(s, _) => s.to_string(),
+            RustHtmlToken::ExternalHtml(s, _) => s.to_string(),
+            RustHtmlToken::AppendToHtml(tokens) => tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" "),
+            RustHtmlToken::Literal(l, _) => {
+                match l {
+                    Some(l) => l.to_string(),
+                    None => "".to_string()
+                }
+            },
+            RustHtmlToken::Identifier(ident) => ident.to_string(),
+            RustHtmlToken::ReservedChar(c, _) => c.to_string(),
+            RustHtmlToken::ReservedIndent(s, _) => s.to_string(),
+            RustHtmlToken::Group(_, group) => group.to_string(),
+            RustHtmlToken::GroupParsed(delimiter, tokens) => {
+                let inner = tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" ");
+                match delimiter {
+                    Delimiter::Brace => format!("{{ {} }}", inner),
+                    Delimiter::Bracket => format!("[ {} ]", inner),
+                    Delimiter::Parenthesis => format!("( {} )", inner),
+                    Delimiter::None => inner,
+                }
+            },
+            RustHtmlToken::GroupOpen(delimiter, g) => {
+                match delimiter {
+                    Delimiter::Brace => "{".to_string(),
+                    Delimiter::Bracket => "[".to_string(),
+                    Delimiter::Parenthesis => "(".to_string(),
+                    Delimiter::None => "".to_string(),
+                }
+            },
+            RustHtmlToken::GroupClose(delimiter, g) => {
+                match delimiter {
+                    Delimiter::Brace => "}".to_string(),
+                    Delimiter::Bracket => "]".to_string(),
+                    Delimiter::Parenthesis => ")".to_string(),
+                    Delimiter::None => "".to_string(),
+                }
+            },
+        }
+    }
+}

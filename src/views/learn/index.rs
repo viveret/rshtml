@@ -1,5 +1,5 @@
 mvc_macro_lib::rusthtml_view_macro! {
-    @viewstart "src/views/learn/_view_start.rshtml"
+    @viewstart "learn/_view_start.rshtml"
     @model crate::view_models::learn::IndexViewModel
     @name "learn_index"
     @{

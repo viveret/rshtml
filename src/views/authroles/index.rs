@@ -1,6 +1,6 @@
 
 mvc_macro_lib::rusthtml_view_macro! {
-    @viewstart "src/views/authroles/_view_start.rshtml"
+    @viewstart "authroles/_view_start.rshtml"
     @name "authroles_index"
     @model crate::view_models::authroles::index::IndexViewModel
     @{

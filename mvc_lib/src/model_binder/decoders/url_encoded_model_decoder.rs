@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::{rc::Rc, any::Any};
 
 use crate::core::itcp_stream_wrapper::ITcpStreamWrapper;
@@ -12,12 +13,12 @@ use crate::services::service_collection::IServiceCollection;
 
 // this struct is used to decode the view model from the request body.
 pub struct UrlEncodedStream {
-    inner_stream: Rc<dyn ITcpStreamWrapper>,
+    inner_stream: Rc<RefCell<dyn ITcpStreamWrapper>>,
 }
 
 impl UrlEncodedStream {
     // creates a new instance of UrlEncodedStream.
-    pub fn new(inner_stream: Rc<dyn ITcpStreamWrapper>) -> Self {
+    pub fn new(inner_stream: Rc<RefCell<dyn ITcpStreamWrapper>>) -> Self {
         Self {
             inner_stream: inner_stream,
         }
@@ -26,31 +27,31 @@ impl UrlEncodedStream {
 
 impl ITcpStreamWrapper for UrlEncodedStream {
     fn shutdown(&self, how: std::net::Shutdown) -> std::io::Result<()> {
-        self.inner_stream.shutdown(how)
+        self.inner_stream.borrow().shutdown(how)
     }
 
     fn flush(&self) -> std::io::Result<()> {
-        self.inner_stream.flush()
+        self.inner_stream.borrow().flush()
     }
 
     fn read(&self, b: &mut [u8]) -> std::io::Result<usize> {
-        self.inner_stream.read(b)
+        self.inner_stream.borrow().read(b)
     }
 
     fn read_line(&self) -> std::io::Result<String> {
-        self.inner_stream.read_line()
+        self.inner_stream.borrow().read_line()
     }
 
     fn write(&self, b: &[u8]) -> std::io::Result<usize> {
-        self.inner_stream.write(b)
+        self.inner_stream.borrow().write(b)
     }
 
     fn write_line(&self, b: &String) -> std::io::Result<usize> {
-        self.inner_stream.write_line(b)
+        self.inner_stream.borrow().write_line(b)
     }
 
     fn remote_addr(&self) -> std::net::SocketAddr {
-        self.inner_stream.remote_addr()
+        self.inner_stream.borrow().remote_addr()
     }
 }
 
@@ -79,16 +80,16 @@ impl IHttpBodyStreamFormat for UrlEncodedFormatResolver {
         content_type.mime_type.starts_with("application/x-www-form-urlencoded")
     }
 
-    fn decode(self: &Self, body: Rc<dyn ITcpStreamWrapper>, _content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
-        Rc::new(UrlEncodedStream::new(body))
+    fn decode(self: &Self, body: Rc<RefCell<dyn ITcpStreamWrapper>>, _content_type: &ContentType) -> Rc<RefCell<dyn ITcpStreamWrapper>> {
+        Rc::new(RefCell::new(UrlEncodedStream::new(body)))
     }
 
     fn type_info(self: &Self) -> Box<TypeInfo> {
         TypeInfo::rc_of::<UrlEncodedStream>()
     }
 
-    fn encode(self: &Self, stream: Rc<dyn ITcpStreamWrapper>, _content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
-        Rc::new(UrlEncodedStream::new(stream))
+    fn encode(self: &Self, stream: Rc<RefCell<dyn ITcpStreamWrapper>>, _content_type: &ContentType) -> Rc<RefCell<dyn ITcpStreamWrapper>> {
+        Rc::new(RefCell::new(UrlEncodedStream::new(stream)))
     }
 }
 

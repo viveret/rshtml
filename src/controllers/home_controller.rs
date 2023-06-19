@@ -58,7 +58,7 @@ impl HomeController {
     // this is the home page for the site.
     pub fn get_index(_controller: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let view_model = Rc::new(IndexViewModel::new());
-        Ok(Some(Rc::new(ViewResult::new("views/home/index.rs".to_string(), view_model))))
+        Ok(Some(Rc::new(ViewResult::new("home/index.rs".to_string(), view_model))))
     }
 }
 

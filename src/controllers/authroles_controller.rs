@@ -101,13 +101,13 @@ impl AuthRolesController {
     pub fn get_index(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let roles = self.get_roles();
         let view_model = Rc::new(IndexViewModel::new(roles));
-        Ok(Some(Rc::new(ViewResult::new("views/authroles/index.rs".to_string(), view_model))))
+        Ok(Some(Rc::new(ViewResult::new("authroles/index.rs".to_string(), view_model))))
     }
 
     // get the add role view, which allows the user to add a new role.
     pub fn get_add(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let view_model = Rc::new(AddViewModel::new(String::new(), None));
-        Ok(Some(Rc::new(ViewResult::new("views/authroles/add.rs".to_string(), view_model))))
+        Ok(Some(Rc::new(ViewResult::new("authroles/add.rs".to_string(), view_model))))
     }
 
     // post the add role view, which allows the user to add a new role.
@@ -131,7 +131,7 @@ impl AuthRolesController {
                 AddViewModel::new_error(String::new(), "Role missing from query string")
             }
         );
-        Ok(Some(Rc::new(ViewResult::new("views/authroles/add.rs".to_string(), view_model))))
+        Ok(Some(Rc::new(ViewResult::new("authroles/add.rs".to_string(), view_model))))
     }
 }
 

@@ -65,15 +65,19 @@ impl LogAddInputModel {
         } else if self.level.is_empty() {
             false
         } else {
-            match self.level.to_lowercase().as_str() {
-                "trace" |
-                "debug" |
-                "info" |
-                "warn" |
-                "error" |
-                "fatal" => true,
-                _ => false
-            }
+            Self::is_valid_level(&self.level)
+        }
+    }
+
+    pub fn is_valid_level(level: &String) -> bool {
+        match level.to_lowercase().as_str() {
+            "trace" |
+            "debug" |
+            "info" |
+            "warn" |
+            "error" |
+            "fatal" => true,
+            _ => false
         }
     }
 
@@ -94,10 +98,12 @@ impl LogAddInputModel {
         if self.message.is_empty() {
             errors.push(("message".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Message is required."))));
         }
+        
         if self.level.is_empty() {
             errors.push(("level".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Level is required."))));
+        } else if !Self::is_valid_level(&self.level) {
+            errors.push(("level".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Level is invalid (must be one of trace, debug, info, warn, error, fatal)."))));
         }
-        
 
         match errors.len() {
             0 => ModelValidationResult::Ok(self.clone()),
@@ -136,9 +142,9 @@ impl IModelBinder for LogAddInputModelBinder {
 
     fn bind_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
         let mut model = LogAddInputModel::default();
-        if let Some(body) = request_context.get_body_content() {
+        // if let Some(body) = request_context.get_body_content() {
             let content_type = request_context.get_content_type().unwrap();
-            let form_encoded = UrlEncodedModel::new_from_body(content_type, body);
+            let form_encoded = UrlEncodedModel::new_from_body(content_type, request_context);
             let form = &form_encoded.0.entries;
             
             if let Some(message) = form.get("message") {
@@ -154,13 +160,13 @@ impl IModelBinder for LogAddInputModelBinder {
             }
             
             ModelValidationResult::Ok(AnyIModel::new(Rc::new(model)))
-        } else {
+        // } else {
             // if no body then decode from request query string
             // let query_string = request_context.get_query_string();
             // let form = &query_string.entries;
             // request_context.decode_and_bind_body(services, &mut model, form)
-            ModelValidationResult::OtherError(Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Missing request body.".to_string())))
-        }
+            // ModelValidationResult::OtherError(Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Missing request body.".to_string())))
+        // }
     }
 }
 

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro::Ident;
+use proc_macro::{Ident, TokenTree, Delimiter};
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
@@ -28,12 +28,47 @@ impl IRustHtmlDirective for WhileDirective {
 
     fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         output.push(RustHtmlToken::Identifier(identifier.clone()));
-        // read until we reach the loop body {}
         
-        if let Ok(_) = parser.parse_for_or_while_loop_preamble(output, it, parser.get_context().get_is_raw_tokenstream()) {
-            Ok(RustHtmlDirectiveResult::OkContinue)
-        } else {
-            return Err(RustHtmlError::from_str("Error parsing while preamble"));
+        // read until we reach the loop body {}
+        loop {
+            if let Some(token) = it.peek() {
+                match token {
+                    TokenTree::Ident(ident) => {
+                        output.push(RustHtmlToken::Identifier(ident.clone()));
+                        it.next();
+                    },
+                    TokenTree::Literal(literal) => {
+                        output.push(RustHtmlToken::Literal(Some(literal.clone()), None));
+                        it.next();
+                    },
+                    TokenTree::Punct(punct) => {
+                        output.push(RustHtmlToken::ReservedChar(punct.as_char(), punct.clone()));
+                        it.next();
+                    },
+                    TokenTree::Group(group) => {
+                        let delimiter = group.delimiter();
+                        match delimiter {
+                            Delimiter::Brace => {
+                                match parser.as_ref().convert_group_to_rusthtmltoken(group, false, false, output, false) {
+                                    Ok(_) => {
+                                        break;
+                                    },
+                                    Err(RustHtmlError(err)) => {
+                                        return Err(RustHtmlError::from_string(err.to_string()));
+                                    }
+                                }
+                            },
+                            _ => {
+                                panic!("unexpected group delimiter: {:?}", delimiter);
+                            }
+                        }
+                    }
+                }
+            } else {
+                break;
+            }
         }
+
+        Ok(RustHtmlDirectiveResult::OkContinue)
     }
 }

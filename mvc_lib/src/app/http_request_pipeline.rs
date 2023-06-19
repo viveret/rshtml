@@ -4,7 +4,7 @@ use std::result::Result;
 use std::rc::Rc;
 
 use crate::app::ihttp_request_pipeline::IHttpRequestPipeline;
-use crate::contexts::connection_context::IHttpConnectionContext;
+use crate::contexts::ihttpconnection_context::IHttpConnectionContext;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::IResponseContext;
 use crate::diagnostics::logging::logging_service::ILoggingService;

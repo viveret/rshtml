@@ -71,12 +71,12 @@ impl IRequestMiddlewareService for RequestDecoderMiddleware {
 }
 
 pub struct GzipBodyStream {
-    _inner_stream: Rc<dyn ITcpStreamWrapper>
+    _inner_stream: Rc<RefCell<dyn ITcpStreamWrapper>>
 }
 
 impl GzipBodyStream {
     // source: Rc<dyn ITcpStreamWrapper>
-    pub fn new(inner_stream: Rc<dyn ITcpStreamWrapper>) -> Self {
+    pub fn new(inner_stream: Rc<RefCell<dyn ITcpStreamWrapper>>) -> Self {
         // let mut d = flate2::Decompress::decompress();
         // let mut s = String::new();
         // d.read_to_string(&mut s).unwrap();
@@ -135,12 +135,12 @@ impl IHttpBodyStreamFormat for GzipBodyStreamFormat {
         content_type.mime_type == "application/gzip" || content_type.mime_type == "gzip"
     }
 
-    fn decode(&self, stream: Rc<dyn ITcpStreamWrapper>, _content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
-        Rc::new(GzipBodyStream::new(stream))
+    fn decode(&self, stream: Rc<RefCell<dyn ITcpStreamWrapper>>, _content_type: &ContentType) -> Rc<RefCell<dyn ITcpStreamWrapper>> {
+        Rc::new(RefCell::new(GzipBodyStream::new(stream)))
     }
 
-    fn encode(self: &Self, stream: Rc<dyn ITcpStreamWrapper>, _content_type: &ContentType) -> Rc<dyn ITcpStreamWrapper> {
-        Rc::new(GzipBodyStream::new(stream))
+    fn encode(self: &Self, stream: Rc<RefCell<dyn ITcpStreamWrapper>>, _content_type: &ContentType) -> Rc<RefCell<dyn ITcpStreamWrapper>> {
+        Rc::new(RefCell::new(GzipBodyStream::new(stream)))
     }
 
     fn type_info(self: &Self) -> Box<TypeInfo> {

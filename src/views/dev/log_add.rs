@@ -1,7 +1,7 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @use crate::helpers::custom_html_helpers::CustomHtmlHelpers
     @use crate::view_models::dev::log_add::LogAddViewModel
-    @viewstart "src/views/dev/_view_start.rshtml"
+    @viewstart "dev/_view_start.rshtml"
     @name "dev_log_add"
     @model LogAddViewModel
     @inject CustomHtmlHelpers::<LogAddViewModel>: custom_html

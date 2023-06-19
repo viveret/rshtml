@@ -102,14 +102,14 @@ impl DevController {
     // this is the index action for the controller.
     pub fn index(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let view_model = Rc::new(IndexViewModel::new());
-        Ok(Some(Rc::new(ViewResult::new("views/dev/index.rs".to_string(), view_model))))
+        Ok(Some(Rc::new(ViewResult::new("dev/index.rs".to_string(), view_model))))
     }
 
     // this action returns a view of a list of all the views in the application.
     pub fn views(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
         let view_model = Rc::new(ViewsViewModel::new(view_renderer.get_all_views(services)));
-        Ok(Some(Rc::new(ViewResult::new("views/dev/views.rs".to_string(), view_model))))
+        Ok(Some(Rc::new(ViewResult::new("dev/views.rs".to_string(), view_model))))
     }
 
     // this action returns a view of the details of a view in the application.
@@ -125,14 +125,14 @@ impl DevController {
         // println!("Viewing view at path: {:?}", path);
         let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
         let view_model = Rc::new(ViewDetailsViewModel::new(view_renderer.get_view(&path.to_string(), services)));
-        return Ok(Some(Rc::new(ViewResult::new("views/dev/view_details.rs".to_string(), view_model))));
+        return Ok(Some(Rc::new(ViewResult::new("dev/view_details.rs".to_string(), view_model))));
     }
 
     // this action returns a view of a list of all the controllers in the application.
     pub fn controllers(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let route_map_service = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
         let view_model = Rc::new(ControllersViewModel::from_controllers(route_map_service.as_ref().get_mapper().as_ref().get_controllers()));
-        Ok(Some(Rc::new(ViewResult::new("views/dev/controllers.rs".to_string(), view_model))))
+        Ok(Some(Rc::new(ViewResult::new("dev/controllers.rs".to_string(), view_model))))
     }
 
     #[fake_property_attribute]
@@ -159,14 +159,14 @@ impl DevController {
                 a.1.get_return_type().map(|x| x.to_string()).unwrap_or("void".to_string()),
             )).collect(),
         ));
-        return Ok(Some(Rc::new(ViewResult::new("views/dev/controller_details.rs".to_string(), view_model))));
+        return Ok(Some(Rc::new(ViewResult::new("dev/controller_details.rs".to_string(), view_model))));
     }
 
     // this action returns a view of a list of all the routes in the application.
     pub fn routes(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let routes = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
         let view_model = Rc::new(RoutesViewModel::new(routes.as_ref().get_mapper().as_ref().get_all_actions()));
-        Ok(Some(Rc::new(ViewResult::new("views/dev/routes.rs".to_string(), view_model))))
+        Ok(Some(Rc::new(ViewResult::new("dev/routes.rs".to_string(), view_model))))
     }
 
     // this action returns a view of the details of a route in the application.
@@ -183,13 +183,13 @@ impl DevController {
         let controller = routes.as_ref().get_mapper().get_controller(route.get_controller_name().to_string());
 
         let view_model = Rc::new(RouteDetailsViewModel::new(route, Some(controller)));
-        return Ok(Some(Rc::new(ViewResult::new("views/dev/route_details.rs".to_string(), view_model))));
+        return Ok(Some(Rc::new(ViewResult::new("dev/route_details.rs".to_string(), view_model))));
     }
 
     // this action returns a view of the system information.
     pub fn sys_info(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let view_model = Rc::new(SysInfoViewModel::new());
-        Ok(Some(Rc::new(ViewResult::new("views/dev/sysinfo.rs".to_string(), view_model))))
+        Ok(Some(Rc::new(ViewResult::new("dev/sysinfo.rs".to_string(), view_model))))
     }
 
     pub fn log(&self, _controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
@@ -197,7 +197,7 @@ impl DevController {
         let supports_read = logger.supports_read();
         let logs = if supports_read { logger.read_logs() } else { vec![] };
         let view_model = Rc::new(LogViewModel::new(supports_read, logs));
-        Ok(Some(Rc::new(ViewResult::new("views/dev/log.rs".to_string(), view_model))))
+        Ok(Some(Rc::new(ViewResult::new("dev/log.rs".to_string(), view_model))))
     }
 
     pub fn log_add(&self, model_result: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
@@ -218,13 +218,13 @@ impl DevController {
         println!("{} model: {}", method, model.to_string());
 
         if method == http::Method::GET || !model.is_valid() {
-            if !model.is_valid() {
+            if method != http::Method::GET && !model.is_valid() {
                 model_result = model.get_validation_result();
                 controller_ctx.get_request_context().set_model_validation_result(Some(model_result.as_anyimodel()));
             }
 
             let view_model = Rc::new(LogAddViewModel::new(supports_read, Rc::new(model)));
-            Ok(Some(Rc::new(ViewResult::new("views/dev/log_add.rs".to_string(), view_model))))
+            Ok(Some(Rc::new(ViewResult::new("dev/log_add.rs".to_string(), view_model))))
         } else {
             self.log_service.log(model.parse_level(), model.message.as_str());            
             Ok(Some(Rc::new(RedirectActionResult::new(false, Some(false), None, Some("log".to_string()), Some("Dev".to_string()), None, None))))
@@ -237,7 +237,7 @@ impl DevController {
 
         if controller_ctx.get_request_context().get_method() == http::Method::GET {
             let view_model = Rc::new(LogClearViewModel::new(supports_clear));
-            Ok(Some(Rc::new(ViewResult::new("views/dev/log_clear.rs".to_string(), view_model))))
+            Ok(Some(Rc::new(ViewResult::new("dev/log_clear.rs".to_string(), view_model))))
         } else {
             logger.clear_logs();
             Ok(Some(Rc::new(RedirectActionResult::new(false, Some(false), None, Some("log".to_string()), Some("Dev".to_string()), None, None))))
@@ -246,7 +246,7 @@ impl DevController {
 
     pub fn perf_log(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let view_model = Rc::new(PerfLogViewModel::new());
-        Ok(Some(Rc::new(ViewResult::new("views/dev/perf_log.rs".to_string(), view_model))))
+        Ok(Some(Rc::new(ViewResult::new("dev/perf_log.rs".to_string(), view_model))))
     }
 
     pub fn error(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {

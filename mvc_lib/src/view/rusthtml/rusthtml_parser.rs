@@ -50,15 +50,24 @@ impl RustHtmlParser {
         let rusthtml_tokens_for_view = self.parser.parse_tokenstream_to_rusthtmltokens(true, it, false)?;
 
         // prefix with _view_start
-        let view_start_path = self.parse_context.get_param_string("viewstart").unwrap_or("src/views/home/_view_start.rshtml".to_string());
-        let mut view_start_tokens = vec![];
-        self.parser.expand_external_tokenstream(&view_start_path, &mut view_start_tokens)?;
+        let rusthtml_tokens = match self.parse_context.get_param_string("viewstart") {
+            Ok(view_start_path) => {
+                // try different paths to resolve to existing file.
+                // let folder = String::new();
+                // let final_path = self.parser.resolve_views_path_str(&view_start_path)?;
 
-        let rusthtml_tokens = view_start_tokens.iter().chain(rusthtml_tokens_for_view.iter()).cloned().collect();
+                let mut view_start_tokens = vec![];
+                self.parser.expand_external_tokenstream(&view_start_path, &mut view_start_tokens)?;
+
+                view_start_tokens.iter().chain(rusthtml_tokens_for_view.iter()).cloned().collect()
+            },
+            _ => {
+                rusthtml_tokens_for_view
+            }
+        };
+
         let rust_output = self.converter.parse_rusthtmltokens_to_plain_rust(&rusthtml_tokens)?;
-
         self.parse_context.set_raw(self.display_as_code(&mut rust_output.iter().cloned().peekable()));
-
         Ok(TokenStream::from_iter(rust_output))
     }
 

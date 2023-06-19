@@ -5,7 +5,8 @@ use core_macro_lib::{reflect_attributes, reflect_properties, reflect_methods};
 use core_macro_lib::IHazAttributes;
 use core_macro_lib::IModel;
 
-use crate::http::http_body_content::{ContentType, IBodyContent};
+use crate::contexts::irequest_context::IRequestContext;
+use crate::http::http_body_content::ContentType;
 use crate::core::type_info::TypeInfo;
 use crate::core::query_string::QueryString;
 
@@ -40,8 +41,8 @@ impl UrlEncodedModel {
         Self(QueryString::parse(body))
     }
 
-    pub fn new_from_body(content_type: ContentType, body: Rc<dyn IBodyContent>) -> Self {
-        let generic = body.data();
+    pub fn new_from_body(content_type: ContentType, body: &dyn IRequestContext) -> Self {
+        let generic = body.get_connection_context();
         // read all of body (TODO: implement in ITcpStreamWrapper so that we can read all of the body in one call and reuse the function)
         let mut body_bytes = Vec::new();
         loop {

@@ -9,12 +9,10 @@ use http::{ HeaderName, HeaderValue, HeaderMap, Method };
 
 use crate::controller_actions::controller_action::IControllerAction;
 
-use crate::core::itcp_stream_wrapper::ITcpStreamWrapper;
 use crate::core::query_string::QueryString;
 
 use crate::http::http_body_content::ContentType;
 use crate::http::http_body_content::IBodyContent;
-use crate::http::http_body_content::StreamBodyContent;
 use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
 use crate::model_binder::imodel::AnyIModel;
 use crate::model_binder::imodel::IModel;
@@ -26,7 +24,7 @@ use crate::model_binder::model_validation_result::ModelValidationResult;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
-use super::connection_context::IHttpConnectionContext;
+use super::ihttpconnection_context::IHttpConnectionContext;
 use super::irequest_context::IRequestContext;
 
 
@@ -59,9 +57,9 @@ pub struct RequestContext<'a> {
     // decoders used to decode the request body
     decoders: RefCell<Vec<Rc<dyn IHttpBodyStreamFormat>>>,
     // the decoded body content of the request
-    body_content: RefCell<Option<Rc<dyn IBodyContent>>>,
+    // body_content: RefCell<Option<Rc<dyn IBodyContent>>>,
     // the body stream of the request
-    body_stream: RefCell<Option<Rc<dyn ITcpStreamWrapper>>>,
+    // body_stream: RefCell<Option<Rc<dyn ITcpStreamWrapper>>>,
     // the model validation result of the request
     model_validation_result: RefCell<Option<ModelValidationResult<AnyIModel>>>,
     // the body model of the request
@@ -99,20 +97,47 @@ impl <'a> RequestContext<'a> {
         query_string: Box<String>,
         request_headers: HeaderMap,
     ) -> Self {
+        let method = match method {
+            Some(v) => v,
+            None => {
+                match method_str {
+                    Some(v) => {
+                        match Method::from_str(v.as_str()) {
+                            Ok(v2) => v2,
+                            Err(e) => {
+                                panic!("{}", e);
+                            },
+                        }
+                    },
+                    None => {
+                        panic!("No method specified.");
+                    },
+                }
+            }
+        };
+        let scheme = match scheme {
+            Some(v) => {
+                match v.as_str() {
+                    "http" | "https" => v,
+                    _ => panic!("Invalid scheme: {}", v),
+                }
+            },
+            None => Box::new("http".to_string()),
+        };
         Self {
             uuid: uuid::Uuid::new_v4(),
             connection_context: connection_context,
             http_version: http_version,
-            scheme: scheme.unwrap_or(Box::new("http".to_string())),
-            method: method.unwrap_or(Method::from_str(method_str.unwrap().as_ref().as_str()).unwrap()),
+            scheme: scheme,
+            method: method,
             host_name: host_name,
             port: port,
             path: path,
             query: QueryString::parse(query_string.as_ref()),
             _query_string: query_string,
             headers: request_headers,
-            body_content: RefCell::new(None),
-            body_stream: RefCell::new(None),
+            // body_content: RefCell::new(None),
+            // body_stream: RefCell::new(None),
             model_validation_result: RefCell::new(None),
             body_model: RefCell::new(None),
             route_data: RefCell::new(RouteData::new()),
@@ -121,6 +146,21 @@ impl <'a> RequestContext<'a> {
             controller_action: RefCell::new(None),
             decoders: RefCell::new(Vec::new()),
         }
+    }
+
+    pub fn default(connection_context: &'a dyn IHttpConnectionContext) -> Self {
+        Self::new(
+            connection_context,
+            http::version::Version::HTTP_11,
+            None,
+            None,
+            Some(http::Method::GET),
+            Box::new(String::new()),
+            0,
+            Box::new(String::new()),
+            Box::new(String::new()),
+            HeaderMap::new(),
+        )
     }
 
     // parses a HTTP request into a request context.
@@ -197,7 +237,7 @@ impl <'a> RequestContext<'a> {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Could not parse headers: {:?}", errors)));
         }
 
-        let host_header_value = headers.get("Host").unwrap();
+        let host_header_value = headers.get("Host").expect("Host header not found.");
         let host_header_string = format!("http://{}", host_header_value.to_str().unwrap());
         let host_header_url = url::Url::parse(host_header_string.as_str()).unwrap();
 
@@ -214,7 +254,7 @@ impl <'a> RequestContext<'a> {
             Some(Box::new(method_str.to_string())),
             None,
             Box::new(request_url.host().unwrap().to_string()),
-            request_url.port().unwrap(),
+            request_url.port().unwrap_or_default(),
             Box::new(path.to_string()),
             Box::new(query.to_string()),
             headers,
@@ -308,9 +348,9 @@ impl<'a> IRequestContext for RequestContext<'a> {
         &self.method
     }
 
-    fn get_body_content(self: &Self) -> Option<Rc<dyn IBodyContent>> {
-        self.body_content.borrow().clone()
-    }
+    // fn get_body_content(self: &Self) -> Option<Rc<dyn IBodyContent>> {
+    //     self.body_content.borrow().clone()
+    // }
 
     fn get_auth_claims(self: &Self) -> Vec<Rc<dyn IAuthClaim>> {
         self.auth_claims.borrow().clone()
@@ -461,17 +501,14 @@ impl<'a> IRequestContext for RequestContext<'a> {
         
                         let model_binder_service: Rc<dyn IModelBinderService> = ServiceCollectionExtensions::get_required_single(services);
                         
-                        let final_stream = self.connection_context.get_stream();
-                        for decoder in self.decoders.borrow().iter() {
-                            let decoded_stream = decoder.decode(final_stream.borrow().clone(), content_type);
-                            final_stream.replace(decoded_stream);
-                        }
-                        self.body_stream.replace(Some(final_stream.borrow().clone()));
-                        self.body_content.replace(Some(Rc::new(StreamBodyContent::new(
-                            content_type.clone(),
-                            self.get_content_length().unwrap(),
-                            final_stream.borrow().clone()
-                        ))));
+                        self.connection_context.add_stream_decoders(self.decoders.borrow().as_slice(), content_type);
+                        
+                        // self.body_stream.replace(Some(final_stream.borrow().clone()));
+                        // self.body_content.replace(Some(Rc::new(StreamBodyContent::new(
+                        //     content_type.clone(),
+                        //     self.get_content_length().unwrap(),
+                        //     self.connection_context,
+                        // ))));
                 
                         // use model binder to try and read stream into model
                         let bind_result = model_binder_service.bind_model(self, model_type.as_ref());

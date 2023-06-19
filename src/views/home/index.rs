@@ -1,5 +1,5 @@
 mvc_macro_lib::rusthtml_view_macro! {
-    @viewstart "src/views/home/_view_start.rshtml"
+    @viewstart "home/_view_start.rshtml"
     @name "home_index"
     @{
         view_context.insert_str("Title", "Rust HTML (rshtml) Home".to_string());
@@ -7,7 +7,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     
     <h1>@view_context.get_str("Title")</h1>
 
-    // @htmlfile "src/views/home/index.html"
-    // @rshtmlfile "src/views/home/index.rshtml"
+    // @htmlfile "home/index.html"
+    // @rshtmlfile "home/index.rshtml"
     @mdfile_const "README.md"
 }

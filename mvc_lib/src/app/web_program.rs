@@ -6,8 +6,8 @@ use std::vec::Vec;
 
 use crate::app::ihttp_request_pipeline::IHttpRequestPipeline;
 
-use crate::contexts::connection_context::{ HttpConnectionContext, IHttpConnectionContext };
-
+use crate::contexts::httpconnection_context::HttpConnectionContext;
+use crate::contexts::ihttpconnection_context::IHttpConnectionContext;
 use crate::options::http_options::IHttpOptions;
 
 use crate::services::default_services::DefaultServices;

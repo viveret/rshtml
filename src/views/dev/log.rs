@@ -1,5 +1,5 @@
 mvc_macro_lib::rusthtml_view_macro! {
-    @viewstart "src/views/dev/_view_start.rshtml"
+    @viewstart "dev/_view_start.rshtml"
     @name "dev_log"
     @model crate::view_models::dev::log::LogViewModel
     @{
@@ -9,13 +9,18 @@ mvc_macro_lib::rusthtml_view_macro! {
     @html.link(url.url_action(false, Some(false), None, Some("index"), Some("Dev"), None, None).as_str(), "< Back to dev routes list", None)
     
     <h1>@view_context.get_str("Title")</h1>
+    @if model.supports_read {
+        <p>@format!("There are {} log entries", model.logs.len())</p>
+        @html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None)
 
-    <p>@format!("There are {} log entries", model.logs.len())</p>
-    @html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None)
-
-    <ul>
-    @for log in model.logs.iter() {
-        <li>@log</li>
+        <ul>
+            @{
+                for log in model.logs.iter() {
+                    <li>@log</li>
+                }
+            }
+        </ul>
+    } else {
+        <p>@"Reading from log is not supported."</p>
     }
-    </ul>
 }

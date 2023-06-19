@@ -175,6 +175,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                 self.convert_rust_entry_to_rusthtmltoken(c, punct, is_in_html_mode, output, it, is_raw_tokenstream)?;
             },
             '<' => {
+                // println!("convert_punct_to_rusthtmltoken: {:?}", punct);
                 self.convert_html_entry_to_rusthtmltoken(c, punct, is_in_html_mode, output, it, is_raw_tokenstream)?;
             },
             '}' if !is_in_html_mode => {
@@ -503,9 +504,47 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
         path.push(cwd);
         let relative_path = self.parse_string_with_quotes(identifier.clone(), it)?;
         path.push(relative_path.clone());
-        // println!("convert_path_str: {:?} -> {}", identifier, relative_path);
+        println!("convert_path_str: {:?} -> {}", identifier, path.to_str().unwrap());
 
         Ok(path.to_str().unwrap().to_string())
+    }
+
+    // convert a Rust identifier expression to a path string relative to the views directory.
+    // identifier: the identifier to convert.
+    // it: the iterator to use.
+    // returns: the path string or an error.
+    fn convert_views_path_str(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
+        let path = self.parse_string_with_quotes(identifier.clone(), it)?;
+        self.resolve_views_path_str(&path)
+    }
+
+    fn resolve_views_path_str(self: &Self, path: &str) -> Result<String, RustHtmlError> {
+        // println!("input path: {}", path);
+        let cwd = std::env::current_dir().unwrap();
+
+        // list of different prefixes to try
+        let prefixes = vec![
+            "src/views/",
+            // folder,
+            "src/views/shared/",
+            ""
+        ];
+
+        // try each prefix
+        for prefix in prefixes {
+            let mut path_buf = std::path::PathBuf::new();
+            path_buf.push(cwd.clone());
+            path_buf.push(prefix);
+            path_buf.push(path.clone());
+    
+            if path_buf.exists() {
+                // println!("resolve_views_path_str: {:?} -> {:?}", path, path_buf.to_str());
+                return Ok(path_buf.to_str().unwrap().to_string());
+            } else {
+                // println!("resolve_views_path_str: {:?} -> not found", path_buf.to_str());
+            }
+        }
+        Err(RustHtmlError::from_string(format!("Could not find view: {}", path)))
     }
 
     // expand an external token stream into RustHtml tokens.
@@ -1183,58 +1222,6 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             }
         }
         Ok(true)
-    }
-
-    // parse a Rust for loop or while loop and convert it to RustHtml tokens.
-    // output: the destination for the RustHtml tokens.
-    // it: the iterator to use.
-    // is_raw_tokenstream: whether the token stream is raw or not.
-    // returns: nothing or an error.
-    fn parse_for_or_while_loop_preamble(self: &Self, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
-        // already parsed and added first ident (for or while)
-        // only allow parsing ident, literal, and punct if punct != '{'
-        loop {
-            let token_option = it.next();
-            match token_option {
-                Some(token) => {
-                    match token {
-                        TokenTree::Ident(ident) => {
-                            output.push(RustHtmlToken::Identifier(ident.clone()));
-                        },
-                        TokenTree::Literal(literal) => {
-                            output.push(RustHtmlToken::Literal(Some(literal.clone()), None));
-                        },
-                        TokenTree::Punct(punct) => {
-                            let c = punct.as_char();
-                            match c {
-                                '{' => {
-                                    panic!("unexpected {{");
-                                },
-                                _ => {
-                                    output.push(RustHtmlToken::ReservedChar(c, punct.clone()));
-                                }
-                            }
-                        },
-                        TokenTree::Group(group) => {
-                            let delimiter = group.delimiter();
-                            match delimiter {
-                                Delimiter::Brace => {
-                                    self.convert_group_to_rusthtmltoken(group, false, false, output, is_raw_tokenstream)?;
-                                    break;
-                                },
-                                _ => {
-                                    output.push(RustHtmlToken::Group(delimiter, group.clone()));
-                                },
-                            }
-                        },
-                    }
-                },
-                None => {
-                    break;
-                }
-            }
-        }
-        Ok(())
     }
 
     // convert a Rust group, identifier, or literal to RustHtml tokens.

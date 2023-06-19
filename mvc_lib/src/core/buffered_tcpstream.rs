@@ -22,8 +22,8 @@ impl BufferedTcpStream {
         Self::new(stream)
     }
 
-    pub fn new_self(source_stream: &RefCell<BufferedTcpStream>) -> BufferedTcpStream {
-        Self::new(source_stream.borrow().stream.borrow().try_clone().unwrap())
+    pub fn clone(&self) -> BufferedTcpStream {
+        Self::new(self.stream.borrow().try_clone().unwrap())
     }
 }
 

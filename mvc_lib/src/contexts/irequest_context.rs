@@ -14,7 +14,7 @@ use crate::services::authorization_service::IAuthClaim;
 use crate::controller_actions::controller_action::IControllerAction;
 use crate::services::service_collection::IServiceCollection;
 
-use super::connection_context::IHttpConnectionContext;
+use super::ihttpconnection_context::IHttpConnectionContext;
 
 
 // this trait represents a HTTP request and its context.
@@ -39,7 +39,7 @@ pub trait IRequestContext {
     // get the body of the request if it exists and is not empty.
     // fn get_body_raw(self: &Self) -> Option<Box<Vec<u8>>>;
     // get the body of the request if it exists and is not empty, and was decoded.
-    fn get_body_content(self: &Self) -> Option<Rc<dyn IBodyContent>>;
+    // fn get_body_content(self: &Self) -> Option<Rc<dyn IBodyContent>>;
     
     // get the model validation result of the request
     fn get_model_validation_result(self: &Self) -> Option<ModelValidationResult<AnyIModel>>;

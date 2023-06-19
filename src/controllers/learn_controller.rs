@@ -80,7 +80,7 @@ impl IController for LearnController {
                     .collect();
 
                 let view_model = Rc::new(IndexViewModel::new(learn_docs));
-                Ok(Some(Rc::new(ViewResult::new("views/learn/index.rs".to_string(), view_model))))
+                Ok(Some(Rc::new(ViewResult::new("learn/index.rs".to_string(), view_model))))
             })),
             Rc::new(ControllerActionClosure::new_default_area_validated(vec![], None, "/learn/..".into(), "details".into(), controller_name.clone().into(), Rc::new(|_model, controller_ctx, _services| {
                 let request_context = controller_ctx.get_request_context();
@@ -91,7 +91,7 @@ impl IController for LearnController {
                 }
 
                 let view_model = Rc::new(DetailsViewModel::new(format!("docs/learn/{}.md", path)));
-                Ok(Some(Rc::new(ViewResult::new("views/learn/details.rs".to_string(), view_model))))
+                Ok(Some(Rc::new(ViewResult::new("learn/details.rs".to_string(), view_model))))
             }))),
         ]
     }

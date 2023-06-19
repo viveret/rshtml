@@ -6,7 +6,6 @@ use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::response_context::IResponseContext;
 
 use crate::action_results::iaction_result::IActionResult;
-use crate::model_binder::imodel::IModel;
 use crate::model_binder::iviewmodel::IViewModel;
 use crate::view::view_renderer::IViewRenderer;
 use crate::view::rusthtml::html_string::HtmlString;

@@ -9,7 +9,7 @@ use crate::action_results::iaction_result::IActionResult;
 use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
 use crate::services::service_collection::IServiceCollection;
 
-use super::connection_context::IHttpConnectionContext;
+use super::ihttpconnection_context::IHttpConnectionContext;
 use super::irequest_context::IRequestContext;
 
 

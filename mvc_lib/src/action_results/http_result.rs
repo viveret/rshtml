@@ -22,12 +22,6 @@ impl HttpRedirectResult {
     pub fn new(redirect_target: String) -> Self {
         Self { redirect_target: redirect_target }
     }
-
-    // this function configures the response to redirect to the redirect target.
-    pub fn config_response(response_context: &dyn IResponseContext, redirect_target: String) -> Result<(), Rc<dyn std::error::Error>> {
-        response_context.add_header_string("Location".to_string(), redirect_target);
-        Ok(())
-    }
 }
 
 impl IActionResult for HttpRedirectResult {
@@ -36,7 +30,8 @@ impl IActionResult for HttpRedirectResult {
     }
 
     fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
-        Self::config_response(response_context, self.redirect_target.clone())
+        response_context.add_header_string("Location".to_string(), self.redirect_target.clone());
+        Ok(())
     }
 }
 

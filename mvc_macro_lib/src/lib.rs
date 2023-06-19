@@ -81,7 +81,7 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
             let inject_tokens = parser.parse_context.get_inject_statements_stream();
             let when_compiled = chrono::prelude::Utc::now().to_rfc2822();
 
-            quote! {
+            let s = quote! {
                 #use_statements
 
                 pub struct #view_name_ident {
@@ -138,7 +138,12 @@ pub fn rusthtml_view_macro(input: TokenStream) -> TokenStream {
                         Ok(html_output.collect_html())
                     }
                 }
-            }
+            };
+
+            // if view_name == "dev_log" {
+            //     println!("rusthtml_view_macro: {}", s.to_string());
+            // }
+            s
         },
         Err(err) => {
             let err_str = format!("could not compile rust html: {:?}", err);

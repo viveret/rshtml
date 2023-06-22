@@ -9,7 +9,7 @@ use crate::model_binder::iviewmodel::IViewModel;
 use crate::view::iview::IView;
 use crate::view::view_renderer::IViewRenderer;
 
-use super::response_context::IResponseContext;
+use super::iresponse_context::IResponseContext;
 
 // this trait represents a view context which is used to render a view.
 // a view context is created for each view that is rendered.

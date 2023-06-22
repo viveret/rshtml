@@ -6,37 +6,37 @@ use crate::core::itcp_stream_wrapper::ITcpStreamWrapper;
 use crate::http::http_body_content::ContentType;
 use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
 
-use super::iconnection_context::IConnectionContext;
+use super::itcpconnection_context::ITcpConnectionContext;
 
 
-// this struct implements IConnectionContext and represents a TCP connection.
-pub struct ConnectionContext {
-    source_stream: BufferedTcpStream,
+// this struct implements ITcpConnectionContext and represents a TCP connection.
+pub struct TcpConnectionContext {
+    // source_stream: Rc<RefCell<dyn ITcpStreamWrapper>>,
     stream: RefCell<Rc<RefCell<dyn ITcpStreamWrapper>>>,
     connection_id: u32,
 }
 
-impl ConnectionContext {
-    // create a new ConnectionContext struct from a remote address.
+impl TcpConnectionContext {
+    // create a new instance from a remote address.
     // remote_addr: the remote address of the connection.
-    // returns: a new ConnectionContext struct.
+    // returns: a new instance.
     pub fn new(
-        source_stream: BufferedTcpStream,
+        source_stream: Rc<RefCell<dyn ITcpStreamWrapper>>,
         connection_id: u32
     ) -> Self {
         Self {
-            source_stream: source_stream.clone(),
+            // source_stream: source_stream.clone(),
             connection_id: connection_id,
-            stream: RefCell::new(Rc::new(RefCell::new(source_stream))),
+            stream: RefCell::new(source_stream),
         }
     }
 
-    pub fn new_from_stream(stream: BufferedTcpStream, connection_id: u32) -> Self {
-        Self::new(stream, connection_id)
+    pub fn new_from_stream(stream: std::net::TcpStream, connection_id: u32) -> Self {
+        Self::new(Rc::new(RefCell::new(BufferedTcpStream::new_from_tcp(stream))), connection_id)
     }
 }
 
-impl IConnectionContext for ConnectionContext {
+impl ITcpConnectionContext for TcpConnectionContext {
     fn to_string(self: &Self) -> String {
         format!("{:?}", self.get_remote_addr())
     }

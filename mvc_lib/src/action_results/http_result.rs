@@ -4,7 +4,7 @@ use std::rc::Rc;
 use http::StatusCode;
 
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::IResponseContext;
+use crate::contexts::iresponse_context::IResponseContext;
 
 use crate::action_results::iaction_result::IActionResult;
 
@@ -21,6 +21,10 @@ pub struct HttpRedirectResult {
 impl HttpRedirectResult {
     pub fn new(redirect_target: String) -> Self {
         Self { redirect_target: redirect_target }
+    }
+
+    pub fn default() -> Self {
+        Self::new("localhost".to_string())
     }
 }
 
@@ -89,6 +93,37 @@ impl IActionResult for InternalServerErrorResult {
 
     fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
         match response_context.get_connection_context().write_str(format!("Error: {}", self.error).as_str()) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(Rc::new(err)),
+        }
+    }
+}
+
+
+
+
+#[derive(Clone, Debug)]
+pub struct OkResult {
+    content: String,
+}
+
+impl OkResult {
+    pub fn new(content: String) -> Self {
+        Self { content: content }
+    }
+
+    pub fn default() -> Self {
+        Self { content: String::new() }
+    }
+}
+
+impl IActionResult for OkResult {
+    fn get_statuscode(self: &Self) -> StatusCode {
+        StatusCode::OK
+    }
+
+    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
+        match response_context.get_connection_context().write_str(&self.content.as_str()) {
             Ok(_) => Ok(()),
             Err(err) => Err(Rc::new(err)),
         }

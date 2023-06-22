@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::app::ihttp_request_pipeline::IHttpRequestPipeline;
 use crate::contexts::ihttpconnection_context::IHttpConnectionContext;
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::IResponseContext;
+use crate::contexts::iresponse_context::IResponseContext;
 use crate::diagnostics::logging::logging_service::ILoggingService;
 use crate::diagnostics::logging::logging_service::LoggingService;
 use crate::error::error_handler_service::IErrorHandlerService;
@@ -28,7 +28,7 @@ use crate::services::service_scope::ServiceScope;
 pub struct HttpRequestPipeline {
     #[allow(dead_code)]
     options: Rc<dyn IHttpOptions>,
-    logger_service: Rc<dyn ILoggingService>,
+    _logger_service: Rc<dyn ILoggingService>,
     // times_called: RefCell<i32>,
     error_handler_service: Rc<dyn IErrorHandlerService>,
 }
@@ -42,7 +42,7 @@ impl HttpRequestPipeline {
     ) -> Self {
         Self { 
             options: options,
-            logger_service: logger_service,
+            _logger_service: logger_service,
             // times_called: RefCell::new(0),
             // http_error_handlers: http_error_handlers,
             error_handler_service: error_handler_service,

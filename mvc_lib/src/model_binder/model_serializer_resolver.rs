@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use std::any::Any;
 
-use crate::contexts::response_context::IResponseContext;
+use crate::contexts::iresponse_context::IResponseContext;
 use crate::core::type_info::TypeInfo;
 use crate::services::service_scope::ServiceScope;
 use crate::services::service_descriptor::ServiceDescriptor;

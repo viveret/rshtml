@@ -11,7 +11,7 @@ use crate::services::service_collection::{ServiceCollection, ServiceCollectionEx
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
 use crate::contexts::irequest_context::IRequestContext;
-use crate::contexts::response_context::IResponseContext;
+use crate::contexts::iresponse_context::IResponseContext;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::request_middleware_service::MiddlewareResult;
 use crate::services::request_middleware_service::IRequestMiddlewareService;

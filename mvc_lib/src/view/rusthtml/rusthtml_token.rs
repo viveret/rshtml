@@ -112,7 +112,7 @@ impl RustHtmlToken {
                     Delimiter::None => inner,
                 }
             },
-            RustHtmlToken::GroupOpen(delimiter, g) => {
+            RustHtmlToken::GroupOpen(delimiter, _) => {
                 match delimiter {
                     Delimiter::Brace => "{".to_string(),
                     Delimiter::Bracket => "[".to_string(),
@@ -120,7 +120,7 @@ impl RustHtmlToken {
                     Delimiter::None => "".to_string(),
                 }
             },
-            RustHtmlToken::GroupClose(delimiter, g) => {
+            RustHtmlToken::GroupClose(delimiter, _) => {
                 match delimiter {
                     Delimiter::Brace => "}".to_string(),
                     Delimiter::Bracket => "]".to_string(),

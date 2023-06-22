@@ -52,7 +52,7 @@ impl IRustHtmlDirective for IfDirective {
                                     Ok(_) => {
                                         let last = output.last().unwrap();
                                         match last {
-                                            RustHtmlToken::GroupParsed(delimiter, tokens) => {
+                                            RustHtmlToken::GroupParsed(_, tokens) => {
                                                 let to_str = tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" ");
                                                 println!("if group: {:?}", to_str);
                                                 if to_str.contains("for log in model") {

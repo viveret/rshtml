@@ -180,7 +180,7 @@ fn request_context_new_panic_for_invalid_scheme() {
 }
 
 #[test]
-fn request_context_parse_works() {
+fn request_context_parse_minimal_works() {
     let data = "GET / HTTP/1.1\r\nHost: localhost\r\n";
     let connection_context = Rc::new(FromStringConnectionContext::new(data.to_string(), 1));
     let http_context = HttpConnectionContext::new(connection_context);

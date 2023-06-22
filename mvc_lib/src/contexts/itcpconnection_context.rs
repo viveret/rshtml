@@ -8,17 +8,14 @@ use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
 
 // this trait represents a TCP connection.
 #[automock]
-pub trait IConnectionContext {
+pub trait ITcpConnectionContext {
     // returns a string representation of the connection context.
     fn to_string(self: &Self) -> String;
 
     // get the remote address of the connection.
     fn get_remote_addr(self: &Self) -> std::net::SocketAddr;
 
-    // get the connection id.
     fn get_connection_id(&self) -> u32;
-
-    // fn get_source_stream(&self) -> Rc<dyn ITcpStreamWrapper>;
 
     fn add_stream_decoders(&self, decoders: &[Rc<dyn IHttpBodyStreamFormat>], content_type: &ContentType);
 

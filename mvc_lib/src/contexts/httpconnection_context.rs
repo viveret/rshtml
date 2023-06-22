@@ -5,18 +5,17 @@ use std::vec;
 use http::{HeaderName, HeaderValue, HeaderMap};
 use http::status::StatusCode;
 
-use crate::core::buffered_tcpstream::BufferedTcpStream;
 use crate::http::http_body_content::ContentType;
 use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
 
-use super::connection_context::ConnectionContext;
-use super::iconnection_context::IConnectionContext;
+use super::tcp_connection_context::TcpConnectionContext;
+use super::itcpconnection_context::ITcpConnectionContext;
 use super::ihttpconnection_context::IHttpConnectionContext;
 
 
 // this struct implements IHttpConnectionContext and represents a HTTP connection.
 pub struct HttpConnectionContext {
-    pub tcp_connection_context: Rc<dyn IConnectionContext>,
+    pub tcp_connection_context: Rc<dyn ITcpConnectionContext>,
     pub has_started_writing: RefCell<bool>,
 
     pub pending_http_version: RefCell<http::Version>,
@@ -26,7 +25,7 @@ pub struct HttpConnectionContext {
 }
 
 impl HttpConnectionContext {
-    pub fn new(connection_context: Rc<dyn IConnectionContext>) -> Self {
+    pub fn new(connection_context: Rc<dyn ITcpConnectionContext>) -> Self {
         Self {
             tcp_connection_context: connection_context,
             has_started_writing: RefCell::new(false),
@@ -38,7 +37,7 @@ impl HttpConnectionContext {
     }
 
     pub fn new_from_stream(stream: std::net::TcpStream, connection_id: u32) -> HttpConnectionContext {
-        Self::new(Rc::new(ConnectionContext::new_from_stream(BufferedTcpStream::new_from_tcp(stream), connection_id)))
+        Self::new(Rc::new(TcpConnectionContext::new_from_stream(stream, connection_id)))
     }
 
     pub fn shutdown(&self, how: std::net::Shutdown) -> std::io::Result<()> {
@@ -47,7 +46,7 @@ impl HttpConnectionContext {
 }
 
 impl IHttpConnectionContext for HttpConnectionContext {
-    fn get_tcp_context(&self) -> &dyn IConnectionContext {
+    fn get_tcp_context(&self) -> &dyn ITcpConnectionContext {
         self.tcp_connection_context.as_ref()
     }
     
@@ -175,5 +174,17 @@ impl IHttpConnectionContext for HttpConnectionContext {
 
     fn add_stream_decoders(&self, decoders: &[Rc<dyn IHttpBodyStreamFormat>], content_type: &ContentType) {
         self.tcp_connection_context.add_stream_decoders(decoders, content_type);
+    }
+
+    fn set_header_string(&self, name: String, value: String) {
+        self.pending_headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).unwrap(), HeaderValue::from_bytes(value.as_bytes()).unwrap());
+    }
+
+    fn set_header_str(&self, name: &str, value: &str) {
+        self.pending_headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).unwrap(), HeaderValue::from_bytes(value.as_bytes()).unwrap());
+    }
+
+    fn get_pending_header(&self, name: &str) -> Option<String> {
+        self.pending_headers.borrow().get(name).map(|v| v.to_str().unwrap().to_string())
     }
 }

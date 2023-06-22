@@ -9,7 +9,7 @@ use crate::contexts::irequest_context::IRequestContext;
 use crate::core::type_info::TypeInfo;
 use crate::options::logging_services_options::ILogHttpRequestsOptions;
 
-use crate::contexts::response_context::IResponseContext;
+use crate::contexts::iresponse_context::IResponseContext;
 
 use crate::services::service_collection::{ IServiceCollection, ServiceCollectionExtensions };
 

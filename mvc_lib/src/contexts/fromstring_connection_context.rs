@@ -1,14 +1,13 @@
 use std::cell::RefCell;
-use std::num;
 use std::rc::Rc;
 
 use crate::http::http_body_content::ContentType;
 use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
 
-use super::iconnection_context::IConnectionContext;
+use super::itcpconnection_context::ITcpConnectionContext;
 
 
-// this is a mock implementation of IConnectionContext that reads from a string and writes to an in-memory buffer.
+// this is a mock implementation of ITcpConnectionContext that reads from a string and writes to an in-memory buffer.
 pub struct FromStringConnectionContext {
     data: String,
     connection_id: u32,
@@ -29,7 +28,7 @@ impl FromStringConnectionContext {
     }
 }
 
-impl IConnectionContext for FromStringConnectionContext {
+impl ITcpConnectionContext for FromStringConnectionContext {
     fn to_string(self: &Self) -> String {
         format!("FromStringConnectionContext ({}): {}", self.connection_id, self.data)
     }
@@ -74,7 +73,7 @@ impl IConnectionContext for FromStringConnectionContext {
     fn read_line(&self) -> std::io::Result<String> {
         let pos = *self.input_position.borrow();
         if pos < self.data.len() {
-            let mut line: String = self.data.as_str().chars().skip(pos).take_while(|c| *c != '\r' && *c != '\n').collect();
+            let line: String = self.data.as_str().chars().skip(pos).take_while(|c| *c != '\r' && *c != '\n').collect();
             let mut num_read = line.len();
             
             if self.data.chars().nth(pos + num_read) == Some('\r') {
@@ -91,7 +90,7 @@ impl IConnectionContext for FromStringConnectionContext {
         }
     }
 
-    fn add_stream_decoders(&self, decoders: &[Rc<dyn IHttpBodyStreamFormat>], content_type: &ContentType) {
+    fn add_stream_decoders(&self, _decoders: &[Rc<dyn IHttpBodyStreamFormat>], _content_type: &ContentType) {
         todo!()
     }
 }

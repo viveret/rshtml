@@ -11,79 +11,11 @@ use crate::services::service_collection::IServiceCollection;
 
 use super::ihttpconnection_context::IHttpConnectionContext;
 use super::irequest_context::IRequestContext;
+use super::iresponse_context::IResponseContext;
 
-
-// this trait represents a HTTP response and its context.
-pub trait IResponseContext {
-    // add a header to the response.
-    // name: the name of the header.
-    // value: the value of the header.
-    fn add_header_string(self: &Self, name: String, value: String);
-
-    // add a header to the response.
-    // name: the name of the header.
-    // value: the value of the header.
-    fn add_header_str(self: &Self, name: &str, value: &str);
-
-    // get the status message of the response.
-    fn status_message(self: &Self) -> String;
-
-    // get the headers of the response.
-    fn get_headers(&self) -> HeaderMap;
-
-    // get the status code of the response.
-    fn get_status_code(&self) -> StatusCode;
-
-    // invoke the action result for the controller context by setting the status code of the response and then
-    // configuring the response with the action result, and finally writing the response body.
-    fn invoke_action_result(self: &Self, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>>;
-
-    // set the status code of the response.
-    fn set_status_code(&self, status_code: StatusCode);
-
-    // get the request context of the response.
-    fn get_request_context(&self) -> &dyn IRequestContext;
-
-    // get the connection context of the response, same as the one for the request context.
-    fn get_connection_context(&self) -> &dyn IHttpConnectionContext;
-
-    // use an encoder for the response body.
-    fn use_encoder(self: &Self, encoder: Rc<dyn IHttpBodyStreamFormat>);
-
-    // get the action result for the controller context.
-    fn get_action_result(self: &Self) -> Option<Rc<dyn IActionResult>>;
-
-    // set the action result for the controller context.
-    fn set_action_result(self: &Self, action_result: Option<Rc<dyn IActionResult>>);
-
-    fn get_has_started_writing(self: &Self) -> bool;
-
-    fn set_result_500_if_not_started_writing(self: &Self);
-
-
-    // get the context data of the request
-    fn get_str(self: &Self, key: &str) -> Option<String>;
-    // get the context data of the request
-    fn get_string(self: &Self, key: String) -> Option<String>;
-    // insert a value into the context data of the request
-    fn insert_str(self: &mut Self, key: &str, value: String);
-    // insert a value into the context data of the request
-    fn insert_string(self: &mut Self, key: String, value: String);
-    // remove a value from the context data of the request
-    fn remove_str(self: &mut Self, key: &str);
-    // remove a value from the context data of the request
-    fn remove_string(self: &mut Self, key: String);
-}
 
 // this trait represents a HTTP response and its context.
 pub struct ResponseContext<'a> {
-    // // the HTTP version of the response
-    // pub http_version: Version,
-    // // the status code of the response
-    // pub status_code: RefCell<StatusCode>,
-    // // the headers of the response
-    // pub headers: RefCell<HeaderMap>,
-
     // the request context of the response.
     pub request_context: &'a dyn IRequestContext,
     // the connection context of the response, same as the one for the request context.
@@ -105,9 +37,6 @@ impl <'a> ResponseContext<'a> {
         let http_context = request_context.get_connection_context();
 
         Self {
-            // http_version: http_version,
-            // status_code: RefCell::new(status_code),
-            // headers: RefCell::new(HeaderMap::new()),
             request_context: request_context,
             connection_context: http_context,
             encoders: RefCell::new(Vec::new()),
@@ -123,6 +52,10 @@ impl <'a> IResponseContext for ResponseContext<'a> {
 
     fn add_header_str(self: &Self, name: &str, value: &str) {
         self.connection_context.add_header_str(name, value);
+    }
+
+    fn get_header(self: &Self, name: &str) -> Option<String> {
+        self.connection_context.get_pending_header(name)
     }
 
     fn status_message(self: &Self) -> String {
@@ -167,24 +100,24 @@ impl <'a> IResponseContext for ResponseContext<'a> {
         self.action_result.replace(action_result);
     }
 
-    fn get_str(self: &Self, key: &str) -> Option<String> {
+    fn get_str(self: &Self, _key: &str) -> Option<String> {
         None
     }
 
-    fn get_string(self: &Self, key: String) -> Option<String> {
+    fn get_string(self: &Self, _key: String) -> Option<String> {
         None
     }
 
-    fn insert_str(self: &mut Self, key: &str, value: String) {
+    fn insert_str(self: &mut Self, _key: &str, _value: String) {
     }
 
-    fn insert_string(self: &mut Self, key: String, value: String) {
+    fn insert_string(self: &mut Self, _key: String, _value: String) {
     }
 
-    fn remove_str(self: &mut Self, key: &str) {
+    fn remove_str(self: &mut Self, _key: &str) {
     }
 
-    fn remove_string(self: &mut Self, key: String) {
+    fn remove_string(self: &mut Self, _key: String) {
     }
 
     fn get_has_started_writing(self: &Self) -> bool {

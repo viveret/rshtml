@@ -31,7 +31,11 @@ impl HtmlString {
 
     // create a new empty HtmlString.
     pub fn empty() -> Self {
-        Self { content: "".to_string() }
+        Self { content: String::new() }
+    }
+
+    pub fn default() -> Self {
+        Self::empty()
     }
 
     // whether or not the HtmlString is empty.

@@ -186,12 +186,13 @@ fn response_context_invoke_action_result_ok_works() {
     let response = ResponseContext::new(&request_context);
     let services = ServiceCollection::new_root();
 
+    assert_eq!(false, response.get_has_started_writing());
     response.set_action_result(Some(Rc::new(OkResult::default())));
     response
         .invoke_action_result(&request_context, &services)
         .unwrap();
 
-    assert_eq!(false, response.get_has_started_writing());
+    assert_eq!(true, response.get_has_started_writing());
     assert_eq!(http::StatusCode::OK, response.get_status_code());
 }
 

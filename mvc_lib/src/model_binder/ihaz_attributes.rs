@@ -6,6 +6,7 @@ use super::imodel_attribute::IAttribute;
 
 
 
+#[mockall::automock]
 pub trait IHazAttributes {
     // only contains runtime attributes, compile time attributes are not saved / reflected.
     fn get_attributes(&self) -> Vec<Rc<dyn IAttribute>>;

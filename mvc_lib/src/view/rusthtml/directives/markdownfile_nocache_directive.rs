@@ -23,7 +23,7 @@ impl MarkdownFileNoCacheDirective {
     // output: the destination for the RustHtml tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    pub fn convert_mdfile_nocache_directive(identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
+    pub fn convert_mdfile_nocache_directive(identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
         // could be literal or ident
         if let Ok(path_tokens) = parser.convert_string_or_ident(it, parser.get_context().get_is_raw_tokenstream()) {
             if let Ok(x) = parser.convert_ident_and_punct_and_group_or_literal_to_tokenstream(&path_tokens) {
@@ -63,7 +63,7 @@ impl IRustHtmlDirective for MarkdownFileNoCacheDirective {
         name == "mdfile_nocache" || name == "md_file_nocache" || name == "markdownfile_nocache" || name == "markdown_file_nocache"
     }
 
-    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         if let Ok(_) = Self::convert_mdfile_nocache_directive(identifier, parser, output, it) {
             Ok(RustHtmlDirectiveResult::OkContinue)
         } else {

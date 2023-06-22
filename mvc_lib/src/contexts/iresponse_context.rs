@@ -13,6 +13,7 @@ use super::irequest_context::IRequestContext;
 
 
 // this trait represents a HTTP response and its context.
+#[mockall::automock]
 pub trait IResponseContext {
     // add a header to the response.
     // name: the name of the header.

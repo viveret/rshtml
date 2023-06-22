@@ -1,3 +1,7 @@
+use std::rc::Rc;
+
+
+use super::ihaz_attributes::IHazAttributes;
 use super::imodel::IModel;
 
 
@@ -9,7 +13,23 @@ pub trait IViewModel: IModel {
 
 
 pub struct MockIViewModelObject {
-    mock_model_object: super::imodel::MockIModelObject,
+}
+
+impl MockIViewModelObject {
+    pub fn new() -> Self {
+        Self {
+        }
+    }
+}
+
+impl IHazAttributes for MockIViewModelObject {
+    fn get_attributes(&self) -> Vec<Rc<dyn super::imodel_attribute::IAttribute>> {
+        todo!()
+    }
+
+    fn get_attribute(&self, typeinfo: &crate::core::type_info::TypeInfo) -> Option<Rc<dyn super::imodel_attribute::IAttribute>> {
+        todo!()
+    }
 }
 
 impl IViewModel for MockIViewModelObject {
@@ -17,11 +37,13 @@ impl IViewModel for MockIViewModelObject {
 
 impl IModel for MockIViewModelObject {
     fn get_properties(&self) -> std::collections::HashMap<String, std::rc::Rc<dyn super::imodel_property::IModelProperty>> {
-        self.mock_model_object.get_properties()
+        todo!()
+        // self.mock_model_object.get_properties()
     }
 
     fn get_property(&self, name: &str) -> Option<std::rc::Rc<dyn super::imodel_property::IModelProperty>> {
-        self.mock_model_object.get_property(name)
+        todo!()
+        // self.mock_model_object.get_property(name)
     }
 
     fn get_methods(&self) -> std::collections::HashMap<String, std::rc::Rc<dyn super::imodel_method::IModelMethod>> {
@@ -58,7 +80,7 @@ impl MockIViewModel {
         }
     }
 
-    pub fn object() -> MockIViewModelObject {
+    pub fn object(&self) -> MockIViewModelObject {
         MockIViewModelObject::new()
     }
 }

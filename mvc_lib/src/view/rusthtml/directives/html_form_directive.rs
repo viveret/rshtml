@@ -24,7 +24,7 @@ impl HtmlFormDirective {
 
     // parse the form function call and add the form tokens to the output.
     // the form function call is called between the form opening and closing tags.
-    fn parse_form_function_call(self: &Self, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: &dyn IPeekableTokenTree) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
+    fn parse_form_function_call(self: &Self, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: &dyn IPeekableTokenTree) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
         // println!("parsing form function call");
 
         // parse method
@@ -53,10 +53,10 @@ impl HtmlFormDirective {
 
         // println!("method: {}", method);
 
-        let mut _form_render_fn_tokens: Option<Vec<RustHtmlToken>> = None;
-        let mut attributes: Option<HashMap<String, Vec<RustHtmlToken>>> = None;
+        let mut _form_render_fn_tokens: Option<Vec<RustHtmlToken<Ident, Punct, Literal>>> = None;
+        let mut attributes: Option<HashMap<String, Vec<RustHtmlToken<Ident, Punct, Literal>>>> = None;
         let mut action: Option<String> = None;
-        let mut _route_values: Option<HashMap<String, Vec<RustHtmlToken>>> = None;
+        let mut _route_values: Option<HashMap<String, Vec<RustHtmlToken<Ident, Punct, Literal>>>> = None;
 
         // check for comma separator between method and action
         if Self::check_for_comma(it) {
@@ -146,7 +146,7 @@ impl HtmlFormDirective {
         Ok(RustHtmlDirectiveResult::OkContinue)
     }
 
-    fn parse_form_render_closure(self: &Self, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: &dyn IPeekableTokenTree) -> Result<(), RustHtmlError<'static>> {
+    fn parse_form_render_closure(self: &Self, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: &dyn IPeekableTokenTree) -> Result<(), RustHtmlError<'static>> {
         // expecting closure to render contents of form
         // must start with () to indicate it is a function
         match it.next() {
@@ -186,7 +186,7 @@ impl HtmlFormDirective {
         }
     }
     
-    fn try_parse_object_route_values(self: &Self, it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
+    fn try_parse_object_route_values(self: &Self, it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlToken<Ident, Punct, Literal>>>>, RustHtmlError<'static>> {
         if let Some(group_object) = Self::peek_group_with_braces(it) {
             // skip group after peeking
             it.next();
@@ -198,10 +198,10 @@ impl HtmlFormDirective {
         }
     }
     
-    fn parse_object_route_values(group_object: Group) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
+    fn parse_object_route_values(group_object: Group) -> Result<Option<HashMap<String, Vec<RustHtmlToken<Ident, Punct, Literal>>>>, RustHtmlError<'static>> {
         let mut object_route_values = HashMap::new();
         let mut object_route_value_name: Option<String> = None;
-        let mut object_route_value_values: Vec<RustHtmlToken> = vec![];
+        let mut object_route_value_values: Vec<RustHtmlToken<Ident, Punct, Literal>> = vec![];
         let mut it =  group_object.stream().into_iter().peekable();
         loop {
             match it.next() {
@@ -247,7 +247,7 @@ impl HtmlFormDirective {
         Ok(Some(object_route_values))
     }
     
-    fn try_parse_object_html_attributes(it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
+    fn try_parse_object_html_attributes(it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlToken<Ident, Punct, Literal>>>>, RustHtmlError<'static>> {
         if let Some(group_object) = Self::peek_group_with_braces(it) {
             // skip group after peeking
             it.next();
@@ -271,10 +271,10 @@ impl HtmlFormDirective {
         None
     }
 
-    fn parse_object_html_attributes(group_object: proc_macro::Group) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
+    fn parse_object_html_attributes(group_object: proc_macro::Group) -> Result<Option<HashMap<String, Vec<RustHtmlToken<Ident, Punct, Literal>>>>, RustHtmlError<'static>> {
         let mut object_attributes = HashMap::new();
         let mut object_attribute_name: Option<String> = None;
-        let mut object_attribute_values: Vec<RustHtmlToken> = vec![];
+        let mut object_attribute_values: Vec<RustHtmlToken<Ident, Punct, Literal>> = vec![];
         let mut it =  group_object.stream().into_iter().peekable();
         loop {
             match it.next() {
@@ -336,7 +336,7 @@ impl IRustHtmlDirective for HtmlFormDirective {
         name == "form"
     }
 
-    fn execute(self: &Self, _identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, _identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // parse form function parameter values
         // top level ()
         // print!("parsing form function call");

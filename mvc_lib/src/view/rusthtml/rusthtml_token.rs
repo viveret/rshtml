@@ -4,49 +4,49 @@ use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Span};
 
 // a RustHtml token for a Rust identifier or punctuation.
 #[derive(Clone, Debug)]
-pub enum RustHtmlIdentOrPunct {
-    Ident(Ident),
-    Punct(Punct),
+pub enum RustHtmlIdentOrPunct<TIdent, TPunct> {
+    Ident(TIdent),
+    Punct(TPunct),
 }
 
 // a RustHtml token for a Rust identifier or punctuation or literal.
 #[derive(Clone, Debug)]
-pub enum RustHtmlIdentAndPunctOrLiteral {
-    Literal(Literal),
-    IdentAndPunct(Vec<RustHtmlIdentOrPunct>)
+pub enum RustHtmlIdentAndPunctOrLiteral<TIdent, TPunct, TLiteral> {
+    Literal(TLiteral),
+    IdentAndPunct(Vec<RustHtmlIdentOrPunct<TIdent, TPunct>>)
 }
 
 // a RustHtml token for a Rust identifier or punctuation or group.
 #[derive(Clone, Debug)]
-pub enum RustHtmlIdentOrPunctOrGroup {
-    Ident(Ident),
-    Punct(Punct),
-    Group(Group),
-    // GroupParsed(Vec<RustHtmlToken>),
+pub enum RustHtmlIdentOrPunctOrGroup<TIdent, TPunct, TGroup> {
+    Ident(TIdent),
+    Punct(TPunct),
+    Group(TGroup),
+    // GroupParsed(Vec<RustHtmlToken<Ident, Punct, Literal>>),
 }
 
 // a RustHtml token for a Rust identifier or punctuation or group or literal.
 #[derive(Clone, Debug)]
-pub enum RustHtmlIdentAndPunctAndGroupOrLiteral {
-    Literal(Literal),
-    IdentAndPunctAndGroup(Vec<RustHtmlIdentOrPunctOrGroup>)
+pub enum RustHtmlIdentAndPunctAndGroupOrLiteral<TLiteral, TIdent, TPunct, TGroup> {
+    Literal(TLiteral),
+    IdentAndPunctAndGroup(Vec<RustHtmlIdentOrPunctOrGroup<TIdent, TPunct, TGroup>>)
 }
 
 // The token types for the RustHtml language.
 // Each enum variant represents a different part of the RustHtml language.
 #[derive(Clone, Debug)]
-pub enum RustHtmlToken {
+pub enum RustHtmlToken<TIdent, TPunct, TLiteral> {
     // any / both
     Space(char),
 
     // html
     HtmlTextNode(String, Span),
-    HtmlTagVoid(String, Option<Vec<RustHtmlIdentOrPunct>>),
-    HtmlTagStart(String, Option<Vec<RustHtmlIdentOrPunct>>),
-    HtmlTagEnd(String, Option<Vec<RustHtmlIdentOrPunct>>),
-    HtmlTagAttributeName(String, Option<RustHtmlIdentAndPunctOrLiteral>),
+    HtmlTagVoid(String, Option<Vec<RustHtmlIdentOrPunct<TIdent, TPunct>>>),
+    HtmlTagStart(String, Option<Vec<RustHtmlIdentOrPunct<TIdent, TPunct>>>),
+    HtmlTagEnd(String, Option<Vec<RustHtmlIdentOrPunct<TIdent, TPunct>>>),
+    HtmlTagAttributeName(String, Option<RustHtmlIdentAndPunctOrLiteral<TLiteral, TIdent, TPunct>>),
     HtmlTagAttributeEquals(char, Option<Punct>),
-    HtmlTagAttributeValue(Option<String>, Option<Vec<RustHtmlToken>>),
+    HtmlTagAttributeValue(Option<String>, Option<Vec<RustHtmlToken<TIdent, TPunct, TLiteral>>>),
     HtmlTagCloseVoidPunct(char, Option<Punct>),
     HtmlTagCloseSelfContainedPunct(char, Option<Punct>),
     HtmlTagCloseStartChildrenPunct(char, Option<Punct>),
@@ -57,21 +57,21 @@ pub enum RustHtmlToken {
     // External HTML file that is copied into the output
     ExternalHtml(String, Span),
     // Instruction to append to the HTML output
-    AppendToHtml(Vec<RustHtmlToken>),
+    AppendToHtml(Vec<RustHtmlToken<TIdent, TPunct, TLiteral>>),
 
     Literal(Option<Literal>, Option<String>),
     Identifier(Ident),
     ReservedChar(char, Punct),
     ReservedIndent(String, Ident),
     Group(Delimiter, Group),
-    GroupParsed(Delimiter, Vec<RustHtmlToken>),
+    GroupParsed(Delimiter, Vec<RustHtmlToken<TIdent, TPunct, TLiteral>>),
     GroupOpen(Delimiter, Span),
     GroupClose(Delimiter, Span),
 
     // CompileError(String), // this will output a compile error using quote!
 }
 
-impl RustHtmlToken {
+impl<TIdent, TPunct, TLiteral> RustHtmlToken<TIdent, TPunct, TLiteral> {
     pub fn to_string(&self) -> String {
         match self {
             RustHtmlToken::Space(c) => c.to_string(),

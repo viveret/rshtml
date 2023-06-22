@@ -34,3 +34,15 @@ fn html_string_len() {
     let hs = HtmlString::empty();
     assert_eq!(hs.len(), 0);
 }
+
+#[test]
+fn html_string_escapes_special_characters() {
+    for html in vec![
+        "<div></div>",
+        "<a href=\"www.google.com\"></a>",
+        "&lt;a&gt;",
+    ] {
+        let hs = HtmlString::from(html);
+        assert_eq!(html_escape::encode_text(html), hs.content);
+    }
+}

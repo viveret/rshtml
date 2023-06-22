@@ -1,25 +1,26 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
 use std::collections::HashMap;
 
-use proc_macro::{Literal, Punct};
+use proc_macro::{Ident, Literal, Punct};
 
-use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentOrPunct };
+use crate::view::rusthtml::rusthtml_token::RustHtmlIdentOrPunct;
+use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
 // this is the main parsing context for the RustHtml language.
 // it is used to parse the RustHtml language into a RustHtmlToken stream of RustHtml tokens.
 pub struct HtmlTagParseContext {
     // the HTML tag name
-    pub tag_name: Vec<RustHtmlIdentOrPunct>,
+    pub tag_name: Vec<RustHtmlIdentOrPunct<Ident, Punct>>,
     // the HTML tag attributes
-    pub html_attrs: HashMap<String, Option<RustHtmlToken>>,
+    pub html_attrs: HashMap<String, Option<RustHtmlToken<Ident, Punct, Literal>>>,
     // the current HTML attribute key
     pub html_attr_key: String,
     // the current HTML attribute key literal
     pub html_attr_key_literal: Option<Literal>,
     // the current HTML attribute key ident
-    pub html_attr_key_ident: Vec<RustHtmlIdentOrPunct>,
+    pub html_attr_key_ident: Vec<RustHtmlIdentOrPunct<Ident, Punct>>,
     // the current HTML attribute value
-    pub html_attr_val: Vec<RustHtmlToken>,
+    pub html_attr_val: Vec<RustHtmlToken<Ident, Punct, Literal>>,
     // whether or not to parse attributes
     pub parse_attrs: bool,
     // whether or not to parse attribute values
@@ -78,7 +79,7 @@ impl HtmlTagParseContext {
     // formats the RustHtml tag name as a string.
     // tag_name: the RustHtml tag name to format as a string.
     // returns the formatted RustHtml tag name as a string.
-    pub fn fmt_tag_name_as_str(tag_name: &Vec<RustHtmlIdentOrPunct>) -> String {
+    pub fn fmt_tag_name_as_str(tag_name: &Vec<RustHtmlIdentOrPunct<Ident, Punct>>) -> String {
         let mut s = String::new();
         for part in tag_name.iter() {
             match part {
@@ -91,7 +92,7 @@ impl HtmlTagParseContext {
 
     // called when the tag name is parsed.
     // output: the output RustHtml token stream to add the tag name to.
-    pub fn on_html_tag_name_parsed(self: &mut Self, output: &mut Vec<RustHtmlToken>) {
+    pub fn on_html_tag_name_parsed(self: &mut Self, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>) {
         self.parse_attrs = true;
         if self.is_opening_tag {
             if self.is_void_tag() {

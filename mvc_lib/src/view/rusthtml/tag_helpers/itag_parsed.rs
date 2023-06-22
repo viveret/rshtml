@@ -12,5 +12,5 @@ use crate::view::rusthtml::rusthtml_parser_context::IRustHtmlParserContext;
 // This is different from the node parser, which is used to parse a complete HTML node.
 pub trait IHtmlTagParsed {
     fn matches(&self, tag_name: &str, is_opening_tag: bool) -> bool;
-    fn on_tag_parsed(&self, tag_context: &HtmlTagParseContext, html_context: Rc<dyn IRustHtmlParserContext>, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError>;
+    fn on_tag_parsed(&self, tag_context: &HtmlTagParseContext, html_context: Rc<dyn IRustHtmlParserContext>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>) -> Result<bool, RustHtmlError>;
 }

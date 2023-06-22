@@ -18,6 +18,7 @@ use super::ihttpconnection_context::IHttpConnectionContext;
 
 
 // this trait represents a HTTP request and its context.
+#[mockall::automock]
 pub trait IRequestContext {
     // get the HTTP version of the request
     fn get_http_version(self: &Self) -> http::version::Version;

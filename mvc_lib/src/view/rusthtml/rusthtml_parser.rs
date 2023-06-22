@@ -136,7 +136,7 @@ impl RustHtmlParser {
 
     // insert a self. before an identifier.
     // output: the destination for the RustHtml tokens.
-    pub fn insert_self_dot(self: &Self, output: &mut Vec<RustHtmlToken>) {
+    pub fn insert_self_dot(self: &Self, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>) {
         output.push(RustHtmlToken::Identifier(Ident::new("self", Span::call_site())));
         output.push(RustHtmlToken::ReservedChar('.', Punct::new('.', Spacing::Alone)));
     }

@@ -1,6 +1,8 @@
 {
     "rust-analyzer.linkedProjects": [
+        "./core_macro_lib/Cargo.toml",
         "./mvc_lib/Cargo.toml",
-        "./mvc_lib/Cargo.toml"
+        "./mvc_macro_lib/Cargo.toml",
+        "Cargo.toml"
     ]
 }

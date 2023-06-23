@@ -274,6 +274,10 @@ impl RustHtmlParserContext {
             ],
         }
     }
+
+    pub fn is_ok(&self) -> bool {
+        true
+    }
 }
 
 impl IRustHtmlParserContext for RustHtmlParserContext {

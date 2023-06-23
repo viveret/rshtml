@@ -106,11 +106,11 @@ impl RustHtmlParser {
     // parse a token stream to a syn AST.
     // input: the token stream to parse.
     // returns: the AST or an error.
-    pub fn parse_to_ast(self: &Self, input: proc_macro::TokenStream) -> Result<syn::Item, RustHtmlError> {
-        let ts = self.expand_tokenstream(input)?;
-        let ast = syn::parse(ts).unwrap();
-        Ok(ast)
-    }
+    // pub fn parse_to_ast(self: &Self, input: TokenStream) -> Result<syn::Item, RustHtmlError> {
+    //     let ts = self.expand_tokenstream(input)?;
+    //     let ast = syn::parse(ts).unwrap();
+    //     Ok(ast)
+    // }
 
     // assert that the next token is a punct. if it is, return nothing. otherwise, return the unexpected token.
     // c: the punct to expect.

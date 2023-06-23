@@ -53,7 +53,7 @@ impl HtmlTagParseContext {
     // returns false if the tag is not a void tag (e.g. <div></div> or <p></p>)
     pub fn is_void_tag(self: &Self) -> bool {
         match self.tag_name_as_str().as_str() {
-            "input" | "hr" | "!DOCTYPE" => true,
+            "input" | "hr" | "br" | "!DOCTYPE" => true,
             _ => false,
         }
     }

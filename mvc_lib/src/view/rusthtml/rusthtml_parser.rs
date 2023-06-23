@@ -1,7 +1,7 @@
 use std::iter::Peekable;
 use std::rc::Rc;
 
-use proc_macro::{ Ident, Punct, Spacing, Span, TokenStream, TokenTree};
+use proc_macro2::{ Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 
 use crate::core::panic_or_return_error::PanicOrReturnError;
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken };
@@ -106,7 +106,7 @@ impl RustHtmlParser {
     // parse a token stream to a syn AST.
     // input: the token stream to parse.
     // returns: the AST or an error.
-    pub fn parse_to_ast(self: &Self, input: TokenStream) -> Result<syn::Item, RustHtmlError> {
+    pub fn parse_to_ast(self: &Self, input: proc_macro::TokenStream) -> Result<syn::Item, RustHtmlError> {
         let ts = self.expand_tokenstream(input)?;
         let ast = syn::parse(ts).unwrap();
         Ok(ast)
@@ -136,7 +136,7 @@ impl RustHtmlParser {
 
     // insert a self. before an identifier.
     // output: the destination for the RustHtml tokens.
-    pub fn insert_self_dot(self: &Self, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>) {
+    pub fn insert_self_dot(self: &Self, output: &mut Vec<RustHtmlToken>) {
         output.push(RustHtmlToken::Identifier(Ident::new("self", Span::call_site())));
         output.push(RustHtmlToken::ReservedChar('.', Punct::new('.', Spacing::Alone)));
     }

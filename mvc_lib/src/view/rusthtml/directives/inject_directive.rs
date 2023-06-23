@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro::{Ident, TokenStream, TokenTree};
+use proc_macro2::{Ident, TokenStream, TokenTree};
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
@@ -18,7 +18,7 @@ impl InjectDirective {
         Self {}
     }
 
-    fn parse_identifier_for_variable_name(self: &Self, type_ident_tokens: Vec<TokenTree>, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: &Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
+    fn parse_identifier_for_variable_name(self: &Self, type_ident_tokens: Vec<TokenTree>, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: &Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
         if let Some(inject_name_token) = it.next() {
             match &inject_name_token {
                 TokenTree::Ident(_) => {
@@ -45,7 +45,7 @@ impl IRustHtmlDirective for InjectDirective {
         name == "inject"
     }
 
-    fn execute(self: &Self, _: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, _: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // expecting type identifier
         if let Ok(type_ident_tokens) = parser.parse_type_identifier(it.clone()) {
             // next token should be "as"

@@ -16,12 +16,12 @@ impl EnvironmentHtmlNodeParsed {
     }
 }
 
-impl<TIdent, TPunct, TLiteral> IHtmlNodeParsed<TIdent, TPunct, TLiteral> for EnvironmentHtmlNodeParsed {
+impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
     fn matches(&self, tag_name: &str) -> bool {
         return tag_name == "environment";
     }
 
-    fn on_node_parsed(&self, tag_context: &HtmlTagParseContext, html_context: Rc<dyn IRustHtmlParserContext>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>) -> Result<bool, RustHtmlError> {
+    fn on_node_parsed(&self, tag_context: &HtmlTagParseContext, html_context: Rc<dyn IRustHtmlParserContext>, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError> {
         // look for include or exclude attributes
         let mut keep_or_remove: Option<bool> = None;
 

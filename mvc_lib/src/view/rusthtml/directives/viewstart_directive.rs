@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use std::borrow::Cow;
 
-use proc_macro::Ident;
+use proc_macro2::Ident;
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -27,7 +27,7 @@ impl IRustHtmlDirective for ViewStartDirective {
         name == "viewstart" || name == "view_start"
     }
 
-    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         if let Ok(param_value) = parser.convert_views_path_str(identifier.clone(), it, false) {
             parser.get_context().mut_params().insert(identifier.to_string().clone(), param_value);
             Ok(RustHtmlDirectiveResult::OkBreak)

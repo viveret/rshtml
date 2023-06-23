@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use proc_macro::{TokenTree, TokenStream};
+use proc_macro2::{TokenTree, TokenStream};
 
 
 // this is used to peek at the next token in a Rust token stream.
@@ -19,7 +19,7 @@ pub trait IPeekableTokenTree {
 }
 
 pub struct PeekableTokenTree {
-    it: RefCell<proc_macro::token_stream::IntoIter>,
+    it: RefCell<proc_macro2::token_stream::IntoIter>,
     n_peeked: RefCell<Vec<TokenTree>>,
 }
 impl PeekableTokenTree {

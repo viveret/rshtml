@@ -8,7 +8,7 @@ use crate::view::rusthtml::rusthtml_parser_context::IRustHtmlParserContext;
 
 
 // this trait is used to allow the HtmlTagParseContext to call back to the HtmlNodeParsed
-pub trait IHtmlNodeParsed<TIdent, TPunct, TLiteral> {
+pub trait IHtmlNodeParsed {
     fn matches(&self, tag_name: &str) -> bool;
-    fn on_node_parsed(&self, tag_context: &HtmlTagParseContext, html_context: Rc<dyn IRustHtmlParserContext>, output: &mut Vec<RustHtmlToken<TIdent, TPunct, TLiteral>>) -> Result<bool, RustHtmlError>;
+    fn on_node_parsed(&self, tag_context: &HtmlTagParseContext, html_context: Rc<dyn IRustHtmlParserContext>, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError>;
 }

@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use std::borrow::Cow;
 
-use proc_macro::Ident;
+use proc_macro2::Ident;
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{irust_to_rusthtml_converter::IRustToRustHtmlConverter, rusthtml_token::RustHtmlToken};
@@ -26,7 +26,7 @@ impl IRustHtmlDirective for NameDirective {
         name == "name"
     }
 
-    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         if let Ok(param_value) = parser.parse_string_with_quotes(identifier.clone(), it) {
             parser.get_context().mut_params().insert(identifier.to_string().clone(), param_value);
             Ok(RustHtmlDirectiveResult::OkBreak)

@@ -1,7 +1,7 @@
 use std::io::Read;
 use std::rc::Rc;
 
-use proc_macro::{Ident, Literal, Punct};
+use proc_macro2::Ident;
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
@@ -24,7 +24,7 @@ impl MarkdownFileConstDirective {
     // output: the destination for the RustHtml tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    fn convert_mdfile_const_directive(identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
+    fn convert_mdfile_const_directive(identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
         if let Ok(path) = parser.convert_views_path_str(identifier.clone(), it, parser.get_context().get_is_raw_tokenstream()) {
             match std::fs::File::open(path.as_str()) {
                 Ok(mut f) => {
@@ -49,7 +49,7 @@ impl IRustHtmlDirective for MarkdownFileConstDirective {
         name == "mdfile_const" || name == "markdownfile_const"
     }
 
-    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         if let Ok(_) = Self::convert_mdfile_const_directive(identifier, parser, output, it) {
             Ok(RustHtmlDirectiveResult::OkContinue)
         } else {

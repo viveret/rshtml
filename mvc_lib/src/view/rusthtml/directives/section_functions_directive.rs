@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro::{Ident, TokenTree};
+use proc_macro2::{Ident, TokenTree};
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -27,7 +27,7 @@ impl IRustHtmlDirective for FunctionsSectionDirective {
         name == "functions"
     }
 
-    fn execute(self: &Self, _identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, _identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // expecting group
         match it.next() {
             Some(group_token) => {

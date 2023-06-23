@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro::{Ident, TokenTree};
+use proc_macro2::{Ident, TokenTree};
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
@@ -22,7 +22,7 @@ impl LetDirective {
     // output: the destination for the RustHtml tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    pub fn parse_let(parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError> {
+    pub fn parse_let(parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError> {
         loop
         {
             match it.next() {
@@ -59,7 +59,7 @@ impl IRustHtmlDirective for LetDirective {
         name == "let"
     }
 
-    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         output.push(RustHtmlToken::Identifier(identifier.clone()));
         if let Ok(_) = Self::parse_let(parser, output, it) {
             Ok(RustHtmlDirectiveResult::OkContinue)

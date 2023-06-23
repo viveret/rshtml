@@ -3,7 +3,7 @@ use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use proc_macro::{TokenStream, TokenTree, Ident};
+use proc_macro2::{TokenStream, TokenTree};
 
 use crate::core::panic_or_return_error::PanicOrReturnError;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -100,7 +100,7 @@ pub trait IRustHtmlParserContext {
     // get tag parsed handlers.
     fn get_tag_parsed_handler(self: &Self) -> Vec<Rc<dyn IHtmlTagParsed>>;
     // get node parsed handlers.
-    fn get_node_parsed_handler(self: &Self) -> Vec<Rc<dyn IHtmlNodeParsed<Ident, Punct, Literal>>>;
+    fn get_node_parsed_handler(self: &Self) -> Vec<Rc<dyn IHtmlNodeParsed>>;
 }
 
 pub struct RustHtmlParserContext {

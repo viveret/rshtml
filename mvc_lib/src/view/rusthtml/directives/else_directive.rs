@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro::{Ident, TokenTree};
+use proc_macro2::{Ident, TokenTree, Delimiter};
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -25,7 +25,7 @@ impl IRustHtmlDirective for ElseDirective {
         name == "else"
     }
 
-    fn execute(self: &Self, _identifier: &Ident, _parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken<Ident, Punct, Literal>>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, _identifier: &Ident, _parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // output directive identifier and opening bracket to output.
         
         // check if the next token is a '{'
@@ -38,7 +38,7 @@ impl IRustHtmlDirective for ElseDirective {
                 if let Some(token) = it.peek() {
                     match token.clone() {
                         TokenTree::Group(group) => {
-                            if group.delimiter() == proc_macro::Delimiter::Brace {
+                            if group.delimiter() == Delimiter::Brace {
                                 it.next();
                                 todo!("parse the else body")
                                 // parser.convert_rust_directive_group_to_rusthtmltoken(group, identifier, &mut else_body, is_raw_tokenstream)?;

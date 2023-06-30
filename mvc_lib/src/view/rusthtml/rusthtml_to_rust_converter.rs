@@ -10,7 +10,7 @@ use super::html_tag_parse_context::HtmlTagParseContext;
 use super::irusthtml_to_rust_converter::IRustHtmlToRustConverter;
 use super::peekable_rusthtmltoken::PeekableRustHtmlToken;
 use super::peekable_rusthtmltoken::IPeekableRustHtmlToken;
-use super::rusthtml_parser_context::RustHtmlParserContext;
+use super::rusthtml_parser_context::{RustHtmlParserContext, IRustHtmlParserContext};
 
 
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
@@ -38,8 +38,10 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // rusthtml_tokens: the RustHtml tokens to convert.
     // returns: the Rust tokens or an error.
     fn parse_rusthtmltokens_to_plain_rust(self: &Self, rusthtml_tokens: &Vec<RustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> { // , Option<Vec<TokenTree>>)
+        let rusthtml_tokens = self.preprocess_rusthtmltokens(rusthtml_tokens)?;
+
         let mut rust_output = Vec::new();
-        let it = PeekableRustHtmlToken::new(rusthtml_tokens);
+        let it = PeekableRustHtmlToken::new(&rusthtml_tokens);
         loop 
         {
             if self.convert_rusthtmltokens_to_plain_rust(&mut rust_output, &it)? {
@@ -166,6 +168,14 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
         let content = std::fs::read_to_string(path).unwrap();
         self.convert_rusthtmltextnode_to_tokentree(&content, &span, output, it)
     }
+
+
+
+
+    // all the below could be post processors, but it's easier to do it here.
+    // if we use post processors then we can chain them together correctly.
+
+
 
     // convert a RustHtml start tag to Rust tokens.
     // tag: the tag to convert.
@@ -317,6 +327,17 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     fn convert_appendhtmlstring_to_tokentree(self: &Self, html_string: String, output: &mut Vec<TokenTree>, _it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
         output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str((#html_string).into()); }))));
         Ok(())
+    }
+
+    fn preprocess_rusthtmltokens(self: &Self, rusthtml_tokens: &Vec<RustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+        let mut rusthtml_tokens = rusthtml_tokens.clone();
+        for x in self.context.get_preprocessors() {
+            match x.process_rusthtml(&rusthtml_tokens) {
+                Ok(tokens) => rusthtml_tokens = tokens,
+                Err(RustHtmlError(e)) => return Err(RustHtmlError::from_string(e.to_string())),
+            }
+        }
+        Ok(rusthtml_tokens)
     }
 }
 

@@ -31,8 +31,10 @@ use super::directives::section_struct_directive::StructSectionDirective;
 use super::directives::use_directive::UseDirective;
 use super::directives::viewstart_directive::ViewStartDirective;
 use super::directives::while_directive::WhileDirective;
+use super::irusthtml_processor::IRustHtmlProcessor;
 use super::node_helpers::environment_node::EnvironmentHtmlNodeParsed;
 use super::node_helpers::inode_parsed::IHtmlNodeParsed;
+use super::processors::post_process_combine_static_str::PostProcessCombineStaticStr;
 use super::tag_helpers::environment_tag::EnvironmentHtmlTagParsed;
 use super::tag_helpers::itag_parsed::IHtmlTagParsed;
 
@@ -101,6 +103,10 @@ pub trait IRustHtmlParserContext {
     fn get_tag_parsed_handler(self: &Self) -> Vec<Rc<dyn IHtmlTagParsed>>;
     // get node parsed handlers.
     fn get_node_parsed_handler(self: &Self) -> Vec<Rc<dyn IHtmlNodeParsed>>;
+    // get the preprocessors available to the parser.
+    fn get_preprocessors(self: &Self) -> Vec<Rc<dyn IRustHtmlProcessor>>;
+    // get the postprocessors available to the parser.
+    fn get_postprocessors(self: &Self) -> Vec<Rc<dyn IRustHtmlProcessor>>;
 }
 
 pub struct RustHtmlParserContext {
@@ -147,6 +153,11 @@ pub struct RustHtmlParserContext {
     pub tag_parsed_handlers: Vec<Rc<dyn IHtmlTagParsed>>,
     // node parsed handlers.
     pub node_parsed_handlers: Vec<Rc<dyn IHtmlNodeParsed>>,
+
+    // preprocessors available to the parser.
+    pub preprocessors: Vec<Rc<dyn IRustHtmlProcessor>>,
+    // postprocessors available to the parser.
+    pub postprocessors: Vec<Rc<dyn IRustHtmlProcessor>>,
 }
 
 impl RustHtmlParserContext {
@@ -271,6 +282,10 @@ impl RustHtmlParserContext {
                 // Rc::new(CommentNodeParsed::new()),
                 // Rc::new(TextNodeParsed::new()),
                 // Rc::new(WhitespaceNodeParsed::new()),
+            ],
+            preprocessors: vec![],
+            postprocessors: vec![
+                Rc::new(PostProcessCombineStaticStr::new()),
             ],
         }
     }
@@ -493,5 +508,13 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
                 .map(|s| s.into_iter())
                 .flatten()
         )
+    }
+
+    fn get_preprocessors(self: &Self) -> Vec<Rc<dyn IRustHtmlProcessor>> {
+        self.preprocessors.clone()
+    }
+
+    fn get_postprocessors(self: &Self) -> Vec<Rc<dyn IRustHtmlProcessor>> {
+        self.postprocessors.clone()
     }
 }

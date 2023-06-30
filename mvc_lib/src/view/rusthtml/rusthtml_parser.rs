@@ -74,8 +74,8 @@ impl RustHtmlParser {
     // print a token stream as code.
     // rust_output: the token stream to print.
     // returns: nothing.
-    pub fn print_as_code(self: &Self, rust_output: &Vec<TokenTree>) {
-        println!("{}", self.display_as_code(&mut rust_output.iter().cloned().peekable()));
+    pub fn print_as_code(self: &Self, rust_output: TokenStream) {
+        println!("{}", self.display_as_code(&mut rust_output.into_iter().peekable()));
     }
 
     // display a token stream as code and return it as a string.

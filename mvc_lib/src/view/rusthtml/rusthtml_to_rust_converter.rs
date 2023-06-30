@@ -55,9 +55,9 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // output: the destination for the Rust tokens.
     // it: the iterator to use.
     // returns: whether we should break the outer loop or not, or an error.
-    fn convert_rusthtmltokens_to_plain_rust(self: &Self, output: &mut Vec<TokenTree>, it: &dyn IPeekableRustHtmlToken) -> Result<bool, RustHtmlError> { // , Option<Vec<TokenTree>>)
+    fn convert_rusthtmltokens_to_plain_rust(self: &Self, output: &mut Vec<TokenTree>, it: &dyn IPeekableRustHtmlToken) -> Result<bool, RustHtmlError> {
         let mut should_break_outer_loop = false;
-        loop 
+        loop
         {
             let token_option = it.next();
             if let Some(token) = token_option {

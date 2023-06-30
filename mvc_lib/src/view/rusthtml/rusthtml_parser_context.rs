@@ -31,6 +31,7 @@ use super::directives::section_struct_directive::StructSectionDirective;
 use super::directives::use_directive::UseDirective;
 use super::directives::viewstart_directive::ViewStartDirective;
 use super::directives::while_directive::WhileDirective;
+use super::irust_processor::IRustProcessor;
 use super::irusthtml_processor::IRustHtmlProcessor;
 use super::node_helpers::environment_node::EnvironmentHtmlNodeParsed;
 use super::node_helpers::inode_parsed::IHtmlNodeParsed;
@@ -158,6 +159,19 @@ pub struct RustHtmlParserContext {
     pub preprocessors: Vec<Rc<dyn IRustHtmlProcessor>>,
     // postprocessors available to the parser.
     pub postprocessors: Vec<Rc<dyn IRustHtmlProcessor>>,
+
+    // preprocessors available to the parser.
+    pub rust_preprocessors: Vec<Rc<dyn IRustProcessor>>,
+    // postprocessors available to the parser.
+    pub rust_postprocessors: Vec<Rc<dyn IRustProcessor>>,
+
+    // stack of the current processing state of the parser.
+    // this is calculated by taking the hash of the stream / vec of token trees.
+    // if the hash is the same, then the processing state is the same,
+    // if the hash is different, then the processing state is different,
+    // and if the hash is repeated, then the processing state is in a recursive loop or no longer simplifiable.
+    pub rusthtml_processing_state_stack: RefCell<Vec<u32>>,
+    pub rust_processing_state_stack: RefCell<Vec<u32>>,
 }
 
 impl RustHtmlParserContext {
@@ -285,8 +299,14 @@ impl RustHtmlParserContext {
             ],
             preprocessors: vec![],
             postprocessors: vec![
+                // Rc::new(PostProcessCombineStaticStr::new()),
+            ],
+            rust_preprocessors: vec![],
+            rust_postprocessors: vec![
                 Rc::new(PostProcessCombineStaticStr::new()),
             ],
+            rusthtml_processing_state_stack: RefCell::new(vec![]),
+            rust_processing_state_stack: RefCell::new(vec![]),
         }
     }
 

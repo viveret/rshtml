@@ -13,6 +13,7 @@ pub mod rusthtml_parser_context;
 pub mod rusthtml_token;
 pub mod rusthtml_to_rust_converter;
 pub mod irusthtml_processor;
+pub mod irust_processor;
 pub mod irusthtml_to_rust_converter;
 pub mod rust_to_rusthtml_converter;
 pub mod irust_to_rusthtml_converter;

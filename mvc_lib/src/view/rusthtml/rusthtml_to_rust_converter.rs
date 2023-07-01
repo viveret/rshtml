@@ -151,26 +151,10 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 self.convert_rusthtmltextnode_to_tokentree(text, span, output, it)?,
             RustHtmlToken::AppendToHtml(inner) =>
                 self.convert_rusthtmlappendhtml_to_tokentree(None, Some(inner), output)?,
-            RustHtmlToken::ExternalHtml(path, span) =>
-                self.convert_htmlexternal_to_tokentree(path, span.clone(), output, it)?,
             _ => { return Err(RustHtmlError::from_string(format!("Could not handle token {:?}", token))); }
         }
         Ok(false)
     }
-
-    // read and convert an external HTML file to RustHtml tokens.
-    // path: the path to the external HTML file.
-    // span: the span of the directive.
-    // output: the destination for the Rust tokens.
-    // it: the iterator to use.
-    // returns: nothing or an error.
-    fn convert_htmlexternal_to_tokentree(self: &Self, path: &String, span: Span, output: &mut Vec<TokenTree>, it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
-        let content = std::fs::read_to_string(path).unwrap();
-        self.convert_rusthtmltextnode_to_tokentree(&content, &span, output, it)
-    }
-
-
-
 
     // all the below could be post processors, but it's easier to do it here.
     // if we use post processors then we can chain them together correctly.
@@ -332,6 +316,17 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     fn preprocess_rusthtmltokens(self: &Self, rusthtml_tokens: &Vec<RustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         let mut rusthtml_tokens = rusthtml_tokens.clone();
         for x in self.context.get_preprocessors() {
+            match x.process_rusthtml(&rusthtml_tokens) {
+                Ok(tokens) => rusthtml_tokens = tokens,
+                Err(RustHtmlError(e)) => return Err(RustHtmlError::from_string(e.to_string())),
+            }
+        }
+        Ok(rusthtml_tokens)
+    }
+
+    fn postprocess_rusthtmltokens(self: &Self, rusthtml_tokens: &Vec<RustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+        let mut rusthtml_tokens = rusthtml_tokens.clone();
+        for x in self.context.get_postprocessors() {
             match x.process_rusthtml(&rusthtml_tokens) {
                 Ok(tokens) => rusthtml_tokens = tokens,
                 Err(RustHtmlError(e)) => return Err(RustHtmlError::from_string(e.to_string())),

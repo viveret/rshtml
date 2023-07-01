@@ -52,9 +52,9 @@ pub enum RustHtmlToken {
 
     // rust / html
     // External RustHtml file that is copied into the output
-    ExternalRustHtml(String, Span),
+    // ExternalRustHtml(String, Span),
     // External HTML file that is copied into the output
-    ExternalHtml(String, Span),
+    // ExternalHtml(String, Span),
     // Instruction to append to the HTML output
     AppendToHtml(Vec<RustHtmlToken>),
 
@@ -89,8 +89,8 @@ impl RustHtmlToken {
             RustHtmlToken::HtmlTagCloseVoidPunct(c, _) => c.to_string(),
             RustHtmlToken::HtmlTagCloseSelfContainedPunct(c, _) => c.to_string(),
             RustHtmlToken::HtmlTagCloseStartChildrenPunct(c, _) => c.to_string(),
-            RustHtmlToken::ExternalRustHtml(s, _) => s.to_string(),
-            RustHtmlToken::ExternalHtml(s, _) => s.to_string(),
+            // RustHtmlToken::ExternalRustHtml(s, _) => s.to_string(),
+            // RustHtmlToken::ExternalHtml(s, _) => s.to_string(),
             RustHtmlToken::AppendToHtml(tokens) => tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" "),
             RustHtmlToken::Literal(l, _) => {
                 match l {
@@ -127,6 +127,9 @@ impl RustHtmlToken {
                     Delimiter::None => "".to_string(),
                 }
             },
+            _ => {
+                panic!("RustHtmlToken::to_string() not implemented for {:?}", self);
+            }
         }
     }
 }

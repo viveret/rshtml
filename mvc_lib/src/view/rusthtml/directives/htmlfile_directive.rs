@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro2::Ident;
+use proc_macro2::{Ident, Group, Delimiter, TokenTree};
 
 use crate::core::panic_or_return_error::PanicOrReturnError;
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
@@ -28,7 +28,12 @@ impl HtmlFileDirective {
         if let Ok(path) = parser.convert_views_path_str(identifier.clone(), it, parser.get_context().get_is_raw_tokenstream()) {
             match std::fs::File::open(path.as_str()) {
                 Ok(_f) => {
-                    output.push(RustHtmlToken::ExternalHtml(path, identifier.span()));
+                    let mut inner_tokens = vec![];
+                    parser.convert_copy(TokenTree::Group(Group::new(Delimiter::None, quote::quote! { 
+                        let content = std::fs::read_to_string(path).unwrap();
+                        self.convert_rusthtmltextnode_to_tokentree(&content, &span, output, it)
+                    })), &mut inner_tokens);
+                    output.push(RustHtmlToken::AppendToHtml(inner_tokens));
                 },
                 Err(e) => {
                     return PanicOrReturnError::panic_or_return_error(parser.get_context().get_should_panic_or_return_error(), format!("cannot read external HTML file '{}', could not open: {:?}", path, e));

@@ -164,6 +164,6 @@ pub fn rust_to_rusthtml_converter_convert_html_entry_to_rusthtmltoken() {
     
 }
 
-pub fn rust_to_rusthtml_converter_convert_html_entry_to_rusthtmltoken() {
+pub fn rust_to_rusthtml_converter_convert_html_entry_to_rusthtmltoken2() {
     
 }

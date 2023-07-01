@@ -35,7 +35,7 @@ impl RustToRustHtmlConverter {
     // panic or return an error. if should_context.panic_or_return_error is true, then panic. otherwise, return an error.
     // message: the error message.
     // returns: an error with the message.
-    fn panic_or_return_error<'a, T>(self: &Self, message: String) -> Result<T, RustHtmlError<'a>> {
+    pub fn panic_or_return_error<'a, T>(self: &Self, message: String) -> Result<T, RustHtmlError<'a>> {
         return PanicOrReturnError::panic_or_return_error(self.context.get_should_panic_or_return_error(), message);
     }
 
@@ -49,7 +49,7 @@ impl RustToRustHtmlConverter {
         Ok(true)
     }
 
-    fn peek_reserved_char(self: &Self, expected_char: char, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<bool, RustHtmlError> {
+    pub fn peek_reserved_char(self: &Self, expected_char: char, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<bool, RustHtmlError> {
         if let Some(next_token) = it.peek() {
             match next_token {
                 TokenTree::Punct(next_punct) => {
@@ -219,7 +219,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                         }
                     }
                 }
-            }
+            },
             _ => {
                 if is_in_html_mode {
                     output.push(RustHtmlToken::HtmlTextNode(punct.as_char().to_string(), punct.span().clone()));
@@ -240,14 +240,11 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // is_raw_tokenstream: whether the token stream is raw or not.
     // returns: nothing or an error.
     fn convert_rust_entry_to_rusthtmltoken(self: &Self, _c: char, _punct: Punct, _is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
-        // if is_in_html_mode {
-            let directive_token = it.next().unwrap();
+        if let Some(directive_token) = it.next() {
             // println!("directive_token: {:?}", directive_token);
             self.convert_rust_directive_to_rusthtmltoken(directive_token, None, output, it, is_raw_tokenstream)?;
-            Ok(())
-        // } else {
-        //     return self.panic_or_return_error(format!("Cannot escape HTML when already in rust mode (hint: remove '@'?)"));
-        // }
+        }
+        Ok(())
     }
 
     // convert a Rust HTML entry to a RustHtml token.
@@ -294,11 +291,10 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                     self.panic_or_return_error(format!("Mismatched HTML tags (found {} but expected {})", last_scope_from_stack, ctx.tag_name_as_str()))?;
                 }
 
-                match output_inner.last().unwrap() {
-                    RustHtmlToken::HtmlTagEnd(_tag_end, _tag_end_tokens) => {
+                if let Some(output_inner_last) = output_inner.last() {
+                    if let RustHtmlToken::HtmlTagEnd(_tag_end, _tag_end_tokens) = output_inner_last {
                         add_inner = self.on_html_node_parsed(&ctx, &mut output_inner)?;
-                    },
-                    _ => {}
+                    }
                 }
             }
 

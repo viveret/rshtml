@@ -46,7 +46,7 @@ use crate::views::dev::sysinfo::view_dev_sysinfo;
 use crate::views::home::index::view_home_index;
 use crate::views::learn::index::view_learn_index;
 use crate::views::learn::details::view_learn_details;
-use crate::views::shared::_layout::view_shared__layout;
+// use crate::views::shared::_layout::view_shared__layout;
 use crate::views::shared::error::view_error;
 
 use crate::controllers::home_controller::HomeController;
@@ -77,7 +77,7 @@ pub fn add_views(services: &mut ServiceCollection) {
             view_home_index::new_service(),
             view_learn_index::new_service(),
             view_learn_details::new_service(),
-            view_shared__layout::new_service(),
+            // view_shared__layout::new_service(),
             view_error::new_service(),
         ]
     }

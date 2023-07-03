@@ -10,7 +10,7 @@ use mvc_lib::view::view_renderer::{ViewRenderer, IViewRenderer};
 #[test]
 fn view_renderer_render() {
     // need to register view at view_path
-    let mut view_renderer = ViewRenderer::new();
+    let view_renderer = ViewRenderer::new();
     let view_path = "tests/view/view_renderer_tests.rs";
     let mock_vm = MockIViewModel::new();
     let view_model = Rc::new(mock_vm.object());

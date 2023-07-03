@@ -1,15 +1,13 @@
-use proc_macro2::{TokenTree, Delimiter};
+use proc_macro2::{TokenTree, Delimiter, TokenStream};
 use quote::quote;
 
-use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
-
+use mvc_lib::{view::rusthtml::rusthtml_parser::RustHtmlParser, html::gen::HtmlGenerator};
 
 
 
 #[test]
 fn rusthtml_parser_constructor_works() {
-    let parser = RustHtmlParser::new(false, "test".to_string());
-    // assert_eq!(true, ctx.print_as_code(rust_output).is_ok());
+    let _ = RustHtmlParser::new(false, "test".to_string());
 }
 
 
@@ -75,14 +73,19 @@ fn rusthtml_parser_expand_tokenstream_simple_struct_works() {
 #[test]
 fn rusthtml_parser_expand_tokenstream_simple_view_works() {
     let parser = RustHtmlParser::new(false, "test".to_string());
-    let rust_output = quote! {
-        @name "dev_index"
+    let html = "
         <ul>
             <li>test</li>
         </ul>
+    ";
+    let html_tokenstream: TokenStream = html.parse().unwrap();
+    let rust_output = quote! {
+        @name "dev_index"
+        #html_tokenstream
     };
 
-    parser.expand_tokenstream(rust_output).unwrap();
+    let actual_stream = parser.expand_tokenstream(rust_output).unwrap();
+    assert_eq!("html_output . write_html_str (\"<ul><li>test</li></ul>\") ;", actual_stream.to_string());
 }
 
 
@@ -90,31 +93,15 @@ fn rusthtml_parser_expand_tokenstream_simple_view_works() {
 fn rusthtml_parser_expand_tokenstream_complex_view_works() {
     let parser = RustHtmlParser::new(false, "test".to_string());
     // more complex html
+    let html = HtmlGenerator::new().generate();
+    let html_tokenstream: TokenStream = html.parse().unwrap();
     let rust_output = quote! {
         @name "dev_index"
-        <div>
-            <ul>
-                <li>test</li>
-            </ul>
-            <p>test</p>
-            <br/>
-            <input type="text" />
-            <table>
-                <tr>
-                    <td>test</td>
-                </tr>
-            </table>
-            <hr>
-            <img src="test.png" />
-            <a href="test.html">test</a>
-            <form action="test.html" method="post">
-                <input type="text" />
-                <input type="submit" />
-            </form>
-        </div>
+        #html_tokenstream
     };
 
-    parser.expand_tokenstream(rust_output).unwrap();
+    let actual_stream = parser.expand_tokenstream(rust_output).unwrap();
+    assert_eq!(html_tokenstream.to_string(), actual_stream.to_string());
 }
 
 
@@ -156,68 +143,37 @@ fn rusthtml_parser_expand_tokenstream_for_loop_complex_works() {
         }
     };
     let rust_output_expected = quote! {
-        pub struct view_dev_index {
-
-        }
-
-        impl view_dev_index {
-            pub fn new() -> view_dev_index {
-                view_dev_index {
-
-                }
+        html_output . write_html_str("<h1>");
+        html_output . write_html_str(&view_context.get_str("Title"));
+        html_output . write_html_str("</h1>");
+        if model.supports_read {
+            html_output . write_html_str("<p>");
+            html_output . write_html_str(&format!("There are {} log entries", model.logs.len()));
+            html_output . write_html_str("</p>");
+            html_output . write_html_str(&html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None).unwrap());
+            html_output . write_html_str("<ul>");
+            for log in model.logs.iter() {
+                html_output . write_html_str("<li>");
+                html_output . write_html_str(&log.to_string());
+                html_output . write_html_str("</li>");
             }
-        }
-
-        impl IView for view_dev_index {
-            fn name(&self) -> &str {
-                "dev_index"
-            }
-
-            fn render(&self, view_context: &mut ViewContext, model: &mut IModel, url: &mut UrlHelper, html: &mut HtmlHelper) -> Result<String, String> {
-                view_context.insert_str("Title", "Log - Dev".to_string());
-                let model = model.downcast_mut::<crate::view_models::dev::log::LogViewModel>().unwrap();
-                let url = url.downcast_mut::<crate::url_helper::UrlHelper>().unwrap();
-                let html = html.downcast_mut::<crate::html_helper::HtmlHelper>().unwrap();
-                let mut output = String::new();
-                output.push_str("<h1>");
-                output.push_str(&view_context.get_str("Title"));
-                output.push_str("</h1>");
-                if model.supports_read {
-                    output.push_str("<p>");
-                    output.push_str(&format!("There are {} log entries", model.logs.len()));
-                    output.push_str("</p>");
-                    output.push_str(&html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None).unwrap());
-                    output.push_str("<ul>");
-                    for log in model.logs.iter() {
-                        output.push_str("<li>");
-                        output.push_str(&log.to_string());
-                        output.push_str("</li>");
-                    }
-                    output.push_str("</ul>");
-                } else {
-                    output.push_str("<p>");
-                    output.push_str("Reading from log is not supported.");
-                    output.push_str("</p>");
-                }
-                Ok(output)
-            }
+            html_output . write_html_str("</ul>");
+        } else {
+            html_output . write_html_str("<p>");
+            html_output . write_html_str("Reading from log is not supported.");
+            html_output . write_html_str("</p>");
         }
     };
-    let mut expected_it = rust_output_expected.into_iter().peekable();
+    let expected_it = rust_output_expected.into_iter().peekable();
 
     let actual = parser.expand_tokenstream(rust_output.clone()).unwrap();
-    let mut actual_it = actual.into_iter().peekable();
+    let actual_it = actual.into_iter().peekable();
 
     // do simple string comparison
     let expected_str = expected_it.map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
     let actual_str = actual_it.map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
 
     assert_str::assert_str_trim_eq!(expected_str, actual_str);
-
-    // let mut group_stack_expected: Vec<TokenTree> = vec![];
-    // let mut group_stack_actual: Vec<TokenTree> = vec![];
-
-    // assert_tokenstreams_eq(expected_it, actual_it);
 }
 
 fn assert_tokenstreams_eq(mut expected_it: std::iter::Peekable<proc_macro2::token_stream::IntoIter>, mut actual_it: std::iter::Peekable<proc_macro2::token_stream::IntoIter>) {

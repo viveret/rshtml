@@ -5,7 +5,7 @@ use mvc_lib::view::rusthtml::peekable_rusthtmltoken::{PeekableRustHtmlToken, IPe
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use mvc_lib::view::rusthtml::rusthtml_to_rust_converter::RustHtmlToRustConverter;
 use mvc_lib::view::rusthtml::rusthtml_token::RustHtmlToken;
-use proc_macro2::{Delimiter, Literal};
+use proc_macro2::{Delimiter, Literal, TokenTree, TokenStream};
 
 
 
@@ -19,7 +19,7 @@ pub fn rusthtml_to_rust_converter_constructor_works() {
 }
 
 #[test]
-pub fn rusthtml_to_rust_converter_parse_rusthtmltokens_to_plain_rust_works() {
+pub fn rusthtml_to_rust_converter_parse_rusthtmltokens_to_plain_rust_empty() {
     let is_raw_tokenstream = false;
     let should_panic_or_return_error = true;
     let environment_name = "test".to_string();
@@ -27,6 +27,28 @@ pub fn rusthtml_to_rust_converter_parse_rusthtmltokens_to_plain_rust_works() {
     let converter = RustHtmlToRustConverter::new(context);
     let result = converter.parse_rusthtmltokens_to_plain_rust(&vec![]).unwrap();
     assert_eq!(0, result.len());
+}
+
+#[test]
+pub fn rusthtml_to_rust_converter_parse_rusthtmltokens_to_plain_rust_basic_html() {
+    let is_raw_tokenstream = false;
+    let should_panic_or_return_error = true;
+    let environment_name = "test".to_string();
+    let context = Rc::new(RustHtmlParserContext::new(is_raw_tokenstream, should_panic_or_return_error, environment_name));
+    let converter = RustHtmlToRustConverter::new(context);
+
+
+    let html = vec![
+        RustHtmlToken::HtmlTagStart("html".to_string(), None),
+        RustHtmlToken::HtmlTagStart("body".to_string(), None),
+        RustHtmlToken::HtmlTagStart("div".to_string(), None),
+        RustHtmlToken::HtmlTagEnd("div".to_string(), None),
+        RustHtmlToken::HtmlTagEnd("body".to_string(), None),
+        RustHtmlToken::HtmlTagEnd("html".to_string(), None),
+    ];
+
+    let result = converter.parse_rusthtmltokens_to_plain_rust(&html).unwrap();
+    assert_ne!(0, result.len());
 }
 
 #[test]
@@ -84,7 +106,7 @@ pub fn rusthtml_to_rust_converter_convert_rusthtmltoken_to_tokentree() {
 }
 
 #[test]
-pub fn rusthtml_to_rust_converter_preprocess_rusthtmltokens() {
+pub fn rusthtml_to_rust_converter_preprocess_rusthtmltokens_empty() {
     let is_raw_tokenstream = false;
     let should_panic_or_return_error = true;
     let environment_name = "test".to_string();
@@ -96,7 +118,7 @@ pub fn rusthtml_to_rust_converter_preprocess_rusthtmltokens() {
 }
 
 #[test]
-pub fn rusthtml_to_rust_converter_postprocess_rusthtmltokens() {
+pub fn rusthtml_to_rust_converter_postprocess_rusthtmltokens_empty() {
     let is_raw_tokenstream = false;
     let should_panic_or_return_error = true;
     let environment_name = "test".to_string();
@@ -105,4 +127,43 @@ pub fn rusthtml_to_rust_converter_postprocess_rusthtmltokens() {
     let input = vec![];
     let result = converter.postprocess_rusthtmltokens(&input).unwrap();
     assert_eq!(0, result.len());
+}
+
+#[test]
+pub fn rusthtml_to_rust_converter_postprocess_rusthtmltokens_complex() {
+    let is_raw_tokenstream = false;
+    let should_panic_or_return_error = true;
+    let environment_name = "test".to_string();
+    let context = Rc::new(RustHtmlParserContext::new(is_raw_tokenstream, should_panic_or_return_error, environment_name));
+    let converter = RustHtmlToRustConverter::new(context);
+    let input = vec![
+        RustHtmlToken::HtmlTagStart("html".to_string(), None),
+        RustHtmlToken::HtmlTagStart("body".to_string(), None),
+        RustHtmlToken::HtmlTagStart("div".to_string(), None),
+        RustHtmlToken::HtmlTagEnd("div".to_string(), None),
+        RustHtmlToken::HtmlTagEnd("body".to_string(), None),
+        RustHtmlToken::HtmlTagEnd("html".to_string(), None),
+    ];
+    let result = converter.postprocess_rusthtmltokens(&input).unwrap();
+    assert_ne!(0, result.len());
+}
+
+#[test]
+pub fn rusthtml_to_rust_converter_postprocess_tokenstream() {
+    let is_raw_tokenstream = false;
+    let should_panic_or_return_error = true;
+    let environment_name = "test".to_string();
+    let context = Rc::new(RustHtmlParserContext::new(is_raw_tokenstream, should_panic_or_return_error, environment_name));
+
+    let converter = RustHtmlToRustConverter::new(context);
+    let input = quote::quote! {
+        html_output . write_html_str("<html>");
+        html_output . write_html_str("<body>");
+        html_output . write_html_str("<div>");
+        html_output . write_html_str("</div>");
+        html_output . write_html_str("</body>");
+        html_output . write_html_str("</html>");
+    }.into_iter().collect();
+    let result = TokenStream::from_iter(converter.postprocess_tokenstream(&input).unwrap().into_iter());
+    assert_eq!("html_output . write_html_str (\"<html><body><div></div></body></html>\") ;", result.to_string());
 }

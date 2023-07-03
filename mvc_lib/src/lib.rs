@@ -15,6 +15,7 @@ pub mod entity;
 pub mod error;
 pub mod errors;
 pub mod http;
+pub mod html;
 pub mod model_binder;
 pub mod middleware;
 pub mod options;

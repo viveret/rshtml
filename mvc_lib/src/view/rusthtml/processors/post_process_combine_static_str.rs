@@ -1,5 +1,8 @@
-use proc_macro2::TokenTree;
+use std::borrow::Borrow;
 
+use proc_macro2::{TokenTree, Delimiter, Group, TokenStream};
+
+use crate::view::rusthtml::peekable_tokentree::{PeekableTokenTree, IPeekableTokenTree};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::irust_processor::IRustProcessor;
 
@@ -13,6 +16,94 @@ impl PostProcessCombineStaticStr {
     }
 }
 
+fn append_and_clear(output: &mut Vec<TokenTree>, current_str: &mut String) {
+    if current_str.len() > 0 {
+        let inner = TokenStream::from_iter(vec![ TokenTree::Literal(proc_macro2::Literal::string(current_str.as_str())) ]);
+        output.push(TokenTree::Group(Group::new(Delimiter::Parenthesis, inner)));
+        output.push(TokenTree::Punct(proc_macro2::Punct::new(';', proc_macro2::Spacing::Alone)));
+        current_str.clear();
+    }
+}
+
+fn is_ident_with_name(add_to_output: bool, name: &str, output: &mut Vec<TokenTree>, it: &mut std::iter::Peekable<std::slice::Iter<'_, TokenTree>>) -> bool {
+    if let Some(token) = it.peek() {
+        match token {
+            TokenTree::Ident(ident) if ident.to_string().as_str() == name => {
+                if add_to_output {
+                    output.push(it.next().unwrap().clone());
+                } else {
+                    it.next().unwrap();
+                }
+                return true;
+            },
+            _ => return false,
+        }
+    } else {
+        return false;
+    }
+}
+
+fn is_write_html_str(add_to_output: bool, output: &mut Vec<TokenTree>, it: &mut std::iter::Peekable<std::slice::Iter<'_, TokenTree>>) -> bool {
+    is_ident_with_name(add_to_output, "write_html_str", output, it)
+}
+
+fn is_html_output(add_to_output: bool, output: &mut Vec<TokenTree>, it: &mut std::iter::Peekable<std::slice::Iter<'_, TokenTree>>) -> bool {
+    is_ident_with_name(add_to_output, "html_output", output, it)
+}
+
+fn is_punct_with_char(add_to_output: bool, c: char, output: &mut Vec<TokenTree>, it: &mut std::iter::Peekable<std::slice::Iter<'_, TokenTree>>) -> bool {
+    if let Some(token) = it.peek() {
+        match token {
+            TokenTree::Punct(punct) if punct.as_char() == c => {
+                if add_to_output {
+                    output.push(it.next().unwrap().clone());
+                } else {
+                    it.next().unwrap();
+                }
+                return true;
+            },
+            _ => return false,
+        }
+    } else {
+        return false;
+    }
+}
+
+fn is_group(delimiter: Delimiter, str_output: &mut String, it: &mut std::iter::Peekable<std::slice::Iter<'_, TokenTree>>) -> bool {
+    if let Some(token) = it.peek() {
+        match token {
+            TokenTree::Group(group) if group.delimiter() == delimiter => {
+                it.next();
+                // next is string literal
+                if is_string_literal(str_output, PeekableTokenTree::new(group.stream())) {
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+            _ => return false,
+        }
+    } else {
+        return false;
+    }
+}
+
+fn is_string_literal(str_output: &mut String, it: PeekableTokenTree) -> bool {
+    if let Some(token) = it.peek() {
+        match token {
+            TokenTree::Literal(_) => {
+                let s1 = it.next().unwrap().to_string();
+                let s = s1.replace("\\\\", "\\").replace("\\\"", "\"").replace("\"", "");
+                str_output.push_str(s.borrow());
+                return true;
+            },
+            _ => return false,
+        }
+    } else {
+        return false;
+    }
+}
+
 impl IRustProcessor for PostProcessCombineStaticStr {
     fn get_stage_for(&self) -> &str {
         "post"
@@ -21,87 +112,31 @@ impl IRustProcessor for PostProcessCombineStaticStr {
     fn process_rust(&self, rusthtml: &Vec<TokenTree>) -> Result<Vec<TokenTree>, RustHtmlError> {
         let mut output = vec![];
         let mut current_str = String::new();
-        
-        fn append_and_clear(output: &mut Vec<TokenTree>, current_str: &mut String) {
-            if current_str.len() > 0 {
-                output.extend_from_slice(quote::quote! {}.into_iter().collect::<Vec<TokenTree>>().as_slice());
-                current_str.clear();
-            }
-        }
+        let mut is_first = true;
 
         let mut it = rusthtml.iter().peekable();
         loop {
-            if let Some(token) = it.next() {
-                match token {
-                    TokenTree::Ident(ident) if ident.to_string().as_str() == "html_output" => {
-                        // next char has to be '.'
-                        if let Some(period_token) = it.peek() {
-                            match period_token {
-                                TokenTree::Punct(punct) if punct.as_char() == '.' => {
-                                    it.next();
-
-                                    // next ident has to be 'write_html_str'
-                                    if let Some(write_html_str_token) = it.peek() {
-                                        match write_html_str_token {
-                                            TokenTree::Ident(ident) if ident.to_string().as_str() == "write_html_str" => {
-                                                it.next();
-
-                                                // next char has to be '('
-                                                if let Some(open_paren_token) = it.peek() {
-                                                    match open_paren_token {
-                                                        TokenTree::Punct(punct) if punct.as_char() == '(' => {
-                                                            it.next();
-
-                                                            // next is string literal
-                                                            if let Some(string_literal_token) = it.peek() {
-                                                                match string_literal_token {
-                                                                    TokenTree::Literal(literal) => {
-                                                                        current_str.push_str(literal.to_string().as_str());
-                                                                        it.next();
-
-                                                                        // next char has to be ')'
-                                                                        if let Some(close_paren_token) = it.peek() {
-                                                                            match close_paren_token {
-                                                                                TokenTree::Punct(punct) if punct.as_char() == ')' => {
-                                                                                    it.next();
-                                                                                    continue;
-                                                                                },
-                                                                                _ => break,
-                                                                            }
-                                                                        } else {
-                                                                            break;
-                                                                        }
-                                                                    },
-                                                                    _ => break,
-                                                                }
-                                                            } else {
-                                                                break;
-                                                            }
-                                                        },
-                                                        _ => break,
-                                                    }
-                                                } else {
-                                                    break;
-                                                }
-                                            },
-                                            _ => break,
-                                        }
-                                    } else {
-                                        break;
-                                    }
-                                },
-                                _ => break,
+            if is_html_output(is_first, &mut output, &mut it) {
+                // next char has to be '.'
+                if is_punct_with_char(is_first, '.', &mut output, &mut it) {
+                    // next ident has to be 'write_html_str'
+                    if is_write_html_str(is_first, &mut output, &mut it) {
+                        // next char has to be '('
+                        if is_group(Delimiter::Parenthesis, &mut current_str, &mut it) {
+                            is_first = false;
+                            // next char has to be ';'
+                            if is_punct_with_char(is_first, ';', &mut output, &mut it) {
+                                continue;
                             }
                         }
-    
-                        append_and_clear(output.as_mut(), &mut current_str);
-                        output.push(token.clone());
-                    },
-                    _ => {
-                        append_and_clear(output.as_mut(), &mut current_str);
-                        output.push(token.clone());
                     }
                 }
+            }
+
+            is_first = true;
+            append_and_clear(output.as_mut(), &mut current_str);
+            if let Some(token) = it.next() {
+                output.push(token.clone());
             } else {
                 break;
             }

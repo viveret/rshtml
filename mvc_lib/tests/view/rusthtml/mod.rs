@@ -14,3 +14,4 @@ pub mod rusthtml_to_rust_converter_tests;
 pub mod rust_to_rusthtml_converter_tests;
 pub mod tag_helpers;
 pub mod node_helpers;
+pub mod processors;

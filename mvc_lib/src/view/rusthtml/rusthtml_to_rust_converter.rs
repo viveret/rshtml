@@ -37,7 +37,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // converts a stream of RustHtml tokens to a stream of Rust tokens.
     // rusthtml_tokens: the RustHtml tokens to convert.
     // returns: the Rust tokens or an error.
-    fn parse_rusthtmltokens_to_plain_rust(self: &Self, rusthtml_tokens: &Vec<RustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> { // , Option<Vec<TokenTree>>)
+    fn parse_rusthtmltokens_to_plain_rust(self: &Self, rusthtml_tokens: &Vec<RustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
         let rusthtml_tokens = self.preprocess_rusthtmltokens(rusthtml_tokens)?;
 
         let mut rust_output = Vec::new();
@@ -48,7 +48,8 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 break;
             }
         }
-        Ok(rust_output)
+
+        self.postprocess_tokenstream(&rust_output)
     }
 
     // converts a RustHtml token stream to a Rust token stream.
@@ -333,6 +334,33 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
             }
         }
         Ok(rusthtml_tokens)
+    }
+
+    fn preprocess_tokenstream(self: &Self, tokens: &Vec<TokenTree>) -> Result<Vec<TokenTree>, RustHtmlError> {
+        let mut tokens = tokens.clone();
+        for x in self.context.get_rust_preprocessors() {
+            match x.process_rust(&tokens) {
+                Ok(new_tokens) => tokens = new_tokens,
+                Err(RustHtmlError(e)) => return Err(RustHtmlError::from_string(e.to_string())),
+            }
+        }
+        Ok(tokens)
+    }
+
+    fn postprocess_tokenstream(self: &Self, tokens: &Vec<TokenTree>) -> Result<Vec<TokenTree>, RustHtmlError> {
+        let post_processors = self.context.get_rust_postprocessors();
+        if post_processors.len() == 0 {
+            return Err(RustHtmlError::from_string(format!("No post processors found.")));
+        }
+
+        let mut tokens = tokens.clone();
+        for x in post_processors{
+            match x.process_rust(&tokens) {
+                Ok(new_tokens) => tokens = new_tokens,
+                Err(RustHtmlError(e)) => return Err(RustHtmlError::from_string(e.to_string())),
+            }
+        }
+        Ok(tokens)
     }
 }
 

@@ -13,13 +13,11 @@ mvc_macro_lib::rusthtml_view_macro! {
         <p>@format!("There are {} log entries", model.logs.len())</p>
         @html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None)
 
-        <ul>
-            @{
-                for log in model.logs.iter() {
-                    <li>@log</li>
-                }
-            }
-        </ul>
+        //<ul>
+            // @for log in model.logs.iter() {
+            //     <li>@log</li>
+            // }
+        //</ul>
     } else {
         <p>@"Reading from log is not supported."</p>
     }

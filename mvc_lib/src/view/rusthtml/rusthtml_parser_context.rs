@@ -108,6 +108,10 @@ pub trait IRustHtmlParserContext {
     fn get_preprocessors(self: &Self) -> Vec<Rc<dyn IRustHtmlProcessor>>;
     // get the postprocessors available to the parser.
     fn get_postprocessors(self: &Self) -> Vec<Rc<dyn IRustHtmlProcessor>>;
+    // get the rust tokentree preprocessors available to the parser.
+    fn get_rust_preprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>>;
+    // get the rust tokentree postprocessors available to the parser.
+    fn get_rust_postprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>>;
 }
 
 pub struct RustHtmlParserContext {
@@ -536,5 +540,13 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
 
     fn get_postprocessors(self: &Self) -> Vec<Rc<dyn IRustHtmlProcessor>> {
         self.postprocessors.clone()
+    }
+
+    fn get_rust_preprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>> {
+        self.rust_preprocessors.clone()
+    }
+
+    fn get_rust_postprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>> {
+        self.rust_postprocessors.clone()
     }
 }

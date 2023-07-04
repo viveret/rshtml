@@ -28,11 +28,14 @@ impl IRustHtmlDirective for ViewStartDirective {
     }
 
     fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
-        if let Ok(param_value) = parser.convert_views_path_str(identifier.clone(), it, false) {
-            parser.get_context().mut_params().insert(identifier.to_string().clone(), param_value);
-            Ok(RustHtmlDirectiveResult::OkBreak)
-        } else {
-            return Err(RustHtmlError(Cow::Owned(format!("The \"viewstart\" directive must be followed by a valid Rust identifier."))));
+        match parser.convert_views_path_str(identifier.clone(), it.clone(), false) {
+            Ok(param_value) => {
+                parser.get_context().mut_params().insert(identifier.to_string().clone(), param_value);
+                Ok(RustHtmlDirectiveResult::OkBreak)
+            },
+            Err(RustHtmlError(e)) => {
+                return Err(RustHtmlError(Cow::Owned(format!("The \"viewstart\" directive failed: ({})", e))));
+            }
         }
     }
 }

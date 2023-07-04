@@ -386,6 +386,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
         match token {
             TokenTree::Ident(ident) => {
                 // println!("ident: {}", ident.to_string());
+                // println!("it.peek(): {:?}", it.peek());
                 self.convert_rust_directive_identifier_to_rusthtmltoken(ident, prefix_token_option, output, it, is_raw_tokenstream)?;
             },
             TokenTree::Group(group) => {
@@ -458,25 +459,19 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // returns: nothing or an error.
     fn convert_rust_directive_identifier_to_rusthtmltoken(self: &Self, identifier: Ident, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
         if let Some(directive) = self.context.try_get_directive(identifier.to_string()) {
-            let x = directive.clone();
-            let r = x.execute(&identifier, Rc::new(self.clone()), output, it);
+            let r = directive.execute(&identifier, Rc::new(self.clone()), output, it);
             match r {
                 Ok(r) => {
                     match r {
-                        RustHtmlDirectiveResult::OkContinue => {
-                        },
-                        RustHtmlDirectiveResult::OkBreak => {
-                        },
-                        RustHtmlDirectiveResult::OkBreakAppendHtml => {
-                            output.push(RustHtmlToken::AppendToHtml(vec![]));
-                        },
+                        RustHtmlDirectiveResult::OkContinue => { },
+                        RustHtmlDirectiveResult::OkBreak => { },
+                        RustHtmlDirectiveResult::OkBreakAppendHtml => output.push(RustHtmlToken::AppendToHtml(vec![])),
                     }
                 },
                 Err(RustHtmlError(e)) => {
                     self.panic_or_return_error(format!("error executing directive: {}", e))?;
                 }
             }
-
         } else {
             let mut inner_tokens = vec![];
             if let Some(prefix_token) = prefix_token_option {
@@ -498,7 +493,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
 
         let cwd = std::env::current_dir().unwrap();
         path.push(cwd);
-        let relative_path = self.parse_string_with_quotes(identifier.clone(), it)?;
+        let relative_path = self.parse_string_with_quotes(false, identifier.clone(), it)?;
         path.push(relative_path.clone());
         println!("convert_path_str: {:?} -> {}", identifier, path.to_str().unwrap());
 
@@ -510,11 +505,15 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // it: the iterator to use.
     // returns: the path string or an error.
     fn convert_views_path_str(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
-        let path = self.parse_string_with_quotes(identifier.clone(), it)?;
+        let path = self.parse_string_with_quotes(true, identifier.clone(), it)?;
         self.resolve_views_path_str(&path)
     }
 
     fn resolve_views_path_str(self: &Self, path: &str) -> Result<String, RustHtmlError> {
+        if path == "_" {
+            return Ok(path.to_string());
+        }
+
         // println!("input path: {}", path);
         let cwd = std::env::current_dir().unwrap();
 
@@ -527,10 +526,15 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
         ];
 
         // try each prefix
+        let mut folders_tried = vec![];
         for prefix in prefixes {
             let mut path_buf = std::path::PathBuf::new();
             path_buf.push(cwd.clone());
+            path_buf.push("example_web_app");
             path_buf.push(prefix);
+
+            folders_tried.push(path_buf.to_str().unwrap().to_string());
+
             path_buf.push(path.clone());
     
             if path_buf.exists() {
@@ -540,7 +544,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                 // println!("resolve_views_path_str: {:?} -> not found", path_buf.to_str());
             }
         }
-        Err(RustHtmlError::from_string(format!("Could not find view: {}", path)))
+        Err(RustHtmlError::from_string(format!("Could not find view {} in {:?}", path, folders_tried)))
     }
 
     // expand an external token stream into RustHtml tokens.
@@ -548,22 +552,34 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // output: the destination for the RustHtml tokens.
     // returns: nothing or an error.
     fn expand_external_tokenstream(self: &Self, path: &String, output: &mut Vec<RustHtmlToken>) -> Result<(), RustHtmlError> {
-        let input_str = std::fs::read_to_string(path).unwrap();
+        match std::fs::read_to_string(path) {
+            Ok(input_str) => {
+                self.expand_external_rshtml_string(path, output)
+            },
+            Err(e) => {
+                self.panic_or_return_error(format!("{}", e))
+            },
+        }
+    }
+
+    // expand an external token stream into RustHtml tokens.
+    // path: the path to the external token stream.
+    // output: the destination for the RustHtml tokens.
+    // returns: nothing or an error.
+    fn expand_external_rshtml_string(self: &Self, input_str: &String, output: &mut Vec<RustHtmlToken>) -> Result<(), RustHtmlError> {
         let input_result = TokenStream::from_str(input_str.as_str());
         
         match input_result {
             Ok(input) => {
-                // println!("Expanding external token stream: {}", path);
                 let peekable = Rc::new(PeekableTokenTree::new(input));
                 let rusthtml_tokens = self.parse_tokenstream_to_rusthtmltokens(true, peekable, true)?;
                 output.extend_from_slice(&rusthtml_tokens);
+                Ok(())
             },
             Err(e) => {
-                return self.panic_or_return_error(format!("{}", e));
+                self.panic_or_return_error(format!("{}", e))
             },
         }
-
-        Ok(())
     }
 
     // returns if the current output is the start of a new expression or not.
@@ -604,11 +620,15 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // identifier: the identifier to convert.
     // it: the iterator to use.
     // returns: the string or an error.
-    fn parse_string_with_quotes(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError> {
-        let expect_string_token = it.next().unwrap();
-        match expect_string_token {
-            TokenTree::Literal(literal) => Ok(snailquote::unescape(&literal.to_string()).unwrap()),
-            _ => self.panic_or_return_error(format!("unexpected token after {} directive: {:?}", identifier, expect_string_token))?
+    fn parse_string_with_quotes(self: &Self, peek_or_next: bool, identifier: Ident, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError> {
+        let r = if peek_or_next { it.peek() } else { it.next() };
+        if let Some(expect_string_token) = r {
+            match expect_string_token {
+                TokenTree::Literal(literal) => Ok(snailquote::unescape(&literal.to_string()).unwrap()),
+                _ => self.panic_or_return_error(format!("unexpected token after {} directive: {:?}", identifier, expect_string_token))?
+            }
+        } else {
+            self.panic_or_return_error(format!("unexpected end of token stream after {} directive", identifier))?
         }
     }
 
@@ -686,20 +706,23 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // it: the iterator to use.
     // returns: the converted tokens or an error.
     fn convert_string_or_ident(self: &Self, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<RustHtmlIdentAndPunctAndGroupOrLiteral, RustHtmlError> {
-        let expect_string_or_ident_token = it.next().unwrap();
-        match expect_string_or_ident_token {
-            TokenTree::Literal(literal) => {
-                Ok(RustHtmlIdentAndPunctAndGroupOrLiteral::Literal(literal.clone()))
-            },
-            TokenTree::Ident(ident2) => {
-                let mut inner_tokens = vec![];
-                self.parse_identifier_expression(ident2.clone(), &mut inner_tokens, it, is_raw_tokenstream)?;
-                // println!("inner_tokens: {:?}", inner_tokens);
-                Ok(RustHtmlIdentAndPunctAndGroupOrLiteral::IdentAndPunctAndGroup(self.convert_rusthtmltokens_to_ident_or_punct_or_group(inner_tokens)?))
-            },
-            _ => {
-                self.panic_or_return_error(format!("convert_string_or_ident did not find string or ident"))?
+        if let Some(expect_string_or_ident_token) = it.next() {
+            match expect_string_or_ident_token {
+                TokenTree::Literal(literal) => {
+                    Ok(RustHtmlIdentAndPunctAndGroupOrLiteral::Literal(literal.clone()))
+                },
+                TokenTree::Ident(ident2) => {
+                    let mut inner_tokens = vec![];
+                    self.parse_identifier_expression(ident2.clone(), &mut inner_tokens, it, is_raw_tokenstream)?;
+                    // println!("inner_tokens: {:?}", inner_tokens);
+                    Ok(RustHtmlIdentAndPunctAndGroupOrLiteral::IdentAndPunctAndGroup(self.convert_rusthtmltokens_to_ident_or_punct_or_group(inner_tokens)?))
+                },
+                _ => {
+                    self.panic_or_return_error(format!("convert_string_or_ident did not find string or ident"))?
+                }
             }
+        } else {
+            self.panic_or_return_error(format!("convert_string_or_ident did not find string or ident"))?
         }
     }
 
@@ -795,22 +818,25 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             parse_ctx.tag_name.push(RustHtmlIdentOrPunct::Ident(ident.clone()));
             let mut last_token_was_ident = true;
             loop {
-                let next_token = it.peek().unwrap();
-                match next_token {
-                    TokenTree::Punct(punct) if punct.as_char() == '-' => {
-                        parse_ctx.tag_name.push(RustHtmlIdentOrPunct::Punct(punct.clone()));
-                        it.next();
-                        last_token_was_ident = false;
-                    },
-                    TokenTree::Ident(ident) if last_token_was_ident == false => {
-                        parse_ctx.tag_name.push(RustHtmlIdentOrPunct::Ident(ident.clone()));
-                        it.next();
-                        last_token_was_ident = true;
-                    },
-                    _ => {
-                        parse_ctx.on_html_tag_name_parsed(output);
-                        break;
+                if let Some(next_token) = it.peek() {
+                    match next_token {
+                        TokenTree::Punct(punct) if punct.as_char() == '-' => {
+                            parse_ctx.tag_name.push(RustHtmlIdentOrPunct::Punct(punct.clone()));
+                            it.next();
+                            last_token_was_ident = false;
+                        },
+                        TokenTree::Ident(ident) if last_token_was_ident == false => {
+                            parse_ctx.tag_name.push(RustHtmlIdentOrPunct::Ident(ident.clone()));
+                            it.next();
+                            last_token_was_ident = true;
+                        },
+                        _ => {
+                            parse_ctx.on_html_tag_name_parsed(output);
+                            break;
+                        }
                     }
+                } else {
+                    break;
                 }
             }
         }
@@ -1059,17 +1085,20 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                     // if it is a colon, then push it
                     let mut colons = vec![];
                     for i in 0..3 {
-                        let peek_colon = it.peek_nth(i).unwrap().clone();
-                        match &peek_colon {
-                            TokenTree::Punct(punct) => {
-                                match punct.as_char() {
-                                    ':' => {
-                                        colons.push(peek_colon);
-                                    },
-                                    _ => break,
-                                }
-                            },
-                            _ => break,
+                        if let Some(peek_colon) = it.peek_nth(i) {
+                            match &peek_colon {
+                                TokenTree::Punct(punct) => {
+                                    match punct.as_char() {
+                                        ':' => {
+                                            colons.push(peek_colon);
+                                        },
+                                        _ => break,
+                                    }
+                                },
+                                _ => break,
+                            }
+                        } else {
+                            break;
                         }
                     }
 

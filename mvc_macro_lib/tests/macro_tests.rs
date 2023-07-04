@@ -1,6 +1,3 @@
-use rusthtml;
-use rusthtml_macro;
-
 
 #[test]
 fn it_works() {

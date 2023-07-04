@@ -17,8 +17,9 @@ use super::rusthtml_parser_context::IRustHtmlParserContext;
 // this is called before converting the RustHtml tokens back to Rust tokens.
 pub trait IRustToRustHtmlConverter {
     fn expand_external_tokenstream(self: &Self, path_str: &String, output: &mut Vec<RustHtmlToken>) -> Result<(), RustHtmlError>;
+    fn expand_external_rshtml_string(self: &Self, rshtml_str: &String, output: &mut Vec<RustHtmlToken>) -> Result<(), RustHtmlError>;
     fn parse_tokenstream_to_rusthtmltokens(self: &Self, is_in_html_mode: bool, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
-    fn parse_string_with_quotes(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError>;
+    fn parse_string_with_quotes(self: &Self, peek_or_next: bool, identifier: Ident, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError>;
     fn parse_identifier_expression(self: &Self, identifier: Ident, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
     fn parse_type_identifier(self: &Self, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<TokenTree>, RustHtmlError>;
     fn loop_next_and_convert(self: &Self, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;

@@ -52,10 +52,6 @@ impl RustHtmlParser {
         // prefix with _view_start
         let rusthtml_tokens = match self.parse_context.get_param_string("viewstart") {
             Ok(view_start_path) => {
-                // try different paths to resolve to existing file.
-                // let folder = String::new();
-                // let final_path = self.parser.resolve_views_path_str(&view_start_path)?;
-
                 let mut view_start_tokens = vec![];
                 self.parser.expand_external_tokenstream(&view_start_path, &mut view_start_tokens)?;
 

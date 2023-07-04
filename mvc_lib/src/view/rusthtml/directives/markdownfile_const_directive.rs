@@ -25,21 +25,24 @@ impl MarkdownFileConstDirective {
     // it: the iterator to use.
     // returns: nothing or an error.
     fn convert_mdfile_const_directive(identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
-        if let Ok(path) = parser.convert_views_path_str(identifier.clone(), it, parser.get_context().get_is_raw_tokenstream()) {
-            match std::fs::File::open(path.as_str()) {
-                Ok(mut f) => {
-                    let mut buffer = String::new();
-                    f.read_to_string(&mut buffer).expect("could not read markdown file");
-                    let mdtext = comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default());
-                    output.push(RustHtmlToken::HtmlTextNode(mdtext, identifier.span()));
-                },
-                Err(e) => {
-                    return Err(RustHtmlError::from_string(format!("cannot read external markdown file '{}', could not open: {:?}", path, e)));
+        match parser.convert_views_path_str(identifier.clone(), it, parser.get_context().get_is_raw_tokenstream()) {
+            Ok(path) => {
+                match std::fs::File::open(path.as_str()) {
+                    Ok(mut f) => {
+                        let mut buffer = String::new();
+                        f.read_to_string(&mut buffer).expect("could not read markdown file");
+                        let mdtext = comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default());
+                        output.push(RustHtmlToken::HtmlTextNode(mdtext, identifier.span()));
+                    },
+                    Err(e) => {
+                        return Err(RustHtmlError::from_string(format!("cannot read external markdown file '{}', could not open: {:?}", path, e)));
+                    }
                 }
+                Ok(())
+            },
+            Err(RustHtmlError(e)) => {
+                return Err(RustHtmlError::from_string(format!("cannot read external markdown file '{}', could not parse path: {}", identifier, e)));
             }
-            Ok(())
-        } else {
-            return Err(RustHtmlError::from_string(format!("cannot read external markdown file '{}', could not parse path", identifier)));
         }
     }
 }
@@ -50,10 +53,13 @@ impl IRustHtmlDirective for MarkdownFileConstDirective {
     }
 
     fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
-        if let Ok(_) = Self::convert_mdfile_const_directive(identifier, parser, output, it) {
-            Ok(RustHtmlDirectiveResult::OkContinue)
-        } else {
-            Err(RustHtmlError::from_string(format!("cannot read external markdown file '{}'", identifier)))
+        match Self::convert_mdfile_const_directive(identifier, parser, output, it) {
+            Ok(_) => {
+                Ok(RustHtmlDirectiveResult::OkContinue)
+            },
+            Err(RustHtmlError(e)) => {
+                Err(RustHtmlError::from_string(format!("cannot read external markdown file '{}': {}", identifier, e)))
+            }
         }
     }
 }

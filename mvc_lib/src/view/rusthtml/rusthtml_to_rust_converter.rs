@@ -38,14 +38,16 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // rusthtml_tokens: the RustHtml tokens to convert.
     // returns: the Rust tokens or an error.
     fn parse_rusthtmltokens_to_plain_rust(self: &Self, rusthtml_tokens: &Vec<RustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
-        let rusthtml_tokens = self.preprocess_rusthtmltokens(rusthtml_tokens)?;
+        let rusthtml = self.preprocess_rusthtmltokens(rusthtml_tokens)?;
 
         let mut rust_output = Vec::new();
-        let it = PeekableRustHtmlToken::new(&rusthtml_tokens);
+        let it = PeekableRustHtmlToken::new(&rusthtml);
         loop 
         {
             if self.convert_rusthtmltokens_to_plain_rust(&mut rust_output, &it)? {
-                break;
+                if it.peek().is_none() {
+                    break;
+                }
             }
         }
 

@@ -47,8 +47,12 @@ pub fn rusthtml_to_rust_converter_parse_rusthtmltokens_to_plain_rust_basic_html(
         RustHtmlToken::HtmlTagEnd("html".to_string(), None),
     ];
 
-    let result = converter.parse_rusthtmltokens_to_plain_rust(&html).unwrap();
-    assert_ne!(0, result.len());
+    let result = TokenStream::from_iter(converter.parse_rusthtmltokens_to_plain_rust(&html).unwrap());
+    let expected_result = quote::quote! {
+        html_output . write_html_str ( "<html><body><div></div></body></html>" ) ;
+    };
+
+    assert_ne!(expected_result.to_string(), result.to_string());
 }
 
 #[test]

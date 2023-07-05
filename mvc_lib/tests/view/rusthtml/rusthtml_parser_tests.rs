@@ -1,7 +1,9 @@
+use std::rc::Rc;
+
 use proc_macro2::{TokenTree, Delimiter, TokenStream};
 use quote::quote;
 
-use mvc_lib::{view::rusthtml::rusthtml_parser::RustHtmlParser, html::gen::HtmlGenerator};
+use mvc_lib::{view::rusthtml::{rusthtml_parser::RustHtmlParser, peekable_tokentree::PeekableTokenTree, peekable_rusthtmltoken::{PeekableRustHtmlToken, IPeekableRustHtmlToken}}, html::gen::HtmlGenerator};
 
 
 
@@ -95,13 +97,14 @@ fn rusthtml_parser_expand_tokenstream_complex_view_works() {
     // more complex html
     let html = HtmlGenerator::new().generate();
     let html_tokenstream: TokenStream = html.parse().unwrap();
+    // println!("html_tokenstream: {}", html_tokenstream.to_string());
     let rust_output = quote! {
         @name "dev_index"
         #html_tokenstream
     };
 
     let actual_stream = parser.expand_tokenstream(rust_output).unwrap();
-    assert_eq!(html_tokenstream.to_string(), actual_stream.to_string());
+    assert_eq!(quote::quote! { html_output . write_html_str (#html) ; }.to_string(), actual_stream.to_string());
 }
 
 

@@ -69,38 +69,41 @@ fn is_punct_with_char(add_to_output: bool, c: char, output: &mut Vec<TokenTree>,
     }
 }
 
-fn is_group(delimiter: Delimiter, str_output: &mut String, it: &mut std::iter::Peekable<std::slice::Iter<'_, TokenTree>>) -> bool {
+fn try_group(delimiter: Delimiter, it: &mut std::iter::Peekable<std::slice::Iter<'_, TokenTree>>) -> Option<Group> {
     if let Some(token) = it.peek() {
         match token {
             TokenTree::Group(group) if group.delimiter() == delimiter => {
                 it.next();
-                // next is string literal
-                if is_string_literal(str_output, PeekableTokenTree::new(group.stream())) {
-                    return true;
-                } else {
-                    return false;
-                }
+                Some(group.clone())
             },
-            _ => return false,
+            _ => None,
         }
     } else {
-        return false;
+        None
     }
 }
 
-fn is_string_literal(str_output: &mut String, it: PeekableTokenTree) -> bool {
+fn is_group_with_string_literal_arg(delimiter: Delimiter, it: &mut std::iter::Peekable<std::slice::Iter<'_, TokenTree>>) -> Option<String> {
+    if let Some(group) = try_group(delimiter, it) {
+        // next is string literal
+        is_string_literal(PeekableTokenTree::new(group.stream()))
+    } else {
+        None
+    }
+}
+
+fn is_string_literal(it: PeekableTokenTree) -> Option<String> {
     if let Some(token) = it.peek() {
         match token {
             TokenTree::Literal(_) => {
                 let s1 = it.next().unwrap().to_string();
                 let s = s1.replace("\\\\", "\\").replace("\\\"", "\"").replace("\"", "");
-                str_output.push_str(s.borrow());
-                return true;
+                Some(s.clone())
             },
-            _ => return false,
+            _ => None,
         }
     } else {
-        return false;
+        None
     }
 }
 
@@ -122,15 +125,30 @@ impl IRustProcessor for PostProcessCombineStaticStr {
                     // next ident has to be 'write_html_str'
                     if is_write_html_str(is_first, &mut output, &mut it) {
                         // next char has to be '('
-                        if is_group(Delimiter::Parenthesis, &mut current_str, &mut it) {
+                        if let Some(s) = is_group_with_string_literal_arg(Delimiter::Parenthesis, &mut it) {
                             is_first = false;
+                            current_str.push_str(s.as_str());
+                            
                             // next char has to be ';'
                             if is_punct_with_char(is_first, ';', &mut output, &mut it) {
                                 continue;
+                            } else {
+                                panic!("is_html_output: next char is not ';'");
                             }
+                        } else {
+                            panic!("is_html_output: next group is not string literal");
                         }
+                    } else {
+                        panic!("is_html_output: next ident is not 'write_html_str'");
                     }
+                } else {
+                    panic!("is_html_output: next char is not '.'");
                 }
+            } else if let Some(group) = try_group(Delimiter::Brace, &mut it) {
+                // recurse
+                let inner = self.process_rust(&group.stream().into_iter().collect::<Vec<TokenTree>>())?;
+                output.push(TokenTree::Group(Group::new(Delimiter::Brace, TokenStream::from_iter(inner))));
+                continue;
             }
 
             is_first = true;

@@ -43,6 +43,9 @@ impl IRustHtmlDirective for IfDirective {
                         println!("punct: {:?}", punct);
                         output.push(RustHtmlToken::ReservedChar(punct.as_char(), punct.clone()));
                         it.next();
+                        if punct.as_char() == ';' {
+                            break;
+                        }
                     },
                     TokenTree::Group(group) => {
                         let delimiter = group.delimiter();
@@ -55,10 +58,6 @@ impl IRustHtmlDirective for IfDirective {
                                             RustHtmlToken::GroupParsed(_, tokens) => {
                                                 let to_str = tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" ");
                                                 println!("if group: {:?}", to_str);
-                                                if to_str.contains("for log in model") {
-                                                    // should not be all grouped together without spaces
-                                                    // panic!("if group should not be all grouped together without spaces");
-                                                }
                                             },
                                             _ => {}
                                         }
@@ -71,7 +70,8 @@ impl IRustHtmlDirective for IfDirective {
                                 }
                             },
                             _ => {
-                                panic!("unexpected group delimiter: {:?}", delimiter);
+                                output.push(RustHtmlToken::Group(group.delimiter(), group.clone()));
+                                it.next();
                             }
                         }
                     }

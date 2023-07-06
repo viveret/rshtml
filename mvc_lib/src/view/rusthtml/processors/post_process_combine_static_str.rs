@@ -1,6 +1,6 @@
 use std::borrow::Borrow;
 
-use proc_macro2::{TokenTree, Delimiter, Group, TokenStream};
+use proc_macro2::{TokenTree, Delimiter, Group, TokenStream, Ident, Punct};
 
 use crate::view::rusthtml::peekable_tokentree::{PeekableTokenTree, IPeekableTokenTree};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -19,8 +19,11 @@ impl PostProcessCombineStaticStr {
 fn append_and_clear(output: &mut Vec<TokenTree>, current_str: &mut String) {
     if current_str.len() > 0 {
         let inner = TokenStream::from_iter(vec![ TokenTree::Literal(proc_macro2::Literal::string(current_str.as_str())) ]);
+        output.push(TokenTree::Ident(Ident::new("html_output", proc_macro2::Span::call_site())));
+        output.push(TokenTree::Punct(Punct::new('.', proc_macro2::Spacing::Alone)));
+        output.push(TokenTree::Ident(Ident::new("write_html_str", proc_macro2::Span::call_site())));
         output.push(TokenTree::Group(Group::new(Delimiter::Parenthesis, inner)));
-        output.push(TokenTree::Punct(proc_macro2::Punct::new(';', proc_macro2::Spacing::Alone)));
+        output.push(TokenTree::Punct(Punct::new(';', proc_macro2::Spacing::Alone)));
         current_str.clear();
     }
 }

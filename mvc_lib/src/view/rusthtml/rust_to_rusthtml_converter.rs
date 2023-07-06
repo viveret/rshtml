@@ -661,17 +661,17 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                         }
                     },
                     TokenTree::Group(group) => {
-                        let delimeter = group.delimiter();
+                        let delimiter = group.delimiter();
                         let mut inner_tokens = vec![];
                         self.loop_next_and_convert(false, &mut inner_tokens, Rc::new(PeekableTokenTree::new(group.stream())), is_raw_tokenstream)?;
                         // println!("String representation of inner tokens: {}", inner_tokens.iter().map(|x| format!("{:?}", x)).collect::<Vec<String>>().join(" ").as_str());
                         // println!("Count of punctuation tokens in group: {}", inner_tokens.iter().filter(|x| match x { RustHtmlToken::ReservedChar(..) => true, _ => false }).count());
-                        output.push(RustHtmlToken::GroupParsed(delimeter, inner_tokens));
+                        output.push(RustHtmlToken::GroupParsed(delimiter, inner_tokens));
                        
                         it.next();
 
                         // // not a function call or index
-                        if delimeter == Delimiter::Brace {
+                        if delimiter == Delimiter::Brace {
                             break;
                         }
                     },

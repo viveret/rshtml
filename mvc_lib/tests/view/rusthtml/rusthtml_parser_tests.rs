@@ -1,9 +1,8 @@
-use std::rc::Rc;
-
 use proc_macro2::{TokenTree, Delimiter, TokenStream};
 use quote::quote;
 
-use mvc_lib::{view::rusthtml::{rusthtml_parser::RustHtmlParser, peekable_tokentree::PeekableTokenTree, peekable_rusthtmltoken::{PeekableRustHtmlToken, IPeekableRustHtmlToken}}, html::gen::HtmlGenerator};
+use mvc_lib::html::gen::HtmlGenerator;
+use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
 
 
 

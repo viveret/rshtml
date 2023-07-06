@@ -14,11 +14,9 @@ mvc_macro_lib::rusthtml_view_macro! {
     
     <h1>@view_context.get_str("Title")</h1>
     
-    @{
-        if let Some(validation_result) = &model.validation_result {
-            let html_class = if validation_result.has_errors { "fc-error" } else { "fc-success" };
-            <p class=@html_class>@validation_result.message.clone()</p>
-        }
+    @if let Some(validation_result) = &model.validation_result {
+        let html_class = if validation_result.has_errors { "fc-error" } else { "fc-success" };
+        <p class=@html_class>@validation_result.message.clone()</p>
     }
 
     @custom_html.form(http::method::Method::POST, url.url_action(false, Some(false), None, Some("add"), Some("AuthRoles"), None, None).into(), Some(&HashMap::new()) /* optional attributes, takes precedent over route values */, || -> HtmlString {

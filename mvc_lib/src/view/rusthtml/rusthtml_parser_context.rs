@@ -7,6 +7,7 @@ use proc_macro2::{TokenStream, TokenTree};
 
 use crate::core::panic_or_return_error::PanicOrReturnError;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
+use crate::view::rusthtml::processors::post_process_flatten_group_none_delimiter::PostProcessFlattenGroupNoneDelimiter;
 
 use super::directives::else_directive::ElseDirective;
 use super::directives::else_if_directive::ElseIfDirective;
@@ -307,6 +308,7 @@ impl RustHtmlParserContext {
             ],
             rust_preprocessors: vec![],
             rust_postprocessors: vec![
+                Rc::new(PostProcessFlattenGroupNoneDelimiter::new()),
                 Rc::new(PostProcessCombineStaticStr::new()),
             ],
             rusthtml_processing_state_stack: RefCell::new(vec![]),

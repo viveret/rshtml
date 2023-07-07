@@ -71,7 +71,10 @@ pub enum RustHtmlToken {
 }
 
 impl RustHtmlToken {
+    // todo/fixme: this is not matching the spacing of original tokenstream.
+    // look into preserving spacing field from tokentree / tokenstream.
     pub fn to_string(&self) -> String {
+        panic!("fix me fix me fix me");
         match self {
             RustHtmlToken::Space(c) => c.to_string(),
             RustHtmlToken::HtmlTextNode(s, _) => s.to_string(),

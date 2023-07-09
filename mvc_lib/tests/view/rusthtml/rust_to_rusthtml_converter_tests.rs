@@ -503,13 +503,9 @@ pub fn rust_to_rusthtml_converter_parse_complex_if_else_followed_by_html() {
                 RustHtmlToken::Identifier(Ident::new("html_class", Span::call_site())),
             ])
         ),
-        RustHtmlToken::Identifier(Ident::new("html_class", Span::call_site())),
-        RustHtmlToken::ReservedChar('>', Punct::new('>', Spacing::Alone)),
-        RustHtmlToken::Identifier(Ident::new("test", Span::call_site())),
-        RustHtmlToken::ReservedChar('<', Punct::new('<', Spacing::Joint)),
-        RustHtmlToken::ReservedChar('/', Punct::new('/', Spacing::Alone)),
-        RustHtmlToken::Identifier(Ident::new("p", Span::call_site())),
-        RustHtmlToken::ReservedChar('>', Punct::new('>', Spacing::Alone)),
+        RustHtmlToken::HtmlTagCloseStartChildrenPunct('>', Some(Punct::new('>', Spacing::Alone))),
+        RustHtmlToken::HtmlTextNode("test".to_string(), Span::call_site()),
+        RustHtmlToken::HtmlTagEnd("p".to_string(), Some(vec![RustHtmlIdentOrPunct::Ident(Ident::new("p", Span::call_site()))])),
     ];
 
     compare_rusthtmltokens(&expected_output, &output);
@@ -561,12 +557,18 @@ fn compare_rusthtmltokens(expected_output: &Vec<RustHtmlToken>, output: &Vec<Rus
                     assert_eq!(expected_literal.to_string(), actual_literal.as_ref().unwrap().to_string());
                 } else if let Some(_) = expected_idents {
                     // need new function similar to existing one
-                    assert_vecs_of_rusthtmlidentsandpuncts_or_literal_eq(expected_idents, actual_idents);
+                    assert_vecs_of_rusthtmlidentsorpunct_eq(expected_idents.as_ref().unwrap(), actual_idents.as_ref().unwrap());
                 } else if let Some(expected_rust) = expected_rust {
                     compare_rusthtmltokens(expected_rust, actual_rust.as_ref().unwrap());
                 } else {
                     panic!("expected and actual are not the same or not supported: expected: {:?}, actual: {:?}", expected, actual);
                 }
+            },
+            (RustHtmlToken::HtmlTagCloseStartChildrenPunct(expected_c, _), RustHtmlToken::HtmlTagCloseStartChildrenPunct(actual_c, _)) => {
+                assert_eq!(*expected_c, *actual_c);
+            },
+            (RustHtmlToken::HtmlTextNode(expected_text, _), RustHtmlToken::HtmlTextNode(actual_text, _)) => {
+                assert_eq!(expected_text, actual_text);
             },
             _ => {
                 let expected_next = if i + 1 < expected_output.len() { Some(&expected_output[i + 1]) } else { None };

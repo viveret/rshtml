@@ -7,7 +7,7 @@ use proc_macro2::{Ident, TokenTree, Group, Delimiter};
 use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 use crate::view::rusthtml::peekable_tokentree::{IPeekableTokenTree, PeekableTokenTree};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
-use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
+use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use super::irusthtml_directive::IRustHtmlDirective;
@@ -54,7 +54,7 @@ impl HtmlFormDirective {
         // println!("method: {}", method);
 
         let mut _form_render_fn_tokens: Option<Vec<RustHtmlToken>> = None;
-        let mut attributes: Option<HashMap<String, Vec<RustHtmlToken>>> = None;
+        let mut attributes: Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>> = None;
         let mut action: Option<String> = None;
         let mut _route_values: Option<HashMap<String, Vec<RustHtmlToken>>> = None;
 
@@ -119,10 +119,10 @@ impl HtmlFormDirective {
             RustHtmlToken::HtmlTagStart("form".to_string(), None),
             RustHtmlToken::HtmlTagAttributeName("method".to_string(), None),
             RustHtmlToken::HtmlTagAttributeEquals('=', None),
-            RustHtmlToken::HtmlTagAttributeValue(Some(method), None),
+            RustHtmlToken::HtmlTagAttributeValue(Some(method), None, None),
             RustHtmlToken::HtmlTagAttributeName("action".to_string(), None),
             RustHtmlToken::HtmlTagAttributeEquals('=', None),
-            RustHtmlToken::HtmlTagAttributeValue(action, None),
+            RustHtmlToken::HtmlTagAttributeValue(action, None, None),
         ]);
 
         for attr_kvp in attributes.unwrap() {
@@ -130,7 +130,15 @@ impl HtmlFormDirective {
             let attr_values = attr_kvp.1;
             output.push(RustHtmlToken::HtmlTagAttributeName(attr_name, None));
             output.push(RustHtmlToken::HtmlTagAttributeEquals('=', None));
-            output.push(RustHtmlToken::HtmlTagAttributeValue(None, Some(attr_values)));
+
+            match attr_values.first().unwrap() {
+                RustHtmlIdentAndPunctOrLiteral::Literal(literal) => {
+                    output.push(RustHtmlToken::HtmlTagAttributeValue(Some(literal.to_string()), None, None));
+                },
+                RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(ident_or_punct) => {
+                    output.push(RustHtmlToken::HtmlTagAttributeValue(None, Some(ident_or_punct.clone()), None));
+                }
+            }
         }
 
         output.push(RustHtmlToken::HtmlTagCloseStartChildrenPunct('>', None));
@@ -247,7 +255,7 @@ impl HtmlFormDirective {
         Ok(Some(object_route_values))
     }
     
-    fn try_parse_object_html_attributes(it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
+    fn try_parse_object_html_attributes(it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>>, RustHtmlError<'static>> {
         if let Some(group_object) = Self::peek_group_with_braces(it) {
             // skip group after peeking
             it.next();
@@ -271,10 +279,10 @@ impl HtmlFormDirective {
         None
     }
 
-    fn parse_object_html_attributes(group_object: Group) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
+    fn parse_object_html_attributes(group_object: Group) -> Result<Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>>, RustHtmlError<'static>> {
         let mut object_attributes = HashMap::new();
         let mut object_attribute_name: Option<String> = None;
-        let mut object_attribute_values: Vec<RustHtmlToken> = vec![];
+        let mut object_attribute_values: Vec<RustHtmlIdentAndPunctOrLiteral> = vec![];
         let mut it =  group_object.stream().into_iter().peekable();
         loop {
             match it.next() {
@@ -289,8 +297,8 @@ impl HtmlFormDirective {
                             }
                         },
                         TokenTree::Literal(literal) => {
-                            if let Some(attribute_name) = object_attribute_name {
-                                object_attribute_values.push(RustHtmlToken::Literal(Some(literal), Some(attribute_name)));
+                            if object_attribute_name.is_some() {
+                                object_attribute_values.push(RustHtmlIdentAndPunctOrLiteral::Literal(literal));
                                 object_attribute_name = None;
                             } else {
                                 return Err(RustHtmlError::from_string(format!("expected attribute name, not \"{}\"", literal)));

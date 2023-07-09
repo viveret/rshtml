@@ -45,7 +45,7 @@ pub enum RustHtmlToken {
     HtmlTagEnd(String, Option<Vec<RustHtmlIdentOrPunct>>),
     HtmlTagAttributeName(String, Option<RustHtmlIdentAndPunctOrLiteral>),
     HtmlTagAttributeEquals(char, Option<Punct>),
-    HtmlTagAttributeValue(Option<String>, Option<Vec<RustHtmlToken>>),
+    HtmlTagAttributeValue(Option<String>, Option<Vec<RustHtmlIdentOrPunct>>, Option<Vec<RustHtmlToken>>),
     HtmlTagCloseVoidPunct(char, Option<Punct>),
     HtmlTagCloseSelfContainedPunct(char, Option<Punct>),
     HtmlTagCloseStartChildrenPunct(char, Option<Punct>),
@@ -74,7 +74,7 @@ impl RustHtmlToken {
     // todo/fixme: this is not matching the spacing of original tokenstream.
     // look into preserving spacing field from tokentree / tokenstream.
     pub fn to_string(&self) -> String {
-        panic!("fix me fix me fix me");
+        // panic!("fix m e fix me fix me");
         match self {
             RustHtmlToken::Space(c) => c.to_string(),
             RustHtmlToken::HtmlTextNode(s, _) => s.to_string(),
@@ -83,7 +83,7 @@ impl RustHtmlToken {
             RustHtmlToken::HtmlTagEnd(s, _) => format!("</{}>", s.to_string()),
             RustHtmlToken::HtmlTagAttributeName(s, _) => s.to_string(),
             RustHtmlToken::HtmlTagAttributeEquals(c, _) => c.to_string(),
-            RustHtmlToken::HtmlTagAttributeValue(s, _) => {
+            RustHtmlToken::HtmlTagAttributeValue(s, _, _) => {
                 match s {
                     Some(s) => s.to_string(),
                     None => "".to_string()
@@ -130,9 +130,6 @@ impl RustHtmlToken {
                     Delimiter::None => "".to_string(),
                 }
             },
-            _ => {
-                panic!("RustHtmlToken::to_string() not implemented for {:?}", self);
-            }
         }
     }
 }

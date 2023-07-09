@@ -19,8 +19,12 @@ pub struct HtmlTagParseContext {
     pub html_attr_key_literal: Option<Literal>,
     // the current HTML attribute key ident
     pub html_attr_key_ident: Vec<RustHtmlIdentOrPunct>,
-    // the current HTML attribute value
-    pub html_attr_val: Vec<RustHtmlToken>,
+    // the current HTML attribute value literal
+    pub html_attr_val_literal: Option<Literal>,
+    // the current HTML attribute value ident
+    pub html_attr_val_ident: Vec<RustHtmlIdentOrPunct>,
+    // the current HTML attribute value Rust tokens
+    pub html_attr_val_rust: Vec<RustHtmlToken>,
     // whether or not to parse attributes
     pub parse_attrs: bool,
     // whether or not to parse attribute values
@@ -40,7 +44,9 @@ impl HtmlTagParseContext {
             html_attr_key: String::new(),
             html_attr_key_literal: None,
             html_attr_key_ident: vec![],
-            html_attr_val: vec![],
+            html_attr_val_literal: None,
+            html_attr_val_ident: vec![],
+            html_attr_val_rust: vec![],
             parse_attrs: false,
             parse_attr_val: false,
             is_self_contained_tag: false,
@@ -62,7 +68,9 @@ impl HtmlTagParseContext {
     pub fn clear_attr_kvp(self: &mut Self) {
         self.parse_attr_val = false;
 
-        self.html_attr_val = vec![];
+        self.html_attr_val_literal = None;
+        self.html_attr_val_ident = vec![];
+        self.html_attr_val_rust = vec![];
 
         self.html_attr_key = String::new();
         self.html_attr_key_literal = None;

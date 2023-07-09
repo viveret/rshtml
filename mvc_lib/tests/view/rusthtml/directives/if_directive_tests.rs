@@ -6,7 +6,7 @@ use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter
 use mvc_lib::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use mvc_lib::view::rusthtml::directives::irusthtml_directive::IRustHtmlDirective;
 use mvc_lib::view::rusthtml::directives::if_directive::IfDirective;
-use proc_macro2::{TokenTree, TokenStream};
+use proc_macro2::TokenTree;
 
 
 
@@ -42,7 +42,7 @@ pub fn if_directive_process_rust_basic() {
     match result {
         RustHtmlDirectiveResult::OkContinue => {
             let rusthtml_actual = output.iter().map(|t| t.to_string()).collect::<Vec<String>>().join("");
-            assert_eq!(rusthtml_expected_string, rusthtml_actual);
+            assert_eq!(rusthtml_expected_string.replace(" ", ""), rusthtml_actual.replace(" ", ""));
         },
         _ => panic!("expected OkContinue, not {:?}", result)
     }

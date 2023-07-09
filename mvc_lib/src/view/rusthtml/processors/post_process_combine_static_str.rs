@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-
 use proc_macro2::{TokenTree, Delimiter, Group, TokenStream, Ident, Punct};
 
 use crate::view::rusthtml::peekable_tokentree::{PeekableTokenTree, IPeekableTokenTree};

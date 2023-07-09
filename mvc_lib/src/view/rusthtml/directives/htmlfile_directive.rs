@@ -29,10 +29,13 @@ impl HtmlFileDirective {
             match std::fs::File::open(path.as_str()) {
                 Ok(_f) => {
                     let mut inner_tokens = vec![];
-                    parser.convert_copy(TokenTree::Group(Group::new(Delimiter::None, quote::quote! { 
+                    let result = parser.convert_copy(TokenTree::Group(Group::new(Delimiter::None, quote::quote! { 
                         let content = std::fs::read_to_string(path).unwrap();
                         self.convert_rusthtmltextnode_to_tokentree(&content, &span, output, it)
                     })), &mut inner_tokens);
+                    if let Err(RustHtmlError(e)) = result {
+                        return Err(RustHtmlError::from_string(e.to_string()));
+                    }
                     output.push(RustHtmlToken::AppendToHtml(inner_tokens));
                 },
                 Err(e) => {

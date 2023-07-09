@@ -372,7 +372,7 @@ pub fn rust_to_rusthtml_converter_on_kvp_defined() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let mut ctx = HtmlTagParseContext::new();
     let mut output = vec![];
-    converter.on_kvp_defined(&mut ctx, &mut output);
+    converter.on_kvp_defined(&mut ctx, &mut output).unwrap();
 }
 
 #[test]
@@ -432,4 +432,110 @@ pub fn rust_to_rusthtml_converter_convert_ident_and_punct_and_group_or_literal_t
 pub fn rust_to_rusthtml_converter_get_context() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     converter.get_context();
+}
+
+#[test]
+pub fn rust_to_rusthtml_converter_parse_complex() {
+    let parse_context = RustHtmlParserContext::new(false, false, "test".to_string());
+    let converter = RustToRustHtmlConverter::new(Rc::new(parse_context));
+    let output = converter.parse_tokenstream_to_rusthtmltokens(
+        false,
+        Rc::new(PeekableTokenTree::new(quote::quote! {
+            fn test() {
+                println!("test");
+            }
+        })),
+        false
+    ).unwrap();
+    
+    let expected_output = vec![
+        RustHtmlToken::Identifier(Ident::new("fn", Span::call_site())),
+        RustHtmlToken::Identifier(Ident::new("test", Span::call_site())),
+        RustHtmlToken::Group(Delimiter::Parenthesis, Group::new(Delimiter::Parenthesis, TokenStream::new())),
+        RustHtmlToken::GroupParsed(Delimiter::Brace, vec![
+            RustHtmlToken::Identifier(Ident::new("println", Span::call_site())),
+            RustHtmlToken::ReservedChar('!', Punct::new('!', Spacing::Alone)),
+            RustHtmlToken::Group(Delimiter::Parenthesis, Group::new(Delimiter::Parenthesis, TokenStream::from_iter(vec![
+                TokenTree::Literal(Literal::string("test")),
+            ].into_iter())).into()),
+            RustHtmlToken::ReservedChar(';', Punct::new(';', Spacing::Alone)),
+        ]),
+    ];
+
+    assert_eq!(expected_output.len(), output.len());
+
+    compare_rusthtmltokens(&expected_output, &output);
+}
+
+#[test]
+pub fn rust_to_rusthtml_converter_parse_complex_if_else_followed_by_html() {
+    let parse_context = RustHtmlParserContext::new(false, false, "test".to_string());
+    let converter = RustToRustHtmlConverter::new(Rc::new(parse_context));
+    let output = converter.parse_tokenstream_to_rusthtmltokens(
+        false,
+        Rc::new(PeekableTokenTree::new(quote::quote! {
+            let html_class = if is_active { "active" } else { "" };
+            <p class=@html_class>test</p>
+        })),
+        false
+    ).unwrap();
+    
+    let expected_output = vec![
+        RustHtmlToken::Identifier(Ident::new("let", Span::call_site())),
+        RustHtmlToken::Identifier(Ident::new("html_class", Span::call_site())),
+        RustHtmlToken::ReservedChar('=', Punct::new('=', Spacing::Alone)),
+        RustHtmlToken::Identifier(Ident::new("if", Span::call_site())),
+        RustHtmlToken::Identifier(Ident::new("is_active", Span::call_site())),
+        RustHtmlToken::GroupParsed(Delimiter::Brace, vec![
+            RustHtmlToken::Literal(Some(Literal::string("active")), None),
+        ]),
+        RustHtmlToken::Identifier(Ident::new("else", Span::call_site())),
+        RustHtmlToken::GroupParsed(Delimiter::Brace, vec![
+            RustHtmlToken::Literal(Some(Literal::string("")), None),
+        ]),
+        RustHtmlToken::ReservedChar(';', Punct::new(';', Spacing::Alone)),
+        RustHtmlToken::ReservedChar('<', Punct::new('<', Spacing::Alone)),
+        RustHtmlToken::Identifier(Ident::new("p", Span::call_site())),
+        RustHtmlToken::Identifier(Ident::new("class", Span::call_site())),
+        RustHtmlToken::ReservedChar('=', Punct::new('=', Spacing::Alone)),
+        RustHtmlToken::ReservedChar('@', Punct::new('>', Spacing::Alone)),
+        RustHtmlToken::Identifier(Ident::new("html_class", Span::call_site())),
+        RustHtmlToken::ReservedChar('>', Punct::new('>', Spacing::Alone)),
+        RustHtmlToken::Identifier(Ident::new("test", Span::call_site())),
+        RustHtmlToken::ReservedChar('<', Punct::new('<', Spacing::Joint)),
+        RustHtmlToken::ReservedChar('/', Punct::new('/', Spacing::Alone)),
+        RustHtmlToken::Identifier(Ident::new("p", Span::call_site())),
+        RustHtmlToken::ReservedChar('>', Punct::new('>', Spacing::Alone)),
+    ];
+
+    compare_rusthtmltokens(&expected_output, &output);
+}
+
+fn compare_rusthtmltokens(expected_output: &Vec<RustHtmlToken>, output: &Vec<RustHtmlToken>) {
+    for i in 0..std::cmp::min(expected_output.len(), output.len()) {
+        let expected = &expected_output[i];
+        let actual = &output[i];
+
+        match (expected, actual) {
+            (RustHtmlToken::Identifier(expected_ident), RustHtmlToken::Identifier(actual_ident)) => {
+                assert_eq!(expected_ident.to_string(), actual_ident.to_string());
+            },
+            (RustHtmlToken::Group(expected_delimiter, expected_group), RustHtmlToken::Group(actual_delimiter, actual_group)) => {
+                assert_eq!(*expected_delimiter, *actual_delimiter);
+                assert_eq!(expected_group.to_string(), actual_group.to_string());
+            },
+            (RustHtmlToken::GroupParsed(expected_delimiter, expected_group), RustHtmlToken::GroupParsed(actual_delimiter, actual_group)) => {
+                assert_eq!(*expected_delimiter, *actual_delimiter);
+                compare_rusthtmltokens(expected_group, actual_group);
+            },
+            (RustHtmlToken::ReservedChar(expected_c, _), RustHtmlToken::ReservedChar(actual_c, _)) => {
+                assert_eq!(*expected_c, *actual_c);
+            },
+            (RustHtmlToken::Literal(expected_literal, _), RustHtmlToken::Literal(actual_literal, _)) => {
+                assert_eq!(expected_literal, actual_literal);
+            },
+            _ => panic!("expected and actual are not the same or not supported: expected: {:?}, actual: {:?}", expected, actual)
+        }
+    }
+    assert_eq!(expected_output.len(), output.len());
 }

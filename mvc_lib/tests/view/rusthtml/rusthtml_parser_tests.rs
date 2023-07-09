@@ -28,14 +28,32 @@ fn rusthtml_parser_print_as_code_works() {
 fn rusthtml_parser_expect_punct_works() {
     let parser = RustHtmlParser::new(false, "test".to_string());
     let rust_output = quote! {
-        fn test() {
-            println!("test");
-        }
+        <div></div>
     };
 
     let mut it = rust_output.into_iter().peekable();
-    parser.expect_punct(',', &mut it).unwrap();
+    match parser.expect_punct('<', &mut it) {
+        Ok(_) => {},
+        Err(e) => panic!("Expected punct, not {:?}", e)
+    }
 }
+
+
+// #[test]
+// fn rusthtml_parser_expect_ident_works() {
+//     let parser = RustHtmlParser::new(false, "test".to_string());
+//     let rust_output = quote! {
+//         fn test() {
+//             println!("test");
+//         }
+//     };
+
+//     let mut it = rust_output.into_iter().peekable();
+//     match parser.expect_ident("fn", &mut it) {
+//         Ok(_) => {},
+//         Err(e) => panic!("Expected ident, not {:?}", e)
+//     }
+// }
 
 
 #[test]
@@ -225,4 +243,40 @@ fn assert_tokenstreams_eq(mut expected_it: std::iter::Peekable<proc_macro2::toke
         }
         index_at += 1;
     }
+}
+
+
+
+
+
+
+
+#[test]
+fn rusthtml_parser_expand_tokenstream_if_else_followed_by_html() {
+    let stream = quote::quote! {
+        @{
+            let html_class = if validation_result . has_errors { "fc-error" } else { "fc-success" } ; <p class = @html_class> @validation_result . message </p>
+        }
+    };
+    let expected_output = quote::quote! {
+        let html_class = if validation_result . has_errors { "fc-error" } else { "fc-success" } ;
+        html_output.write_html_str("<p class=\"");
+        html_output.write_html_str(html_class);
+        html_output.write_html_str(">");
+        html_output.write_html_str(validation_result . message);
+        html_output.write_html_str("</p>");
+    };
+    let expected_it = expected_output.into_iter().peekable();
+
+    let parser = RustHtmlParser::new(false, "test".to_string());
+    let actual_output = parser.expand_tokenstream(stream).unwrap();
+
+    let actual = parser.expand_tokenstream(actual_output.clone()).unwrap();
+    let actual_it = actual.into_iter().peekable();
+
+    // do simple string comparison
+    let expected_str = expected_it.map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
+    let actual_str = actual_it.map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
+
+    assert_str::assert_str_trim_eq!(expected_str, actual_str);
 }

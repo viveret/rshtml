@@ -92,7 +92,7 @@ pub fn rusthtml_to_rust_converter_convert_rusthtmlappendhtml_to_tokentree() {
     let converter = RustHtmlToRustConverter::new(context);
     let mut output = vec![];
     let inner = None;
-    converter.convert_rusthtmlappendhtml_to_tokentree(Some(&"".to_string()), inner, &mut output).unwrap();
+    converter.convert_rusthtmlappendhtml_to_tokentree(Some(&"".to_string()), inner, None, &mut output).unwrap();
 }
 
 #[test]

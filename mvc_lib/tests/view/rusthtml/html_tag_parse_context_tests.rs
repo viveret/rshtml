@@ -29,7 +29,8 @@ fn html_tag_parse_context_clear_attr_kvp_works() {
 
     assert_eq!(true, ctx.parse_attr_val);
     assert_eq!(true, ctx.equals_punct.is_none());
-    assert_eq!(0, ctx.html_attr_val.len());
+    assert_eq!(0, ctx.html_attr_val_ident.len());
+    assert_eq!(0, ctx.html_attr_val_rust.len());
     assert_eq!(0, ctx.html_attr_key_ident.len());
     assert_eq!(0, ctx.html_attr_key.len());
     ctx.clear_attr_kvp();

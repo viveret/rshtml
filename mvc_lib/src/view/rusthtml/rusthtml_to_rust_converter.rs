@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro2::{Delimiter, Group, Literal, Span, TokenStream, TokenTree};
+use proc_macro2::{Delimiter, Group, Literal, Span, TokenStream, TokenTree, Punct, Spacing};
 use quote::quote;
 
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct };
@@ -95,7 +95,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // inner: the inner tokens of the group.
     // output: the destination for the Rust tokens.
     // returns: nothing or an error.
-    fn convert_rusthtmlappendhtml_to_tokentree(self: &Self, inner_as_string: Option<&String>, inner: Option<&Vec<RustHtmlToken>>, output: &mut Vec<TokenTree>) -> Result<(), RustHtmlError> {
+    fn convert_rusthtmlappendhtml_to_tokentree(self: &Self, inner_as_string: Option<&String>, inner_as_ident: Option<&Vec<RustHtmlIdentOrPunct>>, inner: Option<&Vec<RustHtmlToken>>, output: &mut Vec<TokenTree>) -> Result<(), RustHtmlError> {
         let mut inner_tokens = vec![];
         if let Some(inner) = inner {
             let inner_it = PeekableRustHtmlToken::new(inner);
@@ -103,6 +103,18 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
             let inner_tokenstream1 = TokenStream::from_iter(inner_tokens);
             let inner_tokenstream = proc_macro2::TokenStream::from(inner_tokenstream1);
             output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html((#inner_tokenstream).into()); }))));
+        } else if let Some(inner_as_ident) = inner_as_ident {
+            let ident_tokenstream = TokenStream::from_iter(
+                inner_as_ident.iter()
+                .map(|x| {
+                    match x {
+                        RustHtmlIdentOrPunct::Ident(ident) => TokenTree::Ident(ident.clone()),
+                        RustHtmlIdentOrPunct::Punct(punct) => TokenTree::Punct(punct.clone()),
+                    }
+                })
+                .collect::<Vec<TokenTree>>()
+            );
+            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html(#ident_tokenstream); }))));
         } else if let Some(inner_as_string) = inner_as_string {
             output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html(#inner_as_string.into()); }))));
         } else {
@@ -118,6 +130,10 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // returns: if we should break the outer loop or not, or an error.
     fn convert_rusthtmltoken_to_tokentree(self: &Self, token: &RustHtmlToken, output: &mut Vec<TokenTree>, it: &dyn IPeekableRustHtmlToken) -> Result<bool, RustHtmlError> {
         match token {
+            // help: message: unsupported character `' '`
+            // RustHtmlToken::Space(space) => {
+            //     output.push(TokenTree::Punct(Punct::new(space.clone(), Spacing::Alone)));
+            // }
             RustHtmlToken::Identifier(ident) => output.push(TokenTree::Ident(ident.clone())),
             RustHtmlToken::Literal(literal, string) => {
                 if let Some(literal) = literal {
@@ -125,7 +141,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 } else if let Some(string) = string {
                     output.push(TokenTree::Literal(Literal::string(string)));
                 } else {
-                    return Err(RustHtmlError::from_string(format!("Could not handle token {:?}", token)));
+                    return Err(RustHtmlError::from_string(format!("Token is neither literal or string: {:?}", token)));
                 }
             },
             RustHtmlToken::ReservedChar(_, punct) => output.push(TokenTree::Punct(punct.clone())),
@@ -148,12 +164,12 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 self.convert_rusthtmltagattributeequals_to_tokentree(output, it)?,
             RustHtmlToken::HtmlTagAttributeName(tag, tag_tokens) =>
                 self.convert_rusthtmltagattributename_to_tokentree(tag, tag_tokens, output, it)?,
-            RustHtmlToken::HtmlTagAttributeValue(value, value_tokens) =>
-                self.convert_rusthtmltagattributevalue_to_tokentree(value.as_ref(), value_tokens.as_ref(), output, it)?,
+            RustHtmlToken::HtmlTagAttributeValue(value, value_tokens, value_rust_tokens) =>
+                self.convert_rusthtmltagattributevalue_to_tokentree(value.as_ref(), value_tokens.as_ref(), value_rust_tokens.as_ref(), output, it)?,
             RustHtmlToken::HtmlTextNode(text, span) => 
                 self.convert_rusthtmltextnode_to_tokentree(text, span, output, it)?,
             RustHtmlToken::AppendToHtml(inner) =>
-                self.convert_rusthtmlappendhtml_to_tokentree(None, Some(inner), output)?,
+                self.convert_rusthtmlappendhtml_to_tokentree(None, None, Some(inner), output)?,
             _ => { return Err(RustHtmlError::from_string(format!("Could not handle token {:?}", token))); }
         }
         Ok(false)
@@ -269,10 +285,10 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // output: the destination for the Rust tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    fn convert_rusthtmltagattributevalue_to_tokentree(self: &Self, value: Option<&String>, value_tokens: Option<&Vec<RustHtmlToken>>, output: &mut Vec<TokenTree>, it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
+    fn convert_rusthtmltagattributevalue_to_tokentree(self: &Self, value: Option<&String>, value_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, value_rust: Option<&Vec<RustHtmlToken>>, output: &mut Vec<TokenTree>, it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
         self.convert_appendhtmlstring_to_tokentree("\"".to_string(), output, it)?;
         // inner tokens
-        self.convert_rusthtmlappendhtml_to_tokentree(value, value_tokens, output)?;
+        self.convert_rusthtmlappendhtml_to_tokentree(value, value_tokens, value_rust, output)?;
         self.convert_appendhtmlstring_to_tokentree("\"".to_string(), output, it)?;
         Ok(())
     }

@@ -6,7 +6,8 @@ use mvc_lib::view::rusthtml::peekable_tokentree::{PeekableTokenTree, IPeekableTo
 use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
-use mvc_lib::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctAndGroupOrLiteral, RustHtmlIdentOrPunctOrGroup};
+use mvc_lib::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctAndGroupOrLiteral, RustHtmlIdentOrPunct, RustHtmlIdentOrPunctOrGroup};
+use mvc_lib::view::rusthtml::rusthtml_token::RustHtmlIdentAndPunctOrLiteral;
 use proc_macro2::{TokenTree, Group, Delimiter, TokenStream, Punct, Spacing, Ident, Span, Literal};
 
 
@@ -494,11 +495,14 @@ pub fn rust_to_rusthtml_converter_parse_complex_if_else_followed_by_html() {
             RustHtmlToken::Literal(Some(Literal::string("")), None),
         ]),
         RustHtmlToken::ReservedChar(';', Punct::new(';', Spacing::Alone)),
-        RustHtmlToken::ReservedChar('<', Punct::new('<', Spacing::Alone)),
-        RustHtmlToken::Identifier(Ident::new("p", Span::call_site())),
-        RustHtmlToken::Identifier(Ident::new("class", Span::call_site())),
-        RustHtmlToken::ReservedChar('=', Punct::new('=', Spacing::Alone)),
-        RustHtmlToken::ReservedChar('@', Punct::new('>', Spacing::Alone)),
+        RustHtmlToken::HtmlTagStart("p".to_string(), Some(vec![RustHtmlIdentOrPunct::Ident(Ident::new("p", Span::call_site()))])),
+        RustHtmlToken::HtmlTagAttributeName("class".to_string(), Some(RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(vec![RustHtmlIdentOrPunct::Ident(Ident::new("class", Span::call_site()))]))),
+        RustHtmlToken::HtmlTagAttributeEquals('=', Some(Punct::new('=', Spacing::Alone))),
+        RustHtmlToken::HtmlTagAttributeValue(
+            None, None, Some(vec![
+                RustHtmlToken::Identifier(Ident::new("html_class", Span::call_site())),
+            ])
+        ),
         RustHtmlToken::Identifier(Ident::new("html_class", Span::call_site())),
         RustHtmlToken::ReservedChar('>', Punct::new('>', Spacing::Alone)),
         RustHtmlToken::Identifier(Ident::new("test", Span::call_site())),
@@ -512,6 +516,7 @@ pub fn rust_to_rusthtml_converter_parse_complex_if_else_followed_by_html() {
 }
 
 fn compare_rusthtmltokens(expected_output: &Vec<RustHtmlToken>, output: &Vec<RustHtmlToken>) {
+    let mut previous_token: Option<&RustHtmlToken> = None;
     for i in 0..std::cmp::min(expected_output.len(), output.len()) {
         let expected = &expected_output[i];
         let actual = &output[i];
@@ -531,11 +536,102 @@ fn compare_rusthtmltokens(expected_output: &Vec<RustHtmlToken>, output: &Vec<Rus
             (RustHtmlToken::ReservedChar(expected_c, _), RustHtmlToken::ReservedChar(actual_c, _)) => {
                 assert_eq!(*expected_c, *actual_c);
             },
-            (RustHtmlToken::Literal(expected_literal, _), RustHtmlToken::Literal(actual_literal, _)) => {
-                assert_eq!(expected_literal, actual_literal);
+            (RustHtmlToken::Literal(expected_literal, expected_str), RustHtmlToken::Literal(actual_literal, actual_str)) => {
+                let expected = if let Some(s) = expected_literal { s.to_string() } else { expected_str.as_ref().unwrap().clone() };
+                let actual = if let Some(s) = actual_literal { s.to_string() } else { actual_str.as_ref().unwrap().clone() };
+                assert_eq!(expected, actual);
             },
-            _ => panic!("expected and actual are not the same or not supported: expected: {:?}, actual: {:?}", expected, actual)
+            (RustHtmlToken::HtmlTagStart(expected_tag, expected_idents), RustHtmlToken::HtmlTagStart(actual_tag, actual_idents)) => {
+                assert_eq!(expected_tag, actual_tag);
+                assert_vecs_of_option_rusthtmlidentsorpunct_eq(expected_idents, actual_idents);
+            },
+            (RustHtmlToken::HtmlTagEnd(expected_tag, expected_idents), RustHtmlToken::HtmlTagEnd(actual_tag, actual_idents)) => {
+                assert_eq!(expected_tag, actual_tag);
+                assert_vecs_of_option_rusthtmlidentsorpunct_eq(expected_idents, actual_idents);
+            },
+            (RustHtmlToken::HtmlTagAttributeName(expected_name, expected_idents), RustHtmlToken::HtmlTagAttributeName(actual_name, actual_idents)) => {
+                assert_eq!(expected_name, actual_name);
+                assert_vecs_of_rusthtmlidentsandpuncts_or_literal_eq(expected_idents, actual_idents);
+            },
+            (RustHtmlToken::HtmlTagAttributeEquals(expected_c, _), RustHtmlToken::HtmlTagAttributeEquals(actual_c, _)) => {
+                assert_eq!(*expected_c, *actual_c);
+            },
+            (RustHtmlToken::HtmlTagAttributeValue(expected_literal, expected_idents, expected_rust), RustHtmlToken::HtmlTagAttributeValue(actual_literal, actual_idents, actual_rust)) => {
+                if let Some(expected_literal) = expected_literal {
+                    assert_eq!(expected_literal.to_string(), actual_literal.as_ref().unwrap().to_string());
+                } else if let Some(_) = expected_idents {
+                    // need new function similar to existing one
+                    assert_vecs_of_rusthtmlidentsandpuncts_or_literal_eq(expected_idents, actual_idents);
+                } else if let Some(expected_rust) = expected_rust {
+                    compare_rusthtmltokens(expected_rust, actual_rust.as_ref().unwrap());
+                } else {
+                    panic!("expected and actual are not the same or not supported: expected: {:?}, actual: {:?}", expected, actual);
+                }
+            },
+            _ => {
+                let expected_next = if i + 1 < expected_output.len() { Some(&expected_output[i + 1]) } else { None };
+                let actual_next = if i + 1 < output.len() { Some(&output[i + 1]) } else { None };
+                panic!("expected and actual are not the same or not supported: expected: {:?} (next: {:?}), actual: {:?} (next: {:?}), previous: {:?}", 
+                        expected, expected_next, actual, actual_next, previous_token)
+            }
         }
+
+        previous_token = Some(&actual);
     }
     assert_eq!(expected_output.len(), output.len());
+}
+
+fn assert_vecs_of_rusthtmlidentsandpuncts_or_literal_eq(expected_idents: &Option<RustHtmlIdentAndPunctOrLiteral>, actual_idents: &Option<RustHtmlIdentAndPunctOrLiteral>) {
+    match (expected_idents, actual_idents) {
+        (Some(expected_idents), Some(actual_idents)) => {
+            match (expected_idents, actual_idents) {
+                (RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(expected_idents), RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(actual_idents)) => {
+                    assert_vecs_of_rusthtmlidentsorpunct_eq(expected_idents, actual_idents);
+                },
+                (RustHtmlIdentAndPunctOrLiteral::Literal(expected_literal), RustHtmlIdentAndPunctOrLiteral::Literal(actual_literal)) => {
+                    assert_eq!(expected_literal.to_string(), actual_literal.to_string());
+                },
+                _ => panic!("expected and actual are not the same or not supported: expected: {:?}, actual: {:?}", expected_idents, actual_idents)
+            }
+        },
+        (None, None) => {},
+        _ => panic!("expected and actual are not the same or not supported: expected: {:?}, actual: {:?}", expected_idents, actual_idents)
+    }
+}
+
+fn assert_vecs_of_option_rusthtmlidentsorpunct_eq(
+    expected_idents: &Option<Vec<RustHtmlIdentOrPunct>>,
+    actual_idents: &Option<Vec<RustHtmlIdentOrPunct>>
+) {
+    if let Some(expected_idents) = expected_idents {
+        if let Some(actual_idents) = actual_idents {
+            assert_vecs_of_rusthtmlidentsorpunct_eq(expected_idents, actual_idents);
+        } else {
+            panic!("Actual idents is None");
+        }
+    } else {
+        panic!("Expected idents is None");
+    }
+}
+
+fn assert_vecs_of_rusthtmlidentsorpunct_eq(
+    expected_idents: &Vec<RustHtmlIdentOrPunct>,
+    actual_idents: &Vec<RustHtmlIdentOrPunct>
+) {
+    for i in 0..std::cmp::min(expected_idents.len(), actual_idents.len()) {
+        let expected_ident = &expected_idents[i];
+        let actual_ident = &actual_idents[i];
+        match (expected_ident, actual_ident) {
+            (RustHtmlIdentOrPunct::Ident(expected_ident), RustHtmlIdentOrPunct::Ident(actual_ident)) => {
+                assert_eq!(expected_ident.to_string(), actual_ident.to_string());
+            },
+            (RustHtmlIdentOrPunct::Punct(expected_punct), RustHtmlIdentOrPunct::Punct(actual_punct)) => {
+                assert_eq!(expected_punct.as_char(), actual_punct.as_char());
+            },
+            _ => {
+                panic!("expected and actual are not the same or not supported: expected: {:?}, actual: {:?}", expected_ident, actual_ident)
+            }
+        }
+    }
+    assert_eq!(expected_idents.len(), actual_idents.len());
 }

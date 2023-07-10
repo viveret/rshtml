@@ -11,6 +11,8 @@ use mvc_lib::view::view_renderer::{ViewRenderer, IViewRenderer};
 fn view_renderer_render() {
     // need to register view at view_path
     let view_renderer = ViewRenderer::new();
+
+    // todo / fixme: this does not actually exist so we need to mock the view provider to provide a mock view.
     let view_path = "tests/view/view_renderer_tests.rs";
     let mock_vm = MockIViewModel::new();
     let view_model = Rc::new(mock_vm.object());

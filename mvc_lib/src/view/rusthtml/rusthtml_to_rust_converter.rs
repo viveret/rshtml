@@ -372,7 +372,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
         }
 
         let mut tokens = tokens.clone();
-        for x in post_processors{
+        for x in post_processors {
             match x.process_rust(&tokens) {
                 Ok(new_tokens) => tokens = new_tokens,
                 Err(RustHtmlError(e)) => return Err(RustHtmlError::from_string(e.to_string())),

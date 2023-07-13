@@ -1,3 +1,4 @@
+use std::process::Output;
 use std::rc::Rc;
 
 use mvc_lib::view::rusthtml::irusthtml_to_rust_converter::IRustHtmlToRustConverter;
@@ -168,6 +169,8 @@ pub fn rusthtml_to_rust_converter_postprocess_tokenstream() {
         html_output . write_html_str("</body>");
         html_output . write_html_str("</html>");
     }.into_iter().collect();
-    let result = TokenStream::from_iter(converter.postprocess_tokenstream(&input).unwrap().into_iter());
+
+    let output = converter.postprocess_tokenstream(&input).unwrap();
+    let result = TokenStream::from_iter(output.into_iter());
     assert_eq!("html_output . write_html_str (\"<html><body><div></div></body></html>\") ;", result.to_string());
 }

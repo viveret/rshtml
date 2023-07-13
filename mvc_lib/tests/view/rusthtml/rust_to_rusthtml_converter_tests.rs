@@ -369,9 +369,22 @@ pub fn rust_to_rusthtml_converter_convert_html_punct_to_rusthtmltoken() {
 }
 
 #[test]
-pub fn rust_to_rusthtml_converter_on_kvp_defined() {
+#[should_panic]
+pub fn rust_to_rusthtml_converter_on_kvp_defined_when_empty_panics() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let mut ctx = HtmlTagParseContext::new();
+    let mut output = vec![];
+    converter.on_kvp_defined(&mut ctx, &mut output).unwrap();
+}
+
+#[test]
+pub fn rust_to_rusthtml_converter_on_kvp_defined_when_not_empty_works() {
+    let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
+    let mut ctx = HtmlTagParseContext::new();
+    ctx.html_attr_key = "test".to_string();
+    ctx.html_attr_key_ident.push(RustHtmlIdentOrPunct::Ident(Ident::new("test", Span::call_site())));
+    ctx.equals_punct = Some(Punct::new('=', Spacing::Alone));
+    ctx.html_attr_val_literal = Some(Literal::string("test"));
     let mut output = vec![];
     converter.on_kvp_defined(&mut ctx, &mut output).unwrap();
 }

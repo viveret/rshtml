@@ -144,8 +144,15 @@ pub fn test_is_html_output_write_html_str_with_string_literal_arg_and_semicolon_
     );
 
     assert!(result);
+    assert_eq!(5, output.len());
 }
 
+// #[test]
+// pub fn punct_are_same_different_spacing() {
+//     let a = Punct::new('.', Spacing::Alone);
+//     let b = Punct::new('.', Spacing::Joint);
+//     assert_eq!(a, b);
+// }
 
 #[test]
 pub fn is_html_output_write_html_str_with_string_literal_arg_and_semicolon_single_works() {

@@ -151,7 +151,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
             RustHtmlToken::HtmlTagStart(tag, tag_tokens) =>
                 self.convert_rusthtmltagstart_to_tokentree(tag, tag_tokens.as_ref(), output, it)?,
             RustHtmlToken::HtmlTagVoid(tag, tag_tokens) =>
-                self.convert_rusthtmltagstart_to_tokentree(tag, tag_tokens.as_ref(), output, it)?,
+                self.convert_rusthtmltagvoid_to_tokentree(tag, tag_tokens.as_ref(), output, it)?,
             RustHtmlToken::HtmlTagEnd(tag, tag_tokens) =>
                 self.convert_rusthtmltagend_to_tokentree(tag, tag_tokens.as_ref(), output, it)?,
             RustHtmlToken::HtmlTagCloseStartChildrenPunct(_c, _punct) =>
@@ -186,6 +186,18 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // it: the iterator to use.
     // returns: nothing or an error.
     fn convert_rusthtmltagstart_to_tokentree(self: &Self, tag: &String, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, output: &mut Vec<TokenTree>, _it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
+        let tag_as_html = format_tag(true, tag, tag_tokens);
+        // println!("tag_as_html: {}", tag_as_html);
+        output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#tag_as_html); }))));
+        Ok(())
+    }
+
+    // convert a RustHtml void tag to Rust tokens.
+    // tag: the tag to convert.
+    // output: the destination for the RustHtml tokens.
+    // it: the iterator to use.
+    // returns: nothing or an error.
+    fn convert_rusthtmltagvoid_to_tokentree(self: &Self, tag: &String, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, output: &mut Vec<TokenTree>, _it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
         let tag_as_html = format_tag(true, tag, tag_tokens);
         // println!("tag_as_html: {}", tag_as_html);
         output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#tag_as_html); }))));
@@ -371,14 +383,14 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
             return Err(RustHtmlError::from_string(format!("No post processors found.")));
         }
 
-        let mut tokens = tokens.clone();
+        let mut output = tokens.clone();
         for x in post_processors {
-            match x.process_rust(&tokens) {
-                Ok(new_tokens) => tokens = new_tokens,
+            match x.process_rust(&output) {
+                Ok(new_tokens) => output = new_tokens,
                 Err(RustHtmlError(e)) => return Err(RustHtmlError::from_string(e.to_string())),
             }
         }
-        Ok(tokens)
+        Ok(output)
     }
 }
 

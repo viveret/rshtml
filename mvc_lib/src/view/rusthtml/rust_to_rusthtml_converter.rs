@@ -827,7 +827,8 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                 self.on_kvp_defined(parse_ctx, output)?;
             } else {
                 parse_ctx.html_attr_key_literal = Some(literal.clone());
-                parse_ctx.html_attr_key.push_str(&literal.to_string());
+                let s = snailquote::unescape(&literal.to_string()).unwrap();
+                parse_ctx.html_attr_key.push_str(&s);
                 parse_ctx.parse_attr_val = true;
             }
         } else {
@@ -972,7 +973,8 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     ) -> Result<(), RustHtmlError> {
         let mut attr_name = String::new();
         output.push(if let Some(is_literal) = &parse_ctx.html_attr_key_literal {
-            attr_name.push_str(&is_literal.to_string());
+            let s = snailquote::unescape(&is_literal.to_string()).unwrap();
+            attr_name.push_str(&s);
             RustHtmlToken::HtmlTagAttributeName(is_literal.to_string(), Some(RustHtmlIdentAndPunctOrLiteral::Literal(is_literal.clone())))
         } else if parse_ctx.html_attr_key_ident.len() > 0 {
             for ident_or_punct in &parse_ctx.html_attr_key_ident {
@@ -992,7 +994,8 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
 
         if let Some(is_literal) = &parse_ctx.html_attr_val_literal {
             output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.equals_punct.as_ref().unwrap().as_char(), Some(parse_ctx.equals_punct.as_ref().unwrap().clone())));
-            output.push(RustHtmlToken::HtmlTagAttributeValue(Some(is_literal.to_string()), None, None));
+            let s = snailquote::unescape(&is_literal.to_string()).unwrap();
+            output.push(RustHtmlToken::HtmlTagAttributeValue(Some(s), None, None));
             parse_ctx.html_attrs.insert(attr_name, Some(RustHtmlToken::Literal(Some(is_literal.clone()), Some(is_literal.to_string()))));
         } else if parse_ctx.html_attr_val_ident.len() > 0 {
             output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.equals_punct.as_ref().unwrap().as_char(), Some(parse_ctx.equals_punct.as_ref().unwrap().clone())));

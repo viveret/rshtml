@@ -78,7 +78,7 @@ impl RustHtmlToken {
         match self {
             RustHtmlToken::Space(c) => c.to_string(),
             RustHtmlToken::HtmlTextNode(s, _) => s.to_string(),
-            RustHtmlToken::HtmlTagVoid(s, _) => format!("<{} />", s.to_string()),
+            RustHtmlToken::HtmlTagVoid(s, _) => panic!("<{} />", s.to_string()),
             RustHtmlToken::HtmlTagStart(s, _) => format!("<{}", s.to_string()),
             RustHtmlToken::HtmlTagEnd(s, _) => format!("</{}>", s.to_string()),
             RustHtmlToken::HtmlTagAttributeName(s, _) => s.to_string(),

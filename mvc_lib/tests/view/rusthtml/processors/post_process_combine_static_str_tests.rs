@@ -136,15 +136,29 @@ pub fn test_is_html_output_write_html_str_with_string_literal_arg_and_semicolon_
     // multiply input
     let input = if n > 1 { input.into_iter().cycle().take(input_len * n).collect::<Vec<TokenTree>>() } else { input };
     let mut it = input.iter().peekable();
-    let result = PostProcessCombineStaticStr::is_html_output_write_html_str_with_string_literal_arg_and_semicolon(
-        &mut is_first,
-        &mut current_str,
-        &mut output,
-        &mut it
-    );
+    loop {
+        if PostProcessCombineStaticStr::is_html_output_write_html_str_with_string_literal_arg_and_semicolon(
+            &mut is_first,
+            &mut current_str,
+            &mut output,
+            &mut it
+        ) {
+            // do nothing
+        } else {
+            break;
+        }
+    }
 
-    assert!(result);
-    assert_eq!(5, output.len());
+    // compare string content
+    let expected_str = "html_output . write_html_str";
+    let actual_str = TokenStream::from_iter(output.clone().into_iter()).to_string();
+    assert_eq!(expected_str, actual_str);
+    assert_eq!(3, output.len());
+
+    let hello_world_str = "Hello, world!";
+    let s_len = hello_world_str.len();
+    let s: String = hello_world_str.chars().cycle().take(s_len * n).collect();
+    assert_eq!(s, current_str);
 }
 
 // #[test]

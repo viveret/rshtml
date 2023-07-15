@@ -104,6 +104,7 @@ impl HtmlTagParseContext {
         self.parse_attrs = true;
         if self.is_opening_tag {
             if self.is_void_tag() {
+                println!("void tag: {}", self.tag_name_as_str());
                 output.push(RustHtmlToken::HtmlTagVoid(self.tag_name_as_str(), Some(self.tag_name.clone())));
             } else if self.is_self_contained_tag {
                 output.push(RustHtmlToken::HtmlTagStart(self.tag_name_as_str(), Some(self.tag_name.clone())));

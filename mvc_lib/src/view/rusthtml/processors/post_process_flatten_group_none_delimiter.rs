@@ -38,6 +38,8 @@ impl IRustProcessor for PostProcessFlattenGroupNoneDelimiter {
                             group.push(TokenTree::Group(g.clone()));
                         }
                     }
+                } else {
+                    group.push(token.clone());
                 }
             } else {
                 break;
@@ -45,5 +47,9 @@ impl IRustProcessor for PostProcessFlattenGroupNoneDelimiter {
         }
 
         Ok(group)
+    }
+
+    fn get_type(&self) -> &str {
+        nameof::name_of_type!(PostProcessFlattenGroupNoneDelimiter)
     }
 }

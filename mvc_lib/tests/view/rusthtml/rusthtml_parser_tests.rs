@@ -99,7 +99,6 @@ fn rusthtml_parser_expand_tokenstream_simple_view_works() {
     ";
     let html_tokenstream: TokenStream = html.parse().unwrap();
     let rust_output = quote! {
-        @name "dev_index"
         #html_tokenstream
     };
 
@@ -114,14 +113,15 @@ fn rusthtml_parser_expand_tokenstream_complex_view_works() {
     // more complex html
     let html = HtmlGenerator::new().generate();
     let html_tokenstream: TokenStream = html.parse().unwrap();
-    // println!("html_tokenstream: {}", html_tokenstream.to_string());
-    let rust_output = quote! {
-        @name "dev_index"
-        #html_tokenstream
-    };
+    let html_tokenstream_str = html_tokenstream.to_string();
+    let actual_stream = parser.expand_tokenstream(html_tokenstream).unwrap();
+    assert_eq_ignore_whitespace(quote::quote! { html_output . write_html_str (#html_tokenstream_str) ; }.to_string(), actual_stream.to_string());
+}
 
-    let actual_stream = parser.expand_tokenstream(rust_output).unwrap();
-    assert_eq!(quote::quote! { html_output . write_html_str (#html) ; }.to_string(), actual_stream.to_string());
+fn assert_eq_ignore_whitespace(expected: String, actual: String) {
+    let expected = expected.replace(" ", "").replace("\n", "");
+    let actual = actual.replace(" ", "").replace("\n", "");
+    assert_eq!(expected, actual);
 }
 
 

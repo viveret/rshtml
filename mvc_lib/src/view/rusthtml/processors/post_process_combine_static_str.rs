@@ -23,7 +23,7 @@ impl PostProcessCombineStaticStr {
             // next char has to be '.'
             if Self::is_punct_with_char(*is_first, '.', output, it) {
                 // next ident has to be 'write_html_str'
-                if Self::is_write_html_str(*is_first, output, it) {
+                if Self::is_write_html(*is_first, output, it) {
                     // next char has to be '('
                     if let Some(s) = Self::is_group_with_string_literal_arg(Delimiter::Parenthesis, it) {
                         *is_first = false;
@@ -33,16 +33,16 @@ impl PostProcessCombineStaticStr {
                         if Self::is_punct_with_char(*is_first, ';', output, it) {
                             true
                         } else {
-                            panic!("next char is not ';'");
+                            panic!("next char is not ';', was {:?}", it.peek());
                         }
                     } else {
-                        panic!("next group is not string literal");
+                        panic!("next group is not group with string literal, was {:?}", it.peek());
                     }
                 } else {
-                    panic!("next ident is not 'write_html_str'");
+                    panic!("next ident is not 'write_html_str', was {:?}", it.peek());
                 }
             } else {
-                panic!("next char is not '.' (was {:?})", it.peek());
+                panic!("next char is not '.', was {:?}", it.peek());
             }
         } else {
             false
@@ -51,7 +51,6 @@ impl PostProcessCombineStaticStr {
 
     pub fn append_and_clear(output: &mut Vec<TokenTree>, current_str: &mut String) {
         if current_str.len() > 0 {
-            println!("current_str: {}", current_str);
             let inner = TokenStream::from_iter(vec![ TokenTree::Literal(proc_macro2::Literal::string(current_str.as_str())) ]);
             output.push(TokenTree::Group(Group::new(Delimiter::Parenthesis, inner)));
             output.push(TokenTree::Punct(Punct::new(';', proc_macro2::Spacing::Alone)));
@@ -77,7 +76,8 @@ impl PostProcessCombineStaticStr {
         }
     }
 
-    pub fn is_write_html_str(add_to_output: bool, output: &mut Vec<TokenTree>, it: &mut std::iter::Peekable<std::slice::Iter<'_, TokenTree>>) -> bool {
+    pub fn is_write_html(add_to_output: bool, output: &mut Vec<TokenTree>, it: &mut std::iter::Peekable<std::slice::Iter<'_, TokenTree>>) -> bool {
+        Self::is_ident_with_name(add_to_output, "write_html", output, it) ||
         Self::is_ident_with_name(add_to_output, "write_html_str", output, it)
     }
 
@@ -130,14 +130,19 @@ impl PostProcessCombineStaticStr {
         if let Some(token) = it.peek() {
             match token {
                 TokenTree::Literal(_) => {
-                    let s1 = it.next().unwrap().to_string();
-                    let s = s1.replace("\\\\", "\\").replace("\\\"", "\"").replace("\"", "");
-                    Some(s.clone())
+                    let s = it.next().unwrap().to_string();
+                    Some(snailquote::unescape(&s).unwrap())
                 },
-                _ => None,
+                TokenTree::Group(group) if group.delimiter() == Delimiter::Parenthesis => {
+                    // check if contents are string literal or group with string literal
+                    Self::is_string_literal(PeekableTokenTree::new(group.stream()))
+                },
+                // _ => None,
+                _ => panic!("is_string_literal: not a literal, was {:?}", token),
             }
         } else {
-            None
+            panic!("is_string_literal: no token");
+            // None
         }
     }
 }
@@ -160,25 +165,26 @@ impl IRustProcessor for PostProcessCombineStaticStr {
                 &mut output,
                 &mut it
             ) {
-                println!("found html_output.write_html_str with string literal arg and semicolon");
             } else if let Some(group) = Self::try_group(Delimiter::Brace, &mut it) {
                 // recurse
                 let inner = self.process_rust(&group.stream().into_iter().collect::<Vec<TokenTree>>())?;
                 output.push(TokenTree::Group(Group::new(Delimiter::Brace, TokenStream::from_iter(inner))));
             } else {
-                Self::append_and_clear(output.as_mut(), &mut current_str);
+                Self::append_and_clear(&mut output, &mut current_str);
                 is_first = true;
                 if let Some(token) = it.next() {
                     output.push(token.clone());
-                    println!("not sure what to do with token: {}", token.to_string());
                 } else {
-                    panic!("not sure what to do here ({})", TokenStream::from_iter(rusthtml.clone()).to_string());
-                    // break;
+                    break;
                 }
             }
         }
         
-        Self::append_and_clear(output.as_mut(), &mut current_str);
+        Self::append_and_clear(&mut output, &mut current_str);
         Ok(output)
+    }
+
+    fn get_type(&self) -> &str {
+        nameof::name_of_type!(PostProcessCombineStaticStr)
     }
 }

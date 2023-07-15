@@ -133,7 +133,8 @@ impl HtmlFormDirective {
 
             match attr_values.first().unwrap() {
                 RustHtmlIdentAndPunctOrLiteral::Literal(literal) => {
-                    output.push(RustHtmlToken::HtmlTagAttributeValue(Some(literal.to_string()), None, None));
+                    let s = snailquote::unescape(&literal.to_string()).unwrap();
+                    output.push(RustHtmlToken::HtmlTagAttributeValue(Some(s), None, None));
                 },
                 RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(ident_or_punct) => {
                     output.push(RustHtmlToken::HtmlTagAttributeValue(None, Some(ident_or_punct.clone()), None));

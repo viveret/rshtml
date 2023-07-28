@@ -136,9 +136,9 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                     // keep - don't add outer environment tags but do add inner elements
                     loop {
                         match output.first().unwrap() {
-                            RustHtmlToken::HtmlTagCloseVoidPunct(_, _) |
-                            RustHtmlToken::HtmlTagCloseSelfContainedPunct(_, _) |
-                            RustHtmlToken::HtmlTagCloseStartChildrenPunct(_, _) => {
+                            RustHtmlToken::HtmlTagCloseVoidPunct(_) |
+                            RustHtmlToken::HtmlTagCloseSelfContainedPunct |
+                            RustHtmlToken::HtmlTagCloseStartChildrenPunct => {
                                 output.remove(0);
                                 break;
                             },

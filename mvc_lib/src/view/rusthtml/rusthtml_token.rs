@@ -46,9 +46,9 @@ pub enum RustHtmlToken {
     HtmlTagAttributeName(String, Option<RustHtmlIdentAndPunctOrLiteral>),
     HtmlTagAttributeEquals(char, Option<Punct>),
     HtmlTagAttributeValue(Option<String>, Option<Vec<RustHtmlIdentOrPunct>>, Option<Vec<RustHtmlToken>>),
-    HtmlTagCloseVoidPunct(char, Option<Punct>),
-    HtmlTagCloseSelfContainedPunct(char, Option<Punct>),
-    HtmlTagCloseStartChildrenPunct(char, Option<Punct>),
+    HtmlTagCloseVoidPunct(Option<(char, Punct)>),
+    HtmlTagCloseSelfContainedPunct,
+    HtmlTagCloseStartChildrenPunct,
 
     // rust / html
     // External RustHtml file that is copied into the output
@@ -89,9 +89,9 @@ impl RustHtmlToken {
                     None => "".to_string()
                 }
             },
-            RustHtmlToken::HtmlTagCloseVoidPunct(c, _) => c.to_string(),
-            RustHtmlToken::HtmlTagCloseSelfContainedPunct(c, _) => c.to_string(),
-            RustHtmlToken::HtmlTagCloseStartChildrenPunct(c, _) => c.to_string(),
+            RustHtmlToken::HtmlTagCloseVoidPunct(c) => if c.is_some() { "/>" } else { ">" }.to_string(),
+            RustHtmlToken::HtmlTagCloseSelfContainedPunct => "/>".to_string(),
+            RustHtmlToken::HtmlTagCloseStartChildrenPunct => ">".to_string(),
             // RustHtmlToken::ExternalRustHtml(s, _) => s.to_string(),
             // RustHtmlToken::ExternalHtml(s, _) => s.to_string(),
             RustHtmlToken::AppendToHtml(tokens) => tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" "),

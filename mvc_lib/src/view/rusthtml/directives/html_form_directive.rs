@@ -142,7 +142,7 @@ impl HtmlFormDirective {
             }
         }
 
-        output.push(RustHtmlToken::HtmlTagCloseStartChildrenPunct('>', None));
+        output.push(RustHtmlToken::HtmlTagCloseStartChildrenPunct);
 
         // add form render closure tokens if present
         if let Some(form_render_tokens) = _form_render_fn_tokens {

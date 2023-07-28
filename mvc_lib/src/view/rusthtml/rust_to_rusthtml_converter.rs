@@ -857,7 +857,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
         if parse_ctx.parse_attrs {
             match c {
                 '>' => {
-                    return self.on_html_tag_parsed(punct, parse_ctx, output);
+                    return self.on_html_tag_parsed(None, parse_ctx, output);
                 },
                 '=' => {
                     parse_ctx.equals_punct = Some(punct.clone());
@@ -869,7 +869,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                         TokenTree::Punct(closing_punct) => {
                             if closing_punct.as_char() == '>' {
                                 parse_ctx.is_self_contained_tag = true;
-                                return self.on_html_tag_parsed(&closing_punct, parse_ctx, output);
+                                return self.on_html_tag_parsed(Some(&punct), parse_ctx, output);
                             } else {
                                 return self.panic_or_return_error(format!("convert_html_punct_to_rusthtmltoken Unexpected character '{}' (expected '>', prev: '{}')", closing_punct, c));
                             }
@@ -929,7 +929,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
         } else {
             match c {
                 '>' => {
-                    return self.on_html_tag_parsed(punct, parse_ctx, output);
+                    return self.on_html_tag_parsed(None, parse_ctx, output);
                 },
                 '/' => {
                     if parse_ctx.tag_name.len() > 0 {
@@ -938,7 +938,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                             TokenTree::Punct(closing_punct) => {
                                 if closing_punct.as_char() == '>' {
                                     parse_ctx.is_self_contained_tag = true;
-                                    return self.on_html_tag_parsed(&closing_punct, parse_ctx, output);
+                                    return self.on_html_tag_parsed(Some(&punct), parse_ctx, output);
                                 } else {
                                     self.panic_or_return_error(format!("Unexpected character '{}' (expected '>', prev: '{}')", closing_punct, c))
                                 }
@@ -994,7 +994,9 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
 
         if let Some(is_literal) = &parse_ctx.html_attr_val_literal {
             output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.equals_punct.as_ref().unwrap().as_char(), Some(parse_ctx.equals_punct.as_ref().unwrap().clone())));
+            println!("why am I missing quotes? {}", is_literal.to_string());
             let s = snailquote::unescape(&is_literal.to_string()).unwrap();
+            println!("literal: {}", s); // this is missing quotes?
             output.push(RustHtmlToken::HtmlTagAttributeValue(Some(s), None, None));
             parse_ctx.html_attrs.insert(attr_name, Some(RustHtmlToken::Literal(Some(is_literal.clone()), Some(is_literal.to_string()))));
         } else if parse_ctx.html_attr_val_ident.len() > 0 {
@@ -1175,7 +1177,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // returns: whether we should break the outer loop or not, or an error.
     fn on_html_tag_parsed(
         self: &Self,
-        punct: &Punct,
+        punct: Option<&Punct>,
         parse_ctx: &mut HtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>
     ) -> Result<bool, RustHtmlError> {
@@ -1202,11 +1204,12 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
 
             output.push(
                 if parse_ctx.is_void_tag() {
-                    RustHtmlToken::HtmlTagCloseVoidPunct(punct.as_char(), Some(punct.clone()))
+                    // println!("void tag: {}, punct: {:?}", parse_ctx.tag_name_as_str(), punct);
+                    RustHtmlToken::HtmlTagCloseVoidPunct(punct.map(|punct| (punct.as_char(), punct.clone())))
                 } else if parse_ctx.is_self_contained_tag {
-                    RustHtmlToken::HtmlTagCloseSelfContainedPunct(punct.as_char(), Some(punct.clone()))
+                    RustHtmlToken::HtmlTagCloseSelfContainedPunct
                 } else {
-                    RustHtmlToken::HtmlTagCloseStartChildrenPunct(punct.as_char(), Some(punct.clone()))
+                    RustHtmlToken::HtmlTagCloseStartChildrenPunct
                 }
             );
             return Ok(true); // parse_ctx.is_void_tag() break if void tag, no children

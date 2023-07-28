@@ -46,7 +46,7 @@ pub trait IRustToRustHtmlConverter {
 
     fn is_start_of_current_expression(self: &Self, output: &mut Vec<RustHtmlToken>) -> bool;
     fn next_and_parse_html_tag(self: &Self, token_option: Option<TokenTree>, ctx: &mut HtmlTagParseContext, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError>;
-    fn on_html_tag_parsed(self: &Self, punct: &Punct, parse_ctx: &mut HtmlTagParseContext, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError>;
+    fn on_html_tag_parsed(self: &Self, punct: Option<&Punct>, parse_ctx: &mut HtmlTagParseContext, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError>;
     fn on_html_node_parsed(self: &Self, ctx: &HtmlTagParseContext, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError>;
     fn on_kvp_defined(self: &Self, ctx: &mut HtmlTagParseContext, output: &mut Vec<RustHtmlToken>) -> Result<(), RustHtmlError>;
     fn get_opening_delim(self: &Self, delim: Delimiter) -> &'static str;

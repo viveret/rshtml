@@ -403,7 +403,7 @@ pub fn rust_to_rusthtml_converter_on_html_tag_parsed() {
     let punct = Punct::new('<', Spacing::Alone);
     let mut parse_ctx = HtmlTagParseContext::new();
     let mut output = vec![];
-    let result = converter.on_html_tag_parsed(&punct, &mut parse_ctx, &mut output).unwrap();
+    let result = converter.on_html_tag_parsed(Some(&punct), &mut parse_ctx, &mut output).unwrap();
     assert_eq!(true, result);
 }
 
@@ -441,6 +441,12 @@ pub fn rust_to_rusthtml_converter_convert_ident_and_punct_and_group_or_literal_t
     let actual_tokenstream = converter.convert_ident_and_punct_and_group_or_literal_to_tokenstream(&tag).unwrap();
     assert_eq!("test".to_string(), actual_tokenstream.to_string());
 }
+
+#[test]
+// make new test similar to above but tests the output for
+// left: `"<divclass=\"container\"><divclass=\"row\"><divclass=\"col-md-12\"><h1>Hello,world!</h1></div></div></div>"`,
+// right: `"<divclass=container><divclass=row><divclass=col-md-12><h1>Hello,world!</h1></div></div></div>"`', mvc_lib/tests/view/rusthtml/rusthtml_token_tests.rs:84:5
+// since there is a problem with the converter removing quotes from strings
 
 #[test]
 pub fn rust_to_rusthtml_converter_get_context() {
@@ -516,7 +522,7 @@ pub fn rust_to_rusthtml_converter_parse_complex_if_else_followed_by_html() {
                 RustHtmlToken::Identifier(Ident::new("html_class", Span::call_site())),
             ])
         ),
-        RustHtmlToken::HtmlTagCloseStartChildrenPunct('>', Some(Punct::new('>', Spacing::Alone))),
+        RustHtmlToken::HtmlTagCloseStartChildrenPunct,
         RustHtmlToken::HtmlTextNode("test".to_string(), Span::call_site()),
         RustHtmlToken::HtmlTagEnd("p".to_string(), Some(vec![RustHtmlIdentOrPunct::Ident(Ident::new("p", Span::call_site()))])),
     ];
@@ -577,8 +583,7 @@ fn compare_rusthtmltokens(expected_output: &Vec<RustHtmlToken>, output: &Vec<Rus
                     panic!("expected and actual are not the same or not supported: expected: {:?}, actual: {:?}", expected, actual);
                 }
             },
-            (RustHtmlToken::HtmlTagCloseStartChildrenPunct(expected_c, _), RustHtmlToken::HtmlTagCloseStartChildrenPunct(actual_c, _)) => {
-                assert_eq!(*expected_c, *actual_c);
+            (RustHtmlToken::HtmlTagCloseStartChildrenPunct, RustHtmlToken::HtmlTagCloseStartChildrenPunct) => {
             },
             (RustHtmlToken::HtmlTextNode(expected_text, _), RustHtmlToken::HtmlTextNode(actual_text, _)) => {
                 assert_eq!(expected_text, actual_text);

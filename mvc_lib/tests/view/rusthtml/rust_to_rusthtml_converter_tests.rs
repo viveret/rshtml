@@ -447,6 +447,23 @@ pub fn rust_to_rusthtml_converter_convert_ident_and_punct_and_group_or_literal_t
 // left: `"<divclass=\"container\"><divclass=\"row\"><divclass=\"col-md-12\"><h1>Hello,world!</h1></div></div></div>"`,
 // right: `"<divclass=container><divclass=row><divclass=col-md-12><h1>Hello,world!</h1></div></div></div>"`', mvc_lib/tests/view/rusthtml/rusthtml_token_tests.rs:84:5
 // since there is a problem with the converter removing quotes from strings
+pub fn rust_to_rusthtml_converter_handles_strings_correctly() {
+    let html_stream = quote::quote! {
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <h1>Hello, world!</h1>
+                </div>
+            </div>
+        </div>
+    };
+    let html_stream = Rc::new(PeekableTokenTree::new(html_stream));
+    let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
+    let actual_tokens = converter.parse_tokenstream_to_rusthtmltokens(false, html_stream, false).unwrap();
+    let actual_string = actual_tokens.iter().map(|x| x.to_string()).collect::<Vec<String>>().join("");
+    
+    assert!(actual_string.contains("class=\"container\""));
+}
 
 #[test]
 pub fn rust_to_rusthtml_converter_get_context() {
@@ -518,7 +535,7 @@ pub fn rust_to_rusthtml_converter_parse_complex_if_else_followed_by_html() {
         RustHtmlToken::HtmlTagAttributeName("class".to_string(), Some(RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(vec![RustHtmlIdentOrPunct::Ident(Ident::new("class", Span::call_site()))]))),
         RustHtmlToken::HtmlTagAttributeEquals('=', Some(Punct::new('=', Spacing::Alone))),
         RustHtmlToken::HtmlTagAttributeValue(
-            None, None, Some(vec![
+            None, None, None, Some(vec![
                 RustHtmlToken::Identifier(Ident::new("html_class", Span::call_site())),
             ])
         ),
@@ -571,7 +588,7 @@ fn compare_rusthtmltokens(expected_output: &Vec<RustHtmlToken>, output: &Vec<Rus
             (RustHtmlToken::HtmlTagAttributeEquals(expected_c, _), RustHtmlToken::HtmlTagAttributeEquals(actual_c, _)) => {
                 assert_eq!(*expected_c, *actual_c);
             },
-            (RustHtmlToken::HtmlTagAttributeValue(expected_literal, expected_idents, expected_rust), RustHtmlToken::HtmlTagAttributeValue(actual_literal, actual_idents, actual_rust)) => {
+            (RustHtmlToken::HtmlTagAttributeValue(expected_string, expected_literal, expected_idents, expected_rust), RustHtmlToken::HtmlTagAttributeValue(actual_string, actual_literal, actual_idents, actual_rust)) => {
                 if let Some(expected_literal) = expected_literal {
                     assert_eq!(expected_literal.to_string(), actual_literal.as_ref().unwrap().to_string());
                 } else if let Some(_) = expected_idents {

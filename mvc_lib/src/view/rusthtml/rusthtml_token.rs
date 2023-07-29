@@ -45,7 +45,7 @@ pub enum RustHtmlToken {
     HtmlTagEnd(String, Option<Vec<RustHtmlIdentOrPunct>>),
     HtmlTagAttributeName(String, Option<RustHtmlIdentAndPunctOrLiteral>),
     HtmlTagAttributeEquals(char, Option<Punct>),
-    HtmlTagAttributeValue(Option<String>, Option<Vec<RustHtmlIdentOrPunct>>, Option<Vec<RustHtmlToken>>),
+    HtmlTagAttributeValue(Option<String>, Option<Literal>, Option<Vec<RustHtmlIdentOrPunct>>, Option<Vec<RustHtmlToken>>),
     HtmlTagCloseVoidPunct(Option<(char, Punct)>),
     HtmlTagCloseSelfContainedPunct,
     HtmlTagCloseStartChildrenPunct,
@@ -78,15 +78,18 @@ impl RustHtmlToken {
         match self {
             RustHtmlToken::Space(c) => c.to_string(),
             RustHtmlToken::HtmlTextNode(s, _) => s.to_string(),
-            RustHtmlToken::HtmlTagVoid(s, _) => panic!("<{} />", s.to_string()),
+            RustHtmlToken::HtmlTagVoid(s, _) => format!("<{} />", s.to_string()),
             RustHtmlToken::HtmlTagStart(s, _) => format!("<{}", s.to_string()),
             RustHtmlToken::HtmlTagEnd(s, _) => format!("</{}>", s.to_string()),
             RustHtmlToken::HtmlTagAttributeName(s, _) => s.to_string(),
             RustHtmlToken::HtmlTagAttributeEquals(c, _) => c.to_string(),
-            RustHtmlToken::HtmlTagAttributeValue(s, _, _) => {
-                match s {
-                    Some(s) => s.to_string(),
-                    None => "".to_string()
+            RustHtmlToken::HtmlTagAttributeValue(s, literal, _, _) => {
+                if let Some(s) = s {
+                    s.clone()
+                } else if let Some(literal) = literal {
+                    literal.to_string()
+                } else {
+                    "".to_string()
                 }
             },
             RustHtmlToken::HtmlTagCloseVoidPunct(c) => if c.is_some() { "/>" } else { ">" }.to_string(),

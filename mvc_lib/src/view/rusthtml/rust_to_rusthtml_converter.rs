@@ -994,21 +994,21 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
 
         if let Some(is_literal) = &parse_ctx.html_attr_val_literal {
             output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.equals_punct.as_ref().unwrap().as_char(), Some(parse_ctx.equals_punct.as_ref().unwrap().clone())));
-            println!("why am I missing quotes? {}", is_literal.to_string());
-            let s = snailquote::unescape(&is_literal.to_string()).unwrap();
-            println!("literal: {}", s); // this is missing quotes?
-            output.push(RustHtmlToken::HtmlTagAttributeValue(Some(s), None, None));
+            // println!("why am I missing quotes? {}", is_literal.to_string());
+            // let s = snailquote::unescape(&is_literal.to_string()).unwrap();
+            // println!("literal: {}", s); // this is missing quotes?
+            output.push(RustHtmlToken::HtmlTagAttributeValue(Some(is_literal.to_string()), Some(is_literal.clone()), None, None));
             parse_ctx.html_attrs.insert(attr_name, Some(RustHtmlToken::Literal(Some(is_literal.clone()), Some(is_literal.to_string()))));
         } else if parse_ctx.html_attr_val_ident.len() > 0 {
             output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.equals_punct.as_ref().unwrap().as_char(), Some(parse_ctx.equals_punct.as_ref().unwrap().clone())));
 
-            let html_attr_val = RustHtmlToken::HtmlTagAttributeValue(None, Some(parse_ctx.html_attr_val_ident.clone()), None);
+            let html_attr_val = RustHtmlToken::HtmlTagAttributeValue(None, None, Some(parse_ctx.html_attr_val_ident.clone()), None);
             output.push(html_attr_val.clone());
             parse_ctx.html_attrs.insert(attr_name, Some(html_attr_val));
         } else if parse_ctx.html_attr_val_rust.len() > 0 {
             output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.equals_punct.as_ref().unwrap().as_char(), Some(parse_ctx.equals_punct.as_ref().unwrap().clone())));
 
-            let html_attr_val = RustHtmlToken::HtmlTagAttributeValue(None, None, Some(parse_ctx.html_attr_val_rust.clone()));
+            let html_attr_val = RustHtmlToken::HtmlTagAttributeValue(None, None, None, Some(parse_ctx.html_attr_val_rust.clone()));
             output.push(html_attr_val.clone());
             parse_ctx.html_attrs.insert(attr_name, Some(html_attr_val));
         } else {

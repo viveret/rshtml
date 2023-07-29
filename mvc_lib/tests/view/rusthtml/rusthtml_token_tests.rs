@@ -60,9 +60,9 @@ fn rusthtml_token_to_string_html_tag_attribute_equals() {
 
 #[test]
 fn rusthtml_token_to_string_html_tag_attribute_value() {
-    let token = RustHtmlToken::HtmlTagAttributeValue(Some("container".to_string()), None, None);
+    let token = RustHtmlToken::HtmlTagAttributeValue(Some("\"container\"".to_string()), None, None, None);
     let token_string = token.to_string();
-    assert_eq!("container", token_string);
+    assert_eq!("\"container\"", token_string);
 }
 
 #[test]

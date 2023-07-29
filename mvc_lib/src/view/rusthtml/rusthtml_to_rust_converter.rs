@@ -95,7 +95,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // inner: the inner tokens of the group.
     // output: the destination for the Rust tokens.
     // returns: nothing or an error.
-    fn convert_rusthtmlappendhtml_to_tokentree(self: &Self, inner_as_string: Option<&String>, inner_as_ident: Option<&Vec<RustHtmlIdentOrPunct>>, inner: Option<&Vec<RustHtmlToken>>, output: &mut Vec<TokenTree>) -> Result<(), RustHtmlError> {
+    fn convert_rusthtmlappendhtml_to_tokentree(self: &Self, inner_as_string: Option<&String>, inner_as_literal: Option<&Literal>, inner_as_ident: Option<&Vec<RustHtmlIdentOrPunct>>, inner: Option<&Vec<RustHtmlToken>>, output: &mut Vec<TokenTree>) -> Result<(), RustHtmlError> {
         let mut inner_tokens = vec![];
         if let Some(inner) = inner {
             let inner_it = PeekableRustHtmlToken::new(inner);
@@ -115,6 +115,8 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 .collect::<Vec<TokenTree>>()
             );
             output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html(#ident_tokenstream); }))));
+        } else if let Some(inner_as_literal) = inner_as_literal {
+            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html(#inner_as_literal.into()); }))));
         } else if let Some(inner_as_string) = inner_as_string {
             output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html(#inner_as_string.into()); }))));
         } else {
@@ -164,12 +166,12 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 self.convert_rusthtmltagattributeequals_to_tokentree(output, it)?,
             RustHtmlToken::HtmlTagAttributeName(tag, tag_tokens) =>
                 self.convert_rusthtmltagattributename_to_tokentree(tag, tag_tokens, output, it)?,
-            RustHtmlToken::HtmlTagAttributeValue(value, value_tokens, value_rust_tokens) =>
-                self.convert_rusthtmltagattributevalue_to_tokentree(value.as_ref(), value_tokens.as_ref(), value_rust_tokens.as_ref(), output, it)?,
+            RustHtmlToken::HtmlTagAttributeValue(value_string, value_literal, value_tokens, value_rust_tokens) =>
+                self.convert_rusthtmltagattributevalue_to_tokentree(value_string.as_ref(), value_literal.as_ref(), value_tokens.as_ref(), value_rust_tokens.as_ref(), output, it)?,
             RustHtmlToken::HtmlTextNode(text, span) => 
                 self.convert_rusthtmltextnode_to_tokentree(text, span, output, it)?,
             RustHtmlToken::AppendToHtml(inner) =>
-                self.convert_rusthtmlappendhtml_to_tokentree(None, None, Some(inner), output)?,
+                self.convert_rusthtmlappendhtml_to_tokentree(None, None, None, Some(inner), output)?,
             _ => { return Err(RustHtmlError::from_string(format!("Could not handle token {:?}", token))); }
         }
         Ok(false)
@@ -298,10 +300,10 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // output: the destination for the Rust tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    fn convert_rusthtmltagattributevalue_to_tokentree(self: &Self, value: Option<&String>, value_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, value_rust: Option<&Vec<RustHtmlToken>>, output: &mut Vec<TokenTree>, it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
+    fn convert_rusthtmltagattributevalue_to_tokentree(self: &Self, value_string: Option<&String>, value_literal: Option<&Literal>, value_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, value_rust: Option<&Vec<RustHtmlToken>>, output: &mut Vec<TokenTree>, it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
         self.convert_appendhtmlstring_to_tokentree("\"".to_string(), output, it)?;
         // inner tokens
-        self.convert_rusthtmlappendhtml_to_tokentree(value, value_tokens, value_rust, output)?;
+        self.convert_rusthtmlappendhtml_to_tokentree(value_string, value_literal, value_tokens, value_rust, output)?;
         self.convert_appendhtmlstring_to_tokentree("\"".to_string(), output, it)?;
         Ok(())
     }

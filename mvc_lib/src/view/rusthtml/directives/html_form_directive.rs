@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::vec;
 
-use proc_macro2::{Ident, TokenTree, Group, Delimiter};
+use proc_macro2::{Ident, TokenTree, Group, Delimiter, Literal};
 
 use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 use crate::view::rusthtml::peekable_tokentree::{IPeekableTokenTree, PeekableTokenTree};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
-use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral};
+use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use super::irusthtml_directive::IRustHtmlDirective;
@@ -29,33 +29,33 @@ impl HtmlFormDirective {
 
         // parse method
         // expecting string literal
+        let mut method_string: Option<String> = None;
         let method =
             if let Some(token_method) = it.peek() {
                 match token_method {
                     TokenTree::Literal(literal) => {
                         it.next();
-                        literal.to_string()
+                        (literal.to_string(), Some(literal.clone()), None)
                     },
                     TokenTree::Ident(ident) => {
                         it.next();
-                        ident.to_string()
+                        (ident.to_string(), None, Some(ident.clone()))
                     },
                     TokenTree::Group(_group) => {
                         // this is the main form render closure function.
                         // just use default method and action.
-                        "POST".to_string()
-                    }
+                        ("POST".to_string(), None, None)
+                    },
                     _ => return Err(RustHtmlError::from_string(format!("expected string literal or identifier for method, not \"{}\"", token_method)))
                 }
             } else {
                 return Err(RustHtmlError::from_str("expected string literal, not EOF"));
             };
 
-        // println!("method: {}", method);
-
         let mut _form_render_fn_tokens: Option<Vec<RustHtmlToken>> = None;
         let mut attributes: Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>> = None;
-        let mut action: Option<String> = None;
+        let mut action: Option<Literal> = None;
+        let mut action_string: Option<String> = None;
         let mut _route_values: Option<HashMap<String, Vec<RustHtmlToken>>> = None;
 
         // check for comma separator between method and action
@@ -72,7 +72,8 @@ impl HtmlFormDirective {
                         it.next();
 
                         // unescape string literal
-                        Some(snailquote::unescape(&literal.to_string()).unwrap())
+                        // Some(snailquote::unescape(&literal.to_string()).unwrap())
+                        Some(literal.clone())
                     } else {
                         None
                     }
@@ -80,7 +81,7 @@ impl HtmlFormDirective {
                     None
                 };
 
-            if None == action {
+            if action.is_none() {
                 // set action based on controller name, action name, and route values
             }
 
@@ -119,10 +120,10 @@ impl HtmlFormDirective {
             RustHtmlToken::HtmlTagStart("form".to_string(), None),
             RustHtmlToken::HtmlTagAttributeName("method".to_string(), None),
             RustHtmlToken::HtmlTagAttributeEquals('=', None),
-            RustHtmlToken::HtmlTagAttributeValue(Some(method), None, None),
+            RustHtmlToken::HtmlTagAttributeValue(Some(method.0), method.1, None, None),
             RustHtmlToken::HtmlTagAttributeName("action".to_string(), None),
             RustHtmlToken::HtmlTagAttributeEquals('=', None),
-            RustHtmlToken::HtmlTagAttributeValue(action, None, None),
+            RustHtmlToken::HtmlTagAttributeValue(action_string, action, None, None),
         ]);
 
         for attr_kvp in attributes.unwrap() {
@@ -133,11 +134,16 @@ impl HtmlFormDirective {
 
             match attr_values.first().unwrap() {
                 RustHtmlIdentAndPunctOrLiteral::Literal(literal) => {
-                    let s = snailquote::unescape(&literal.to_string()).unwrap();
-                    output.push(RustHtmlToken::HtmlTagAttributeValue(Some(s), None, None));
+                    // let s = snailquote::unescape(&literal.to_string()).unwrap();
+                    let s = literal.to_string();
+                    output.push(RustHtmlToken::HtmlTagAttributeValue(Some(s), Some(literal.clone()), None, None));
                 },
                 RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(ident_or_punct) => {
-                    output.push(RustHtmlToken::HtmlTagAttributeValue(None, Some(ident_or_punct.clone()), None));
+                    let s = ident_or_punct.iter().map(|x| match x {
+                        RustHtmlIdentOrPunct::Ident(ident) => ident.to_string(),
+                        RustHtmlIdentOrPunct::Punct(punct) => punct.to_string(),
+                    }).collect::<String>();
+                    output.push(RustHtmlToken::HtmlTagAttributeValue(Some(s), None, Some(ident_or_punct.clone()), None));
                 }
             }
         }

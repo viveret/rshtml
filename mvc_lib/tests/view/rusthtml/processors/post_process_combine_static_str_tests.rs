@@ -1,31 +1,33 @@
+use mvc_lib::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use mvc_lib::view::rusthtml::{irust_processor::IRustProcessor, peekable_tokentree::PeekableTokenTree};
 use mvc_lib::view::rusthtml::processors::post_process_combine_static_str::PostProcessCombineStaticStr;
 use proc_macro2::{TokenTree, TokenStream, Punct, Group, Delimiter, Spacing, Literal, Ident};
 
 // test individual parts of the processor
 #[test]
-pub fn is_ident_with_name_true() {
+pub fn peek_ident_with_name_true() {
     let mut output = Vec::<TokenTree>::new();
     let input = vec![
         TokenTree::Ident(Ident::new("foobar", proc_macro2::Span::call_site())),
     ];
-    let mut it = input.iter().peekable();
-    let result = PostProcessCombineStaticStr::is_ident_with_name(true, "foobar", &mut output, &mut it);
+    let it = PeekableTokenTree::from_vec(&input);
+    let result = PostProcessCombineStaticStr::peek_ident_with_name("foobar", 0, &it);
 
-    assert!(result);
-    assert_eq!(1, output.len());
+    assert!(result.is_some());
+    assert_eq!(0, output.len());
 }
 
 #[test]
-pub fn is_ident_with_name_false() {
+pub fn peek_ident_with_name_false() {
     let mut output = Vec::<TokenTree>::new();
     let input = vec![
         TokenTree::Ident(Ident::new("foobar1", proc_macro2::Span::call_site())),
     ];
-    let mut it = input.iter().peekable();
-    let result = PostProcessCombineStaticStr::is_ident_with_name(true, "foobar", &mut output, &mut it);
 
-    assert!(!result);
+    let it = PeekableTokenTree::from_vec(&input);
+    let result = PostProcessCombineStaticStr::peek_ident_with_name("foobar", 0, &it);
+
+    assert!(result.is_none());
     assert_eq!(0, output.len());
 }
 
@@ -37,8 +39,8 @@ pub fn post_process_combine_static_str_try_group() {
             TokenStream::from_iter(vec![ TokenTree::Ident(Ident::new("foobar", proc_macro2::Span::call_site())) ])
         )),
     ];
-    let mut it = input.iter().peekable();
-    let result = PostProcessCombineStaticStr::try_group(Delimiter::Parenthesis, &mut it).unwrap();
+    let it = PeekableTokenTree::from_vec(&input);
+    let result = PostProcessCombineStaticStr::peek_group(Delimiter::Parenthesis, 0, &it).unwrap();
 
     assert_eq!(1, result.stream().into_iter().collect::<Vec<TokenTree>>().len());
 }
@@ -46,15 +48,19 @@ pub fn post_process_combine_static_str_try_group() {
 #[test]
 pub fn post_process_combine_static_str_is_group_with_string_literal_arg_some() {
     let input = vec![
+        TokenTree::Ident(Ident::new("foo", proc_macro2::Span::call_site())),
+        TokenTree::Punct(Punct::new('.', Spacing::Alone)),
+        TokenTree::Ident(Ident::new("bar", proc_macro2::Span::call_site())),
         TokenTree::Group(Group::new(
             Delimiter::Parenthesis,
             TokenStream::from_iter(vec![ TokenTree::Literal(Literal::string("Hello, world!")) ])
         )),
     ];
-    let mut it = input.iter().peekable();
-    let result = PostProcessCombineStaticStr::is_group_with_string_literal_arg(Delimiter::Parenthesis, &mut it).unwrap();
+    let it = PeekableTokenTree::from_vec(&input);
+    let result = PostProcessCombineStaticStr::peek_group_with_string_literal_arg(Delimiter::Parenthesis, &it);
 
-    assert_eq!("Hello, world!", result);
+    assert!(result.is_some());
+    assert_eq!("Hello, world!", result.unwrap());
 }
 
 #[test]
@@ -65,8 +71,8 @@ pub fn post_process_combine_static_str_is_group_with_string_literal_arg_none() {
             TokenStream::from_iter(Vec::<TokenTree>::new())
         )),
     ];
-    let mut it = input.iter().peekable();
-    let result = PostProcessCombineStaticStr::is_group_with_string_literal_arg(Delimiter::Parenthesis, &mut it);
+    let it = PeekableTokenTree::from_vec(&input);
+    let result = PostProcessCombineStaticStr::peek_group_with_string_literal_arg(Delimiter::Parenthesis, &it);
 
     assert!(result.is_none());
 }
@@ -76,7 +82,7 @@ pub fn post_process_combine_static_str_is_string_literal() {
     let input = quote::quote! {
         "Hello, world!"
     };
-    let result = PostProcessCombineStaticStr::is_string_literal(PeekableTokenTree::new(input)).unwrap();
+    let result = PostProcessCombineStaticStr::is_string_literal(input.into_iter().nth(0).as_ref()).unwrap();
 
     assert_eq!("Hello, world!", result);
 }
@@ -88,20 +94,20 @@ pub fn post_process_combine_static_str_is_html_output() {
     let input = vec![
         TokenTree::Ident(Ident::new("html_output", proc_macro2::Span::call_site())),
     ];
-    let mut it = input.iter().peekable();
-    let result = PostProcessCombineStaticStr::is_html_output(is_first, &mut output, &mut it);
+    let it = PeekableTokenTree::from_vec(&input);
+    let result = PostProcessCombineStaticStr::peek_html_output(&it);
 
-    assert!(result);
-    assert_eq!(1, output.len());
+    assert!(result.is_some());
+    assert_eq!(0, output.len());
 
 
     // test when is_first is false
     is_first = false;
     output.clear();
-    let mut it = input.iter().peekable();
-    let result = PostProcessCombineStaticStr::is_html_output(is_first, &mut output, &mut it);
+    let it = PeekableTokenTree::from_vec(&input);
+    let result = PostProcessCombineStaticStr::peek_html_output(&it);
 
-    assert!(result);
+    assert!(result.is_some());
     assert_eq!(0, output.len());
 
     
@@ -111,14 +117,14 @@ pub fn post_process_combine_static_str_is_html_output() {
     let input = vec![
         TokenTree::Ident(Ident::new("foobar", proc_macro2::Span::call_site())),
     ];
-    let mut it = input.iter().peekable();
-    let result = PostProcessCombineStaticStr::is_html_output(is_first, &mut output, &mut it);
+    let mut it = PeekableTokenTree::from_vec(&input);
+    let result = PostProcessCombineStaticStr::peek_html_output(&it);
 
-    assert!(!result);
+    assert!(result.is_none());
     assert_eq!(0, output.len());
 }
 
-pub fn test_is_html_output_write_html_str_with_string_literal_arg_and_semicolon_for_n(n: usize) {
+pub fn test_try_html_output_write_html_str_with_string_literal_arg_and_semicolon_for_n(n: usize) {
     let mut is_first = true;
     let mut current_str = String::new();
     let mut output = Vec::<TokenTree>::new();
@@ -135,15 +141,16 @@ pub fn test_is_html_output_write_html_str_with_string_literal_arg_and_semicolon_
     let input_len = input.len();
     // multiply input
     let input = if n > 1 { input.into_iter().cycle().take(input_len * n).collect::<Vec<TokenTree>>() } else { input };
-    let mut it = input.iter().peekable();
+    let it = PeekableTokenTree::from_vec(&input);
     loop {
-        if PostProcessCombineStaticStr::is_html_output_write_html_str_with_string_literal_arg_and_semicolon(
+        if PostProcessCombineStaticStr::try_html_output_write_html_str_with_string_literal_arg_and_semicolon(
             &mut is_first,
             &mut current_str,
             &mut output,
-            &mut it
+            &it
         ) {
             // do nothing
+            println!("do nothing")
         } else {
             break;
         }
@@ -169,15 +176,15 @@ pub fn test_is_html_output_write_html_str_with_string_literal_arg_and_semicolon_
 // }
 
 #[test]
-pub fn is_html_output_write_html_str_with_string_literal_arg_and_semicolon_single_works() {
-    test_is_html_output_write_html_str_with_string_literal_arg_and_semicolon_for_n(1);
+pub fn try_html_output_write_html_str_with_string_literal_arg_and_semicolon_single_works() {
+    test_try_html_output_write_html_str_with_string_literal_arg_and_semicolon_for_n(1);
 }
 
 
 #[test]
-pub fn is_html_output_write_html_str_with_string_literal_arg_and_semicolon_multiple_works() {
-    test_is_html_output_write_html_str_with_string_literal_arg_and_semicolon_for_n(3);
-    test_is_html_output_write_html_str_with_string_literal_arg_and_semicolon_for_n(9);
+pub fn try_html_output_write_html_str_with_string_literal_arg_and_semicolon_multiple_works() {
+    test_try_html_output_write_html_str_with_string_literal_arg_and_semicolon_for_n(3);
+    test_try_html_output_write_html_str_with_string_literal_arg_and_semicolon_for_n(9);
 }
 
 
@@ -300,6 +307,62 @@ pub fn post_process_combine_static_str_process_rust_nested_split() {
             something.do_another_thing();
             html_output.write_html_str("Hello, world!Hello, world!");
         }
+    };
+    let rusthtml_expected_string = rusthtml_expected.to_string();
+
+    let result = processor.process_rust(&rusthtml.into_iter().collect::<Vec<TokenTree>>()).unwrap();
+    assert_ne!(0, result.len());
+
+    let rusthtml_actual = TokenStream::from_iter(result.into_iter()).to_string();
+    assert_eq!(rusthtml_expected_string, rusthtml_actual);
+}
+
+#[test]
+pub fn post_process_combine_static_str_process_rust_nested_split_with_if() {
+    let processor = PostProcessCombineStaticStr::new();
+    let rusthtml = quote::quote! {
+        fn foobar() {
+            html_output.write_html_str("Hello, world!");
+            html_output.write_html_str("Hello, world!");
+            if something {
+                html_output.write_html_str("Hello, world!");
+                html_output.write_html_str("Hello, world!");
+            }
+            html_output.write_html_str("Hello, world!");
+            html_output.write_html_str("Hello, world!");
+        }
+    };
+    let rusthtml_expected = quote::quote! {
+        fn foobar() {
+            html_output.write_html_str("Hello, world!Hello, world!");
+            if something {
+                html_output.write_html_str("Hello, world!Hello, world!");
+            }
+            html_output.write_html_str("Hello, world!Hello, world!");
+        }
+    };
+    let rusthtml_expected_string = rusthtml_expected.to_string();
+
+    let result = processor.process_rust(&rusthtml.into_iter().collect::<Vec<TokenTree>>()).unwrap();
+    assert_ne!(0, result.len());
+
+    let rusthtml_actual = TokenStream::from_iter(result.into_iter()).to_string();
+    assert_eq!(rusthtml_expected_string, rusthtml_actual);
+}
+
+
+#[test]
+pub fn post_process_combine_static_str_process_attribute_with_directive_value() {
+    let processor = PostProcessCombineStaticStr::new();
+    let rusthtml = quote::quote! {
+        html_output.write_html_str("Hello, ");
+        html_output.write_html_str(world_string);
+        html_output.write_html_str("!");
+    };
+    let rusthtml_expected = quote::quote! {
+        html_output.write_html_str("Hello, ");
+        html_output.write_html_str(world_string);
+        html_output.write_html_str("!");
     };
     let rusthtml_expected_string = rusthtml_expected.to_string();
 

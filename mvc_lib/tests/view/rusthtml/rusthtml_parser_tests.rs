@@ -254,15 +254,14 @@ fn assert_tokenstreams_eq(mut expected_it: std::iter::Peekable<proc_macro2::toke
 #[test]
 fn rusthtml_parser_expand_tokenstream_if_else_followed_by_html() {
     let stream = quote::quote! {
-        @{
-            let html_class = if validation_result . has_errors { "fc-error" } else { "fc-success" } ; <p class = @html_class> @validation_result . message </p>
-        }
+        let html_class = if validation_result . has_errors { "fc-error" } else { "fc-success" } ;
+        <p class = @html_class> @validation_result . message </p>
     };
     let expected_output = quote::quote! {
         let html_class = if validation_result . has_errors { "fc-error" } else { "fc-success" } ;
         html_output.write_html_str("<p class=\"");
         html_output.write_html_str(html_class);
-        html_output.write_html_str(">");
+        html_output.write_html_str("\">");
         html_output.write_html_str(validation_result . message);
         html_output.write_html_str("</p>");
     };
@@ -270,9 +269,7 @@ fn rusthtml_parser_expand_tokenstream_if_else_followed_by_html() {
 
     let parser = RustHtmlParser::new(false, "test".to_string());
     let actual_output = parser.expand_tokenstream(stream).unwrap();
-
-    let actual = parser.expand_tokenstream(actual_output.clone()).unwrap();
-    let actual_it = actual.into_iter().peekable();
+    let actual_it = actual_output.into_iter().peekable();
 
     // do simple string comparison
     let expected_str = expected_it.map(|x| x.to_string()).collect::<Vec<String>>().join(" ");

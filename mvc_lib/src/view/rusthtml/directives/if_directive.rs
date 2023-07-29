@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro2::{Ident, TokenTree, Delimiter};
+use proc_macro2::{Group, Ident, TokenTree, TokenStream, Delimiter};
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -53,14 +53,15 @@ impl IRustHtmlDirective for IfDirective {
                             Delimiter::Brace => {
                                 match parser.convert_group_to_rusthtmltoken(group, false, false, output, false) {
                                     Ok(_) => {
-                                        let last = output.last().unwrap();
-                                        match last {
-                                            RustHtmlToken::GroupParsed(_, tokens) => {
-                                                let to_str = tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" ");
-                                                println!("if group: {:?}", to_str);
-                                            },
-                                            _ => {}
-                                        }
+                                        // let last = output.last().unwrap();
+                                        // match last {
+                                        //     RustHtmlToken::GroupParsed(delimiter, tokens) => {
+                                        //         // let to_str = tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" ");
+                                        //         // println!("if group: {:?}", to_str);
+                                        //         output.push(RustHtmlToken::Group(delimiter.clone(), Group::new(delimiter.clone(), TokenStream::from_iter(tokens.iter().cloned()))));
+                                        //     },
+                                        //     _ => {}
+                                        // }
                                         it.next();
                                         break;
                                     },

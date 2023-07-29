@@ -28,7 +28,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
         match tag_context.html_attrs.get("include") {
             Some(token) => {
                 match token.clone().unwrap() {
-                    RustHtmlToken::HtmlTagAttributeValue(value, v_parts, rust_value) => {
+                    RustHtmlToken::HtmlTagAttributeValue(value_string, value_literal, v_parts, rust_value) => {
                         if let Some(rust_value) = rust_value {
                             for v in rust_value {
                                 match v {
@@ -54,16 +54,15 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                                 }
                             }
                         } else {
-                            match value {
-                                Some(v) => {
-                                    let v_as_str = snailquote::unescape(&v).unwrap();
-                                    // println!("v_as_str: {}", v_as_str);
+                            if let Some(v) = value_string {
+                                let v_as_str = snailquote::unescape(&v).unwrap();
+                                // println!("v_as_str: {}", v_as_str);
     
-                                    keep_or_remove = Some(html_context.get_environment_name() == v_as_str);
-                                },
-                                None => {
-                                    // println!("environment tag does not have include field");
-                                }
+                                keep_or_remove = Some(html_context.get_environment_name() == v_as_str);
+                            } else if let Some(value_literal) = value_literal {
+                                keep_or_remove = Some(html_context.get_environment_name() == value_literal.to_string());
+                            } else {
+                                panic!("Unexpected token for environment tag: {:?}", token);
                             }
                         }
                     }
@@ -78,7 +77,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
         match tag_context.html_attrs.get("exclude") {
             Some(token) => {
                 match token.clone().unwrap() {
-                    RustHtmlToken::HtmlTagAttributeValue(value, v_parts, rust_value) => {
+                    RustHtmlToken::HtmlTagAttributeValue(value_string, value_literal, v_parts, rust_value) => {
                         if let Some(v_parts) = v_parts {
                             for v in v_parts {
                                 match v {
@@ -110,7 +109,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                                 }
                             }
                         }
-                        if let Some(value) = value {
+                        if let Some(value) = value_string {
                             let value_as_str = snailquote::unescape(&value).unwrap();
                             // println!("value_as_str: {}", value_as_str);
 
@@ -120,6 +119,15 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                                 // println!("self.environment_name ({}) DOES match value_as_str ({})", self.environment_name, value_as_str);
                                 keep_or_remove = Some(false);
                             }
+                        } else if let Some(value_literal) = value_literal {
+                            if html_context.get_environment_name() != value_literal.to_string() {
+                                keep_or_remove = Some(true);
+                            } else {
+                                // println!("self.environment_name ({}) DOES match value_as_str ({})", self.environment_name, value_as_str);
+                                keep_or_remove = Some(false);
+                            }
+                        } else {
+                            panic!("Unexpected token for environment tag: {:?}", token);
                         }
                     }
                     _ => panic!("Unexpected token for environment tag: {:?}", token),

@@ -29,6 +29,10 @@ impl PeekableTokenTree {
             n_peeked: RefCell::new(vec![]),
         }
     }
+
+    pub fn from_vec(rusthtml: &[TokenTree]) -> Self {
+        Self::new(rusthtml.iter().cloned().collect())
+    }
 }
 
 impl IPeekableTokenTree for PeekableTokenTree {

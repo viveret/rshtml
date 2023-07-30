@@ -102,7 +102,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
             self.convert_rusthtmltokens_to_plain_rust(&mut inner_tokens, &inner_it)?;
             let inner_tokenstream1 = TokenStream::from_iter(inner_tokens);
             let inner_tokenstream = proc_macro2::TokenStream::from(inner_tokenstream1);
-            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html((#inner_tokenstream).into()); }))));
+            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#inner_tokenstream); }))));
         } else if let Some(inner_as_ident) = inner_as_ident {
             let ident_tokenstream = TokenStream::from_iter(
                 inner_as_ident.iter()
@@ -343,7 +343,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // it: the iterator to use.
     // returns: nothing or an error.
     fn convert_appendhtmlstring_to_tokentree(self: &Self, html_string: String, output: &mut Vec<TokenTree>, _it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
-        output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str((#html_string).into()); }))));
+        output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#html_string); }))));
         Ok(())
     }
 

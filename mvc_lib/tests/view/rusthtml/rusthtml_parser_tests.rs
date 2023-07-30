@@ -140,16 +140,77 @@ fn rusthtml_parser_expand_tokenstream_for_loop_works() {
 }
 
 
+// this test will verify the parser is correctly switching between html and rust modes.
+// this is what is causing the next test after this one to fail.
+#[test]
+fn rusthtml_parser_expand_tokenstream_nesting_switches_between_modes_simple_works() {
+    let parser = RustHtmlParser::new(false, "test".to_string());
+    // more complex html
+    let rust_output = quote! {
+        @if true {
+            <ul>
+                @for x in 0..10 {
+                    <li>@x</li>
+                    @if x == 5 {
+                        <li><b>@x</b></li>
+                    }
+                }
+            </ul>
+        }
+    };
+
+    let expected = quote! {
+        if true {
+            html_output . write_html_str ("<ul>") ;
+            for x in 0..10 {
+                html_output . write_html_str ("<li>") ;
+                html_output . write_html_str (x) ;
+                html_output . write_html_str ("</li>") ;
+                if x == 5 {
+                    html_output . write_html_str ("<li><b>") ;
+                    html_output . write_html_str (x) ;
+                    html_output . write_html_str ("</b></li>") ;
+                }
+            }
+            html_output . write_html_str ("</ul>") ;
+        }
+    };
+
+    let result = parser.expand_tokenstream(rust_output).unwrap();
+    assert_eq!(expected.to_string(), result.to_string());
+}
+
+
+/*
+
+Test is failing because <ul> is not being parsed as HTML but as rust code.
+The output of the test shows the punct and ident are separated and not being written to the HTML output as a string.
+This could be due to a recurse call that is incorrectly setting the is_in_html_mode flag.
+
+For example, if the input is:
+    <ul>
+    @if ... { html_output . write_html_str ("<li>test</li>") ; }
+    </ul>
+
+What should be:
+    html_output . write_html_str ("<ul>") ;
+    @if ... { html_output . write_html_str ("<li>test</li>") ; }
+    html_output . write_html_str ("</ul>") ;
+
+Is being output as:
+    < ul >
+    if ... { html_output . write_html_str ("<li>test</li>") ; }
+    < / ul >
+*/
 #[test]
 fn rusthtml_parser_expand_tokenstream_for_loop_complex_works() {
     let parser = RustHtmlParser::new(false, "test".to_string());
     // more complex html
     let rust_output = quote! {
-        @name "dev_index"
-        <h1>@view_context.get_str("Title")</h1>
+        <h1>@&view_context.get_str("Title")</h1>
         @if model.supports_read {
-            <p>@format!("There are {} log entries", model.logs.len())</p>
-            @html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None)
+            <p>@&format!("There are {} log entries", model.logs.len())</p>
+            @&html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None)
     
             <ul>
                 @{
@@ -170,18 +231,16 @@ fn rusthtml_parser_expand_tokenstream_for_loop_complex_works() {
             html_output . write_html_str("<p>");
             html_output . write_html_str(&format!("There are {} log entries", model.logs.len()));
             html_output . write_html_str("</p>");
-            html_output . write_html_str(&html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None).unwrap());
+            html_output . write_html_str(&html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None));
             html_output . write_html_str("<ul>");
             for log in model.logs.iter() {
                 html_output . write_html_str("<li>");
-                html_output . write_html_str(&log.to_string());
+                html_output . write_html_str(log);
                 html_output . write_html_str("</li>");
             }
             html_output . write_html_str("</ul>");
         } else {
-            html_output . write_html_str("<p>");
-            html_output . write_html_str("Reading from log is not supported.");
-            html_output . write_html_str("</p>");
+            html_output . write_html_str("<p>Reading from log is not supported.</p>");
         }
     };
     let expected_it = rust_output_expected.into_iter().peekable();
@@ -246,6 +305,29 @@ fn assert_tokenstreams_eq(mut expected_it: std::iter::Peekable<proc_macro2::toke
 }
 
 
+#[test]
+fn rusthtml_parser_expand_tokenstream_if_else() {
+    let stream = quote::quote! {
+        @{
+            let html_class = if validation_result . has_errors { "fc-error" } else { "fc-success" } ;
+        }
+    };
+    let expected_output = quote::quote! {
+        let html_class = if validation_result . has_errors { "fc-error" } else { "fc-success" } ;
+    };
+    let expected_it = expected_output.into_iter().peekable();
+
+    let parser = RustHtmlParser::new(false, "test".to_string());
+    let actual_output = parser.expand_tokenstream(stream).unwrap();
+    let actual_it = actual_output.into_iter().peekable();
+
+    // do simple string comparison
+    let expected_str = expected_it.map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
+    let actual_str = actual_it.map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
+
+    assert_str::assert_str_trim_eq!(expected_str, actual_str);
+}
+
 
 
 
@@ -254,7 +336,9 @@ fn assert_tokenstreams_eq(mut expected_it: std::iter::Peekable<proc_macro2::toke
 #[test]
 fn rusthtml_parser_expand_tokenstream_if_else_followed_by_html() {
     let stream = quote::quote! {
-        let html_class = if validation_result . has_errors { "fc-error" } else { "fc-success" } ;
+        @{
+            let html_class = if validation_result . has_errors { "fc-error" } else { "fc-success" } ;
+        }
         <p class = @html_class> @validation_result . message </p>
     };
     let expected_output = quote::quote! {

@@ -63,6 +63,51 @@ impl IRustHtmlDirective for IfDirective {
                                         //     _ => {}
                                         // }
                                         it.next();
+
+                                        // need to check for else if and else
+                                        if let Some(token) = it.peek() {
+                                            match token {
+                                                TokenTree::Ident(ident) => {
+                                                    if ident.to_string() == "else" {
+                                                        it.next();
+                                                        output.push(RustHtmlToken::Identifier(ident.clone()));
+
+                                                        if let Some(token) = it.peek() {
+                                                            match token {
+                                                                TokenTree::Ident(ident) => {
+                                                                    if ident.to_string() == "if" {
+                                                                        // else if
+                                                                        output.push(RustHtmlToken::Identifier(ident.clone()));
+                                                                        it.next();
+                                                                        continue;
+                                                                    }
+                                                                },
+                                                                _ => {}
+                                                            }
+                                                        }
+
+                                                        // just else, expecting brace group
+                                                        if let Some(token) = it.peek() {
+                                                            match token {
+                                                                TokenTree::Group(group) if group.delimiter() == Delimiter::Brace => {
+                                                                    match parser.convert_group_to_rusthtmltoken(group, false, false, output, false) {
+                                                                        Ok(_) => {
+                                                                            it.next();
+                                                                        },
+                                                                        Err(RustHtmlError(err)) => {
+                                                                            return Err(RustHtmlError::from_string(err.to_string()));
+                                                                        }
+                                                                    }
+                                                                },
+                                                                _ => {}
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                _ => {}
+                                            }
+                                        }
+
                                         break;
                                     },
                                     Err(RustHtmlError(err)) => {

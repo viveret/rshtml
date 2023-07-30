@@ -47,3 +47,47 @@ pub fn if_directive_process_rust_basic() {
         _ => panic!("expected OkContinue, not {:?}", result)
     }
 }
+
+
+// test if else
+#[test]
+fn if_directive_process_rust_basic_else() {
+    let processor = IfDirective::new();
+    let rusthtml = quote::quote! {
+        @if true {
+            <div>@"Hello, world!"</div>
+        } else {
+            <div>@"Hello, world!"</div>
+        }
+    };
+    let rusthtml_expected = quote::quote! {
+        if true {
+            <div>"Hello, world!"</div>
+        } else {
+            <div>"Hello, world!"</div>
+        }
+    };
+    let rusthtml_expected_string = rusthtml_expected.to_string();
+
+    let it = Rc::new(PeekableTokenTree::new(rusthtml)) as Rc<dyn IPeekableTokenTree>;
+    // skip the '@' and 'if' tokens
+    it.as_ref().next();
+
+    let first_token = it.next().unwrap();
+    let first_ident = if let TokenTree::Ident(x) = first_token { x } else { panic!("expected ident, not {:?}", first_token); };
+
+    let context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
+    let parser = Rc::new(RustToRustHtmlConverter::new(context));
+
+    // begin processing
+    let mut output = Vec::new();
+    let result = processor.execute(&first_ident, parser, &mut output, it).unwrap();
+    assert_ne!(0, output.len());
+    match result {
+        RustHtmlDirectiveResult::OkContinue => {
+            let rusthtml_actual = output.iter().map(|t| t.to_string()).collect::<Vec<String>>().join("");
+            assert_eq!(rusthtml_expected_string.replace(" ", ""), rusthtml_actual.replace(" ", ""));
+        },
+        _ => panic!("expected OkContinue, not {:?}", result)
+    }
+}

@@ -168,7 +168,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                 self.convert_rust_entry_to_rusthtmltoken(c, punct, is_in_html_mode, output, it, is_raw_tokenstream)?;
             },
             '<' => {
-                self.convert_html_entry_to_rusthtmltoken(c, punct, is_in_html_mode, output, it, is_raw_tokenstream)?;
+                self.convert_html_entry_to_rusthtmltoken(c, punct, true, output, it, is_raw_tokenstream)?;
             },
             '}' if !is_in_html_mode => {
                 return Ok(true); // do not continue

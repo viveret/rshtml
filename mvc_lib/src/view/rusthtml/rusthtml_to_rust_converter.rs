@@ -31,6 +31,10 @@ impl RustHtmlToRustConverter {
             context: context,
         }
     }
+
+    pub fn write_html_stream(self: &Self, ident_tokenstream: TokenStream) -> TokenStream {
+        TokenStream::from(quote! { html_output.write_html(HtmlString::from(#ident_tokenstream)); })
+    }
 }
 
 impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
@@ -98,11 +102,26 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     fn convert_rusthtmlappendhtml_to_tokentree(self: &Self, inner_as_string: Option<&String>, inner_as_literal: Option<&Literal>, inner_as_ident: Option<&Vec<RustHtmlIdentOrPunct>>, inner: Option<&Vec<RustHtmlToken>>, output: &mut Vec<TokenTree>) -> Result<(), RustHtmlError> {
         let mut inner_tokens = vec![];
         if let Some(inner) = inner {
+            if inner.len() == 1 {
+                match inner.first().unwrap() {
+                    RustHtmlToken::Literal(literal, literal_string) => {
+                        if let Some(literal_string) = literal_string {
+                            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#literal_string); }))));
+                        } else {
+                            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#literal); }))));
+                        }
+                        return Ok(());
+                    },
+                    _ => {
+                    }
+                }
+            }
+            
             let inner_it = PeekableRustHtmlToken::new(inner);
             self.convert_rusthtmltokens_to_plain_rust(&mut inner_tokens, &inner_it)?;
             let inner_tokenstream1 = TokenStream::from_iter(inner_tokens);
             let inner_tokenstream = proc_macro2::TokenStream::from(inner_tokenstream1);
-            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#inner_tokenstream); }))));
+            output.push(TokenTree::Group(Group::new(Delimiter::None, self.write_html_stream(inner_tokenstream))));
         } else if let Some(inner_as_ident) = inner_as_ident {
             let ident_tokenstream = TokenStream::from_iter(
                 inner_as_ident.iter()
@@ -114,11 +133,11 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 })
                 .collect::<Vec<TokenTree>>()
             );
-            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html(#ident_tokenstream); }))));
+            output.push(TokenTree::Group(Group::new(Delimiter::None, self.write_html_stream(ident_tokenstream))));
         } else if let Some(inner_as_literal) = inner_as_literal {
-            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html(#inner_as_literal.into()); }))));
+            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#inner_as_literal); }))));
         } else if let Some(inner_as_string) = inner_as_string {
-            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html(#inner_as_string.into()); }))));
+            output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#inner_as_string); }))));
         } else {
             return Err(RustHtmlError::from_str("Both inner_as_string and inner are None"));
         }

@@ -10,7 +10,7 @@ mvc_macro_lib::rusthtml_view_macro! {
 
     <h1>@view_context.get_str("Title")</h1>
     
-    <p>@format!("In total there are {} controllers:", model.controllers.len())</p>
+    <p>@&format!("In total there are {} controllers:", model.controllers.len())</p>
     <ul>
     @for controller in model.controllers.iter() {
         let link_text = &controller.name;

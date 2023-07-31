@@ -164,11 +164,11 @@ fn rusthtml_parser_expand_tokenstream_nesting_switches_between_modes_simple_work
             html_output . write_html_str ("<ul>") ;
             for x in 0..10 {
                 html_output . write_html_str ("<li>") ;
-                html_output . write_html_str (x) ;
+                html_output . write_html (HtmlString :: from (x)) ;
                 html_output . write_html_str ("</li>") ;
                 if x == 5 {
                     html_output . write_html_str ("<li><b>") ;
-                    html_output . write_html_str (x) ;
+                    html_output . write_html (HtmlString :: from (x)) ;
                     html_output . write_html_str ("</b></li>") ;
                 }
             }
@@ -207,10 +207,10 @@ fn rusthtml_parser_expand_tokenstream_for_loop_complex_works() {
     let parser = RustHtmlParser::new(false, "test".to_string());
     // more complex html
     let rust_output = quote! {
-        <h1>@&view_context.get_str("Title")</h1>
+        <h1>@view_context.get_str("Title")</h1>
         @if model.supports_read {
-            <p>@&format!("There are {} log entries", model.logs.len())</p>
-            @&html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None)
+            <p>@format!("There are {} log entries", model.logs.len())</p>
+            @html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None)
     
             <ul>
                 @{
@@ -225,17 +225,17 @@ fn rusthtml_parser_expand_tokenstream_for_loop_complex_works() {
     };
     let rust_output_expected = quote! {
         html_output . write_html_str("<h1>");
-        html_output . write_html_str(&view_context.get_str("Title"));
+        html_output . write_html(HtmlString :: from (view_context.get_str("Title")));
         html_output . write_html_str("</h1>");
         if model.supports_read {
             html_output . write_html_str("<p>");
-            html_output . write_html_str(&format!("There are {} log entries", model.logs.len()));
+            html_output . write_html(HtmlString :: from (format!("There are {} log entries", model.logs.len())));
             html_output . write_html_str("</p>");
-            html_output . write_html_str(&html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None));
+            html_output . write_html(HtmlString :: from (html.link(url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).as_str(), "Add log message", None)));
             html_output . write_html_str("<ul>");
             for log in model.logs.iter() {
                 html_output . write_html_str("<li>");
-                html_output . write_html_str(log);
+                html_output . write_html(HtmlString :: from (log));
                 html_output . write_html_str("</li>");
             }
             html_output . write_html_str("</ul>");
@@ -344,9 +344,9 @@ fn rusthtml_parser_expand_tokenstream_if_else_followed_by_html() {
     let expected_output = quote::quote! {
         let html_class = if validation_result . has_errors { "fc-error" } else { "fc-success" } ;
         html_output.write_html_str("<p class=\"");
-        html_output.write_html_str(html_class);
+        html_output.write_html(HtmlString :: from (html_class));
         html_output.write_html_str("\">");
-        html_output.write_html_str(validation_result . message);
+        html_output.write_html(HtmlString :: from (validation_result . message));
         html_output.write_html_str("</p>");
     };
     let expected_it = expected_output.into_iter().peekable();

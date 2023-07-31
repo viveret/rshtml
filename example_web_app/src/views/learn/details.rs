@@ -8,9 +8,9 @@ mvc_macro_lib::rusthtml_view_macro! {
     
     @html.link(url.url_action(false, Some(false), None, Some("index"), Some("Learn"), None, None).as_str(), "< Back to learning index", None)
     
-    <h1>@view_context.get_str("Title")</h1>
+    <h1>@&view_context.get_str("Title")</h1>
 
     // @htmlfile "home/index.html"
     // @rshtmlfile "home/index.rshtml"
-    @mdfile_nocache model.path.clone().as_str()
+    @mdfile_nocache model.path.clone()
 }

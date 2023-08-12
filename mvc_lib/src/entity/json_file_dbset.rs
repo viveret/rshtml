@@ -25,10 +25,10 @@ pub struct JsonFileDbSet<TEntity: Clone> {
 impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
     pub fn new(
         file_path: String,
+        f: File,
         factory_method: fn() -> TEntity,
         parse_item_method: fn(v: serde_json::Value) -> TEntity
     ) -> Self {
-
         let my_self = Self {
             file_path: file_path.clone(),
             factory_method: factory_method,
@@ -37,20 +37,28 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
             items_json: RefCell::new(vec![]),
         };
 
-        match File::open(file_path.clone()) {
-            Ok(f) => {
-                let metadata = f.metadata().unwrap();
-                if metadata.len() < 4096 {
-                    // cache since it is not that much text
-                    my_self.cache_file_to_memory(Some(f));
-                }
-            },
-            Err(e) => {
-                println!("Could not open {}: {:?}", file_path, e);
-            }
+        let metadata = f.metadata().unwrap();
+        if metadata.len() < 4096 {
+            // cache since it is not that much text
+            my_self.cache_file_to_memory(Some(f));
         }
 
         my_self
+    }
+
+    pub fn open(
+        file_path: String,
+        factory_method: fn() -> TEntity,
+        parse_item_method: fn(v: serde_json::Value) -> TEntity
+    ) -> std::io::Result<Self> {
+        match File::open(file_path.clone()) {
+            Ok(f) => {
+                std::io::Result::Ok(Self::new(file_path, f, factory_method, parse_item_method))
+            },
+            Err(e) => {
+                std::io::Result::Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("Could not open {}: {:?}", file_path, e)))
+            }
+        }
     }
 
     // read the json file and return the items as a Vec<serde_json::Value>

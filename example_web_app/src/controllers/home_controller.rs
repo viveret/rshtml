@@ -18,8 +18,7 @@ use mvc_lib::controller_action_features::controller_action_feature::IControllerA
 use mvc_lib::controller_actions::controller_action::IControllerAction;
 use mvc_lib::controller_actions::builder::ControllerActionsBuilder;
 use mvc_lib::model_binder::imodel::IModel;
-use mvc_lib::model_binder::iviewmodel::IViewModel;
-use core_macro_lib::{IModel, IViewModel, IHazAttributes, reflect_attributes, reflect_properties, reflect_methods};
+use core_macro_lib::{IModel, IHazAttributes, reflect_attributes, reflect_properties, reflect_methods};
 use mvc_lib::model_binder::ihaz_attributes::IHazAttributes;
 use mvc_lib::model_binder::imodel_attribute::IAttribute;
 use mvc_lib::model_binder::imodel_property::IModelProperty;

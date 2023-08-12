@@ -157,8 +157,14 @@ impl IViewRenderer for ViewRenderer {
     }
 
     fn get_view(self: &Self, path: &String, services: &dyn IServiceCollection) -> Rc<dyn IView> {
-        self.get_views(path, services)
-            .first()
-            .expect(&format!("No views found at '{}'", path.as_str()).to_string()).clone()
+        match self.get_views(path, services).first() {
+            Some(x) => {
+                x.clone()
+            },
+            None => {
+                let available_view_paths = self.get_all_views(services).iter().map(|x| x.get_path()).collect::<Vec<String>>();
+                panic!("No views found at '{}' in {:?}. Available views: {:?}", path.as_str(), std::env::current_dir().unwrap(), available_view_paths)
+            },
+        }
     }
 }

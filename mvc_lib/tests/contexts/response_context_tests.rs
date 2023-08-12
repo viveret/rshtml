@@ -4,9 +4,7 @@ use std::rc::Rc;
 use mockall::predicate;
 use mvc_lib::action_results::http_result::{OkResult, HttpRedirectResult};
 use mvc_lib::contexts::httpconnection_context::HttpConnectionContext;
-use mvc_lib::contexts::ihttpconnection_context::{
-    IHttpConnectionContext, MockIHttpConnectionContext,
-};
+use mvc_lib::contexts::ihttpconnection_context::MockIHttpConnectionContext;
 use mvc_lib::contexts::iresponse_context::IResponseContext;
 use mvc_lib::contexts::request_context::RequestContext;
 use mvc_lib::contexts::response_context::ResponseContext;

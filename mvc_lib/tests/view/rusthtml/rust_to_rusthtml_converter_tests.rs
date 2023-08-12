@@ -167,9 +167,10 @@ pub fn rust_to_rusthtml_converter_convert_punct_to_rusthtmltoken_works() {
 pub fn rust_to_rusthtml_converter_convert_html_entry_to_rusthtmltoken() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let mut output = vec![];
-    let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
-    let is_in_html_mode = false;
     let html_entry = quote::quote! { <div> };
+    let it = Rc::new(PeekableTokenTree::new(html_entry));
+    it.next();
+    let is_in_html_mode = false;
     let c = '<';
     let punct = Punct::new(c, Spacing::Alone);
     converter.convert_html_entry_to_rusthtmltoken(c, punct, is_in_html_mode, &mut output, it.clone(), false).unwrap();

@@ -68,7 +68,7 @@ impl PostProcessCombineStaticStr {
         }
         
         // next char has to be ';'
-        if let Some(c) = Self::peek_punct_with_char(';', 4, it) {
+        if Self::peek_punct_with_char(';', 4, it).is_some() {
             // skip all
             it.next();
             it.next();
@@ -174,7 +174,7 @@ impl PostProcessCombineStaticStr {
         loop {
             if let Some(token) = it.next() {
                 match &token {
-                    TokenTree::Ident(ident) => {
+                    TokenTree::Ident(_) => {
                         continue;
                     },
                     TokenTree::Punct(punct) if punct.as_char() == '.' => {

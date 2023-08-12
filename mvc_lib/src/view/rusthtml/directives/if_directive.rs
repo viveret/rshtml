@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro2::{Group, Ident, TokenTree, TokenStream, Delimiter};
+use proc_macro2::{Ident, TokenTree, Delimiter};
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;

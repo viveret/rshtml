@@ -1,3 +1,5 @@
-use rusthtml_macro;
 
-rusthtml_view_macro! {}
+mvc_macro_lib::rusthtml_view_macro! {
+    @name MockView
+    <p>@"Hello, world!"</p>
+}

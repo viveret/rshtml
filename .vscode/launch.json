@@ -121,15 +121,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'rshtml'",
+            "name": "Debug executable 'example_web_app'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=rshtml",
-                    "--package=rshtml"
+                    "--bin=example_web_app",
+                    "--package=example_web_app"
                 ],
                 "filter": {
-                    "name": "rshtml",
+                    "name": "example_web_app",
                     "kind": "bin"
                 }
             },
@@ -139,16 +139,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'rshtml'",
+            "name": "Debug unit tests in executable 'example_web_app'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=rshtml",
-                    "--package=rshtml"
+                    "--bin=example_web_app",
+                    "--package=example_web_app"
                 ],
                 "filter": {
-                    "name": "rshtml",
+                    "name": "example_web_app",
                     "kind": "bin"
                 }
             },

@@ -29,7 +29,6 @@ impl HtmlFormDirective {
 
         // parse method
         // expecting string literal
-        let mut method_string: Option<String> = None;
         let method =
             if let Some(token_method) = it.peek() {
                 match token_method {
@@ -81,7 +80,9 @@ impl HtmlFormDirective {
                     None
                 };
 
-            if action.is_none() {
+            if let Some(ref action) = action {
+                action_string.replace(action.to_string());
+            } else {
                 // set action based on controller name, action name, and route values
             }
 

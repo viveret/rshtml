@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro2::{Delimiter, Group, Literal, Span, TokenStream, TokenTree, Punct, Spacing};
+use proc_macro2::{Delimiter, Group, Literal, Span, TokenStream, TokenTree, Punct};
 use quote::quote;
 
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct };

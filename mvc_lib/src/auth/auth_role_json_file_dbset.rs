@@ -62,9 +62,12 @@ impl AuthRoleJsonFileDbSet {
     // this is used to create a new AuthRoleJsonFileDbSet struct.
     // file_path: the path to the authrole_dbset.json file.
     // returns a AuthRoleJsonFileDbSet struct.
-    pub fn new(file_path: String) -> Self {
-        Self {
-            json_dbset: JsonFileDbSet::new(file_path, JsonAuthRole::new, JsonAuthRole::parse_json)
+    pub fn open(file_path: String) -> std::io::Result<Self> {
+        match JsonFileDbSet::open(file_path, JsonAuthRole::new, JsonAuthRole::parse_json) {
+            Ok(r) => Ok(Self {
+                json_dbset: r
+            }),
+            Err(e) => Err(e)
         }
     }
 }

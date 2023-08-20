@@ -25,10 +25,11 @@ impl MarkdownFileConstDirective {
     // it: the iterator to use.
     // returns: nothing or an error.
     fn convert_mdfile_const_directive(identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
-        match parser.convert_views_path_str(identifier.clone(), it, parser.get_context().get_is_raw_tokenstream()) {
+        match parser.convert_views_path_str(identifier.clone(), it.clone(), parser.get_context().get_is_raw_tokenstream()) {
             Ok(path) => {
                 match std::fs::File::open(path.as_str()) {
                     Ok(mut f) => {
+                        it.next();
                         let mut buffer = String::new();
                         f.read_to_string(&mut buffer).expect("could not read markdown file");
                         let mdtext = comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default());

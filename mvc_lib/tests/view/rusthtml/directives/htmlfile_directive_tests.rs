@@ -8,7 +8,7 @@ use mvc_lib::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use mvc_lib::view::rusthtml::rusthtml_token::RustHtmlToken;
-use proc_macro2::{TokenTree, Delimiter};
+use proc_macro2::TokenTree;
 
 
 #[test]
@@ -42,12 +42,12 @@ fn htmlfile_directive_basic_cannot_find_file() {
 }
 
 #[test]
-fn htmlfile_directive_basic_cannot_read_file() {
+fn htmlfile_directive_basic_readme() {
     let rust = quote::quote! {
-        htmlfile "README.md"
+        htmlfile "../README.md"
     };
     let it = Rc::new(PeekableTokenTree::new(rust.clone()));
-    let ctx = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
+    let ctx = Rc::new(RustHtmlParserContext::new(false, true, "test".to_string()));
     let parser = Rc::new(RustToRustHtmlConverter::new(ctx));
     let identifier = match it.next().unwrap() {
         TokenTree::Ident(i) => i,
@@ -78,7 +78,7 @@ fn htmlfile_directive_basic_cannot_read_file() {
                                     }
                                 }
                             };
-                            assert_eq!("README.md", actual_s);
+                            assert_eq!(std::fs::read_to_string("../example_web_app/README.md").unwrap(), actual_s);
                         },
                         _ => {
                             assert_eq!("", format!("Expected literal, found {:?}", tokens.first().unwrap()));

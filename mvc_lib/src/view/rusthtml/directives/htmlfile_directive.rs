@@ -43,14 +43,15 @@ impl HtmlFileDirective {
         }
     }
 
-    fn convert_externalhtml_directive_file(_ident: &Ident, _parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, _it: Rc<dyn IPeekableTokenTree>, path: String) -> Result<(), RustHtmlError<'static>> {
-        match std::fs::read_to_string(path) {
+    fn convert_externalhtml_directive_file(_ident: &Ident, _parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, path: String) -> Result<(), RustHtmlError<'static>> {
+        match std::fs::read_to_string(path.clone()) {
             Ok(html) => {
+                it.next();
                 output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Literal(None, Some(html))]));
                 Ok(())
             },
             Err(e) => {
-                PanicOrReturnError::panic_or_return_error(false, format!("cannot read external HTML file: {:?}", e))
+                PanicOrReturnError::panic_or_return_error(false, format!("cannot read external HTML file {}: {:?}", path, e))
             }
         }
     }

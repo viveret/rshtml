@@ -584,14 +584,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
             path = path[2..].to_string();
         }
 
-        // try each prefix
-        let mut folders_tried = vec![];
-        let mut path_buf = std::path::PathBuf::new();
-        path_buf.push(cwd.clone());
-
-        folders_tried.push(path_buf.to_str().unwrap().to_string());
-
-        let path_dir = path_buf.to_str().unwrap();
+        let path_dir = cwd.to_str().unwrap();
         let x = self.views_path_resolvers
             .iter()
             .flat_map(|x| x.get_view_paths(&path))
@@ -601,7 +594,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
                 f_absolute.push(&f);
                 f_absolute
             })
-            .filter(|x| x.exists())
+            .filter(|x| x.exists() && x.is_file())
             .take(1)
             .next();
 
@@ -610,10 +603,6 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
                 return Some(x.to_str().unwrap().to_string());
             },
             None => {
-                if path_buf.exists() {
-                    return Some(path_buf.to_str().unwrap().to_string());
-                }
-
                 return None;
             }
         }

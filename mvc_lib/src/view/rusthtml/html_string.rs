@@ -114,3 +114,9 @@ impl <'a> From<Result<HtmlString, RustHtmlError<'a>>> for HtmlString {
         }
     }
 }
+
+impl From<bool> for HtmlString {
+    fn from(item: bool) -> Self {
+        HtmlString::new_data_string(item.to_string())
+    }
+}

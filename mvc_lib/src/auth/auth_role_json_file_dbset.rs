@@ -39,6 +39,13 @@ impl JsonAuthRole {
             name: v.as_str().unwrap().to_string()
         }
     }
+
+    // this is used to convert a JsonAuthRole struct to a serde_json::Value.
+    // v: the JsonAuthRole struct to convert.
+    // returns a serde_json::Value.
+    pub fn to_json(v: Self) -> serde_json::Value {
+        serde_json::Value::String(v.name)
+    }
 }
 
 impl IAuthRole for JsonAuthRole {
@@ -63,7 +70,7 @@ impl AuthRoleJsonFileDbSet {
     // file_path: the path to the authrole_dbset.json file.
     // returns a AuthRoleJsonFileDbSet struct.
     pub fn open(file_path: String) -> std::io::Result<Self> {
-        match JsonFileDbSet::open(file_path, JsonAuthRole::new, JsonAuthRole::parse_json) {
+        match JsonFileDbSet::open(file_path, JsonAuthRole::new, JsonAuthRole::parse_json, JsonAuthRole::to_json) {
             Ok(r) => Ok(Self {
                 json_dbset: r
             }),
@@ -115,6 +122,10 @@ impl IDbSetAny for AuthRoleJsonFileDbSet {
 
     fn entity_type_name(self: &Self) -> &'static str {
         IDbSet::entity_type_name(&self.json_dbset)
+    }
+
+    fn save_changes(self: &Self) {
+        self.json_dbset.save_changes();
     }
 }
 

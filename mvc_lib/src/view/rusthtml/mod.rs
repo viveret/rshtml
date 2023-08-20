@@ -17,5 +17,7 @@ pub mod irust_processor;
 pub mod irusthtml_to_rust_converter;
 pub mod rust_to_rusthtml_converter;
 pub mod irust_to_rusthtml_converter;
+pub mod iviews_path_resolver;
 pub mod tag_helpers;
 pub mod node_helpers;
+pub mod views_path_resolver;

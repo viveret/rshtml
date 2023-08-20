@@ -1,6 +1,7 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use proc_macro2::{TokenStream, TokenTree};
@@ -34,11 +35,13 @@ use super::directives::viewstart_directive::ViewStartDirective;
 use super::directives::while_directive::WhileDirective;
 use super::irust_processor::IRustProcessor;
 use super::irusthtml_processor::IRustHtmlProcessor;
+use super::iviews_path_resolver::IViewsPathResolver;
 use super::node_helpers::environment_node::EnvironmentHtmlNodeParsed;
 use super::node_helpers::inode_parsed::IHtmlNodeParsed;
 use super::processors::post_process_combine_static_str::PostProcessCombineStaticStr;
 use super::tag_helpers::environment_tag::EnvironmentHtmlTagParsed;
 use super::tag_helpers::itag_parsed::IHtmlTagParsed;
+use super::views_path_resolver::RegularViewsPathResolver;
 
 
 
@@ -113,6 +116,9 @@ pub trait IRustHtmlParserContext {
     fn get_rust_preprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>>;
     // get the rust tokentree postprocessors available to the parser.
     fn get_rust_postprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>>;
+
+    // resolve a full path to a view using different directories.
+    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String>;
 }
 
 pub struct RustHtmlParserContext {
@@ -177,6 +183,8 @@ pub struct RustHtmlParserContext {
     // and if the hash is repeated, then the processing state is in a recursive loop or no longer simplifiable.
     pub rusthtml_processing_state_stack: RefCell<Vec<u32>>,
     pub rust_processing_state_stack: RefCell<Vec<u32>>,
+
+    pub views_path_resolvers: Vec<Rc<dyn IViewsPathResolver>>,
 }
 
 impl RustHtmlParserContext {
@@ -313,6 +321,11 @@ impl RustHtmlParserContext {
             ],
             rusthtml_processing_state_stack: RefCell::new(vec![]),
             rust_processing_state_stack: RefCell::new(vec![]),
+            views_path_resolvers: vec![
+                Rc::new(RegularViewsPathResolver::new(
+                    "example_web_app".to_string(),
+                )),
+            ],
         }
     }
 
@@ -551,5 +564,58 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
 
     fn get_rust_postprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>> {
         self.rust_postprocessors.clone()
+    }
+
+    // this needs to be fixed to be more flexible and like .net core using config and options
+    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String> {
+        let mut cwd = std::env::current_dir().unwrap();
+        let mut path = path.to_string();
+        // handle '../' and './' in path
+        if path.starts_with("../") {
+            loop {
+                if path.starts_with("../") && path.len() > 3 {
+                    cwd.pop();
+                    path = path[3..].to_string();
+                } else {
+                    break;
+                }
+            }
+        } else if path.starts_with("./") {
+            path = path[2..].to_string();
+        }
+
+        // try each prefix
+        let mut folders_tried = vec![];
+        let mut path_buf = std::path::PathBuf::new();
+        path_buf.push(cwd.clone());
+
+        folders_tried.push(path_buf.to_str().unwrap().to_string());
+
+        let path_dir = path_buf.to_str().unwrap();
+        let x = self.views_path_resolvers
+            .iter()
+            .flat_map(|x| x.get_view_paths(&path))
+            .map(|f| {
+                let mut f_absolute = PathBuf::new();
+                f_absolute.push(path_dir);
+                f_absolute.push(&f);
+                f_absolute
+            })
+            .filter(|x| x.exists())
+            .take(1)
+            .next();
+
+        match x {
+            Some(x) => {
+                return Some(x.to_str().unwrap().to_string());
+            },
+            None => {
+                if path_buf.exists() {
+                    return Some(path_buf.to_str().unwrap().to_string());
+                }
+
+                return None;
+            }
+        }
     }
 }

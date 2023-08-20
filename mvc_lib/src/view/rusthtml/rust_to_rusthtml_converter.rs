@@ -496,34 +496,14 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             return Ok(path.to_string());
         }
 
-        let cwd = std::env::current_dir().unwrap();
-
-        // list of different prefixes to try
-        let prefixes = vec![
-            "src/views/",
-            // folder,
-            "src/views/shared/",
-            ""
-        ];
-
-        // try each prefix
-        let mut folders_tried = vec![];
-        for prefix in prefixes {
-            let mut path_buf = std::path::PathBuf::new();
-            path_buf.push(cwd.clone());
-            path_buf.push("example_web_app");
-            path_buf.push(prefix);
-
-            folders_tried.push(path_buf.to_str().unwrap().to_string());
-
-            path_buf.push(path.clone());
-    
-            if path_buf.exists() {
-                return Ok(path_buf.to_str().unwrap().to_string());
-            } else {
-            }
+        match self.context.resolve_views_path_string(&path) {
+            Some(r) => {
+                return Ok(r);
+            },
+            None => {
+                Err(RustHtmlError::from_string(format!("Could not find view {}", path)))
+            },
         }
-        Err(RustHtmlError::from_string(format!("Could not find view {} in {:?}", path, folders_tried)))
     }
 
     // expand an external token stream into RustHtml tokens.

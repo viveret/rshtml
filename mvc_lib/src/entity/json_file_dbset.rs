@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::{any::Any, io::Write};
 use std::cell::RefCell;
 use std::fs::File;
 
@@ -20,6 +20,8 @@ pub struct JsonFileDbSet<TEntity: Clone> {
     factory_method: fn() -> TEntity,
     // the method to parse a serde_json::Value into a TEntity
     parse_item_method: fn(v: serde_json::Value) -> TEntity,
+    // the method to stringify a TEntity into a serde_json::Value
+    jsonify_item_method: fn(v: TEntity) -> serde_json::Value,
 }
 
 impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
@@ -27,12 +29,14 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
         file_path: String,
         f: File,
         factory_method: fn() -> TEntity,
-        parse_item_method: fn(v: serde_json::Value) -> TEntity
+        parse_item_method: fn(v: serde_json::Value) -> TEntity,
+        jsonify_item_method: fn(v: TEntity) -> serde_json::Value,
     ) -> Self {
         let my_self = Self {
             file_path: file_path.clone(),
             factory_method: factory_method,
             parse_item_method: parse_item_method,
+            jsonify_item_method: jsonify_item_method,
             items: RefCell::new(vec![]),
             items_json: RefCell::new(vec![]),
         };
@@ -49,11 +53,12 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
     pub fn open(
         file_path: String,
         factory_method: fn() -> TEntity,
-        parse_item_method: fn(v: serde_json::Value) -> TEntity
+        parse_item_method: fn(v: serde_json::Value) -> TEntity,
+        jsonify_item_method: fn(v: TEntity) -> serde_json::Value,
     ) -> std::io::Result<Self> {
         match File::open(file_path.clone()) {
             Ok(f) => {
-                std::io::Result::Ok(Self::new(file_path, f, factory_method, parse_item_method))
+                std::io::Result::Ok(Self::new(file_path, f, factory_method, parse_item_method, jsonify_item_method))
             },
             Err(e) => {
                 std::io::Result::Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("Could not open {}: {:?}", file_path, e)))
@@ -80,9 +85,13 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
         let mut new_items = vec![];
         let mut new_items_json = vec![];
 
-        for it in v.get("rows").unwrap().as_array().unwrap() {
-            new_items_json.push(it.clone());
-            new_items.push((self.parse_item_method)(it.clone()));
+        if let Some(v) = v.get("rows") {
+            if let Some(v) = v.as_array() {
+                for it in v {
+                    new_items_json.push(it.clone());
+                    new_items.push((self.parse_item_method)(it.clone()));
+                }
+            }
         }
 
         self.items.replace(new_items);
@@ -113,13 +122,23 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
             }
         }
     }
+
+    fn write_to_file(self: &Self) {
+        let mut file = File::create(self.file_path.clone()).unwrap();
+        let json = serde_json::json!({
+            "rows": self.items_json.borrow().clone()
+        });
+        let json_str = serde_json::to_string_pretty(&json).unwrap();
+        file.write_all(json_str.as_bytes()).unwrap();
+        file.flush().unwrap();
+    }
 }
 
-impl<TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
+impl<TEntity: 'static + Clone + PartialEq> JsonFileDbSet<TEntity> {
 
 }
 
-impl<TEntity: 'static + Clone> IDbSetAny for JsonFileDbSet<TEntity> {
+impl<TEntity: 'static + Clone + PartialEq> IDbSetAny for JsonFileDbSet<TEntity> {
     fn add_any(self: &Self, item: Box<dyn Any>) {
         self.add(item.downcast_ref::<TEntity>().unwrap())
     }
@@ -166,19 +185,26 @@ impl<TEntity: 'static + Clone> IDbSetAny for JsonFileDbSet<TEntity> {
     fn entity_type_name(self: &Self) -> &'static str {
         IDbSet::entity_type_name(self)
     }
+
+    fn save_changes(self: &Self) {
+        self.write_to_file();
+    }
 }
 
-impl<TEntity: 'static + Clone> IDbSet<TEntity> for JsonFileDbSet<TEntity> {
+impl<TEntity: 'static + Clone + PartialEq> IDbSet<TEntity> for JsonFileDbSet<TEntity> {
     fn add(self: &Self, item: &TEntity) {
         self.items.borrow_mut().push(item.clone());
+        self.items_json.borrow_mut().push((self.jsonify_item_method)(item.clone()));
     }
 
     fn add_range(self: &Self, items: Vec<TEntity>) {
         (*self.items.borrow_mut()).extend_from_slice(&items.iter().cloned().collect::<Vec<TEntity>>());
+        (*self.items_json.borrow_mut()).extend_from_slice(&items.iter().map(|x| (self.jsonify_item_method)(x.clone())).collect::<Vec<serde_json::Value>>());
     }
 
     fn attach(self: &Self, item: &TEntity) {
         self.items.borrow_mut().push(item.clone());
+        self.items_json.borrow_mut().push((self.jsonify_item_method)(item.clone()));
     }
 
     fn create(self: &Self) -> TEntity {
@@ -190,17 +216,30 @@ impl<TEntity: 'static + Clone> IDbSet<TEntity> for JsonFileDbSet<TEntity> {
     }
     
     fn get_all(self: &Self) -> Vec<TEntity> {
-        self.read()
-            .map(|x| self.parse_item(x))
-            .collect()
+        // self.read()
+        //     .map(|x| self.parse_item(x))
+        //     .collect()
+        self.items.borrow().clone()
     }
 
-    fn remove(self: &Self, _item: &TEntity) {
+    fn remove(self: &Self, item: &TEntity) {
+        let mut items = self.items.borrow_mut();
+        let mut items_json = self.items_json.borrow_mut();
 
+        let index = items.iter().position(|x| x == item).unwrap();
+        items.remove(index);
+        items_json.remove(index);
     }
 
-    fn remove_range(self: &Self, _item: Vec<TEntity>) {
+    fn remove_range(self: &Self, item: Vec<TEntity>) {
+        let mut items = self.items.borrow_mut();
+        let mut items_json = self.items_json.borrow_mut();
 
+        for it in item {
+            let index = items.iter().position(|x| x == &it).unwrap();
+            items.remove(index);
+            items_json.remove(index);
+        }
     }
 
     fn entity_type_info(self: &Self) -> TypeInfo {

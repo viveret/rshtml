@@ -26,11 +26,13 @@ pub trait IDbSetAny {
     fn entity_type_info(self: &Self) -> TypeInfo;
     // get the type name for the database set entity type
     fn entity_type_name(self: &Self) -> &'static str;
+    // save changes of database set to underlying data store
+    fn save_changes(self: &Self);
 }
 
 // this trait represents a database set of entities. it is used to store and retrieve rows of data.
 // TEntity is the type of entity that is stored in the database set.
-pub trait IDbSet<TEntity> {
+pub trait IDbSet<TEntity> where TEntity: 'static + Clone + PartialEq {
     // add an item to the database set
     fn add(self: &Self, item: &TEntity);
     // add a range of items to the database set

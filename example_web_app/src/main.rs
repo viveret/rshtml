@@ -25,7 +25,7 @@ fn main() {
         // service / dependency injection configuration
         .on_configure_services(on_configure_services)
         // thread on start configuration
-        // (last line starts listening for incoming HTTTP requests)
+        // (last line starts listening for incoming HTTP requests)
         .on_start(onstart);
 
     // Now do configuration and start web app

@@ -1,0 +1,14 @@
+{
+  "name": "aibrew-ts",
+  "version": "1.0.0",
+  "description": "AI Brew typescript project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Viveret Steele",
+  "license": "ISC",
+  "dependencies": {
+    "@stackoverflow/stacks": "^1.9.0"
+  }
+}

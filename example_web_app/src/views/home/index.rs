@@ -7,7 +7,5 @@ mvc_macro_lib::rusthtml_view_macro! {
     
     <h1>@view_context.get_str("Title")</h1>
 
-    // @htmlfile "home/index.html"
-    // @rshtmlfile "home/index.rshtml"
     @mdfile_const "README.md"
 }

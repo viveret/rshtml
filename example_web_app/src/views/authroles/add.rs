@@ -1,11 +1,11 @@
 
 mvc_macro_lib::rusthtml_view_macro! {
-    @use crate::helpers::custom_html_helpers::CustomHtmlHelpers
+    @use mvc_lib::view::rusthtml::helpers::stacks_html_helpers::StacksHtmlHelpers
     @use crate::view_models::authroles::add::AddViewModel
     @viewstart "authroles/_view_start.rshtml"
     @name "authroles_add"
     @model AddViewModel
-    @inject CustomHtmlHelpers::<AddViewModel>: custom_html
+    @inject StacksHtmlHelpers::<AddViewModel>: custom_html
     @{
         view_context.insert_str("Title", "Add Auth Role - Dev".to_string());
     }

@@ -25,20 +25,24 @@ impl MarkdownFileConstDirective {
     // it: the iterator to use.
     // returns: nothing or an error.
     fn convert_mdfile_const_directive(identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
-        match parser.convert_views_path_str(identifier.clone(), it.clone(), parser.get_context().get_is_raw_tokenstream()) {
+        match parser.convert_path_str(identifier.clone(), it.clone(), parser.get_context().get_is_raw_tokenstream()) {
             Ok(path) => {
-                match std::fs::File::open(path.as_str()) {
-                    Ok(mut f) => {
-                        it.next();
-                        let mut buffer = String::new();
-                        f.read_to_string(&mut buffer).expect("could not read markdown file");
-                        let mdtext = comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default());
-                        output.push(RustHtmlToken::HtmlTextNode(mdtext, identifier.span()));
-                    },
-                    Err(e) => {
-                        return Err(RustHtmlError::from_string(format!("cannot read external markdown file '{}', could not open: {:?}", path, e)));
+                let code = quote::quote! {
+                    match view_context.open_data_file(#path) {
+                        Ok(mut f) => {
+                            let mut buffer = String::new();
+                            f.read_to_string(&mut buffer).expect("could not read markdown file");
+                            comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default())
+                        },
+                        Err(e) => {
+                            panic!("cannot read external markdown file '{}', could not open: {:?}", #path, e);
+                        }
                     }
-                }
+                };
+        
+                let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
+                output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Group(proc_macro2::Delimiter::Brace, g)]));
+        
                 Ok(())
             },
             Err(RustHtmlError(e)) => {

@@ -27,11 +27,10 @@ impl IRustHtmlDirective for ViewStartDirective {
         name == "viewstart" || name == "view_start"
     }
 
-    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
-        match parser.convert_views_path_str(identifier.clone(), it.clone(), false) {
+    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        match parser.convert_path_str(identifier.clone(), it.clone(), false) {
             Ok(param_value) => {
-                it.next();
-                parser.get_context().mut_params().insert(identifier.to_string().clone(), param_value);
+                parser.get_context().mut_params().insert("view_start".to_string(), param_value);
                 Ok(RustHtmlDirectiveResult::OkBreak)
             },
             Err(RustHtmlError(e)) => {

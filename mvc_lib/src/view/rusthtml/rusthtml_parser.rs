@@ -52,10 +52,11 @@ impl RustHtmlParser {
         // prefix with _view_start
         let rusthtml = match self.parse_context.get_param_string("viewstart") {
             Ok(view_start_path) => {
-                let mut view_start_tokens = vec![];
-                self.parser.expand_external_tokenstream(&view_start_path, &mut view_start_tokens)?;
+                // let mut view_start_tokens = vec![];
+                // self.parser.expand_external_tokenstream(&view_start_path, &mut view_start_tokens)?;
 
-                view_start_tokens.iter().chain(rusthtml_tokens_for_view.iter()).cloned().collect()
+                // view_start_tokens.iter().chain(rusthtml_tokens_for_view.iter()).cloned().collect()
+                rusthtml_tokens_for_view
             },
             _ => {
                 rusthtml_tokens_for_view

@@ -57,7 +57,7 @@ impl IActionResult for ViewResult {
 
     fn configure_response(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
         let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
-        let html = view_renderer.render_with_layout_if_specified(&self.path, self.model.clone(), response_context, request_context, services);
+        let html = view_renderer.render_with_layout_if_specified(&self.path, self.model.clone(), request_context, services);
         match self.write_response(html, response_context) {
             Ok(_) => Ok(()),
             Err(err) => Err(Rc::new(err)),

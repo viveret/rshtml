@@ -1,5 +1,6 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
 use std::borrow::Cow;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::str::FromStr;
 
@@ -474,6 +475,8 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     fn convert_path_str(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
         let mut path = std::path::PathBuf::new();
 
+        println!("source file: {:?}", identifier.span());
+
         let cwd = std::env::current_dir().unwrap();
         path.push(cwd);
         let relative_path = self.parse_string_with_quotes(false, identifier.clone(), it)?;
@@ -486,25 +489,26 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // identifier: the identifier to convert.
     // it: the iterator to use.
     // returns: the path string or an error.
-    fn convert_views_path_str(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
-        let path = self.parse_string_with_quotes(true, identifier.clone(), it)?;
-        self.resolve_views_path_str(&path)
-    }
+    // fn convert_views_path_str(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
+    //     let path = self.parse_string_with_quotes(true, identifier.clone(), it)?;
+    //     self.resolve_views_path_str(&path)
+    // }
 
-    fn resolve_views_path_str(self: &Self, path: &str) -> Result<String, RustHtmlError> {
-        if path == "_" {
-            return Ok(path.to_string());
-        }
+    // fn resolve_views_path_str(self: &Self, path: &str) -> Result<String, RustHtmlError> {
+    //     if path == "_" {
+    //         return Ok(path.to_string());
+    //     }
 
-        match self.context.resolve_views_path_string(&path) {
-            Some(r) => {
-                return Ok(r);
-            },
-            None => {
-                Err(RustHtmlError::from_string(format!("Could not find view {}", path)))
-            },
-        }
-    }
+    //     match self.context.resolve_views_path_string(&path) {
+    //         Some(r) => {
+    //             return Ok(r);
+    //         },
+    //         None => {
+    //             let cwd = self.context.get_view_folder_path(); // need to get project folder, not current working directory
+    //             Err(RustHtmlError::from_string(format!("Could not find view {} (cwd: {})", path, cwd)))
+    //         },
+    //     }
+    // }
 
     // expand an external token stream into RustHtml tokens.
     // path: the path to the external token stream.
@@ -516,7 +520,15 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                 self.expand_external_rshtml_string(&input_str, output)
             },
             Err(e) => {
-                self.panic_or_return_error(format!("{}", e))
+                let parent_path = std::path::Path::new(path).parent().unwrap();
+                match std::fs::read_to_string(parent_path) {
+                    Ok(input_str) => {
+                        self.expand_external_rshtml_string(&input_str, output)
+                    },
+                    Err(e) => {
+                        self.panic_or_return_error(format!("Cannot read {}: {}", path, e))
+                    },
+                }
             },
         }
     }

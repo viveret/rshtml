@@ -24,20 +24,15 @@ impl RustHtmlFileDirective {
     // it: the iterator to use.
     // returns: nothing or an error.
     pub fn convert_externalrusthtml_directive(identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
-        if let Ok(path) = parser.convert_views_path_str(identifier.clone(), it.clone(), parser.get_context().get_is_raw_tokenstream()) {
-            match std::fs::File::open(&path) {
-                Ok(_f) => {
-                    if let Ok(_) = parser.expand_external_tokenstream(&path, output) {
-                        it.next();
-                        Ok(())
-                    } else {
-                        Err(RustHtmlError::from_string(format!("cannot read external Rust HTML file '{}', could not expand: {:?}", path, identifier)))
-                    }
-                },
-                Err(e) => {
-                    Err(RustHtmlError::from_string(format!("cannot read external Rust HTML file '{}', could not open: {:?}", path, e)))
-                }
-            }
+        if let Ok(path) = parser.convert_path_str(identifier.clone(), it.clone(), parser.get_context().get_is_raw_tokenstream()) {
+            let code = quote::quote!{
+                let v = view_context.get_view(#path);
+                v.render()
+            };
+            let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
+            output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Group(proc_macro2::Delimiter::Brace, g)]));
+
+            Ok(())
         } else {
             Err(RustHtmlError::from_string(format!("cannot read external Rust HTML file '{}', could not parse path", identifier)))
         }

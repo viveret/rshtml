@@ -562,4 +562,13 @@ impl<'a> IRequestContext for RequestContext<'a> {
     fn get_uuid(self: &Self) -> &uuid::Uuid {
         &self.uuid
     }
+
+    fn try_get_string(self: &Self,key:String) -> Option<String> {
+        match self.route_data.borrow().map.get(&key) {
+            Some(v) => Some(v.clone()),
+            None => {
+                self.context_data.borrow().get(&key).map(|x| x.clone())
+            }
+        }
+    }
 }

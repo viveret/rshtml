@@ -72,6 +72,8 @@ pub trait IRequestContext {
     fn get_str(self: &Self, key: &str) -> String;
     // get the context data of the request
     fn get_string(self: &Self, key: String) -> String;
+    // try to get the context data of the request
+    fn try_get_string(self: &Self, key: String) -> Option<String>;
     // insert a value into the context data of the request
     fn insert_str(self: &mut Self, key: &str, value: String) -> String;
     // insert a value into the context data of the request

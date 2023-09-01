@@ -1,7 +1,4 @@
-use std::rc::Rc;
-
 use super::iviews_path_resolver::IViewsPathResolver;
-
 
 
 pub struct RegularViewsPathResolver {

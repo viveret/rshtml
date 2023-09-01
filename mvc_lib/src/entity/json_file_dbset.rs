@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::{any::Any, io::Write};
 use std::cell::RefCell;
 use std::fs::File;
@@ -56,12 +57,18 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
         parse_item_method: fn(v: serde_json::Value) -> TEntity,
         jsonify_item_method: fn(v: TEntity) -> serde_json::Value,
     ) -> std::io::Result<Self> {
-        match File::open(file_path.clone()) {
-            Ok(f) => {
+        let path = Path::new(&file_path);
+        match path.try_exists() {
+            Ok(true) => {
+                let f = File::open(file_path.clone())?;
+                std::io::Result::Ok(Self::new(file_path, f, factory_method, parse_item_method, jsonify_item_method))
+            },
+            Ok(false) => {
+                let f = File::create(file_path.clone())?;
                 std::io::Result::Ok(Self::new(file_path, f, factory_method, parse_item_method, jsonify_item_method))
             },
             Err(e) => {
-                std::io::Result::Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("Could not open {}: {:?}", file_path, e)))
+                std::io::Result::Err(e)
             }
         }
     }
@@ -104,11 +111,26 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
     fn cache_file_to_memory(self: &Self, f: Option<File>) {
         let f = match f {
             Some(f) => f,
-            None => File::open(self.file_path.clone()).unwrap(),
+            None => {
+                match File::open(self.file_path.clone()) {
+                    Ok(f) => f,
+                    Err(e) => {
+                        println!("Could not open {}: {:?}", self.file_path, e);
+                        return;
+                    }
+                }
+            },
         };
 
-        let json: serde_json::Value = serde_json::from_reader(f).unwrap();
-        self.parse_and_cache_dbset_json(json);
+        let json = serde_json::from_reader(f);
+        match json {
+            Ok(json) => {
+                self.parse_and_cache_dbset_json(json);
+            },
+            Err(e) => {
+                println!("Could not parse {}: {:?}", self.file_path, e);
+            }
+        }
     }
 
     // cache the json file to memory

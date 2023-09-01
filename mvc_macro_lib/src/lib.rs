@@ -12,8 +12,8 @@ use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
 
 #[proc_macro]
 pub fn rusthtml_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    // let input = input);
     let parser = RustHtmlParser::new(false, "Development".to_string());
+    // let input = input);
     let result = parser.expand_tokenstream(input.into());
     match result {
         Ok(tokens) => tokens.into(),
@@ -81,6 +81,19 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
             let use_statements = TokenStream::from_iter(parser.parse_context.mut_use_statements().iter().cloned().map(|s| s.into_iter()).flatten());
             let inject_tokens = parser.parse_context.get_inject_statements_stream();
             let when_compiled = chrono::prelude::Utc::now().to_rfc2822();
+            let mut view_start_tokens: Option<TokenStream> = None;
+            if let Some(view_start) = parser.parse_context.try_get_param_string("view_start") {
+                // println!("view_start_path: {}", view_start_path);
+                view_start_tokens = Some(quote! {
+                    view_context.get_view_renderer()
+                        .render_with_layout_if_specified(
+                            &#view_start.to_string(),
+                            view_context.get_viewmodel(),
+                            view_context.get_request_context(),
+                            services
+                        );
+                });
+            }
 
             let s = quote! {
                 #use_statements
@@ -90,6 +103,7 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
                     ViewPath: &'static str,
                     raw: &'static str,
                     when_compiled: DateTime<Utc>,
+                    // view_context: RefCell<&'static dyn IViewContext>,
                     #view_struct
                 }
 
@@ -99,7 +113,7 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
                             model_type_name: #model_type_name,
                             ViewPath: file!(),
                             raw: #raw,
-                            when_compiled: DateTime::parse_from_rfc2822(#when_compiled).unwrap().into()
+                            when_compiled: DateTime::parse_from_rfc2822(#when_compiled).unwrap().into(),
                         }
                     }
 
@@ -126,10 +140,14 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
                 
                     // using template, render the view given the current data
                     fn render(self: &Self, view_context: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
+                        // self.view_context.replace(view_context);
+
                         #view_model_tokens
                         #inject_tokens
 
                         let html_output = HtmlBuffer::new();
+
+                        #view_start_tokens
 
                         #view_functions
                         

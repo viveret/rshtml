@@ -24,40 +24,31 @@ impl MarkdownFileNoCacheDirective {
     // it: the iterator to use.
     // returns: nothing or an error.
     pub fn convert_mdfile_nocache_directive(identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
-        // could be literal or ident
-        match parser.convert_string_or_ident(it, parser.get_context().get_is_raw_tokenstream()) {
-            Ok(path_tokens) => {
-                if let Ok(x) = parser.convert_ident_and_punct_and_group_or_literal_to_tokenstream(&path_tokens) {
-                    let path = proc_macro2::TokenStream::from(x);
-                    let tokenstream = quote::quote! {
-                        let mut path = std::path::PathBuf::new();
-                        let cwd = std::env::current_dir().expect("could not get current directory");
-                        path.push(cwd);
-                        path.push(#path);
-
-                        match std::fs::File::open(path.to_str().expect("could not get combined path").to_string()) {
-                            Ok(mut f) => {
-                                let mut buffer = String::new();
-                                f.read_to_string(&mut buffer).expect("could not read markdown file");
-                                html_output.write_html_str(comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default()).as_str());
-                            },
-                            Err(e) => {
-                                println!("convert_mdfile_nocache_directive: could not find {}", #path);
-                                return Err(RustHtmlError(Cow::Owned(format!("cannot read external markdown file '{}', could not open: {:?}", #path, e))));
-                            }
+        match parser.convert_path_str(identifier.clone(), it.clone(), parser.get_context().get_is_raw_tokenstream()) {
+            Ok(path) => {
+                let code = quote::quote! {
+                    match view_context.open_data_file(#path) {
+                        Ok(mut f) => {
+                            let mut buffer = String::new();
+                            f.read_to_string(&mut buffer).expect("could not read markdown file");
+                            comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default())
+                        },
+                        Err(e) => {
+                            panic!("cannot read external markdown file '{}', could not open: {:?}", #path, e);
                         }
-                    };
-                    output.push(RustHtmlToken::Group(Delimiter::None, Group::new(Delimiter::None, TokenStream::from(tokenstream))));
-
-                    Ok(())
-                } else {
-                    return Err(RustHtmlError::from_string(format!("cannot read external markdown file '{}', could not parse path", identifier)));
-                }
+                    }
+                };
+        
+                let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
+                output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Group(proc_macro2::Delimiter::Brace, g)]));
+        
+                Ok(())
             },
             Err(RustHtmlError(e)) => {
                 return Err(RustHtmlError::from_string(format!("cannot read external markdown file '{}', could not parse path: {}", identifier, e)));
             }
         }
+
     }
 }
 

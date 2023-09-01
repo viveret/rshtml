@@ -27,6 +27,9 @@ pub trait IViewContext: Send + Sync {
     // get the view for the view context as a reference.
     fn get_view_as_ref(self: &Self) -> &dyn IView;
 
+    // if the view defines a view start path, this returns the path.
+    fn get_view_start_path(self: &Self) -> Option<String>;
+
     // get the response context for the view context.
     fn get_response_context(self: &Self) -> &dyn IResponseContext;
     // get the request context for the view context.
@@ -36,11 +39,26 @@ pub trait IViewContext: Send + Sync {
     fn get_string(self: &Self, key: String) -> String;
     // get a string from the view data or the controller context.
     fn get_str(self: &Self, key: &str) -> String;
+    // try to get a string from the view data or the controller context.
+    fn try_get_string(self: &Self, key: String) -> Option<String>;
+    // try to get a string from the view data or the controller context.
+    fn try_get_str(self: &Self, key: &str) -> Option<String>;
     
     // insert a string into the view data.
     fn insert_string(self: &Self, key: String, value: String) -> String;
     // insert a string into the view data.
     fn insert_str(self: &Self, key: &str, value: String) -> String;
+
+    // open a data (project/module) file from the view context.
+    fn open_data_file(self: &Self, path: &str) -> Result<std::fs::File, std::io::Error>;
+    // open a view file from the view context.
+    fn open_view_file(self: &Self, path: &str) -> Result<std::fs::File, std::io::Error>;
+
+    // resolve a views path string from the view context.
+    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String>;
+
+    // resolve a data file path string from the view context.
+    fn resolve_data_file_path_string(self: &Self, path: &str) -> Option<String>;
 }
 
 // this struct implements IViewContext.
@@ -56,7 +74,7 @@ pub struct ViewContext<'a> {
     // the view renderer for the view context.
     view_renderer: Rc<dyn IViewRenderer>,
     // the response context for the view context.
-    response_context: &'a dyn IResponseContext,
+    // response_context: &'a dyn IResponseContext,
     // the request context for the view context.
     request_context: &'a dyn IRequestContext,
 }
@@ -76,7 +94,7 @@ impl <'a> ViewContext<'a> {
                 view: Rc<dyn IView>,
                 viewmodel: Option<Rc<dyn IViewModel>>,
                 view_renderer: Rc<dyn IViewRenderer>,
-                response_context: &'a dyn IResponseContext,
+                // response_context: &'a dyn IResponseContext,
                 request_context: &'a dyn IRequestContext,
             ) -> Self {
         Self {
@@ -85,7 +103,7 @@ impl <'a> ViewContext<'a> {
             view: view,
             viewmodel: viewmodel,
             view_renderer: view_renderer,
-            response_context: response_context,
+            // response_context: response_context,
             request_context: request_context,
         }
     }
@@ -99,14 +117,14 @@ impl <'a> ViewContext<'a> {
             view,
             parent_context.get_viewmodel(),
             parent_context.get_view_renderer(),
-            parent_context.get_response_context(),
+            // parent_context.get_response_context(),
             parent_context.get_request_context(),
         )
     }
 
     // clone the view context for a layout view.
     pub fn clone_for_layout(ctx: &'a dyn IViewContext, layout_view: Rc<dyn IView>) -> ViewContext<'a> {
-        let copy = Self::new(layout_view.clone(), ctx.get_viewmodel(), ctx.get_view_renderer(), ctx.get_response_context(), ctx.get_request_context());
+        let copy = Self::new(layout_view.clone(), ctx.get_viewmodel(), ctx.get_view_renderer(), ctx.get_request_context());
         copy.viewdata.as_ref().replace(ctx.get_view_data().as_ref().borrow().clone());
         copy
     }
@@ -141,7 +159,8 @@ impl <'a> IViewContext for ViewContext<'a> {
     }
 
     fn get_response_context(self: &Self) -> &dyn IResponseContext {
-        self.response_context
+        unimplemented!()
+        // self.response_context
     }
 
     fn get_request_context(self: &Self) -> &dyn IRequestContext {
@@ -152,18 +171,36 @@ impl <'a> IViewContext for ViewContext<'a> {
         match self.get_view_data().as_ref().borrow().get(&key) {
             Some(s) => s.clone(),
             None => {
-                match self.response_context.get_string(key.clone()) {
-                    Some(s) => s.clone(),
-                    None => {
+                // match self.response_context.get_string(key.clone()) {
+                    // Some(s) => s.clone(),
+                    // None => {
                         self.request_context.get_string(key)
-                    },
-                }
+                    // },
+                // }
+            },
+        }
+    }
+
+    fn try_get_string(self: &Self, key: String) -> Option<String> {
+        match self.get_view_data().as_ref().borrow().get(&key) {
+            Some(s) => Some(s.clone()),
+            None => {
+                // match self.response_context.get_string(key.clone()) {
+                    // Some(s) => Some(s.clone()),
+                    // None => {
+                        self.request_context.try_get_string(key)
+                    // },
+                // }
             },
         }
     }
 
     fn get_str(self: &Self, key: &str) -> String {
         self.get_string(key.to_string())
+    }
+
+    fn try_get_str(self: &Self, key: &str) -> Option<String> {
+        self.try_get_string(key.to_string())
     }
     
     fn insert_string(self: &Self, key: String, value: String) -> String {
@@ -173,5 +210,41 @@ impl <'a> IViewContext for ViewContext<'a> {
 
     fn insert_str(self: &Self, key: &str, value: String) -> String {
         self.insert_string(key.to_string(), value)
+    }
+
+    fn open_data_file(self: &Self, path: &str) -> Result<std::fs::File, std::io::Error> {
+        match self.resolve_data_file_path_string(path) {
+            Some(path) => {
+                std::fs::File::open(path)
+            },
+            None => {
+                Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Could not resolve data file path"))
+            },
+        }
+    }
+
+    fn open_view_file(self: &Self, path: &str) -> Result<std::fs::File, std::io::Error> {
+        match self.resolve_views_path_string(path) {
+            Some(path) => {
+                std::fs::File::open(path)
+            },
+            None => {
+                Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Could not resolve data file path"))
+            },
+        }
+    }
+
+    // this needs to be fixed to be more flexible and like .net core using config and options
+    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String> {
+        self.view_renderer.resolve_views_path_string(path)
+    }
+
+    // this needs to be fixed to be more flexible and like .net core using config and options
+    fn resolve_data_file_path_string(self: &Self, path: &str) -> Option<String> {
+        self.view_renderer.resolve_data_file_path_string(path)
+    }
+
+    fn get_view_start_path(self: &Self) -> Option<String> {
+        self.try_get_str("view_start")
     }
 }

@@ -118,7 +118,7 @@ pub trait IRustHtmlParserContext {
     fn get_rust_postprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>>;
 
     // resolve a full path to a view using different directories.
-    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String>;
+    // fn resolve_views_path_string(self: &Self, path: &str) -> Option<String>;
 }
 
 pub struct RustHtmlParserContext {
@@ -183,8 +183,6 @@ pub struct RustHtmlParserContext {
     // and if the hash is repeated, then the processing state is in a recursive loop or no longer simplifiable.
     pub rusthtml_processing_state_stack: RefCell<Vec<u32>>,
     pub rust_processing_state_stack: RefCell<Vec<u32>>,
-
-    pub views_path_resolvers: Vec<Rc<dyn IViewsPathResolver>>,
 }
 
 impl RustHtmlParserContext {
@@ -195,7 +193,7 @@ impl RustHtmlParserContext {
     pub fn new(
         is_raw_tokenstream: bool,
         should_panic_or_return_error: bool,
-        environment_name: String
+        environment_name: String,
     ) -> Self {
         Self {
             is_raw_tokenstream: is_raw_tokenstream,
@@ -321,11 +319,6 @@ impl RustHtmlParserContext {
             ],
             rusthtml_processing_state_stack: RefCell::new(vec![]),
             rust_processing_state_stack: RefCell::new(vec![]),
-            views_path_resolvers: vec![
-                Rc::new(RegularViewsPathResolver::new(
-                    "example_web_app".to_string(),
-                )),
-            ],
         }
     }
 
@@ -564,47 +557,5 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
 
     fn get_rust_postprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>> {
         self.rust_postprocessors.clone()
-    }
-
-    // this needs to be fixed to be more flexible and like .net core using config and options
-    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String> {
-        let mut cwd = std::env::current_dir().unwrap();
-        let mut path = path.to_string();
-        // handle '../' and './' in path
-        if path.starts_with("../") {
-            loop {
-                if path.starts_with("../") && path.len() > 3 {
-                    cwd.pop();
-                    path = path[3..].to_string();
-                } else {
-                    break;
-                }
-            }
-        } else if path.starts_with("./") {
-            path = path[2..].to_string();
-        }
-
-        let path_dir = cwd.to_str().unwrap();
-        let x = self.views_path_resolvers
-            .iter()
-            .flat_map(|x| x.get_view_paths(&path))
-            .map(|f| {
-                let mut f_absolute = PathBuf::new();
-                f_absolute.push(path_dir);
-                f_absolute.push(&f);
-                f_absolute
-            })
-            .filter(|x| x.exists() && x.is_file())
-            .take(1)
-            .next();
-
-        match x {
-            Some(x) => {
-                return Some(x.to_str().unwrap().to_string());
-            },
-            None => {
-                return None;
-            }
-        }
     }
 }

@@ -1,6 +1,7 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::cell::RefCell;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::contexts::irequest_context::IRequestContext;
@@ -22,6 +23,9 @@ use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
+use super::rusthtml::iviews_path_resolver::IViewsPathResolver;
+use super::rusthtml::views_path_resolver::RegularViewsPathResolver;
+
 // this defines the interface for a class that can render views.
 // the view result calls this to render the view from the controller.
 pub trait IViewRenderer {
@@ -35,7 +39,7 @@ pub trait IViewRenderer {
         self: &Self,
         view_path: &String,
         view_model: Option<Rc<dyn IViewModel>>,
-        response_context: &dyn IResponseContext,
+        // response_context: &dyn IResponseContext,
         request_context: &dyn IRequestContext,
         services: &dyn IServiceCollection
     ) -> Result<HtmlString, RustHtmlError>;
@@ -61,18 +65,32 @@ pub trait IViewRenderer {
     // services: the services available to the view renderer.
     // returns: the view with the specified path.
     fn get_view(self: &Self, path: &String, services: &dyn IServiceCollection) -> Rc<dyn IView>;
+
+
+
+    // resolve the views path string.
+    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String>;
+    // resolve the data file path string.
+    fn resolve_data_file_path_string(self: &Self, path: &str) -> Option<String>;
 }
 
 // this is a struct that implements IViewRenderer.
 pub struct ViewRenderer {
     // the views available to the view renderer.
     cached_views: RefCell<Option<Vec<Rc<dyn IView>>>>,
+    views_path_resolvers: Vec<Rc<dyn IViewsPathResolver>>,
 }
 
 impl ViewRenderer  {
     pub fn new() -> Self {
+        let project_path = std::env::current_dir().unwrap().to_str().unwrap().to_string();
         Self {
-            cached_views: RefCell::new(None)
+            cached_views: RefCell::new(None),
+            views_path_resolvers: vec![
+                Rc::new(RegularViewsPathResolver::new(
+                    project_path,
+                )),
+            ],
         }
     }
 
@@ -92,12 +110,12 @@ impl IViewRenderer for ViewRenderer {
         self: &Self,
         view_path: &String,
         view_model: Option<Rc<dyn IViewModel>>,
-        response_context: &dyn IResponseContext,
+        // response_context: &dyn IResponseContext,
         request_context: &dyn IRequestContext,
         services: &dyn IServiceCollection
     ) -> Result<HtmlString, RustHtmlError> {
         let view_renderer_service_instance = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
-        let mut body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model, view_renderer_service_instance.clone(), response_context, request_context);
+        let mut body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model, view_renderer_service_instance.clone(), request_context);
         match body_view_ctx.get_view_as_ref().render(&body_view_ctx, services) {
             Ok(body_html) => {
 
@@ -164,6 +182,59 @@ impl IViewRenderer for ViewRenderer {
             None => {
                 let available_view_paths = self.get_all_views(services).iter().map(|x| x.get_path()).collect::<Vec<String>>();
                 panic!("No views found at '{}' in {:?}. Available views: {:?}", path.as_str(), std::env::current_dir().unwrap(), available_view_paths)
+            },
+        }
+    }
+
+    // this needs to be fixed to be more flexible and like .net core using config and options
+    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String> {
+        let mut cwd = std::env::current_dir().unwrap();
+        let mut path = path.to_string();
+        // handle '../' and './' in path
+        if path.starts_with("../") {
+            loop {
+                if path.starts_with("../") && path.len() > 3 {
+                    cwd.pop();
+                    path = path[3..].to_string();
+                } else {
+                    break;
+                }
+            }
+        } else if path.starts_with("./") {
+            path = path[2..].to_string();
+        }
+
+        let path_dir = cwd.to_str().unwrap();
+        let x = self.views_path_resolvers
+            .iter()
+            .flat_map(|x| x.get_view_paths(&path))
+            .map(|f| {
+                let mut f_absolute = PathBuf::new();
+                f_absolute.push(path_dir);
+                f_absolute.push(&f);
+                f_absolute
+            })
+            .filter(|x| x.exists() && x.is_file())
+            .take(1)
+            .next();
+
+        match x {
+            Some(x) => {
+                return Some(x.to_str().unwrap().to_string());
+            },
+            None => {
+                return None;
+            }
+        }
+    }
+
+    fn resolve_data_file_path_string(self: &Self, path: &str) -> Option<String> {
+        match std::fs::File::open(path) {
+            Ok(_) => {
+                Some(path.to_string())
+            },
+            Err(_) => {
+                None
             },
         }
     }

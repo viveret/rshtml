@@ -1,5 +1,7 @@
 [workspace]
 members = [
+  "aibrew_web_app",
+  "dnn_lib",
   "core_macro_lib",
   "mvc_macro_lib",
   "mvc_lib",

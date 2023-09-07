@@ -114,4 +114,14 @@ impl HtmlTagParseContext {
             output.push(RustHtmlToken::HtmlTagEnd(self.tag_name_as_str(), Some(self.tag_name.clone())));
         }
     }
+
+    pub fn is_kvp_defined(&self) -> bool {
+        return self.is_key_defined();
+    }
+
+    pub fn is_key_defined(&self) -> bool {
+        return !self.html_attr_key.is_empty() ||
+                !self.html_attr_key_ident.is_empty() ||
+                self.html_attr_key_literal.is_some();
+    }
 }

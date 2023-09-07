@@ -20,13 +20,15 @@ pub trait IRustToRustHtmlConverter {
     fn expand_external_rshtml_string(self: &Self, rshtml_str: &String, output: &mut Vec<RustHtmlToken>) -> Result<(), RustHtmlError>;
     fn parse_tokenstream_to_rusthtmltokens(self: &Self, is_in_html_mode: bool, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
     fn parse_string_with_quotes(self: &Self, peek_or_next: bool, identifier: Ident, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError>;
-    fn parse_identifier_expression(self: &Self, identifier: Ident, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
+    fn extract_identifier_expression(self: &Self, add_first_ident: bool, identifier_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<Vec<TokenTree>, RustHtmlError>;
+    fn parse_identifier_expression(self: &Self, add_first_ident: bool, identifier: &Ident, identifier_token: &TokenTree, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
     fn parse_type_identifier(self: &Self, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<TokenTree>, RustHtmlError>;
     fn loop_next_and_convert(self: &Self, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
     fn next_and_convert(self: &Self, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError>;
 
     fn convert_copy(self: &Self, token: TokenTree, output: &mut Vec<RustHtmlToken>) -> Result<(), RustHtmlError>;
-    fn convert_path_str(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<String, RustHtmlError>;
+    fn peek_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<String, RustHtmlError>;
+    fn next_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<String, RustHtmlError>;
     // fn convert_views_path_str(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<String, RustHtmlError>;
     // fn resolve_views_path_str(self: &Self, path: &str) -> Result<String, RustHtmlError>;
     fn convert_string_or_ident(self: &Self, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<RustHtmlIdentAndPunctAndGroupOrLiteral, RustHtmlError>;
@@ -40,7 +42,7 @@ pub trait IRustToRustHtmlConverter {
     fn convert_group_to_rusthtmltoken(self: &Self, group: Group, expect_return_html: bool, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
     fn convert_rust_entry_to_rusthtmltoken(self: &Self, c: char, punct: Punct, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
     fn convert_rust_directive_to_rusthtmltoken(self: &Self, token: TokenTree, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError>;
-    fn convert_rust_directive_identifier_to_rusthtmltoken(self: &Self, identifier: Ident, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
+    fn convert_rust_directive_identifier_to_rusthtmltoken(self: &Self, identifier: &Ident, ident_token: &TokenTree, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
     fn convert_rust_directive_group_to_rusthtmltoken(self: &Self, group: Group, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
     fn convert_rusthtmltokens_to_ident_or_punct_or_group(self: &Self, rusthtml_tokens: Vec<RustHtmlToken>) -> Result<Vec<RustHtmlIdentOrPunctOrGroup>, RustHtmlError>;
 

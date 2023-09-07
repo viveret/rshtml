@@ -120,3 +120,9 @@ impl From<bool> for HtmlString {
         HtmlString::new_data_string(item.to_string())
     }
 }
+
+impl From<f32> for HtmlString {
+    fn from(item: f32) -> Self {
+        HtmlString::new_data_string(item.to_string())
+    }
+}

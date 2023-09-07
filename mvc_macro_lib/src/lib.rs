@@ -85,13 +85,20 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
             if let Some(view_start) = parser.parse_context.try_get_param_string("view_start") {
                 // println!("view_start_path: {}", view_start_path);
                 view_start_tokens = Some(quote! {
-                    view_context.get_view_renderer()
+                    match view_context.get_view_renderer()
                         .render_with_layout_if_specified(
                             &#view_start.to_string(),
                             view_context.get_viewmodel(),
                             view_context.get_request_context(),
                             services
-                        );
+                        ) {
+                            Ok(html) => {
+                                html_output.write_html(html);
+                            },
+                            Err(err) => {
+                                html_output.write_html_str(format!("could not render view_start: {}", err).as_str());
+                            }
+                        }
                 });
             }
 

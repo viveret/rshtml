@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use proc_macro2::Ident;
+use proc_macro2::TokenTree;
 
 use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
@@ -25,7 +26,7 @@ impl IRustHtmlDirective for HtmlDirective {
         name == "rawhtml"
     }
 
-    fn execute(self: &Self, _identifier: &Ident, _parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, _it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, _identifier: &Ident, _ident_token: &TokenTree, _parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, _it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         Ok(RustHtmlDirectiveResult::OkContinue)
     }
 }

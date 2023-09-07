@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro2::Ident;
+use proc_macro2::{ Ident, TokenTree };
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
@@ -24,7 +24,7 @@ impl IRustHtmlDirective for ElseIfDirective {
         name == "else if"
     }
 
-    fn execute(self: &Self, _identifier: &Ident, _parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, _it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, _identifier: &Ident, _ident_token: &TokenTree, _parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, _it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         Ok(RustHtmlDirectiveResult::OkContinue)
     }
 }

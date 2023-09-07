@@ -374,8 +374,8 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // returns: whether we should break the outer loop or not, or an error.
     fn convert_rust_directive_to_rusthtmltoken(self: &Self, token: TokenTree, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError>  {
         match token {
-            TokenTree::Ident(ident) => {
-                self.convert_rust_directive_identifier_to_rusthtmltoken(ident, prefix_token_option, output, it, is_raw_tokenstream)?;
+            TokenTree::Ident(ref ident) => {
+                self.convert_rust_directive_identifier_to_rusthtmltoken(ident, &token, prefix_token_option, output, it, is_raw_tokenstream)?;
             },
             TokenTree::Group(group) => {
                 self.convert_rust_directive_group_to_rusthtmltoken(group, prefix_token_option, output, is_raw_tokenstream)?;
@@ -442,9 +442,9 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // it: the iterator to use.
     // is_raw_tokenstream: whether the token stream is raw or not.
     // returns: nothing or an error.
-    fn convert_rust_directive_identifier_to_rusthtmltoken(self: &Self, identifier: Ident, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
+    fn convert_rust_directive_identifier_to_rusthtmltoken(self: &Self, identifier: &Ident, ident_token: &TokenTree, prefix_token_option: Option<RustHtmlToken>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
         if let Some(directive) = self.context.try_get_directive(identifier.to_string()) {
-            let r = directive.execute(&identifier, Rc::new(self.clone()), output, it);
+            let r = directive.execute(&identifier, ident_token, Rc::new(self.clone()), output, it);
             match r {
                 Ok(r) => {
                     match r {
@@ -460,9 +460,30 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
         } else {
             let mut inner_tokens = vec![];
             if let Some(prefix_token) = prefix_token_option {
+                println!("prefix_token: {:?}", prefix_token);
                 inner_tokens.push(prefix_token);
             }
-            self.parse_identifier_expression(identifier, &mut inner_tokens, it, is_raw_tokenstream)?;
+            println!("first token: {:?}", identifier);
+            self.parse_identifier_expression(true, identifier, ident_token, &mut inner_tokens, it, is_raw_tokenstream)?;
+            // need to assert / test that first identifier is added to output
+            // if inner_tokens.len() > 0 {
+            //     if let Some(x) = inner_tokens
+            //                         .iter()
+            //                         .filter(|x| match x { RustHtmlToken::Identifier(..) => true, _ => false })
+            //                         .nth(0) {
+            //         match x {
+            //             RustHtmlToken::Identifier(y) => {
+            //                 // assert that the first identifier is added to output
+            //                 if y != identifier {
+            //                     return self.panic_or_return_error(format!("unexpected first identifier: {:?}", y));
+            //                 }
+            //             },
+            //             _ => {
+            //                 return self.panic_or_return_error(format!("unexpected first token {:?}", x));
+            //             }
+            //         }
+            //     }
+            // }
             output.push(RustHtmlToken::AppendToHtml(inner_tokens));
         }
         Ok(())
@@ -472,14 +493,27 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // identifier: the identifier to convert.
     // it: the iterator to use.
     // returns: the path string or an error.
-    fn convert_path_str(self: &Self, identifier: Ident, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
+    fn next_path_str(self: &Self, identifier: &Ident, identifier_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
         let mut path = std::path::PathBuf::new();
 
-        println!("source file: {:?}", identifier.span());
+        // println!("source file: {:?}", identifier.span());
 
         let cwd = std::env::current_dir().unwrap();
         path.push(cwd);
         let relative_path = self.parse_string_with_quotes(false, identifier.clone(), it)?;
+        path.push(relative_path.clone());
+
+        Ok(path.to_str().unwrap().to_string())
+    }
+
+    fn peek_path_str(self: &Self, identifier: &Ident, identifier_token: &TokenTree,  it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
+        let mut path = std::path::PathBuf::new();
+
+        // println!("source file: {:?}", identifier.span());
+
+        let cwd = std::env::current_dir().unwrap();
+        path.push(cwd);
+        let relative_path = self.parse_string_with_quotes(true, identifier.clone(), it)?;
         path.push(relative_path.clone());
 
         Ok(path.to_str().unwrap().to_string())
@@ -591,7 +625,8 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
         if let Some(expect_string_token) = r {
             match expect_string_token {
                 TokenTree::Literal(literal) => Ok(snailquote::unescape(&literal.to_string()).unwrap()),
-                _ => self.panic_or_return_error(format!("unexpected token after {} directive: {:?}", identifier, expect_string_token))?
+                _ => Err(RustHtmlError::from_string(format!("unexpected token after {} directive: {:?}", identifier, expect_string_token))),
+                // _ if !peek_or_next => self.panic_or_return_error(format!("unexpected token after {} directive: {:?}", identifier, expect_string_token))?
             }
         } else {
             self.panic_or_return_error(format!("unexpected end of token stream after {} directive", identifier))?
@@ -603,60 +638,37 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // output: the destination for the RustHtml tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    fn parse_identifier_expression(self: &Self, identifier: Ident, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
-        output.push(RustHtmlToken::Identifier(identifier.clone()));
-        let mut last_token_was_ident = true;
-        loop {
-            let token_option = it.peek();
-            if let Some(token) = token_option {
-                match token {
-                    TokenTree::Literal(literal) => {
-                        output.push(RustHtmlToken::Literal(Some(literal.clone()), None));
-                        it.next();
-                    },
-                    TokenTree::Ident(ident) => {
-                        if last_token_was_ident {
-                            break;
-                        } else {
+    fn parse_identifier_expression(self: &Self, add_first_ident: bool, identifier: &Ident, identifier_token: &TokenTree, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
+        match self.extract_identifier_expression(add_first_ident, identifier_token, it, is_raw_tokenstream) {
+            Ok(tokens) => {
+                for token in tokens.iter() {
+                    match token {
+                        TokenTree::Literal(literal) => {
+                            output.push(RustHtmlToken::Literal(Some(literal.clone()), None));
+                        },
+                        TokenTree::Ident(ident) => {
                             output.push(RustHtmlToken::Identifier(ident.clone()));
-                            it.next();
-                            last_token_was_ident = true;
-                            continue;
+                        },
+                        TokenTree::Group(group) => {
+                            let delimiter = group.delimiter();
+                            let mut inner_tokens = vec![];
+                            self.loop_next_and_convert(false, &mut inner_tokens, Rc::new(PeekableTokenTree::new(group.stream())), is_raw_tokenstream)?;
+                            output.push(RustHtmlToken::GroupParsed(delimiter, inner_tokens));
+                        },
+                        TokenTree::Punct(punct) => {
+                            output.push(RustHtmlToken::ReservedChar(punct.as_char(), punct.clone()));
+                        },
+                        _ => {
+                            panic!("should not be here");
                         }
-                    },
-                    TokenTree::Group(group) => {
-                        let delimiter = group.delimiter();
-                        let mut inner_tokens = vec![];
-                        self.loop_next_and_convert(false, &mut inner_tokens, Rc::new(PeekableTokenTree::new(group.stream())), is_raw_tokenstream)?;
-                        output.push(RustHtmlToken::GroupParsed(delimiter, inner_tokens));
-                       
-                        it.next();
-
-                        // // not a function call or index
-                        if delimiter == Delimiter::Brace {
-                            break;
-                        }
-                    },
-                    TokenTree::Punct(punct) => {
-                        let c = punct.as_char();
-                        match c {
-                            '.' | '?' | '!' | '_' => {
-                                output.push(RustHtmlToken::ReservedChar(c, punct.clone()));
-                                it.next();
-                            },
-                            _ => {
-                                break;
-                            }
-                        }
-                    },
+                    }
                 }
-            } else {
-                break;
+                Ok(())
+            },
+            Err(e) => {
+                self.panic_or_return_error(format!("error parsing identifier expression: {}", e))?
             }
-
-            last_token_was_ident = false;
         }
-        Ok(())
     }
 
     // get the next token and parse it as a literal or identifier expression that can be converted to RustHtml tokens.
@@ -669,9 +681,9 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                 TokenTree::Literal(literal) => {
                     Ok(RustHtmlIdentAndPunctAndGroupOrLiteral::Literal(literal.clone()))
                 },
-                TokenTree::Ident(ident2) => {
+                TokenTree::Ident(ref ident2) => {
                     let mut inner_tokens = vec![];
-                    self.parse_identifier_expression(ident2.clone(), &mut inner_tokens, it, is_raw_tokenstream)?;
+                    self.parse_identifier_expression(true, ident2, &expect_string_or_ident_token, &mut inner_tokens, it, is_raw_tokenstream)?;
                     Ok(RustHtmlIdentAndPunctAndGroupOrLiteral::IdentAndPunctAndGroup(self.convert_rusthtmltokens_to_ident_or_punct_or_group(inner_tokens)?))
                 },
                 _ => {
@@ -815,8 +827,12 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     ) -> Result<(), RustHtmlError> {
         if parse_ctx.parse_attrs {
             if parse_ctx.parse_attr_val {
-                parse_ctx.html_attr_val_literal = Some(literal.clone());
-                self.on_kvp_defined(parse_ctx, output)?;
+                if parse_ctx.is_key_defined() {
+                    parse_ctx.html_attr_val_literal = Some(literal.clone());
+                    self.on_kvp_defined(parse_ctx, output)?;
+                } else {
+                    panic!("was supposed to call on_kvp_defined but key was None")
+                }
             } else {
                 parse_ctx.html_attr_key_literal = Some(literal.clone());
                 let s = snailquote::unescape(&literal.to_string()).unwrap();
@@ -890,11 +906,11 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                     // escaping the html to insert value
                     let directive_token = it.next().unwrap();
 
-                    // fixme: this needs to be fixed
+                    // fixme: this needs to be fixed, it is not checking directive logic
                     match directive_token {
-                        TokenTree::Ident(ident) => {
+                        TokenTree::Ident(ref ident) => {
                             let mut rust_ident_exp = vec![];
-                            self.parse_identifier_expression(ident, &mut rust_ident_exp, it, is_raw_tokenstream)?;
+                            self.parse_identifier_expression(true, ident, &directive_token, &mut rust_ident_exp, it, is_raw_tokenstream)?;
                             parse_ctx.html_attr_val_rust = rust_ident_exp;
                         },
                         TokenTree::Literal(literal) => {
@@ -904,7 +920,11 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                             return self.panic_or_return_error(format!("Unexpected directive token after '@' in html attribute val parse: {:?}", directive_token))?;
                         }
                     }
-                    self.on_kvp_defined(parse_ctx, output)?;
+
+                    // can't just call this, need to wrap in if
+                    if parse_ctx.is_kvp_defined() {
+                        self.on_kvp_defined(parse_ctx, output)?;
+                    }
                 },
                 _ => {
                     let current_val = if parse_ctx.html_attr_val_ident.len() > 0 {
@@ -980,6 +1000,9 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                 }
             }
             RustHtmlToken::HtmlTagAttributeName(attr_name.clone(), Some(RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(parse_ctx.html_attr_key_ident.clone())))
+        } else if parse_ctx.html_attr_key.len() > 0 {
+            attr_name.push_str(parse_ctx.html_attr_key.as_str());
+            RustHtmlToken::HtmlTagAttributeName(attr_name.clone(), None)
         } else {
             return Err(RustHtmlError::from_string(format!("on_kvp_defined: html_attr_key_literal and html_attr_key_ident are both None")));
         });
@@ -1277,5 +1300,65 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
 
     fn get_context(self: &Self) -> Rc<dyn IRustHtmlParserContext> {
         self.context.clone()
+    }
+
+    // need to differentiate between type and value identifier.
+    // or at least allow '.' where we allow ':'
+    // also need to allow optional add identifier token in case of *html*.link
+    fn extract_identifier_expression(self: &Self, add_first_ident: bool, identifier_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<Vec<TokenTree>, RustHtmlError> {
+        let mut output = vec![];
+        // this needs to be an argument
+        let mut last_token_was_ident = false;
+        loop {
+            let token_option = it.peek();
+            if let Some(token) = token_option {
+                match token {
+                    TokenTree::Literal(literal) => {
+                        output.push(it.next().unwrap());
+                    },
+                    TokenTree::Ident(ident) => {
+                        if last_token_was_ident {
+                            println!("broke ident expression extraction: {:?}", ident);
+                            break;
+                        } else {
+                            output.push(it.next().unwrap());
+                            last_token_was_ident = true;
+                            continue;
+                        }
+                    },
+                    TokenTree::Group(group) => {
+                        output.push(it.next().unwrap());
+                        // not a function call or index
+                        match group.delimiter() {
+                            Delimiter::Brace |
+                            Delimiter::Parenthesis => break,
+                            _ => {}
+                        }
+                    },
+                    TokenTree::Punct(punct) => {
+                        let c = punct.as_char();
+                        match c {
+                            '.' | '?' | '!' | '_' | ':' | '&' => {
+                                if last_token_was_ident {
+                                    output.push(it.next().unwrap());
+                                    last_token_was_ident = false;
+                                } else {
+                                    println!("broke ident expression extraction: {:?}", punct);
+                                    break;
+                                }
+                            },
+                            _ => {
+                                break;
+                            }
+                        }
+                    },
+                }
+            } else {
+                break;
+            }
+
+            last_token_was_ident = false;
+        }
+        Ok(output)
     }
 }

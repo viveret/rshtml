@@ -59,7 +59,7 @@ impl IRustHtmlDirective for LetDirective {
         name == "let"
     }
 
-    fn execute(self: &Self, identifier: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, identifier: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         output.push(RustHtmlToken::Identifier(identifier.clone()));
         if let Ok(_) = Self::parse_let(parser, output, it) {
             Ok(RustHtmlDirectiveResult::OkContinue)

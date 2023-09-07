@@ -45,7 +45,7 @@ impl IRustHtmlDirective for InjectDirective {
         name == "inject"
     }
 
-    fn execute(self: &Self, _: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, _: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // expecting type identifier
         if let Ok(type_ident_tokens) = parser.parse_type_identifier(it.clone()) {
             // next token should be "as"

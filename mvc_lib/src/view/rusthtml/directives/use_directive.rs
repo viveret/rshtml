@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::{Ident, TokenTree, TokenStream};
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
@@ -24,7 +24,7 @@ impl IRustHtmlDirective for UseDirective {
         name == "use"
     }
 
-    fn execute(self: &Self, _: &Ident, parser: Rc<dyn IRustToRustHtmlConverter>, _: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, _: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, _: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // expecting type identifier
         if let Ok(type_ident_tokens) = parser.parse_type_identifier(it) {
             let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_tokens));

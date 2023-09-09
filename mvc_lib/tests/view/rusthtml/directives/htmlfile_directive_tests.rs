@@ -25,7 +25,8 @@ fn htmlfile_directive_basic_cannot_find_file() {
     let it = Rc::new(PeekableTokenTree::new(rust.clone()));
     let ctx = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let parser = Rc::new(RustToRustHtmlConverter::new(ctx));
-    let identifier = match it.next().unwrap() {
+    let ident_token = it.next().unwrap();
+    let identifier = match &ident_token {
         TokenTree::Ident(i) => i,
         _ => panic!("Expected an identifier."),
     };
@@ -34,7 +35,7 @@ fn htmlfile_directive_basic_cannot_find_file() {
 
     let x = HtmlFileDirective::new();
 
-    match x.execute(&identifier, parser, &mut output, it) {
+    match x.execute(&identifier, &ident_token, parser, &mut output, it) {
         Err(RustHtmlError(e)) =>
             assert!(e.starts_with("(@htmlfile) cannot read external HTML file, could not parse path")),
         _ => assert!(false),
@@ -49,7 +50,8 @@ fn htmlfile_directive_basic_readme() {
     let it = Rc::new(PeekableTokenTree::new(rust.clone()));
     let ctx = Rc::new(RustHtmlParserContext::new(false, true, "test".to_string()));
     let parser = Rc::new(RustToRustHtmlConverter::new(ctx));
-    let identifier = match it.next().unwrap() {
+    let ident_token = it.next().unwrap();
+    let identifier = match &ident_token {
         TokenTree::Ident(i) => i,
         _ => panic!("Expected an identifier."),
     };
@@ -58,7 +60,7 @@ fn htmlfile_directive_basic_readme() {
 
     let x = HtmlFileDirective::new();
 
-    match x.execute(&identifier, parser, &mut output, it) {
+    match x.execute(&identifier, &ident_token, parser, &mut output, it) {
         Err(RustHtmlError(e)) =>
             assert_eq!("", e),
         Ok(r) => {

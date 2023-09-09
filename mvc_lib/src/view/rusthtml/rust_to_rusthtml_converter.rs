@@ -1305,10 +1305,10 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // need to differentiate between type and value identifier.
     // or at least allow '.' where we allow ':'
     // also need to allow optional add identifier token in case of *html*.link
-    fn extract_identifier_expression(self: &Self, add_first_ident: bool, identifier_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<Vec<TokenTree>, RustHtmlError> {
+    fn extract_identifier_expression(self: &Self, add_first_ident: bool, identifier_token: &TokenTree, last_token_was_ident: bool, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<Vec<TokenTree>, RustHtmlError> {
         let mut output = vec![];
         // this needs to be an argument
-        let mut last_token_was_ident = false;
+        let mut last_token_was_ident = last_token_was_ident;
         loop {
             let token_option = it.peek();
             if let Some(token) = token_option {

@@ -35,14 +35,18 @@ impl MarkdownFileNoCacheDirective {
                 // couldn't peek path string, try parsing identity expression for dynamic path
                 match parser.extract_identifier_expression(false, ident_token, it.clone(), false) {
                     Ok(ident_output) => {
-                        // might need to prepend ident_token?
-                        let mut ident_output_final = vec![];
-                        ident_output_final.push(ident_token.clone());
-                        ident_output_final.extend_from_slice(&ident_output);
-                        open_inner_tokenstream = Some(TokenStream::from_iter(ident_output_final.into_iter()));
+                        if ident_output.len() > 0 {
+                            // might need to prepend ident_token?
+                            let mut ident_output_final = vec![];
+                            ident_output_final.push(ident_token.clone());
+                            ident_output_final.extend_from_slice(&ident_output);
+                            open_inner_tokenstream = Some(TokenStream::from_iter(ident_output_final.into_iter()));
+                        } else {
+                            return Err(RustHtmlError::from_string(format!("cannot read external markdown file nocache '{}', could not parse path: {}", identifier, e)));
+                        }
                     },
                     Err(RustHtmlError(e2)) => {
-                        return Err(RustHtmlError::from_string(format!("cannot read external markdown file nocache '{}', could not parse path: {}", identifier, e)));
+                        return Err(RustHtmlError::from_string(format!("cannot read external markdown file nocache '{}', could not parse path: {}", identifier, e2)));
                     }
                 }
             }
@@ -50,6 +54,7 @@ impl MarkdownFileNoCacheDirective {
 
         if let Some(open_inner_tokenstream) = open_inner_tokenstream {
             let path = format!("{}", open_inner_tokenstream);
+            println!("path: {}", path);
             let code = quote::quote! {
                 match view_context.open_data_file(#open_inner_tokenstream) {
                     Ok(mut f) => {
@@ -57,11 +62,11 @@ impl MarkdownFileNoCacheDirective {
                         match f.read_to_string(&mut buffer) {
                             Some(x) => {
                                 match comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default()) {
-                                    Some(x) => {
-                                        if x == 0 {
-                                            panic!("Could not convert markdown to html at {} (no bytes written)", #path);
-                                        } else {
+                                    Some(n) => {
+                                        if n > 0 {
                                             HtmlString::new_from_html(buffer)
+                                        } else {
+                                            panic!("Could not convert markdown to html at {} (no bytes written)", #path);
                                         }
                                     },
                                     None => {

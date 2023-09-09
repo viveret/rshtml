@@ -30,14 +30,14 @@ pub fn if_directive_process_rust_basic() {
     it.as_ref().next();
 
     let first_token = it.next().unwrap();
-    let first_ident = if let TokenTree::Ident(x) = first_token { x } else { panic!("expected ident, not {:?}", first_token); };
+    let first_ident = if let TokenTree::Ident(x) = &first_token { x } else { panic!("expected ident, not {:?}", first_token); };
 
     let context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let parser = Rc::new(RustToRustHtmlConverter::new(context));
 
     // begin processing
     let mut output = Vec::new();
-    let result = processor.execute(&first_ident, parser, &mut output, it).unwrap();
+    let result = processor.execute(&first_ident, &first_token, parser, &mut output, it).unwrap();
     assert_ne!(0, output.len());
     match result {
         RustHtmlDirectiveResult::OkContinue => {
@@ -74,14 +74,14 @@ fn if_directive_process_rust_basic_else() {
     it.as_ref().next();
 
     let first_token = it.next().unwrap();
-    let first_ident = if let TokenTree::Ident(x) = first_token { x } else { panic!("expected ident, not {:?}", first_token); };
+    let first_ident = if let TokenTree::Ident(x) = &first_token { x } else { panic!("expected ident, not {:?}", first_token); };
 
     let context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let parser = Rc::new(RustToRustHtmlConverter::new(context));
 
     // begin processing
     let mut output = Vec::new();
-    let result = processor.execute(&first_ident, parser, &mut output, it).unwrap();
+    let result = processor.execute(&first_ident, &first_token, parser, &mut output, it).unwrap();
     assert_ne!(0, output.len());
     match result {
         RustHtmlDirectiveResult::OkContinue => {

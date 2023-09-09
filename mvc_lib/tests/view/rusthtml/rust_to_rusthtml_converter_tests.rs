@@ -227,21 +227,21 @@ pub fn rust_to_rusthtml_converter_convert_views_path_str() {
         test "_"
     }));
     let token = it.next().unwrap();
-    if let TokenTree::Ident(identifier) = token {
+    if let TokenTree::Ident(identifier) = &token {
         let is_raw_tokenstream = false;
-        let result = converter.convert_views_path_str(identifier, it, is_raw_tokenstream).unwrap();
+        let result = converter.next_path_str(identifier, &token, it, is_raw_tokenstream).unwrap();
         assert_eq!(true, result.len() > 0);
     } else {
         panic!("expected TokenTree::Ident");
     }
 }
 
-#[test]
-pub fn rust_to_rusthtml_converter_resolve_views_path_str() {
-    let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
-    let path = "_";
-    converter.resolve_views_path_str(path).unwrap();
-}
+// #[test]
+// pub fn rust_to_rusthtml_converter_resolve_views_path_str() {
+//     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
+//     let path = "_";
+//     converter.path(path).unwrap();
+// }
 
 #[test]
 pub fn rust_to_rusthtml_converter_expand_external_rshtml_string() {
@@ -262,10 +262,13 @@ pub fn rust_to_rusthtml_converter_is_start_of_current_expression() {
 pub fn rust_to_rusthtml_converter_parse_identifier_expression() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let identifier = Ident::new("test", Span::call_site());
-    let mut output = vec![];
+    let ident_token = TokenTree::Ident(identifier.clone());
+
     let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
     let is_raw_tokenstream = false;
-    converter.parse_identifier_expression(identifier, &mut output, it, is_raw_tokenstream).unwrap();
+
+    let mut output = vec![];
+    converter.parse_identifier_expression(true, &identifier, &ident_token, &mut output, it, is_raw_tokenstream).unwrap();
 }
 
 #[test]

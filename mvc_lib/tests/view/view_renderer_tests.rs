@@ -78,6 +78,6 @@ fn view_renderer_render() {
     services.add(ServiceDescriptor::new_from::<dyn IView, MockView>(MockView::new_service, ServiceScope::Request));
     ViewRenderer::add_to_services(&mut services);
 
-    let result = view_renderer.render_with_layout_if_specified(&view_path.to_string(), Some(view_model), &response_context, &request_context, &services).unwrap();
+    let result = view_renderer.render_with_layout_if_specified(&view_path.to_string(), Some(view_model), &request_context, &services).unwrap();
     assert_eq!(result.content, "Hello, world!");
 }

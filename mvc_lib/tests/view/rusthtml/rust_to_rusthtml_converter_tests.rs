@@ -676,3 +676,9 @@ fn assert_vecs_of_rusthtmlidentsorpunct_eq(
     }
     assert_eq!(expected_idents.len(), actual_idents.len());
 }
+
+
+
+// add test for 'a' element with classes and href="/" since the current issue
+// is that the href is not being parsed correctly: the key for some reason is
+// not being stored in the context, either from being skipped or something else

@@ -463,7 +463,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                 println!("prefix_token: {:?}", prefix_token);
                 inner_tokens.push(prefix_token);
             }
-            println!("first token: {:?}", identifier);
+            // println!("first token: {:?}", identifier);
             self.parse_identifier_expression(true, identifier, ident_token, true, &mut inner_tokens, it, is_raw_tokenstream)?;
             // need to assert / test that first identifier is added to output
             // if inner_tokens.len() > 0 {
@@ -868,11 +868,16 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                     return self.on_html_tag_parsed(None, parse_ctx, output);
                 },
                 '=' => {
-                    println!("parse_ctx.html_attr_key: {}", parse_ctx.html_attr_key);
-                    println!("parse_ctx.html_attr_key_ident: {:?}", parse_ctx.html_attr_key_ident);
-                    println!("parse_ctx.html_attr_key_literal: {:?}", parse_ctx.html_attr_key_literal);
-                    parse_ctx.equals_punct = Some(punct.clone());
-                    parse_ctx.parse_attr_val = true;
+                    if parse_ctx.is_key_defined() {
+                        parse_ctx.equals_punct = Some(punct.clone());
+                        parse_ctx.parse_attr_val = true;
+                    } else {
+                        println!("=key: {}", parse_ctx.html_attr_key);
+                        println!("=key_ident: {:?}", parse_ctx.html_attr_key_ident);
+                        println!("=key_literal: {:?}", parse_ctx.html_attr_key_literal);
+                        
+                        return self.panic_or_return_error(format!("convert_html_punct_to_rusthtmltoken Unexpected '=' (key was None)"));
+                    }
                 },
                 '/' => {
                     let expect_closing_punct = it.next().unwrap();
@@ -1007,6 +1012,14 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             attr_name.push_str(parse_ctx.html_attr_key.as_str());
             RustHtmlToken::HtmlTagAttributeName(attr_name.clone(), None)
         } else {
+            // print out state of KVP context
+            println!("parse_ctx.html_attr_key_literal: {:?}", parse_ctx.html_attr_key_literal);
+            println!("parse_ctx.html_attr_key_ident: {:?}", parse_ctx.html_attr_key_ident);
+            println!("parse_ctx.html_attr_key: {:?}", parse_ctx.html_attr_key);
+            println!("parse_ctx.html_attr_val_literal: {:?}", parse_ctx.html_attr_val_literal);
+            println!("parse_ctx.html_attr_val_ident: {:?}", parse_ctx.html_attr_val_ident);
+            println!("parse_ctx.html_attr_val_rust: {:?}", parse_ctx.html_attr_val_rust);
+
             return Err(RustHtmlError::from_string(format!("on_kvp_defined: html_attr_key_literal and html_attr_key_ident are both None")));
         });
 

@@ -33,7 +33,7 @@ impl MarkdownFileNoCacheDirective {
             },
             Err(RustHtmlError(e)) => {
                 // couldn't peek path string, try parsing identity expression for dynamic path
-                match parser.extract_identifier_expression(false, ident_token, it.clone(), false) {
+                match parser.extract_identifier_expression(false, ident_token, false, it.clone(), false) {
                     Ok(ident_output) => {
                         if ident_output.len() > 0 {
                             // might need to prepend ident_token?

@@ -76,6 +76,7 @@ impl HtmlTagParseContext {
         self.html_attr_key_literal = None;
         self.html_attr_key_ident = vec![];
 
+        // self.html_attrs.clear();
         self.equals_punct = None;
     }
 
@@ -120,8 +121,10 @@ impl HtmlTagParseContext {
     }
 
     pub fn is_key_defined(&self) -> bool {
-        return !self.html_attr_key.is_empty() ||
-                !self.html_attr_key_ident.is_empty() ||
-                self.html_attr_key_literal.is_some();
+        // call equivalent of is_some on string
+        return self.html_attr_key.len() > 0 ||
+                self.html_attr_key_ident.len() > 0 ||
+                self.html_attr_key_literal.is_some() ||
+                self.equals_punct.is_some();
     }
 }

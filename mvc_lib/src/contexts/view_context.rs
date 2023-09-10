@@ -1,6 +1,7 @@
 use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::io::Read;
 use std::rc::Rc;
 
 use crate::contexts::irequest_context::IRequestContext;
@@ -59,6 +60,8 @@ pub trait IViewContext: Send + Sync {
 
     // resolve a data file path string from the view context.
     fn resolve_data_file_path_string(self: &Self, path: &str) -> Option<String>;
+
+    fn get_markdown_file_nocache(self: &Self, path: &str) -> Option<String>;
 }
 
 // this struct implements IViewContext.
@@ -246,5 +249,24 @@ impl <'a> IViewContext for ViewContext<'a> {
 
     fn get_view_start_path(self: &Self) -> Option<String> {
         self.try_get_str("view_start")
+    }
+
+    fn get_markdown_file_nocache(self: &Self, path: &str) -> Option<String> {
+        match self.open_data_file(path) {
+            Ok(mut f) => {
+                let mut buffer = String::new();
+                match f.read_to_string(&mut buffer) {
+                    Ok(x) => {
+                        Some(comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default()))
+                    },
+                    Err(e) => {
+                        panic!("Could not read data at {}: {:?}", path, e);
+                    }
+                }
+            },
+            Err(e) => {
+                panic!("cannot read external markdown file nocache '{}', could not open: {:?}", path, e);
+            }
+        }
     }
 }

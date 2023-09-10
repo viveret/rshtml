@@ -38,7 +38,6 @@ impl MarkdownFileNoCacheDirective {
                         if ident_output.len() > 0 {
                             // might need to prepend ident_token?
                             let mut ident_output_final = vec![];
-                            ident_output_final.push(ident_token.clone());
                             ident_output_final.extend_from_slice(&ident_output);
                             open_inner_tokenstream = Some(TokenStream::from_iter(ident_output_final.into_iter()));
                         } else {
@@ -56,33 +55,7 @@ impl MarkdownFileNoCacheDirective {
             let path = format!("{}", open_inner_tokenstream);
             println!("path: {}", path);
             let code = quote::quote! {
-                match view_context.open_data_file(#open_inner_tokenstream) {
-                    Ok(mut f) => {
-                        let mut buffer = String::new();
-                        match f.read_to_string(&mut buffer) {
-                            Some(x) => {
-                                match comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default()) {
-                                    Some(n) => {
-                                        if n > 0 {
-                                            HtmlString::new_from_html(buffer)
-                                        } else {
-                                            panic!("Could not convert markdown to html at {} (no bytes written)", #path);
-                                        }
-                                    },
-                                    None => {
-                                        panic!("Could not convert markdown to html at {}", #path);
-                                    }
-                                }
-                            },
-                            None => {
-                                panic!("Could not read data at {}", #path);
-                            }
-                        }
-                    },
-                    Err(e) => {
-                        panic!("cannot read external markdown file nocache '{}', could not open: {:?}", #path, e);
-                    }
-                }
+                view_context.get_markdown_file_nocache(#open_inner_tokenstream)
             };
 
             let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);

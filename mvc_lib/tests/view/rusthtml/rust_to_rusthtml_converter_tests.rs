@@ -268,7 +268,7 @@ pub fn rust_to_rusthtml_converter_parse_identifier_expression() {
     let is_raw_tokenstream = false;
 
     let mut output = vec![];
-    converter.parse_identifier_expression(true, &identifier, &ident_token, &mut output, it, is_raw_tokenstream).unwrap();
+    converter.parse_identifier_expression(true, &identifier, &ident_token, false, &mut output, it, is_raw_tokenstream).unwrap();
 }
 
 #[test]
@@ -599,7 +599,7 @@ fn compare_rusthtmltokens(expected_output: &Vec<RustHtmlToken>, output: &Vec<Rus
                     // need new function similar to existing one
                     assert_vecs_of_rusthtmlidentsorpunct_eq(expected_idents.as_ref().unwrap(), actual_idents.as_ref().unwrap());
                 } else if let Some(expected_rust) = expected_rust {
-                    compare_rusthtmltokens(expected_rust, actual_rust.as_ref().unwrap());
+                    compare_rusthtmltokens(expected_rust, actual_rust.as_ref().unwrap_or(&vec![]));
                 } else {
                     panic!("expected and actual are not the same or not supported: expected: {:?}, actual: {:?}", expected, actual);
                 }
@@ -619,7 +619,11 @@ fn compare_rusthtmltokens(expected_output: &Vec<RustHtmlToken>, output: &Vec<Rus
 
         previous_token = Some(&actual);
     }
-    assert_eq!(expected_output.len(), output.len());
+
+    // need to do assertion that outputs differences in the two vectors
+    if expected_output.len() != output.len() {
+        panic!("expected and actual are not the same length, expected: {:?}, actual: {:?}", expected_output, output);
+    }
 }
 
 fn assert_vecs_of_rusthtmlidentsandpuncts_or_literal_eq(expected_idents: &Option<RustHtmlIdentAndPunctOrLiteral>, actual_idents: &Option<RustHtmlIdentAndPunctOrLiteral>) {
@@ -681,4 +685,39 @@ fn assert_vecs_of_rusthtmlidentsorpunct_eq(
 
 // add test for 'a' element with classes and href="/" since the current issue
 // is that the href is not being parsed correctly: the key for some reason is
-// not being stored in the context, either from being skipped or something else
+// not being stored in the context, either from being skipped or something else is wrong.
+#[test]
+fn rust_to_rusthtml_converter_parse_complex_html() {
+    let parse_context = RustHtmlParserContext::new(false, false, "test".to_string());
+    let converter = RustToRustHtmlConverter::new(Rc::new(parse_context));
+    let output = converter.parse_tokenstream_to_rusthtmltokens(
+        true,
+        Rc::new(PeekableTokenTree::new(quote::quote! {
+            <a class="nav-link" href="/">Home</a>
+        })),
+        false
+    ).unwrap();
+    
+    let expected_output = vec![
+        RustHtmlToken::HtmlTagStart("a".to_string(), Some(vec![RustHtmlIdentOrPunct::Ident(Ident::new("a", Span::call_site()))])),
+        RustHtmlToken::HtmlTagAttributeName("class".to_string(), Some(RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(vec![RustHtmlIdentOrPunct::Ident(Ident::new("class", Span::call_site()))]))),
+        RustHtmlToken::HtmlTagAttributeEquals('=', Some(Punct::new('=', Spacing::Alone))),
+        RustHtmlToken::HtmlTagAttributeValue(
+            None, None, None, Some(vec![
+                RustHtmlToken::Literal(Some(Literal::string("nav-link")), None),
+            ])
+        ),
+        RustHtmlToken::HtmlTagAttributeName("href".to_string(), Some(RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(vec![RustHtmlIdentOrPunct::Ident(Ident::new("href", Span::call_site()))]))),
+        RustHtmlToken::HtmlTagAttributeEquals('=', Some(Punct::new('=', Spacing::Alone))),
+        RustHtmlToken::HtmlTagAttributeValue(
+            None, None, None, Some(vec![
+                RustHtmlToken::Literal(Some(Literal::string("/")), None),
+            ])
+        ),
+        RustHtmlToken::HtmlTagCloseStartChildrenPunct,
+        RustHtmlToken::HtmlTextNode("Home".to_string(), Span::call_site()),
+        RustHtmlToken::HtmlTagEnd("a".to_string(), Some(vec![RustHtmlIdentOrPunct::Ident(Ident::new("a", Span::call_site()))])),
+    ];
+
+    compare_rusthtmltokens(&expected_output, &output);
+}

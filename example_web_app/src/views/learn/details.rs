@@ -12,5 +12,5 @@ mvc_macro_lib::rusthtml_view_macro! {
 
     // @htmlfile "home/index.html"
     // @rshtmlfile "home/index.rshtml"
-    @mdfile_nocache model.path.clone()
+    @mdfile_nocache &model.path.clone()
 }

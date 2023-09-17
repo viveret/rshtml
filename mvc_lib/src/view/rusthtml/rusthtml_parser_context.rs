@@ -73,7 +73,8 @@ pub trait IRustHtmlParserContext {
     // get the model ident as a token stream.
     fn get_model_ident(self: &Self) -> Option<TokenStream>;
     // get the current HTML tag scope stack.
-    fn mut_htmltag_scope_stack(self: &Self) -> RefMut<Vec<String>>;
+    fn htmltag_scope_stack_push(self: &Self, s: String);
+    fn htmltag_scope_stack_pop(self: &Self) -> Option<String>;
     // get the current punctuation scope stack.
     fn mut_punct_scope_stack(self: &Self) -> RefMut<Vec<char>>;
     // get the use statements as mutable.
@@ -119,6 +120,9 @@ pub trait IRustHtmlParserContext {
 
     // resolve a full path to a view using different directories.
     // fn resolve_views_path_string(self: &Self, path: &str) -> Option<String>;
+
+    fn add_operation_to_ooo_log(self: &Self, operation: String);
+    fn get_ooo(self: &Self) -> Vec<String>;
 }
 
 pub struct RustHtmlParserContext {
@@ -409,8 +413,12 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         *self.model_type.borrow_mut() = value;
     }
 
-    fn mut_htmltag_scope_stack(self: &Self) -> RefMut<Vec<String>> {
-        self.htmltag_scope_stack.borrow_mut()
+    fn htmltag_scope_stack_push(self: &Self, s: String) {
+        self.htmltag_scope_stack.borrow_mut().push(s);
+    }
+
+    fn htmltag_scope_stack_pop(self: &Self) -> Option<String> {
+        self.htmltag_scope_stack.borrow_mut().pop()
     }
 
     fn mut_punct_scope_stack(self: &Self) -> RefMut<Vec<char>> {
@@ -557,5 +565,13 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
 
     fn get_rust_postprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>> {
         self.rust_postprocessors.clone()
+    }
+
+    fn add_operation_to_ooo_log(self: &Self, operation: String) {
+        // dont do anything
+    }
+
+    fn get_ooo(self: &Self) -> Vec<String> {
+        vec![]
     }
 }

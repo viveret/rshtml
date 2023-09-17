@@ -4,13 +4,14 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::str::FromStr;
 
+use core_macro_lib::nameof_member_fn;
 use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, TokenStream, TokenTree};
 
 use crate::core::panic_or_return_error::PanicOrReturnError;
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct, RustHtmlIdentAndPunctAndGroupOrLiteral, RustHtmlIdentOrPunctOrGroup };
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
-use super::html_tag_parse_context::HtmlTagParseContext;
+use super::html_tag_parse_context::{HtmlTagParseContext, IHtmlTagParseContext};
 use super::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 use super::peekable_tokentree::{IPeekableTokenTree, PeekableTokenTree};
 use super::rusthtml_directive_result::RustHtmlDirectiveResult;
@@ -252,7 +253,9 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // returns: nothing or an error.
     fn convert_html_entry_to_rusthtmltoken(self: &Self, c: char, punct: Punct, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError> {
         if is_in_html_mode || self.is_start_of_current_expression(output) {
-            let mut ctx = HtmlTagParseContext::new();
+            // the below context is orphaned by not passing the parent html tag parse context.
+            // this is usually fine. but we need to pass the main context to call add_operation_to_ooo_log
+            let mut ctx = HtmlTagParseContext::new(Some(self.context));
             let mut output_inner = vec![];
             loop {
                 let token_option = it.clone().next();
@@ -262,9 +265,9 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             }
 
             let mut add_inner = true;
-            if ctx.is_opening_tag && !ctx.is_void_tag() && !ctx.is_self_contained_tag {
+            if ctx.is_opening_tag() && !ctx.is_void_tag() && !ctx.is_self_contained_tag() {
                 // parse inner elements / code until we find closing tag
-                self.context.mut_htmltag_scope_stack().push(ctx.tag_name_as_str());
+                self.context.htmltag_scope_stack_push(ctx.tag_name_as_str());
                 loop {
                     if self.next_and_convert(true, &mut output_inner, it.clone(), is_raw_tokenstream)? {
                         break;
@@ -279,7 +282,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                         }
                     }
                 }
-                let last_scope_from_stack = self.context.mut_htmltag_scope_stack().pop().unwrap();
+                let last_scope_from_stack = self.context.htmltag_scope_stack_pop().unwrap();
                 if last_scope_from_stack != ctx.tag_name_as_str() {
                     self.panic_or_return_error(format!("Mismatched HTML tags (found {} but expected {})", last_scope_from_stack, ctx.tag_name_as_str()))?;
                 }
@@ -729,11 +732,12 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     fn next_and_parse_html_tag(
         self: &Self,
         token_option: Option<TokenTree>,
-        parse_ctx: &mut HtmlTagParseContext,
+        parse_ctx: &dyn IHtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>,
         it: Rc<dyn IPeekableTokenTree>,
         is_raw_tokenstream: bool,
     ) -> Result<bool, RustHtmlError> {
+        parse_ctx.get_main_context().add_operation_to_ooo_log(nameof_member_fn!(Self::next_and_parse_html_tag).to_string());
         match token_option {
             Some(token) => {
                 match token {
@@ -770,21 +774,21 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     fn convert_html_ident_to_rusthtmltoken(
         self: &Self, 
         ident: &Ident,
-        parse_ctx: &mut HtmlTagParseContext,
+        parse_ctx: &dyn IHtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>, 
         it: Rc<dyn IPeekableTokenTree>,
         _is_raw_tokenstream: bool,
     ) -> Result<(), RustHtmlError> {
-        if parse_ctx.parse_attrs {
-            if parse_ctx.parse_attr_val {
-                parse_ctx.html_attr_val_ident.push(RustHtmlIdentOrPunct::Ident(ident.clone()));
+        if parse_ctx.is_parsing_attrs() {
+            if parse_ctx.is_parsing_attr_val() {
+                parse_ctx.html_attr_val_ident_push(ident);
                 self.on_kvp_defined(parse_ctx, output)?;
             } else {
-                parse_ctx.html_attr_key_ident.push(RustHtmlIdentOrPunct::Ident(ident.clone()));
-                parse_ctx.html_attr_key.push_str(&ident.to_string());
+                parse_ctx.html_attr_key_ident_push(ident); // RustHtmlIdentOrPunct::Ident(ident.clone())
+                parse_ctx.html_attr_key_push_str(&ident.to_string());
             }
         } else {
-            parse_ctx.tag_name.push(RustHtmlIdentOrPunct::Ident(ident.clone()));
+            parse_ctx.tag_name_push(ident);
             let mut last_token_was_ident = true;
             loop {
                 if let Some(next_token) = it.peek() {
@@ -821,7 +825,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     fn convert_html_literal_to_rusthtmltoken(
         self: &Self, 
         literal: &Literal,
-        parse_ctx: &mut HtmlTagParseContext,
+        parse_ctx: &dyn IHtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>, 
         _is_raw_tokenstream: bool,
     ) -> Result<(), RustHtmlError> {
@@ -856,25 +860,25 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     fn convert_html_punct_to_rusthtmltoken(
         self: &Self, 
         punct: &Punct,
-        parse_ctx: &mut HtmlTagParseContext,
+        parse_ctx: &dyn IHtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>, 
         it: Rc<dyn IPeekableTokenTree>,
         is_raw_tokenstream: bool,
     ) -> Result<bool, RustHtmlError> {
         let c = punct.as_char();
-        if parse_ctx.parse_attrs {
+        if parse_ctx.is_parsing_attrs() {
+            parse_ctx.get_main_context().add_operation_to_ooo_log(format!("{}: parse_attrs", nameof_member_fn!(Self::convert_html_punct_to_rusthtmltoken)));
             match c {
                 '>' => {
                     return self.on_html_tag_parsed(None, parse_ctx, output);
                 },
                 '=' => {
                     if parse_ctx.is_key_defined() {
-                        parse_ctx.equals_punct = Some(punct.clone());
-                        parse_ctx.parse_attr_val = true;
+                        parse_ctx.set_equals_punct(punct);
                     } else {
-                        println!("=key: {}", parse_ctx.html_attr_key);
-                        println!("=key_ident: {:?}", parse_ctx.html_attr_key_ident);
-                        println!("=key_literal: {:?}", parse_ctx.html_attr_key_literal);
+                        // println!("=key: {}", parse_ctx.html_attr_key);
+                        // println!("=key_ident: {:?}", parse_ctx.html_attr_key_ident);
+                        // println!("=key_literal: {:?}", parse_ctx.html_attr_key_literal);
                         
                         return self.panic_or_return_error(format!("convert_html_punct_to_rusthtmltoken Unexpected '=' (key was None)"));
                     }
@@ -884,7 +888,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                     match expect_closing_punct {
                         TokenTree::Punct(closing_punct) => {
                             if closing_punct.as_char() == '>' {
-                                parse_ctx.is_self_contained_tag = true;
+                                parse_ctx.set_is_self_contained_tag(true);
                                 return self.on_html_tag_parsed(Some(&punct), parse_ctx, output);
                             } else {
                                 return self.panic_or_return_error(format!("convert_html_punct_to_rusthtmltoken Unexpected character '{}' (expected '>', prev: '{}')", closing_punct, c));
@@ -896,18 +900,18 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                     }
                 },
                 '"' => {
-                    if parse_ctx.html_attr_key.len() > 0 {
-                        parse_ctx.parse_attr_val = true;
-                    } else if parse_ctx.html_attr_val_ident.len() > 0 || parse_ctx.html_attr_val_literal.is_some() {
+                    if parse_ctx.has_html_attr_key() {
+                        parse_ctx.set_is_parsing_attr_val(true);
+                    } else if parse_ctx.has_html_attr_val() {
                         self.on_kvp_defined(parse_ctx, output)?;
                     }
                 },
                 '-' => {
-                    if parse_ctx.parse_attr_val {
-                        parse_ctx.html_attr_val_ident.push(RustHtmlIdentOrPunct::Punct(punct.clone()));
+                    if parse_ctx.is_parse_attr_val {
+                        parse_ctx.html_attr_val_ident_push(RustHtmlIdentOrPunct::Punct(punct.clone()));
                     } else {
-                        parse_ctx.html_attr_key_ident.push(RustHtmlIdentOrPunct::Punct(punct.clone()));
-                        parse_ctx.html_attr_key.push_str(format!("{}", c).as_str());
+                        parse_ctx.html_attr_key_ident_push(RustHtmlIdentOrPunct::Punct(punct.clone()));
+                        parse_ctx.html_attr_key_push_str(format!("{}", c).as_str());
                     }
                 },
                 '@' => {
@@ -919,10 +923,10 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                         TokenTree::Ident(ref ident) => {
                             let mut rust_ident_exp = vec![];
                             self.parse_identifier_expression(true, ident, &directive_token, false, &mut rust_ident_exp, it, is_raw_tokenstream)?;
-                            parse_ctx.html_attr_val_rust = rust_ident_exp;
+                            parse_ctx.set_html_attr_val_rust(rust_ident_exp);
                         },
                         TokenTree::Literal(literal) => {
-                            parse_ctx.html_attr_val_literal = Some(literal.clone());
+                            parse_ctx.set_html_attr_val_literal(literal.clone());
                         },
                         _ => {
                             return self.panic_or_return_error(format!("Unexpected directive token after '@' in html attribute val parse: {:?}", directive_token))?;
@@ -935,29 +939,30 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                     }
                 },
                 _ => {
-                    let current_val = if parse_ctx.html_attr_val_ident.len() > 0 {
-                        format!("{:?}", parse_ctx.html_attr_val_ident)
+                    let current_val = if parse_ctx.has_html_attr_val_ident() {
+                        format!("ignoring {:?}", parse_ctx.get_html_attr_val_ident())
                     } else {
-                        parse_ctx.html_attr_val_literal.as_ref().unwrap().to_string()
+                        parse_ctx.get_html_attr_val_literal().as_ref().unwrap().to_string()
                     };
                     return self.panic_or_return_error(format!(
                         "Unexpected punct '{}' while parsing HTML tag '{}' attributes \
                         (read {:?}, current key: {}, current val: {:?})", c, parse_ctx.tag_name_as_str(),
-                        parse_ctx.html_attrs, parse_ctx.html_attr_key, current_val));
+                        parse_ctx.get_html_attrs(), parse_ctx.get_html_attr_key(), current_val));
                 }
             }
         } else {
+            parse_ctx.get.add_operation_to_ooo_log(format!("{}: not parse_attrs", nameof_member_fn!(Self::convert_html_punct_to_rusthtmltoken)));
             match c {
                 '>' => {
                     return self.on_html_tag_parsed(None, parse_ctx, output);
                 },
                 '/' => {
-                    if parse_ctx.tag_name.len() > 0 {
+                    if parse_ctx.has_tag_name() {
                         let expect_closing_punct = it.next().unwrap();
                         return match expect_closing_punct {
                             TokenTree::Punct(closing_punct) => {
                                 if closing_punct.as_char() == '>' {
-                                    parse_ctx.is_self_contained_tag = true;
+                                    parse_ctx.set_is_self_contained_tag(true);
                                     return self.on_html_tag_parsed(Some(&punct), parse_ctx, output);
                                 } else {
                                     self.panic_or_return_error(format!("Unexpected character '{}' (expected '>', prev: '{}')", closing_punct, c))
@@ -968,11 +973,11 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                             },
                         };
                     } else {
-                        parse_ctx.is_opening_tag = false;
+                        parse_ctx.set_is_opening_tag(false);
                     }
                 },
                 '-' | '_' | '!' => {
-                    parse_ctx.tag_name.push(RustHtmlIdentOrPunct::Punct(punct.clone()));
+                    parse_ctx.tag_name_push(RustHtmlIdentOrPunct::Punct(punct.clone()));
                 },
                 _ => {
                     return self.panic_or_return_error(format!("Unexpected character '{}'", c));
@@ -988,16 +993,16 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // returns: nothing.
     fn on_kvp_defined(
         self: &Self,
-        parse_ctx: &mut HtmlTagParseContext,
+        parse_ctx: &dyn IHtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>,
     ) -> Result<(), RustHtmlError> {
         let mut attr_name = String::new();
-        output.push(if let Some(is_literal) = &parse_ctx.html_attr_key_literal {
+        output.push(if let Some(is_literal) = &parse_ctx.get_html_attr_key_literal() {
             let s = snailquote::unescape(&is_literal.to_string()).unwrap();
             attr_name.push_str(&s);
             RustHtmlToken::HtmlTagAttributeName(is_literal.to_string(), Some(RustHtmlIdentAndPunctOrLiteral::Literal(is_literal.clone())))
-        } else if parse_ctx.html_attr_key_ident.len() > 0 {
-            for ident_or_punct in &parse_ctx.html_attr_key_ident {
+        } else if parse_ctx.has_html_attr_key_ident() {
+            for ident_or_punct in &parse_ctx.get_html_attr_key_ident() {
                 match ident_or_punct {
                     RustHtmlIdentOrPunct::Ident(ident) => {
                         attr_name.push_str(&ident.to_string());
@@ -1007,43 +1012,43 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                     },
                 }
             }
-            RustHtmlToken::HtmlTagAttributeName(attr_name.clone(), Some(RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(parse_ctx.html_attr_key_ident.clone())))
-        } else if parse_ctx.html_attr_key.len() > 0 {
-            attr_name.push_str(parse_ctx.html_attr_key.as_str());
+            RustHtmlToken::HtmlTagAttributeName(attr_name.clone(), Some(RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(parse_ctx.get_html_attr_key_ident())))
+        } else if parse_ctx.has_html_attr_key() {
+            attr_name.push_str(parse_ctx.get_html_attr_key_as_str());
             RustHtmlToken::HtmlTagAttributeName(attr_name.clone(), None)
         } else {
             // print out state of KVP context
-            println!("parse_ctx.html_attr_key_literal: {:?}", parse_ctx.html_attr_key_literal);
-            println!("parse_ctx.html_attr_key_ident: {:?}", parse_ctx.html_attr_key_ident);
-            println!("parse_ctx.html_attr_key: {:?}", parse_ctx.html_attr_key);
-            println!("parse_ctx.html_attr_val_literal: {:?}", parse_ctx.html_attr_val_literal);
-            println!("parse_ctx.html_attr_val_ident: {:?}", parse_ctx.html_attr_val_ident);
-            println!("parse_ctx.html_attr_val_rust: {:?}", parse_ctx.html_attr_val_rust);
+            // println!("parse_ctx.html_attr_key_literal: {:?}", parse_ctx.html_attr_key_literal);
+            // println!("parse_ctx.html_attr_key_ident: {:?}", parse_ctx.html_attr_key_ident);
+            // println!("parse_ctx.html_attr_key: {:?}", parse_ctx.html_attr_key);
+            // println!("parse_ctx.html_attr_val_literal: {:?}", parse_ctx.html_attr_val_literal);
+            // println!("parse_ctx.html_attr_val_ident: {:?}", parse_ctx.html_attr_val_ident);
+            // println!("parse_ctx.html_attr_val_rust: {:?}", parse_ctx.html_attr_val_rust);
 
             return Err(RustHtmlError::from_string(format!("on_kvp_defined: html_attr_key_literal and html_attr_key_ident are both None")));
         });
 
-        if let Some(is_literal) = &parse_ctx.html_attr_val_literal {
-            output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.equals_punct.as_ref().unwrap().as_char(), Some(parse_ctx.equals_punct.as_ref().unwrap().clone())));
+        if let Some(is_literal) = &parse_ctx.get_html_attr_val_literal() {
+            output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.equals_punct.as_ref().unwrap().as_char(), Some(parse_ctx.get_equals_punct().as_ref().unwrap().clone())));
             // println!("why am I missing quotes? {}", is_literal.to_string());
             // let s = snailquote::unescape(&is_literal.to_string()).unwrap();
             // println!("literal: {}", s); // this is missing quotes?
             output.push(RustHtmlToken::HtmlTagAttributeValue(Some(is_literal.to_string()), Some(is_literal.clone()), None, None));
-            parse_ctx.html_attrs.insert(attr_name, Some(RustHtmlToken::Literal(Some(is_literal.clone()), Some(is_literal.to_string()))));
-        } else if parse_ctx.html_attr_val_ident.len() > 0 {
-            output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.equals_punct.as_ref().unwrap().as_char(), Some(parse_ctx.equals_punct.as_ref().unwrap().clone())));
+            parse_ctx.html_attrs_insert(attr_name, Some(RustHtmlToken::Literal(Some(is_literal.clone()), Some(is_literal.to_string()))));
+        } else if parse_ctx.has_html_attr_val_ident() {
+            output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.get_equals_punct().as_ref().unwrap().as_char(), Some(parse_ctx.get_equals_punct().as_ref().unwrap().clone())));
 
-            let html_attr_val = RustHtmlToken::HtmlTagAttributeValue(None, None, Some(parse_ctx.html_attr_val_ident.clone()), None);
+            let html_attr_val = RustHtmlToken::HtmlTagAttributeValue(None, None, Some(parse_ctx.get_html_attr_val_ident()), None);
             output.push(html_attr_val.clone());
-            parse_ctx.html_attrs.insert(attr_name, Some(html_attr_val));
-        } else if parse_ctx.html_attr_val_rust.len() > 0 {
-            output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.equals_punct.as_ref().unwrap().as_char(), Some(parse_ctx.equals_punct.as_ref().unwrap().clone())));
+            parse_ctx.html_attrs_insert(attr_name, Some(html_attr_val));
+        } else if parse_ctx.has_html_attr_val_rust() {
+            output.push(RustHtmlToken::HtmlTagAttributeEquals(parse_ctx.get_equals_punct().as_ref().unwrap().as_char(), Some(parse_ctx.get_equals_punct().as_ref().unwrap().clone())));
 
-            let html_attr_val = RustHtmlToken::HtmlTagAttributeValue(None, None, None, Some(parse_ctx.html_attr_val_rust.clone()));
+            let html_attr_val = RustHtmlToken::HtmlTagAttributeValue(None, None, None, Some(parse_ctx.get_html_attr_val_rust()));
             output.push(html_attr_val.clone());
-            parse_ctx.html_attrs.insert(attr_name, Some(html_attr_val));
+            parse_ctx.html_attrs_insert(attr_name, Some(html_attr_val));
         } else {
-            parse_ctx.html_attrs.insert(attr_name, None);
+            parse_ctx.html_attrs_insert(attr_name, None);
         }
         
         parse_ctx.clear_attr_kvp();
@@ -1209,11 +1214,11 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     fn on_html_tag_parsed(
         self: &Self,
         punct: Option<&Punct>,
-        parse_ctx: &mut HtmlTagParseContext,
+        parse_ctx: &dyn IHtmlTagParseContext,
         output: &mut Vec<RustHtmlToken>
     ) -> Result<bool, RustHtmlError> {
         for tag_helper in self.context.get_tag_parsed_handler() {
-            if tag_helper.matches(parse_ctx.tag_name_as_str().as_str(), parse_ctx.is_opening_tag) {
+            if tag_helper.matches(parse_ctx.tag_name_as_str().as_str(), parse_ctx.is_opening_tag()) {
                 match tag_helper.on_tag_parsed(parse_ctx, self.context.clone(), output) {
                     Ok(should_break) => {
                         if should_break {
@@ -1228,8 +1233,8 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             }
         }
 
-        if parse_ctx.is_opening_tag {
-            if parse_ctx.html_attr_key.len() > 0 {
+        if parse_ctx.is_opening_tag() {
+            if parse_ctx.has_html_attr_key() {
                 self.on_kvp_defined(parse_ctx, output)?;
             }
 
@@ -1237,7 +1242,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
                 if parse_ctx.is_void_tag() {
                     // println!("void tag: {}, punct: {:?}", parse_ctx.tag_name_as_str(), punct);
                     RustHtmlToken::HtmlTagCloseVoidPunct(punct.map(|punct| (punct.as_char(), punct.clone())))
-                } else if parse_ctx.is_self_contained_tag {
+                } else if parse_ctx.is_self_contained_tag() {
                     RustHtmlToken::HtmlTagCloseSelfContainedPunct
                 } else {
                     RustHtmlToken::HtmlTagCloseStartChildrenPunct

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::view::rusthtml::{html_tag_parse_context::HtmlTagParseContext, rusthtml_parser_context::IRustHtmlParserContext, rusthtml_token::{RustHtmlToken, RustHtmlIdentOrPunct}, rusthtml_error::RustHtmlError};
+use crate::view::rusthtml::{html_tag_parse_context::{HtmlTagParseContext, IHtmlTagParseContext}, rusthtml_parser_context::IRustHtmlParserContext, rusthtml_token::{RustHtmlToken, RustHtmlIdentOrPunct}, rusthtml_error::RustHtmlError};
 
 use super::inode_parsed::IHtmlNodeParsed;
 
@@ -25,7 +25,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
         // look for include or exclude attributes
         let mut keep_or_remove: Option<bool> = None;
 
-        match tag_context.html_attrs.get("include") {
+        match tag_context.get_html_attr("include") {
             Some(token) => {
                 match token.clone().unwrap() {
                     RustHtmlToken::HtmlTagAttributeValue(value_string, value_literal, v_parts, rust_value) => {
@@ -79,7 +79,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
             }
         }
         
-        match tag_context.html_attrs.get("exclude") {
+        match tag_context.get_html_attr("exclude") {
             Some(token) => {
                 match token.clone().unwrap() {
                     RustHtmlToken::HtmlTagAttributeValue(value_string, value_literal, v_parts, rust_value) => {

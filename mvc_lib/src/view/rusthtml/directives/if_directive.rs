@@ -40,7 +40,6 @@ impl IRustHtmlDirective for IfDirective {
                         it.next();
                     },
                     TokenTree::Punct(punct) => {
-                        println!("punct: {:?}", punct);
                         output.push(RustHtmlToken::ReservedChar(punct.as_char(), punct.clone()));
                         it.next();
                         if punct.as_char() == ';' {

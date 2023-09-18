@@ -4,6 +4,7 @@ use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunct
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use super::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+use super::rusthtml_token::RustHtmlIdentOrPunctOrGroup;
 
 
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
@@ -35,4 +36,8 @@ pub trait IRustHtmlToRustConverter {
     fn convert_rusthtmltagattributename_to_tokentree(self: &Self, tag: &String, tag_tokens: &Option<RustHtmlIdentAndPunctOrLiteral>, output: &mut Vec<TokenTree>, _it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError>;
     fn convert_rusthtmltagattributevalue_to_tokentree(self: &Self, value_string: Option<&String>, value_literal: Option<&Literal>, value_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, value_rust: Option<&Vec<RustHtmlToken>>, output: &mut Vec<TokenTree>, it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError>;
     fn convert_appendhtmlstring_to_tokentree(self: &Self, html_string: String, output: &mut Vec<TokenTree>, _it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError>;
+
+    fn format_tag_open(self: &Self, tag_string: &String) -> String;
+    fn format_tag_close(self: &Self, tag_string: &String) -> String;
+    fn format_tag_name_as_string(self: &Self, tag_tokens: &Vec<RustHtmlIdentOrPunct>) -> String;
 }

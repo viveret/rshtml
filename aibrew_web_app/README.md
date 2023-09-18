@@ -1,1 +1,0 @@
-Next version of Pocket Neural Network / AI Brew Web App

@@ -1,13 +1,15 @@
-use std::cell::{RefCell, RefMut};
 use std::rc::Rc;
 
-use core_macro_lib::nameof_member_fn;
+use assert_str::assert_str_eq;
 use mvc_lib::view::rusthtml::html_tag_parse_context::HtmlTagParseContext;
+use mvc_lib::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
 use mvc_lib::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
+use mvc_lib::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use mvc_lib::view::rusthtml::peekable_tokentree::{PeekableTokenTree, IPeekableTokenTree};
 use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
-use mvc_lib::view::rusthtml::rusthtml_parser_context::{RustHtmlParserContext, IRustHtmlParserContext};
+use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
+use mvc_lib::view::rusthtml::rusthtml_parser_context_log::RustHtmlParserContextLog;
 use mvc_lib::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctAndGroupOrLiteral, RustHtmlIdentOrPunct, RustHtmlIdentOrPunctOrGroup};
 use mvc_lib::view::rusthtml::rusthtml_token::RustHtmlIdentAndPunctOrLiteral;
 use proc_macro2::{TokenTree, Group, Delimiter, TokenStream, Punct, Spacing, Ident, Span, Literal};
@@ -317,7 +319,7 @@ pub fn rust_to_rusthtml_converter_convert_rusthtmltokens_to_ident_or_punct_or_gr
 
 #[test]
 pub fn rust_to_rusthtml_converter_next_and_parse_html_tag() {
-    let mut tag_ctx = HtmlTagParseContext::new();
+    let mut tag_ctx = HtmlTagParseContext::new(None);
     let ctx = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let converter = RustToRustHtmlConverter::new(ctx.clone());
     let token = TokenTree::Ident(Ident::new("test", Span::call_site()));
@@ -330,7 +332,7 @@ pub fn rust_to_rusthtml_converter_next_and_parse_html_tag() {
 
 #[test]
 pub fn rust_to_rusthtml_converter_convert_html_ident_to_rusthtmltoken() {
-    let mut tag_ctx = HtmlTagParseContext::new();
+    let mut tag_ctx = HtmlTagParseContext::new(None);
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let mut output = vec![];
     let it = Rc::new(PeekableTokenTree::new(quote::quote! { test }));
@@ -356,8 +358,8 @@ pub fn rust_to_rusthtml_converter_convert_html_literal_to_rusthtmltoken() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let literal = Literal::string("test");
     let mut output = vec![];
-    let mut parse_ctx = HtmlTagParseContext::new();
-    parse_ctx.parse_attrs = true;
+    let mut parse_ctx = HtmlTagParseContext::new(None);
+    parse_ctx.set_parse_attrs(true);
     let is_raw_tokenstream = false;
     
     converter.convert_html_literal_to_rusthtmltoken(&literal, &mut parse_ctx, &mut output, is_raw_tokenstream).unwrap();
@@ -368,7 +370,7 @@ pub fn rust_to_rusthtml_converter_convert_html_punct_to_rusthtmltoken() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let punct = Punct::new('_', Spacing::Alone);
     let mut output = vec![];
-    let mut parse_ctx = HtmlTagParseContext::new();
+    let mut parse_ctx = HtmlTagParseContext::new(None);
     let is_raw_tokenstream = false;
     let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
     converter.convert_html_punct_to_rusthtmltoken(&punct, &mut parse_ctx, &mut output, it, is_raw_tokenstream).unwrap();
@@ -378,7 +380,7 @@ pub fn rust_to_rusthtml_converter_convert_html_punct_to_rusthtmltoken() {
 #[should_panic]
 pub fn rust_to_rusthtml_converter_on_kvp_defined_when_empty_panics() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
-    let mut ctx = HtmlTagParseContext::new();
+    let mut ctx = HtmlTagParseContext::new(None);
     let mut output = vec![];
     converter.on_kvp_defined(&mut ctx, &mut output).unwrap();
 }
@@ -386,11 +388,11 @@ pub fn rust_to_rusthtml_converter_on_kvp_defined_when_empty_panics() {
 #[test]
 pub fn rust_to_rusthtml_converter_on_kvp_defined_when_not_empty_works() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
-    let mut ctx = HtmlTagParseContext::new();
-    ctx.html_attr_key = "test".to_string();
-    ctx.html_attr_key_ident.push(RustHtmlIdentOrPunct::Ident(Ident::new("test", Span::call_site())));
-    ctx.equals_punct = Some(Punct::new('=', Spacing::Alone));
-    ctx.html_attr_val_literal = Some(Literal::string("test"));
+    let mut ctx = HtmlTagParseContext::new(None);
+    ctx.html_attr_key_push_str("test");
+    ctx.html_attr_key_ident_push(&Ident::new("test", Span::call_site()));
+    ctx.set_equals_punct(&Punct::new('=', Spacing::Alone));
+    ctx.set_html_attr_val_literal(&Literal::string("test"));
     let mut output = vec![];
     converter.on_kvp_defined(&mut ctx, &mut output).unwrap();
 }
@@ -407,7 +409,7 @@ pub fn rust_to_rusthtml_converter_parse_type_identifier() {
 pub fn rust_to_rusthtml_converter_on_html_tag_parsed() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let punct = Punct::new('<', Spacing::Alone);
-    let mut parse_ctx = HtmlTagParseContext::new();
+    let mut parse_ctx = HtmlTagParseContext::new(None);
     let mut output = vec![];
     let result = converter.on_html_tag_parsed(Some(&punct), &mut parse_ctx, &mut output).unwrap();
     assert_eq!(true, result);
@@ -416,7 +418,7 @@ pub fn rust_to_rusthtml_converter_on_html_tag_parsed() {
 #[test]
 pub fn rust_to_rusthtml_converter_on_html_node_parsed() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
-    let ctx = HtmlTagParseContext::new();
+    let ctx = HtmlTagParseContext::new(None);
     let mut output = vec![];
     let result = converter.on_html_node_parsed(&ctx, &mut output).unwrap();
     assert_eq!(true, result);
@@ -725,203 +727,11 @@ fn rust_to_rusthtml_converter_parse_complex_html() {
 }
 
 // test half of above to assert middle parse state since the 2nd attribute seems to clear out the first attribute.
-
-struct MockRustHtmlParserContext {
-    order_of_operations: RefCell<Vec<String>>,
-    scope_stack: RefCell<Vec<String>>
-}
-
-impl MockRustHtmlParserContext {
-    pub fn new() -> Self {
-        Self {
-            order_of_operations: RefCell::new(vec![]),
-            scope_stack: RefCell::new(vec![])
-        }
-    }
-
-    pub fn add_operation_to_ooo_log_str(&self, operation: &str) -> bool {
-        self.order_of_operations.borrow_mut().push(operation.to_string());
-        true
-    }
-}
-
-impl IRustHtmlParserContext for MockRustHtmlParserContext {
-    fn get_is_raw_tokenstream(self: &Self) -> bool {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_is_raw_tokenstream));
-        false
-    }
-
-    fn get_should_panic_or_return_error(self: &Self) -> bool {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_should_panic_or_return_error));
-        false
-    }
-
-    fn get_model_type_name(self: &Self) -> String {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_model_type_name));
-        "test".to_string()
-    }
-
-    fn get_model_type(self: &Self) -> Vec<TokenTree> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_model_type));
-        vec![]
-    }
-
-    fn set_model_type(self: &Self, value: Option<Vec<TokenTree>>) {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::set_model_type));
-    }
-
-    fn try_get_param_string(self: &Self, key: &str) -> Option<String> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::try_get_param_string));
-        None
-    }
-
-    fn get_param_string(self: &Self, key: &str) -> Result<String, RustHtmlError> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_param_string));
-        Ok("test".to_string())
-    }
-
-    fn get_functions_section(self: &Self) -> Option<TokenStream> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_functions_section));
-        None
-    }
-
-    fn get_struct_section(self: &Self) -> Option<TokenStream> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_struct_section));
-        None
-    }
-
-    fn get_impl_section(self: &Self) -> Option<TokenStream> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_impl_section));
-        None
-    }
-
-    fn get_model_ident(self: &Self) -> Option<TokenStream> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_model_ident));
-        None
-    }
-
-    fn htmltag_scope_stack_push(self: &Self, s: String) {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::htmltag_scope_stack_push));
-        self.scope_stack.borrow_mut().push(s);
-    }
-
-    fn mut_punct_scope_stack(self: &Self) -> std::cell::RefMut<Vec<char>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::mut_punct_scope_stack));
-        todo!()
-    }
-
-    fn mut_use_statements(self: &Self) -> std::cell::RefMut<Vec<TokenStream>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::mut_use_statements));
-        todo!()
-    }
-
-    fn mut_inject_statements(self: &Self) -> std::cell::RefMut<Vec<TokenStream>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::mut_inject_statements));
-        todo!()
-    }
-
-    fn get_inject_statements_stream(self: &Self) -> proc_macro2::TokenStream {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_inject_statements_stream));
-        proc_macro2::TokenStream::new()
-    }
-
-    fn mut_params(self: &Self) -> std::cell::RefMut<std::collections::HashMap<String, String>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::mut_params));
-        todo!()
-    }
-
-    fn get_environment_name(self: &Self) -> String {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_environment_name));
-        "test".to_string()
-    }
-
-    fn get_raw(&self) -> String {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_raw));
-        "test".to_string()
-    }
-
-    fn set_raw(self: &Self, value: String) {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::set_raw));
-    }
-
-    fn get_section(self: &Self, name: &String) -> Option<TokenStream> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_section));
-        None
-    }
-
-    fn set_section(self: &Self, name: String, value: Option<TokenStream>) {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::set_section));
-    }
-
-    fn set_functions_section(self: &Self, value: Option<TokenStream>) {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::set_functions_section));
-    }
-
-    fn set_impl_section(self: &Self, value: Option<TokenStream>) {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::set_impl_section));
-    }
-
-    fn set_struct_section(self: &Self, value: Option<TokenStream>) {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::set_struct_section));
-    }
-
-    fn get_directives(self: &Self) -> Vec<Rc<dyn mvc_lib::view::rusthtml::directives::irusthtml_directive::IRustHtmlDirective>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_directives));
-        vec![]
-    }
-
-    fn try_get_directive(self: &Self, name: String) -> Option<Rc<dyn mvc_lib::view::rusthtml::directives::irusthtml_directive::IRustHtmlDirective>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::try_get_directive));
-        None
-    }
-
-    fn get_tag_parsed_handler(self: &Self) -> Vec<Rc<dyn mvc_lib::view::rusthtml::tag_helpers::itag_parsed::IHtmlTagParsed>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_tag_parsed_handler));
-        vec![]
-    }
-
-    fn get_node_parsed_handler(self: &Self) -> Vec<Rc<dyn mvc_lib::view::rusthtml::node_helpers::inode_parsed::IHtmlNodeParsed>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_node_parsed_handler));
-        vec![]
-    }
-
-    fn get_preprocessors(self: &Self) -> Vec<Rc<dyn mvc_lib::view::rusthtml::irusthtml_processor::IRustHtmlProcessor>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_preprocessors));
-        vec![]
-    }
-
-    fn get_postprocessors(self: &Self) -> Vec<Rc<dyn mvc_lib::view::rusthtml::irusthtml_processor::IRustHtmlProcessor>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_postprocessors));
-        vec![]
-    }
-
-    fn get_rust_preprocessors(self: &Self) -> Vec<Rc<dyn mvc_lib::view::rusthtml::irust_processor::IRustProcessor>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_rust_preprocessors));
-        vec![]
-    }
-
-    fn get_rust_postprocessors(self: &Self) -> Vec<Rc<dyn mvc_lib::view::rusthtml::irust_processor::IRustProcessor>> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_rust_postprocessors));
-        vec![]
-    }
-
-    fn htmltag_scope_stack_pop(self: &Self) -> Option<String> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::htmltag_scope_stack_pop));
-        self.scope_stack.borrow_mut().pop()
-    }
-
-    fn add_operation_to_ooo_log(self: &Self, operation: String) {
-        self.order_of_operations.borrow_mut().push(operation);
-    }
-
-    fn get_ooo(self: &Self) -> Vec<String> {
-        self.order_of_operations.borrow().clone()
-    }
-}
-
+// for some reason the below passes, but the HTML attribute keys are not working properly
 #[test]
 pub fn test_rust_to_rusthtml_converter_parse_complex_html_inner() {
-    let parse_context = Rc::new(MockRustHtmlParserContext::new());
+    let real_ctx = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
+    let parse_context = Rc::new(RustHtmlParserContextLog::new(real_ctx));
     let converter = RustToRustHtmlConverter::new(parse_context.clone());
     let output = converter.parse_tokenstream_to_rusthtmltokens(
         true,
@@ -934,10 +744,27 @@ pub fn test_rust_to_rusthtml_converter_parse_complex_html_inner() {
 
     // ooo = order of operations (method calls, variable assignments, etc.)
     let expected_ooo = vec![
-        "parse_html_attrs_start",
-        "parse_html_attrs_step",
-        "parse_html_attrs_step",
-
+        "convert_punct_to_rusthtmltoken: <",
+        "convert_html_ident_to_rusthtmltoken(a)",
+        "convert_html_ident_to_rusthtmltoken(class)",
+        "convert_html_punct_to_rusthtmltoken(=)",
+        "convert_html_literal_to_rusthtmltoken(\"nav-link\")",
+        "convert_html_ident_to_rusthtmltoken(href)",
+        "convert_html_punct_to_rusthtmltoken(=)",
+        "convert_html_literal_to_rusthtmltoken(\"/\")",
+        "convert_html_punct_to_rusthtmltoken(>)",
+        "get_tag_parsed_handler",
+        "htmltag_scope_stack_push(a)",
+        "convert_tokentree_to_rusthtmltoken: Ident(Home)",
+        "convert_punct_to_rusthtmltoken: <",
+        "convert_html_ident_to_rusthtmltoken(a)",
+        "convert_html_punct_to_rusthtmltoken(>)",
+        "get_tag_parsed_handler",
+        "htmltag_scope_stack_pop(test)",
+        "get_node_parsed_handler",
     ];
-    assert_eq!(expected_ooo, parse_context.as_ref().get_ooo());    
+    let expected_ooo_string = expected_ooo.join("\n");
+    let actual_ooo = parse_context.as_ref().get_ooo();
+    let actual_ooo_string = actual_ooo.join("\n");
+    assert_str_eq!(expected_ooo_string, actual_ooo_string);    
 }

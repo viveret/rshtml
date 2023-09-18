@@ -1,6 +1,10 @@
 use std::rc::Rc;
 
-use crate::view::rusthtml::{html_tag_parse_context::{HtmlTagParseContext, IHtmlTagParseContext}, rusthtml_parser_context::IRustHtmlParserContext, rusthtml_token::{RustHtmlToken, RustHtmlIdentOrPunct}, rusthtml_error::RustHtmlError};
+use crate::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
+use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentOrPunct};
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::html_tag_parse_context::HtmlTagParseContext;
 
 use super::inode_parsed::IHtmlNodeParsed;
 
@@ -26,14 +30,14 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
         let mut keep_or_remove: Option<bool> = None;
 
         match tag_context.get_html_attr("include") {
-            Some(token) => {
-                match token.clone().unwrap() {
+            Some(ref token) => {
+                match token {
                     RustHtmlToken::HtmlTagAttributeValue(value_string, value_literal, v_parts, rust_value) => {
                         if let Some(rust_value) = rust_value {
                             for v in rust_value {
                                 match v {
                                     RustHtmlToken::Literal(literal, string) => {
-                                        let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.unwrap_or_default() }).unwrap();
+                                        let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.clone().unwrap_or_default() }).unwrap();
                                         keep_or_remove = Some(html_context.get_environment_name() == literal_as_str);
                                     },
                                     _ => panic!("Unexpected token for environment tag value (rust value): {:?}", token),
@@ -67,7 +71,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                         }
                     }
                     RustHtmlToken::Literal(literal, string) => {
-                        let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.unwrap_or_default() }).unwrap();
+                        let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.clone().unwrap_or_default() }).unwrap();
                         // println!("literal_as_str: {}", literal_as_str);
                         keep_or_remove = Some(html_context.get_environment_name() == literal_as_str);
                     },
@@ -80,8 +84,8 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
         }
         
         match tag_context.get_html_attr("exclude") {
-            Some(token) => {
-                match token.clone().unwrap() {
+            Some(ref token) => {
+                match token {
                     RustHtmlToken::HtmlTagAttributeValue(value_string, value_literal, v_parts, rust_value) => {
                         if let Some(v_parts) = v_parts {
                             for v in v_parts {
@@ -101,7 +105,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                             for v in rust_value {
                                 match v {
                                     RustHtmlToken::Literal(literal, string) => {
-                                        let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.unwrap_or(String::default()) }).unwrap();
+                                        let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.clone().unwrap_or_default() }).unwrap();
                                         // println!("literal_as_str: {}", literal_as_str);
                                         if html_context.get_environment_name() != literal_as_str {
                                             keep_or_remove = Some(true);
@@ -136,7 +140,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                         }
                     }
                     RustHtmlToken::Literal(literal, string) => {
-                        let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.unwrap_or_default() }).unwrap();
+                        let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.clone().unwrap_or_default() }).unwrap();
                         // println!("literal_as_str: {}", literal_as_str);
                         if html_context.get_environment_name() != literal_as_str {
                             keep_or_remove = Some(true);
@@ -191,7 +195,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                 }
             },
             None => {
-                Err(RustHtmlError::from_string(format!("rust html tag environment expects attribute 'include' or 'exclude' to be defined (attrs: {:?})", tag_context.html_attrs)))
+                Err(RustHtmlError::from_string(format!("rust html tag environment expects attribute 'include' or 'exclude' to be defined (attrs: {:?})", tag_context.get_html_attrs())))
             }
         }
     }

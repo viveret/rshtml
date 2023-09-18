@@ -24,12 +24,26 @@ impl MarkdownFileNoCacheDirective {
     // it: the iterator to use.
     // returns: nothing or an error.
     pub fn convert_mdfile_nocache_directive(identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
+        // peek for prefix token
+        let mut prefix_token = it.peek();
+        let prefix_punct = if let TokenTree::Punct(p) = prefix_token.unwrap() {
+            prefix_token = it.next();
+            Some(p)
+        } else {
+            prefix_token = None;
+            None
+        };
+        let prefix_stream = if let Some(prefix_punct) = prefix_punct {
+            quote::quote! { #prefix_punct }
+        } else {
+            quote::quote! {}
+        };
         let mut open_inner_tokenstream: Option<TokenStream> = None;
 
         match parser.peek_path_str(identifier, ident_token, it.clone(), parser.get_context().get_is_raw_tokenstream()) {
             Ok(path) => {
                 it.next();
-                open_inner_tokenstream = Some(quote::quote! { #path });
+                open_inner_tokenstream = Some(quote::quote! { #prefix_stream #path });
             },
             Err(RustHtmlError(e)) => {
                 // couldn't peek path string, try parsing identity expression for dynamic path
@@ -38,6 +52,9 @@ impl MarkdownFileNoCacheDirective {
                         if ident_output.len() > 0 {
                             // might need to prepend ident_token?
                             let mut ident_output_final = vec![];
+                            if let Some(ref x) = prefix_token {
+                                ident_output_final.push(x.clone());
+                            }
                             ident_output_final.extend_from_slice(&ident_output);
                             open_inner_tokenstream = Some(TokenStream::from_iter(ident_output_final.into_iter()));
                         } else {
@@ -53,7 +70,6 @@ impl MarkdownFileNoCacheDirective {
 
         if let Some(open_inner_tokenstream) = open_inner_tokenstream {
             let path = format!("{}", open_inner_tokenstream);
-            println!("path: {}", path);
             let code = quote::quote! {
                 view_context.get_markdown_file_nocache(#open_inner_tokenstream)
             };

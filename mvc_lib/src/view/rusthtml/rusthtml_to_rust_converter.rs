@@ -6,11 +6,11 @@ use quote::quote;
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct };
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
-use super::html_tag_parse_context::HtmlTagParseContext;
+use super::irusthtml_parser_context::IRustHtmlParserContext;
 use super::irusthtml_to_rust_converter::IRustHtmlToRustConverter;
 use super::peekable_rusthtmltoken::PeekableRustHtmlToken;
 use super::peekable_rusthtmltoken::IPeekableRustHtmlToken;
-use super::rusthtml_parser_context::{RustHtmlParserContext, IRustHtmlParserContext};
+use super::rusthtml_parser_context::RustHtmlParserContext;
 
 
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
@@ -207,8 +207,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // it: the iterator to use.
     // returns: nothing or an error.
     fn convert_rusthtmltagstart_to_tokentree(self: &Self, tag: &String, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, output: &mut Vec<TokenTree>, _it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
-        let tag_as_html = format_tag(true, tag, false, tag_tokens);
-        // println!("tag_as_html: {}", tag_as_html);
+        let tag_as_html = self.format_tag_open(tag); // true, tag, false, tag_tokens
         output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#tag_as_html); }))));
         Ok(())
     }
@@ -219,8 +218,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // it: the iterator to use.
     // returns: nothing or an error.
     fn convert_rusthtmltagvoid_to_tokentree(self: &Self, tag: &String, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, output: &mut Vec<TokenTree>, _it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
-        let tag_as_html = format_tag(true, tag, true, tag_tokens);
-        // println!("tag_as_html: {}", tag_as_html);
+        let tag_as_html = self.format_tag_close(tag); // true, tag, true, tag_tokens
         output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#tag_as_html); }))));
         Ok(())
     }
@@ -231,7 +229,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // it: the iterator to use.
     // returns: nothing or an error.
     fn convert_rusthtmltagend_to_tokentree(self: &Self, tag: &String, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, output: &mut Vec<TokenTree>, _it: &dyn IPeekableRustHtmlToken) -> Result<(), RustHtmlError> {
-        let tag_as_html = format_tag(false, tag, false, tag_tokens);
+        let tag_as_html = self.format_tag_close(tag); // false, tag, false, tag_tokens
         output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#tag_as_html); }))));
         Ok(())
     }
@@ -304,7 +302,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
         
         let tag_as_html = if let Some(tag_tokens) = tag_tokens {
             match tag_tokens {
-                RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(ident_and_punct) => HtmlTagParseContext::fmt_tag_name_as_str(&ident_and_punct),
+                RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(ident_and_punct) => self.format_tag_name_as_string(ident_and_punct),
                 RustHtmlIdentAndPunctOrLiteral::Literal(literal) => literal.to_string(),
             }
         } else {
@@ -414,29 +412,19 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
         }
         Ok(output)
     }
-}
 
+    fn format_tag_open(&self, tag_string: &String) -> String {
+        format!("<{}", tag_string)
+    }
 
-// format a tag as HTML. this is used to convert RustHtml tags to HTML tags.
-// if tag_tokens is None, then tag is used as the tag name.
-// opening: whether or not this is an opening tag.
-// tag: the tag to format.
-// tag_tokens: the tokens of the tag.
-// returns: the tag as HTML.
-fn format_tag(opening: bool, tag: &String, is_void: bool, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>) -> String {
-    let tag_string = if let Some(tag_tokens) = tag_tokens { HtmlTagParseContext::fmt_tag_name_as_str(tag_tokens) } else { tag.clone() };
-    if opening {
-        // if is_void {
-        //     let mut has_slash = true;
-        //     match tag_string.as_str() {
-        //         "!DOCTYPE" => has_slash = false,
-        //         _ => (),
-        //     }
-        //     format!("<{}{}>", tag_string, if has_slash { "/" } else { "" })
-        // } else {
-            format!("<{}", tag_string)
-        // }
-    } else {
+    fn format_tag_close(&self, tag_string: &String) -> String {
         format!("</{}>", tag_string)
+    }
+
+    fn format_tag_name_as_string(self: &Self, tag_tokens: &Vec<RustHtmlIdentOrPunct>) -> String {
+        tag_tokens.iter().map(|x| match x {
+            RustHtmlIdentOrPunct::Ident(ident) => ident.to_string(),
+            RustHtmlIdentOrPunct::Punct(punct) => punct.to_string(),
+        }).collect::<Vec<String>>().join("")
     }
 }

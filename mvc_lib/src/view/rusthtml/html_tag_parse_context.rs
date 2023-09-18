@@ -1,3 +1,4 @@
+use std::borrow::BorrowMut;
 use std::cell::RefCell;
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
 use std::collections::HashMap;
@@ -9,92 +10,8 @@ use proc_macro2::{Literal, Punct};
 use crate::view::rusthtml::rusthtml_token::RustHtmlIdentOrPunct;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
-use super::rusthtml_parser_context::IRustHtmlParserContext;
-
-
-// need trait for struct
-pub trait IHtmlTagParseContext {
-    // parent context
-    fn get_main_context(&self) -> Rc<dyn IRustHtmlParserContext>;
-
-    // returns true if the tag is a void tag (e.g. <input /> or <hr />)
-    // returns false if the tag is not a void tag (e.g. <div></div> or <p></p>)
-    fn is_void_tag(&self) -> bool;
-
-    // clears the cached attribute key and value information.
-    fn clear_attr_kvp(&self);
-
-    // returns the tag name as a string.
-    fn tag_name_as_str(&self) -> String;
-
-    // formats the RustHtml tag name as a string.
-    // tag_name: the RustHtml tag name to format as a string.
-    // returns the formatted RustHtml tag name as a string.
-    fn fmt_tag_name_as_str(&self, tag_name: &Vec<RustHtmlIdentOrPunct>) -> String;
-
-    // called when the tag name is parsed.
-    // output: the output RustHtml token stream to add the tag name to.
-    fn on_html_tag_name_parsed(&self, output: &mut Vec<RustHtmlToken>);
-
-    // returns true if the key-value pair is defined.
-    fn is_kvp_defined(&self) -> bool;
-
-    // returns true if the key is defined.
-    fn is_key_defined(&self) -> bool;
-
-    // whether or not the tag is an opening tag
-    fn is_opening_tag(&self) -> bool;
-
-    // whether or not the tag is a self-contained tag
-    fn is_self_contained_tag(&self) -> bool;
-
-    // returns true if the parser is parsing attributes
-    fn is_parsing_attrs(&self) -> bool;
-
-    // assigns the equals punct for the current attribute key-value pair.
-    fn set_equals_punct(&self, punct: &Punct);
-
-    fn get_equals_punct(&self) -> Option<Punct>;
-
-    // returns true if the tag name is defined.
-    fn has_tag_name(&self) -> bool;
-
-    fn get_tag_name(&self) -> Vec<RustHtmlIdentOrPunct>;
-
-    fn has_html_attr_key(&self) -> bool;
-
-    fn get_html_attr_key_as_str(&self) -> &str;
-
-    fn html_attr_key_push_str(&self, s: &str);
-
-    fn html_attr_key_ident_push(&self, ident: &Ident);
-
-    fn html_attr_key_ident_push_punct(&self, punct: &Punct);
-
-    fn html_attr_val_ident_push(&self, ident: &Ident);
-
-    fn html_attr_val_ident_push_punct(&self, punct: &Punct);
-
-    fn set_html_attr_key_literal(&self, literal: Literal);
-
-    fn set_html_attr_val_literal(&self, literal: Literal);
-
-    fn set_is_self_contained_tag(&self, is_self_contained_tag: bool);
-
-    fn set_is_opening_tag(&self, is_opening_tag: bool);
-
-    fn is_parsing_attr_val(&self) -> bool;
-
-    fn get_html_attr_val_ident(&self) -> Vec<RustHtmlIdentOrPunct>;
-
-    fn get_html_attr_val_literal(&self) -> Option<Literal>;
-
-    fn html_attrs_insert(&self, key: String, val: Option<RustHtmlToken>);
-
-    fn html_attrs_get(&self, key: &str) -> Option<Option<RustHtmlToken>>;
-}
-
-
+use super::ihtml_tag_parse_context::IHtmlTagParseContext;
+use super::irusthtml_parser_context::IRustHtmlParserContext;
 
 // this is the main parsing context for the RustHtml language.
 // it is used to parse the RustHtml language into a RustHtmlToken stream of RustHtml tokens.
@@ -149,7 +66,7 @@ impl HtmlTagParseContext {
 
 impl IHtmlTagParseContext for HtmlTagParseContext {
     fn get_main_context(self: &Self) -> Rc<dyn IRustHtmlParserContext> {
-        self.main_context.unwrap().clone()
+        self.main_context.as_ref().unwrap().clone()
     }
 
     // returns true if the tag is a void tag (e.g. <input /> or <hr />)
@@ -255,17 +172,17 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
             self.html_attr_key_literal.borrow().is_some()
     }
 
-    fn get_html_attr_key_as_str(&self) -> &str {
-        if self.html_attr_key.borrow().len() > 0 {
-            return self.html_attr_key.borrow().as_str();
-        } else if self.html_attr_key_ident.borrow().len() > 0 {
-            return self.fmt_tag_name_as_str(&self.html_attr_key_ident.borrow()).as_str();
-        } else if self.html_attr_key_literal.borrow().is_some() {
-            return self.html_attr_key_literal.borrow().as_ref().unwrap().to_string().as_str();
-        } else {
-            return "";
-        }
-    }
+    // fn get_html_attr_key_as_str(&self) -> &str {
+    //     if self.html_attr_key.borrow().len() > 0 {
+    //         return self.html_attr_key.borrow().as_str();
+    //     } else if self.html_attr_key_ident.borrow().len() > 0 {
+    //         return self.fmt_tag_name_as_str(&self.html_attr_key_ident.borrow()).as_str();
+    //     } else if self.html_attr_key_literal.borrow().is_some() {
+    //         return self.html_attr_key_literal.borrow().as_ref().unwrap().to_string().as_str();
+    //     } else {
+    //         return "";
+    //     }
+    // }
 
     fn html_attr_key_ident_push(&self, ident: &Ident) {
         self.html_attr_key_ident.borrow_mut().push(RustHtmlIdentOrPunct::Ident(ident.clone()));
@@ -275,12 +192,12 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
         self.html_attr_key_ident.borrow_mut().push(RustHtmlIdentOrPunct::Punct(punct.clone()));
     }
 
-    fn set_html_attr_key_literal(&self, literal: Literal) {
-        self.html_attr_key_literal.borrow_mut().replace(literal);
+    fn set_html_attr_key_literal(&self, literal: &Literal) {
+        self.html_attr_key_literal.borrow_mut().replace(literal.clone());
     }
 
-    fn set_html_attr_val_literal(&self, literal: Literal) {
-        self.html_attr_val_literal.borrow_mut().replace(literal);
+    fn set_html_attr_val_literal(&self, literal: &Literal) {
+        self.html_attr_val_literal.borrow_mut().replace(literal.clone());
     }
 
     fn set_is_self_contained_tag(&self, is_self_contained_tag: bool) {
@@ -289,5 +206,110 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
 
     fn set_is_opening_tag(&self, is_opening_tag: bool) {
         *self.is_opening_tag.borrow_mut() = is_opening_tag;
+    }
+
+    fn get_equals_punct(&self) -> Option<Punct> {
+        self.equals_punct.borrow().clone()
+    }
+
+    fn html_attr_key_push_str(&self, s: &str) {
+        self.html_attr_key.borrow_mut().push_str(s);
+    }
+
+    fn html_attr_val_ident_push(&self, ident: &Ident) {
+        self.html_attr_val_ident.borrow_mut().push(RustHtmlIdentOrPunct::Ident(ident.clone()));
+    }
+
+    fn html_attr_val_ident_push_punct(&self, punct: &Punct) {
+        self.html_attr_val_ident.borrow_mut().push(RustHtmlIdentOrPunct::Punct(punct.clone()));
+    }
+
+    fn is_parsing_attr_val(&self) -> bool {
+        *self.parse_attr_val.borrow()
+    }
+
+    fn get_html_attr_val_ident(&self) -> Vec<RustHtmlIdentOrPunct> {
+        self.html_attr_val_ident.borrow().clone()
+    }
+
+    fn get_html_attr_val_literal(&self) -> Option<Literal> {
+        self.html_attr_val_literal.borrow().clone()
+    }
+
+    fn html_attrs_insert(&self, key: String, val: Option<RustHtmlToken>) {
+        self.html_attrs.borrow_mut().insert(key, val);
+    }
+
+    fn html_attrs_get(&self, key: &str) -> Option<Option<RustHtmlToken>> {
+        self.html_attrs.borrow().get(key).cloned()
+    }
+
+    fn tag_name_push_ident(&self, ident: &Ident) {
+        self.tag_name.borrow_mut().push(RustHtmlIdentOrPunct::Ident(ident.clone()));
+    }
+
+    fn tag_name_push_punct(&self, punct: &Punct) {
+        self.tag_name.borrow_mut().push(RustHtmlIdentOrPunct::Punct(punct.clone()));
+    }
+
+    fn set_parse_attr_val(&self, parse_attr_val: bool) {
+        *self.parse_attr_val.borrow_mut() = parse_attr_val;
+    }
+
+    fn get_html_attr_key(&self) -> String {
+        self.html_attr_key.borrow().clone()
+    }
+
+    fn get_html_attr_key_literal(&self) -> Option<Literal> {
+        self.html_attr_key_literal.borrow().clone()
+    }
+
+    fn get_html_attr_key_ident(&self) -> Vec<RustHtmlIdentOrPunct> {
+        self.html_attr_key_ident.borrow().clone()
+    }
+
+    fn has_html_attr_key_ident(&self) -> bool {
+        self.html_attr_key_ident.borrow().len() > 0
+    }
+
+    fn has_html_attr_val(&self) -> bool {
+        self.html_attr_val_literal.borrow().is_some() ||
+            self.html_attr_val_ident.borrow().len() > 0 ||
+            self.html_attr_val_rust.borrow().len() > 0
+    }
+
+    fn has_html_attr_val_ident(&self) -> bool {
+        self.html_attr_val_ident.borrow().len() > 0
+    }
+
+    fn set_html_attr_val_rust(&self, rust: Vec<RustHtmlToken>) {
+        self.html_attr_val_rust.replace(rust);
+    }
+
+    fn get_html_attr(&self, key: &str) -> Option<RustHtmlToken> {
+        match self.html_attrs.borrow().get(key) {
+            Some(val) => val.clone(),
+            None => None,
+        }
+    }
+
+    fn get_html_attrs(&self) -> HashMap<String, Option<RustHtmlToken>> {
+        self.html_attrs.borrow().clone()
+    }
+
+    fn has_html_attr_val_rust(&self) -> bool {
+        self.html_attr_val_rust.borrow().len() > 0
+    }
+
+    fn get_html_attr_val_rust(&self) -> Vec<RustHtmlToken> {
+        self.html_attr_val_rust.borrow().clone()
+    }
+
+    fn add_operation_to_ooo_log(&self, operation: String) {
+        self.main_context.as_ref().unwrap().add_operation_to_ooo_log(operation);
+    }
+
+    fn set_parse_attrs(&self, parse_attrs: bool) {
+        self.parse_attrs.replace(parse_attrs);
     }
 }

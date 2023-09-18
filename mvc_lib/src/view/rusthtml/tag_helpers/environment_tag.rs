@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
-use crate::view::rusthtml::html_tag_parse_context::HtmlTagParseContext;
-use crate::view::rusthtml::rusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
 use super::itag_parsed::IHtmlTagParsed;
@@ -25,8 +25,8 @@ impl IHtmlTagParsed for EnvironmentHtmlTagParsed {
         tag_name == "environment" && is_opening_tag
     }
 
-    fn on_tag_parsed(&self, tag_context: &HtmlTagParseContext, _html_context: Rc<dyn IRustHtmlParserContext>, _output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError> {
-        if tag_context.is_opening_tag {
+    fn on_tag_parsed(&self, tag_context: &dyn IHtmlTagParseContext, _html_context: Rc<dyn IRustHtmlParserContext>, _output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError> {
+        if tag_context.is_opening_tag() {
             // let environment_name = tag_context.html_attrs.get("name").unwrap();
             // let environment_value = tag_context.html_attrs.get("value").unwrap();
             // output.push_str(&format!("let {} = {};", environment_name.unwrap(), environment_value.unwrap()));

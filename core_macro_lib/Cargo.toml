@@ -25,6 +25,8 @@ regex = "1.7.1"
 rustc_lexer = "0.1.0"
 syn = "2.0.17"
 
+core_lib = { path = "../core_lib" }
+
 
 [dev-dependencies]
 trybuild = "1.0.79"

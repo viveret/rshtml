@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "core_lib",
   "core_macro_lib",
   "mvc_macro_lib",
   "mvc_lib",

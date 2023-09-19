@@ -1,6 +1,9 @@
 use std::rc::Rc;
 
 use assert_str::assert_str_eq;
+
+use core_lib::assert::assert_tokentree::{assert_tokentree_ident, assert_tokentree_literal, assert_tokentree_punct, assert_tokentree_stream, assert_tokentree_group};
+
 use mvc_lib::view::rusthtml::html_tag_parse_context::HtmlTagParseContext;
 use mvc_lib::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
 use mvc_lib::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
@@ -775,27 +778,39 @@ pub fn test_html_attr_key_parsing() {
     let real_ctx = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let parse_context = Rc::new(RustHtmlParserContextLog::new(real_ctx));
 
-    let mut tag_ctx = HtmlTagParseContext::new(None);
+    let ctx = HtmlTagParseContext::new(None);
     let mut output = vec![];
     let converter = RustToRustHtmlConverter::new(parse_context.clone());
     let it = Rc::new(PeekableTokenTree::new(quote::quote! {
         <a class="nav-link" href="/">Home</a>
     }));
 
-    let mut is_raw_tokenstream = false;
+    // assert each token in the stream
+    // my_assert_punct('<', &mut output, &converter, &ctx, it.clone());
+    it.next(); // skip first
+    my_assert_ident("a", &mut output, &converter, &ctx, it.clone());
+    my_assert_ident("class", &mut output, &converter, &ctx, it.clone());
+    my_assert_punct('=', &mut output, &converter, &ctx, it.clone());
+}
 
-    
-    loop {
-        let result = converter.convert_tokentree_to_rusthtmltoken(token, is_in_html_mode, &mut output, it, is_raw_tokenstream);
-        match result {
-            Ok(should_continue) => {
-                if !should_continue {
-                    break;
-                }
-            },
-            Err(RustHtmlError(e)) => {
-                panic!("expected Some: {}", e);
-            }
+fn my_assert_ident(s: &str, output: &mut Vec<RustHtmlToken>, converter: &dyn IRustToRustHtmlConverter, ctx: &dyn IHtmlTagParseContext, it: Rc<PeekableTokenTree>) {
+    let token_option = it.next().unwrap();
+    let ident = core_lib::assert::assert_tokentree::assert_tokentree_ident(&token_option, s);
+    match converter.next_and_parse_html_tag(Some(token_option), ctx, output, it.clone(), false) {
+        Ok(x) => assert_eq!(false, x),
+        Err(RustHtmlError(e)) => {
+            panic!("expected Some: {}", e);
+        }
+    }
+}
+
+fn my_assert_punct(c: char, output: &mut Vec<RustHtmlToken>, converter: &dyn IRustToRustHtmlConverter, ctx: &dyn IHtmlTagParseContext, it: Rc<PeekableTokenTree>) {
+    let token_option = it.next().unwrap();
+    let punct = core_lib::assert::assert_tokentree::assert_tokentree_punct(&token_option, c);
+    match converter.next_and_parse_html_tag(Some(token_option), ctx, output, it.clone(), false) {
+        Ok(x) => assert_eq!(true, x),
+        Err(RustHtmlError(e)) => {
+            panic!("expected Some: {}", e);
         }
     }
 }

@@ -15,6 +15,7 @@ mod imodel_macro;
 mod iviewmodel_macro;
 
 
+
 #[proc_macro]
 pub fn nameof_member_fn(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let mut it = TokenStream::from(input).into_iter();
@@ -160,3 +161,4 @@ pub fn fake_property_attribute(_attr: proc_macro::TokenStream, item: proc_macro:
     // println!("item: \"{}\"", item.to_string());
     item
 }
+

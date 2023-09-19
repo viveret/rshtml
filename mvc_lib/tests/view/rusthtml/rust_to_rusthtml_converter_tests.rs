@@ -768,3 +768,34 @@ pub fn test_rust_to_rusthtml_converter_parse_complex_html_inner() {
     let actual_ooo_string = actual_ooo.join("\n");
     assert_str_eq!(expected_ooo_string, actual_ooo_string);    
 }
+
+// new test that steps through the above and checks the keys in the context
+#[test]
+pub fn test_html_attr_key_parsing() {
+    let real_ctx = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
+    let parse_context = Rc::new(RustHtmlParserContextLog::new(real_ctx));
+
+    let mut tag_ctx = HtmlTagParseContext::new(None);
+    let mut output = vec![];
+    let converter = RustToRustHtmlConverter::new(parse_context.clone());
+    let it = Rc::new(PeekableTokenTree::new(quote::quote! {
+        <a class="nav-link" href="/">Home</a>
+    }));
+
+    let mut is_raw_tokenstream = false;
+
+    
+    loop {
+        let result = converter.convert_tokentree_to_rusthtmltoken(token, is_in_html_mode, &mut output, it, is_raw_tokenstream);
+        match result {
+            Ok(should_continue) => {
+                if !should_continue {
+                    break;
+                }
+            },
+            Err(RustHtmlError(e)) => {
+                panic!("expected Some: {}", e);
+            }
+        }
+    }
+}

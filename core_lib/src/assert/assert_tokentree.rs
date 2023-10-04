@@ -42,16 +42,16 @@ pub fn assert_tokentree_literal(literal: &TokenTree, expected: &str) {
 pub fn assert_tokentree_stream(stream: &proc_macro2::TokenStream, expected: &str) {
     for token in stream.clone() {
         match &token {
-            proc_macro2::TokenTree::Ident(ident) => {
+            proc_macro2::TokenTree::Ident(_) => {
                 assert_tokentree_ident(&token, expected);
             },
-            proc_macro2::TokenTree::Punct(punct) => {
+            proc_macro2::TokenTree::Punct(_) => {
                 assert_tokentree_punct(&token, expected.chars().next().unwrap());
             },
-            proc_macro2::TokenTree::Literal(literal) => {
+            proc_macro2::TokenTree::Literal(_) => {
                 assert_tokentree_literal(&token, expected);
             },
-            proc_macro2::TokenTree::Group(group) => {
+            proc_macro2::TokenTree::Group(_) => {
                 assert_tokentree_group(&token, proc_macro2::Delimiter::Brace);
             },
         }

@@ -4,7 +4,6 @@ use crate::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentOrPunct};
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::html_tag_parse_context::HtmlTagParseContext;
 
 use super::inode_parsed::IHtmlNodeParsed;
 
@@ -25,7 +24,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
         return tag_name == "environment";
     }
 
-    fn on_node_parsed(&self, tag_context: &HtmlTagParseContext, html_context: Rc<dyn IRustHtmlParserContext>, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError> {
+    fn on_node_parsed(&self, tag_context: Rc<dyn IHtmlTagParseContext>, html_context: Rc<dyn IRustHtmlParserContext>, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError> {
         // look for include or exclude attributes
         let mut keep_or_remove: Option<bool> = None;
 
@@ -175,14 +174,16 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                         }
                     }
                     
-                    match output.last().unwrap() {
-                        RustHtmlToken::HtmlTagEnd(tag_end, _tag_end_tokens) => {
+                    match output.last() {
+                        Some(RustHtmlToken::HtmlTagEnd(tag_end, _tag_end_tokens)) => {
                             if tag_end == &tag_context.tag_name_as_str() {
                                 let _pop_result = output.pop();
-                                // println!("output.pop(): {:?}", pop_result);
                             } else {
-                                println!("mismatch while processing environment HTML tag (found {})", tag_end);
+                                panic!("mismatch while processing environment HTML tag (found {})", tag_end);
                             }
+                        },
+                        Some(_) => {
+                            panic!("unexpected token while processing environment HTML tag (found {:?})", output.last().unwrap());
                         },
                         _ => {}
                     }

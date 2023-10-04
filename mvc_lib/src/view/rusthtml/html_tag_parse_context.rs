@@ -1,4 +1,3 @@
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
 use std::collections::HashMap;
@@ -12,6 +11,8 @@ use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
 use super::ihtml_tag_parse_context::IHtmlTagParseContext;
 use super::irusthtml_parser_context::IRustHtmlParserContext;
+use super::rusthtml_error::RustHtmlError;
+use super::rusthtml_token::RustHtmlIdentAndPunctOrLiteral;
 
 // this is the main parsing context for the RustHtml language.
 // it is used to parse the RustHtml language into a RustHtmlToken stream of RustHtml tokens.
@@ -66,7 +67,7 @@ impl HtmlTagParseContext {
 
 impl IHtmlTagParseContext for HtmlTagParseContext {
     fn get_main_context(self: &Self) -> Rc<dyn IRustHtmlParserContext> {
-        self.main_context.as_ref().unwrap().clone()
+        self.main_context.as_ref().expect("called get_main_context, expected context but none was supplied").clone()
     }
 
     // returns true if the tag is a void tag (e.g. <input /> or <hr />)
@@ -171,18 +172,6 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
             self.html_attr_key_ident.borrow().len() > 0 ||
             self.html_attr_key_literal.borrow().is_some()
     }
-
-    // fn get_html_attr_key_as_str(&self) -> &str {
-    //     if self.html_attr_key.borrow().len() > 0 {
-    //         return self.html_attr_key.borrow().as_str();
-    //     } else if self.html_attr_key_ident.borrow().len() > 0 {
-    //         return self.fmt_tag_name_as_str(&self.html_attr_key_ident.borrow()).as_str();
-    //     } else if self.html_attr_key_literal.borrow().is_some() {
-    //         return self.html_attr_key_literal.borrow().as_ref().unwrap().to_string().as_str();
-    //     } else {
-    //         return "";
-    //     }
-    // }
 
     fn html_attr_key_ident_push(&self, ident: &Ident) {
         self.html_attr_key_ident.borrow_mut().push(RustHtmlIdentOrPunct::Ident(ident.clone()));
@@ -311,5 +300,70 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
 
     fn set_parse_attrs(&self, parse_attrs: bool) {
         self.parse_attrs.replace(parse_attrs);
+    }
+
+    fn on_kvp_defined(&self) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+        let (name_token, attr_name) = self.create_key_for_kvp()?;
+        let val = self.create_val_for_kvp(attr_name.clone())?;
+
+        let r = if let Some(val) = val {
+            self.html_attrs_insert(attr_name, Some(val.0.clone()));
+            Ok(vec![name_token, RustHtmlToken::HtmlTagAttributeEquals('=', self.get_equals_punct()), val.0])
+        } else {
+            self.html_attrs_insert(attr_name, None);
+            Ok(vec![name_token])
+        };
+
+        self.clear_attr_kvp();
+        r
+    }
+
+    fn create_key_for_kvp(&self) -> Result<(RustHtmlToken, String), RustHtmlError> {
+        let mut attr_name = String::new();
+        let token = if let Some(is_literal) = &self.get_html_attr_key_literal() {
+            let s = snailquote::unescape(&is_literal.to_string()).unwrap();
+            attr_name.push_str(&s);
+            RustHtmlToken::HtmlTagAttributeName(is_literal.to_string(), Some(RustHtmlIdentAndPunctOrLiteral::Literal(is_literal.clone())))
+        } else if self.has_html_attr_key_ident() {
+            for ident_or_punct in &self.get_html_attr_key_ident() {
+                match ident_or_punct {
+                    RustHtmlIdentOrPunct::Ident(ident) => {
+                        attr_name.push_str(&ident.to_string());
+                    },
+                    RustHtmlIdentOrPunct::Punct(punct) => {
+                        attr_name.push(punct.as_char());
+                    },
+                }
+            }
+            RustHtmlToken::HtmlTagAttributeName(attr_name.clone(), Some(RustHtmlIdentAndPunctOrLiteral::IdentAndPunct(self.get_html_attr_key_ident())))
+        } else if self.has_html_attr_key() {
+            attr_name.push_str(self.get_html_attr_key().as_str());
+            RustHtmlToken::HtmlTagAttributeName(attr_name.clone(), None)
+        } else {
+            return Err(RustHtmlError::from_string(format!("on_kvp_defined: html_attr_key_literal and html_attr_key_ident are both None")));
+        };
+        Ok((token, attr_name))
+    }
+
+    fn create_val_for_kvp(&self, _attr_name: String) -> Result<Option<(RustHtmlToken, String)>, RustHtmlError> {
+        if let Some(is_literal) = &self.get_html_attr_val_literal() {
+            // let s = snailquote::unescape(&is_literal.to_string()).unwrap();
+            let s = is_literal.to_string();
+            Ok(Some((
+                RustHtmlToken::HtmlTagAttributeValue(Some(s.clone()), Some(is_literal.clone()), None, None),
+            s)))
+        } else if self.has_html_attr_val_ident() {
+            let ident = self.get_html_attr_val_ident();
+            let s = ident.iter().map(|i| i.to_string()).collect::<Vec<String>>().join("");
+            let html_attr_val = RustHtmlToken::HtmlTagAttributeValue(None, None, Some(ident), None);
+            Ok(Some((html_attr_val, s)))
+        } else if self.has_html_attr_val_rust() {
+            let val_rust = self.get_html_attr_val_rust();
+            let s = val_rust.iter().map(|i| i.to_string()).collect::<Vec<String>>().join("");
+            let html_attr_val = RustHtmlToken::HtmlTagAttributeValue(None, None, None, Some(val_rust));
+            Ok(Some((html_attr_val, s)))
+        } else {
+            Ok(None)
+        }
     }
 }

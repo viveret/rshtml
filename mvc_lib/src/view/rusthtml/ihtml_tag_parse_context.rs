@@ -1,5 +1,3 @@
-use std::borrow::BorrowMut;
-use std::cell::RefCell;
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -11,6 +9,7 @@ use crate::view::rusthtml::rusthtml_token::RustHtmlIdentOrPunct;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
 use super::irusthtml_parser_context::IRustHtmlParserContext;
+use super::rusthtml_error::RustHtmlError;
 
 
 // need trait for struct
@@ -123,6 +122,12 @@ pub trait IHtmlTagParseContext {
     fn add_operation_to_ooo_log(&self, operation: String);
 
     fn set_parse_attrs(&self, parse_attrs: bool);
+
+
+
+    fn on_kvp_defined(&self) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn create_key_for_kvp(&self) -> Result<(RustHtmlToken, String), RustHtmlError>;
+    fn create_val_for_kvp(&self, attr_name: String) -> Result<Option<(RustHtmlToken, String)>, RustHtmlError>;
 }
 
 

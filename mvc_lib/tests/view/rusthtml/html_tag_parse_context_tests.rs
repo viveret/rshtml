@@ -1,5 +1,4 @@
 use mvc_lib::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
-use mvc_lib::view::rusthtml::rusthtml_token::RustHtmlIdentOrPunct;
 use mvc_lib::view::rusthtml::html_tag_parse_context::HtmlTagParseContext;
 use proc_macro2::Ident;
 use proc_macro2::Span;
@@ -16,7 +15,7 @@ fn html_tag_parse_context_is_void_tag_false_by_default() {
 #[test]
 fn html_tag_parse_context_is_void_tag_true_works() {
     let mut output = vec![];
-    let mut ctx = HtmlTagParseContext::new(None);
+    let ctx = HtmlTagParseContext::new(None);
     ctx.tag_name_push_ident(&Ident::new("br", Span::call_site()));
     ctx.on_html_tag_name_parsed(&mut output);
     assert_eq!(true, ctx.is_void_tag());
@@ -25,7 +24,7 @@ fn html_tag_parse_context_is_void_tag_true_works() {
 
 #[test]
 fn html_tag_parse_context_clear_attr_kvp_works() {
-    let mut ctx = HtmlTagParseContext::new(None);
+    let ctx = HtmlTagParseContext::new(None);
     ctx.set_parse_attr_val(true);
 
     assert_eq!(true, ctx.is_parsing_attr_val());

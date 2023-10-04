@@ -25,13 +25,13 @@ impl ViewStartDirective {
 
 impl IRustHtmlDirective for ViewStartDirective {
     fn matches(self: &Self, name: &String) -> bool {
-        name == "viewstart" || name == "view_start"
+        name == "viewstart"
     }
 
-    fn execute(self: &Self, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         match parser.next_path_str(identifier, ident_token, it.clone(), false) {
             Ok(param_value) => {
-                parser.get_context().mut_params().insert("view_start".to_string(), param_value);
+                parser.get_context().mut_params().insert("viewstart".to_string(), param_value);
                 Ok(RustHtmlDirectiveResult::OkBreak)
             },
             Err(RustHtmlError(e)) => {

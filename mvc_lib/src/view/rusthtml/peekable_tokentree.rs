@@ -16,17 +16,27 @@ pub trait IPeekableTokenTree {
 
     // to string
     fn to_string(self: &Self) -> String;
+
+
+    fn enable_log_next(&self, msg: &str);
+    fn disable_log_next(&self);
 }
 
 pub struct PeekableTokenTree {
     it: RefCell<proc_macro2::token_stream::IntoIter>,
     n_peeked: RefCell<Vec<TokenTree>>,
+    // whether or not the next token is logged
+    log_next_enabled: RefCell<bool>,
+    // what to put in the logged message for the next token
+    log_next_msg: RefCell<String>,
 }
 impl PeekableTokenTree {
     pub fn new(stream: TokenStream) -> Self {
         Self {
             it: RefCell::new(stream.into_iter()),
             n_peeked: RefCell::new(vec![]),
+            log_next_enabled: RefCell::new(false),
+            log_next_msg: RefCell::new(String::new()),
         }
     }
 
@@ -42,11 +52,17 @@ impl IPeekableTokenTree for PeekableTokenTree {
 
     fn next(self: &Self) -> Option<TokenTree> {
         let mut n_peeked = self.n_peeked.borrow_mut();
-        if n_peeked.len() > 0 {
+        let token = if n_peeked.len() > 0 {
             Some(n_peeked.remove(0))
         } else {
             self.it.borrow_mut().next()
+        };
+
+        if *self.log_next_enabled.borrow() {
+            let msg = self.log_next_msg.borrow();
+            println!("{}: {:?}", msg, token);
         }
+        token
     }
 
     fn peek_nth(self: &Self, i: usize) -> Option<TokenTree> {
@@ -71,5 +87,14 @@ impl IPeekableTokenTree for PeekableTokenTree {
             s.push_str(&token.to_string());
         }
         s
+    }
+
+    fn enable_log_next(&self, msg: &str) {
+        self.log_next_enabled.replace(true);
+        self.log_next_msg.replace(msg.to_string());
+    }
+
+    fn disable_log_next(&self) {
+        self.log_next_enabled.replace(false);
     }
 }

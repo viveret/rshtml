@@ -82,7 +82,7 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
             let inject_tokens = parser.parse_context.get_inject_statements_stream();
             let when_compiled = chrono::prelude::Utc::now().to_rfc2822();
             let mut view_start_tokens: Option<TokenStream> = None;
-            if let Some(view_start) = parser.parse_context.try_get_param_string("view_start") {
+            if let Some(view_start) = parser.parse_context.try_get_param_string("viewstart") {
                 // println!("view_start_path: {}", view_start_path);
                 view_start_tokens = Some(quote! {
                     match view_context.get_view_renderer()

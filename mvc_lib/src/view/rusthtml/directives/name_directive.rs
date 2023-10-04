@@ -27,7 +27,7 @@ impl IRustHtmlDirective for NameDirective {
         name == "name"
     }
 
-    fn execute(self: &Self, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, identifier: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         if let Ok(param_value) = parser.parse_string_with_quotes(false, identifier.clone(), it) {
             parser.get_context().mut_params().insert(identifier.to_string().clone(), param_value);
             Ok(RustHtmlDirectiveResult::OkBreak)

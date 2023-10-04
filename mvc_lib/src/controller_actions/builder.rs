@@ -223,7 +223,7 @@ impl ControllerActionBuilder {
                 self.action_name.borrow().as_ref().unwrap().clone(),
                 self.controller_name.borrow().as_ref().unwrap().clone(),
                 self.area_name.borrow().as_ref().unwrap().clone(),
-                self.closure_fn_novalidation.borrow().as_ref().unwrap().clone(),
+                self.closure_fn_novalidation.borrow().as_ref().cloned().unwrap(),
                 )
             }
         )

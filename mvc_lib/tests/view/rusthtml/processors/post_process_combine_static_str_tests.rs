@@ -5,7 +5,6 @@ use proc_macro2::{TokenTree, TokenStream, Punct, Group, Delimiter, Spacing, Lite
 // test individual parts of the processor
 #[test]
 pub fn peek_ident_with_name_true() {
-    let mut output = Vec::<TokenTree>::new();
     let input = vec![
         TokenTree::Ident(Ident::new("foobar", proc_macro2::Span::call_site())),
     ];
@@ -13,12 +12,10 @@ pub fn peek_ident_with_name_true() {
     let result = PostProcessCombineStaticStr::peek_ident_with_name("foobar", 0, &it);
 
     assert!(result.is_some());
-    assert_eq!(0, output.len());
 }
 
 #[test]
 pub fn peek_ident_with_name_false() {
-    let mut output = Vec::<TokenTree>::new();
     let input = vec![
         TokenTree::Ident(Ident::new("foobar1", proc_macro2::Span::call_site())),
     ];
@@ -27,7 +24,6 @@ pub fn peek_ident_with_name_false() {
     let result = PostProcessCombineStaticStr::peek_ident_with_name("foobar", 0, &it);
 
     assert!(result.is_none());
-    assert_eq!(0, output.len());
 }
 
 #[test]
@@ -88,7 +84,6 @@ pub fn post_process_combine_static_str_is_string_literal() {
 
 #[test]
 pub fn post_process_combine_static_str_is_html_output() {
-    let mut is_first = true;
     let mut output = Vec::<TokenTree>::new();
     let input = vec![
         TokenTree::Ident(Ident::new("html_output", proc_macro2::Span::call_site())),
@@ -101,7 +96,6 @@ pub fn post_process_combine_static_str_is_html_output() {
 
 
     // test when is_first is false
-    is_first = false;
     output.clear();
     let it = PeekableTokenTree::from_vec(&input);
     let result = PostProcessCombineStaticStr::peek_html_output(&it);
@@ -111,12 +105,11 @@ pub fn post_process_combine_static_str_is_html_output() {
 
     
     // test when next token is not html_output
-    is_first = true;
     output.clear();
     let input = vec![
         TokenTree::Ident(Ident::new("foobar", proc_macro2::Span::call_site())),
     ];
-    let mut it = PeekableTokenTree::from_vec(&input);
+    let it = PeekableTokenTree::from_vec(&input);
     let result = PostProcessCombineStaticStr::peek_html_output(&it);
 
     assert!(result.is_none());

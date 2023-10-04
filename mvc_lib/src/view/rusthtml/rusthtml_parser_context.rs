@@ -283,7 +283,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
             None => {
                 return PanicOrReturnError::panic_or_return_error(
                     self.should_panic_or_return_error,
-                    format!("missing param '@{}' in rusthtml", key)
+                    format!("missing param '@{}' in rusthtml (keys: {})", key, self.params.borrow().keys().map(|x| x.to_string()).collect::<Vec<String>>().join(", "))
                 );
             }
         }
@@ -483,7 +483,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         self.rust_postprocessors.clone()
     }
 
-    fn add_operation_to_ooo_log(self: &Self, operation: String) {
+    fn add_operation_to_ooo_log(self: &Self, _operation: String) {
         // dont do anything
     }
 

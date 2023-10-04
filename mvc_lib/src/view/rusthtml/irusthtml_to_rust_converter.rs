@@ -4,7 +4,6 @@ use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunct
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use super::peekable_rusthtmltoken::IPeekableRustHtmlToken;
-use super::rusthtml_token::RustHtmlIdentOrPunctOrGroup;
 
 
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs

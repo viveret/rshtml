@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro2::{Ident, Delimiter, Group, TokenStream, TokenTree};
+use proc_macro2::{Ident, TokenStream, TokenTree};
 
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
@@ -38,12 +38,11 @@ impl MarkdownFileNoCacheDirective {
         } else {
             quote::quote! {}
         };
-        let mut open_inner_tokenstream: Option<TokenStream> = None;
-
+        let open_inner_tokenstream = 
         match parser.peek_path_str(identifier, ident_token, it.clone(), parser.get_context().get_is_raw_tokenstream()) {
             Ok(path) => {
                 it.next();
-                open_inner_tokenstream = Some(quote::quote! { #prefix_stream #path });
+                quote::quote! { #prefix_stream #path }
             },
             Err(RustHtmlError(e)) => {
                 // couldn't peek path string, try parsing identity expression for dynamic path
@@ -56,7 +55,7 @@ impl MarkdownFileNoCacheDirective {
                                 ident_output_final.push(x.clone());
                             }
                             ident_output_final.extend_from_slice(&ident_output);
-                            open_inner_tokenstream = Some(TokenStream::from_iter(ident_output_final.into_iter()));
+                            TokenStream::from_iter(ident_output_final.into_iter())
                         } else {
                             return Err(RustHtmlError::from_string(format!("cannot read external markdown file nocache '{}', could not parse path: {}", identifier, e)));
                         }
@@ -66,22 +65,17 @@ impl MarkdownFileNoCacheDirective {
                     }
                 }
             }
-        }
+        };
 
-        if let Some(open_inner_tokenstream) = open_inner_tokenstream {
-            let path = format!("{}", open_inner_tokenstream);
-            let code = quote::quote! {
-                view_context.get_markdown_file_nocache(#open_inner_tokenstream)
-            };
+        // let path = format!("{}", open_inner_tokenstream);
+        let code = quote::quote! {
+            view_context.get_markdown_file_nocache(#open_inner_tokenstream)
+        };
 
-            let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
-            output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Group(proc_macro2::Delimiter::Brace, g)]));
+        let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
+        output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Group(proc_macro2::Delimiter::Brace, g)]));
 
-            Ok(())
-        } else {
-            // no valid tokenstream for markdown directive
-            panic!("no valid tokenstream for markdown directive");
-        }
+        Ok(())
     }
 }
 

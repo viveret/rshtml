@@ -361,3 +361,27 @@ fn rusthtml_parser_expand_tokenstream_if_else_followed_by_html() {
 
     assert_str::assert_str_trim_eq!(expected_str, actual_str);
 }
+
+
+
+// try doing a few tests with just single tags
+#[test]
+pub fn rusthtml_parser_expand_tokenstream_single_tag() {
+    let stream = quote::quote! {
+        <div><hr></div>
+    };
+    let expected_output = quote::quote! {
+        html_output.write_html_str("<div><hr></div>");
+    };
+    let expected_it = expected_output.into_iter().peekable();
+
+    let parser = RustHtmlParser::new(false, "test".to_string());
+    let actual_output = parser.expand_tokenstream(stream).unwrap();
+    let actual_it = actual_output.into_iter().peekable();
+
+    // do simple string comparison
+    let expected_str = expected_it.map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
+    let actual_str = actual_it.map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
+
+    assert_str::assert_str_trim_eq!(expected_str, actual_str);
+}

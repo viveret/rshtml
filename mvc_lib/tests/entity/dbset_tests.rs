@@ -1,6 +1,6 @@
 use std::{rc::Rc, fs::File, io::Write};
 
-use mvc_lib::entity::{vec_dbset::VecDbSet, idbset::IDbSet, idbset::IDbSetAny, json_file_dbset::JsonFileDbSet};
+use mvc_lib::entity::{vec_dbset::VecDbSet, idbset::IDbSet, json_file_dbset::JsonFileDbSet};
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -17,7 +17,7 @@ impl TestPerson {
         }
     }
 
-    fn parse(x: serde_json::Value) -> TestPerson {
+    fn parse(_x: serde_json::Value) -> TestPerson {
         todo!()
     }
 
@@ -38,10 +38,10 @@ impl<T> DbSetTestSuite<T> where T: IDbSet<TestPerson> {
 
     pub fn perform_tests(self: &Self, save_changes: bool) {
         // get the type info for the database set
-        let type_info = self.dbset.entity_type_info();
+        let _type_info = self.dbset.entity_type_info();
 
         // get the type name for the database set entity type
-        let type_name = self.dbset.entity_type_name();
+        let _type_name = self.dbset.entity_type_name();
 
         // create a new person
         let person = TestPerson::new();

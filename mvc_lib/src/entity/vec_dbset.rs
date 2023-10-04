@@ -68,15 +68,15 @@ impl<T> IDbSet<T> for VecDbSet<T> where T: 'static + Clone + PartialEq {
 }
 
 impl<T> IDbSetAny for VecDbSet<T> where T: 'static + Clone + PartialEq {
-    fn add_any(self: &Self, item: Box<dyn std::any::Any>) {
+    fn add_any(self: &Self, _item: Box<dyn std::any::Any>) {
         todo!()
     }
 
-    fn add_range_any(self: &Self, items: Vec<Box<dyn std::any::Any>>) {
+    fn add_range_any(self: &Self, _items: Vec<Box<dyn std::any::Any>>) {
         todo!()
     }
 
-    fn attach_any(self: &Self, item: Box<dyn std::any::Any>) {
+    fn attach_any(self: &Self, _item: Box<dyn std::any::Any>) {
         todo!()
     }
 
@@ -92,15 +92,15 @@ impl<T> IDbSetAny for VecDbSet<T> where T: 'static + Clone + PartialEq {
         todo!()
     }
 
-    fn remove_any(self: &Self, item: Box<dyn std::any::Any>) {
+    fn remove_any(self: &Self, _item: Box<dyn std::any::Any>) {
         todo!()
     }
 
-    fn remove_range_any(self: &Self, item: Vec<Box<dyn std::any::Any>>) {
+    fn remove_range_any(self: &Self, _item: Vec<Box<dyn std::any::Any>>) {
         todo!()
     }
 
-    fn as_any(self: &Self, type_info: TypeInfo) -> &dyn std::any::Any {
+    fn as_any(self: &Self, _type_info: TypeInfo) -> &dyn std::any::Any {
         todo!()
     }
 

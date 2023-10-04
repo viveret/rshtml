@@ -229,4 +229,19 @@ impl IHtmlTagParseContext for HtmlTagParseContextLog {
         self.add_operation_to_ooo_log(nameof_member_fn!(Self::set_parse_attrs).to_string());
         self.real_context.set_parse_attrs(parse_attrs)
     }
+
+    fn on_kvp_defined(&self) -> Result<Vec<RustHtmlToken>, super::rusthtml_error::RustHtmlError> {
+        self.add_operation_to_ooo_log(nameof_member_fn!(Self::on_kvp_defined).to_string());
+        self.real_context.on_kvp_defined()
+    }
+
+    fn create_key_for_kvp(&self) -> Result<(RustHtmlToken, String), super::rusthtml_error::RustHtmlError> {
+        self.add_operation_to_ooo_log(nameof_member_fn!(Self::create_key_for_kvp).to_string());
+        self.real_context.create_key_for_kvp()
+    }
+
+    fn create_val_for_kvp(&self, attr_name: String) -> Result<Option<(RustHtmlToken, String)>, super::rusthtml_error::RustHtmlError> {
+        self.add_operation_to_ooo_log(nameof_member_fn!(Self::create_val_for_kvp).to_string());
+        self.real_context.create_val_for_kvp(attr_name)
+    }
 }

@@ -5,7 +5,7 @@ use mvc_lib::view::rusthtml::{directives::markdownfile_const_directive::Markdown
 use mvc_lib::view::rusthtml::peekable_tokentree::PeekableTokenTree;
 use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
-use proc_macro2::{TokenStream, Ident, TokenTree, Span};
+use proc_macro2::{Ident, TokenTree, Span};
 
 
 
@@ -21,7 +21,7 @@ pub fn convert_mdfile_const_directive_test() {
     let identifier = Ident::new("test", Span::call_site());
     let ident_token = TokenTree::Ident(identifier.clone());
 
-    let result = MarkdownFileConstDirective::convert_mdfile_const_directive(
+    let _result = MarkdownFileConstDirective::convert_mdfile_const_directive(
         &identifier, &ident_token, Rc::new(parser), &mut output, Rc::new(it)
     ).unwrap();
 
@@ -36,7 +36,7 @@ pub fn convert_mdfile_const_directive_test() {
                     let full_path = std::path::PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("test.md");
                     let full_path = full_path.to_str().unwrap();
                     let expected_stream = quote::quote! {
-                        match view_context.open_data_file(#full_path) {
+                        view_context.get_markdown_file_nocache(#full_path) {
                             Ok(mut f) => {
                                 let mut buffer = String::new();
                                 f.read_to_string(&mut buffer).expect("could not read markdown file");
@@ -94,7 +94,7 @@ pub fn convert_mdfile_const_directive_integration_test() {
                     let full_path = std::path::PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("test.md");
                     let full_path = full_path.to_str().unwrap();
                     let expected_stream = quote::quote! {
-                        match view_context.open_data_file(#full_path) {
+                        view_context.get_markdown_file_nocache(#full_path) {
                             Ok(mut f) => {
                                 let mut buffer = String::new();
                                 f.read_to_string(&mut buffer).expect("could not read markdown file");

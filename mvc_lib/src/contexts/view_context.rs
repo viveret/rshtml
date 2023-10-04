@@ -248,7 +248,7 @@ impl <'a> IViewContext for ViewContext<'a> {
     }
 
     fn get_view_start_path(self: &Self) -> Option<String> {
-        self.try_get_str("view_start")
+        self.try_get_str("viewstart")
     }
 
     fn get_markdown_file_nocache(self: &Self, path: &str) -> Option<String> {
@@ -256,7 +256,7 @@ impl <'a> IViewContext for ViewContext<'a> {
             Ok(mut f) => {
                 let mut buffer = String::new();
                 match f.read_to_string(&mut buffer) {
-                    Ok(x) => {
+                    Ok(_x) => {
                         Some(comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default()))
                     },
                     Err(e) => {

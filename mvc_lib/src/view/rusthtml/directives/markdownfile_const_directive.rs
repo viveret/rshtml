@@ -1,4 +1,3 @@
-use std::io::Read;
 use std::rc::Rc;
 
 use proc_macro2::Ident;

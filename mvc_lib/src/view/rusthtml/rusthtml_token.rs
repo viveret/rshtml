@@ -9,6 +9,15 @@ pub enum RustHtmlIdentOrPunct {
     Punct(Punct),
 }
 
+impl RustHtmlIdentOrPunct {
+    pub fn to_string(&self) -> String {
+        match self {
+            RustHtmlIdentOrPunct::Ident(ident) => ident.to_string(),
+            RustHtmlIdentOrPunct::Punct(punct) => punct.to_string(),
+        }
+    }
+}
+
 // a RustHtml token for a Rust identifier or punctuation or literal.
 #[derive(Clone, Debug)]
 pub enum RustHtmlIdentAndPunctOrLiteral {

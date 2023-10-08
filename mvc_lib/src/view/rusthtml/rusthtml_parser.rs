@@ -3,7 +3,6 @@ use std::rc::Rc;
 
 use proc_macro2::{ Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 
-use crate::core::panic_or_return_error::PanicOrReturnError;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
@@ -92,35 +91,6 @@ impl RustHtmlParser {
             }
         }
         s
-    }
-
-    // panic or return an error. if should_panic_or_return_error is true, then panic. otherwise, return an error.
-    // message: the error message.
-    // returns: an error with the message.
-    pub fn panic_or_return_error<'a, T>(self: &Self, message: String) -> Result<T, RustHtmlError<'a>> {
-        return PanicOrReturnError::panic_or_return_error(self.parse_context.get_should_panic_or_return_error(), message);
-    }
-
-    // assert that the next token is a punct. if it is, return nothing. otherwise, return the unexpected token.
-    // c: the punct to expect.
-    // it: the iterator to use.
-    // returns: nothing or the unexpected token.
-    pub fn expect_punct(self: &Self, c: char, it: &mut Peekable<impl Iterator<Item = TokenTree>>) -> Result<(), Option<TokenTree>> {
-        if let Some(actual_c_token) = it.peek() {
-            match actual_c_token { 
-                TokenTree::Punct(punct) => {
-                    let actual_c = punct.as_char();
-                    if actual_c == c {
-                        Ok(())
-                    } else {
-                        Err(Some(actual_c_token.clone()))
-                    }
-                },
-                _ => Err(Some(actual_c_token.clone()))
-            }
-        } else {
-            Err(None)
-        }
     }
 
     // insert a self. before an identifier.

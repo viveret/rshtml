@@ -5,7 +5,6 @@ use std::rc::Rc;
 
 use proc_macro2::{TokenStream, TokenTree};
 
-use crate::core::panic_or_return_error::PanicOrReturnError;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::processors::post_process_flatten_group_none_delimiter::PostProcessFlattenGroupNoneDelimiter;
 
@@ -281,10 +280,9 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
                 Ok(s)
             },
             None => {
-                return PanicOrReturnError::panic_or_return_error(
-                    self.should_panic_or_return_error,
+                return Err(RustHtmlError::from_string(
                     format!("missing param '@{}' in rusthtml (keys: {})", key, self.params.borrow().keys().map(|x| x.to_string()).collect::<Vec<String>>().join(", "))
-                );
+                ));
             }
         }
     }
@@ -319,10 +317,6 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         } else {
             None
         }
-    }
-
-    fn get_should_panic_or_return_error(self: &Self) -> bool {
-        self.should_panic_or_return_error
     }
 
     fn set_model_type(self: &Self, value: Option<Vec<TokenTree>>) {

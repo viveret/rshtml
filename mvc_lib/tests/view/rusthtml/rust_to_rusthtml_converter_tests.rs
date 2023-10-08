@@ -23,23 +23,6 @@ pub fn rust_to_rusthtml_converter_constructor_works() {
 }
 
 #[test]
-pub fn rust_to_rusthtml_converter_panic_or_return_error_works_for_error() {
-    let parser_context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
-    let converter = RustToRustHtmlConverter::new(parser_context);
-    assert_eq!(true, converter.panic_or_return_error::<()>("test".to_string()).is_err());
-}
-
-#[test]
-#[should_panic]
-pub fn rust_to_rusthtml_converter_panic_or_return_error_works_for_panic() {
-    let parser_context = Rc::new(RustHtmlParserContext::new(false, true, "test".to_string()));
-    let converter = RustToRustHtmlConverter::new(parser_context);
-
-    // should not get to below statement
-    let _ = converter.panic_or_return_error::<()>("test".to_string());
-}
-
-#[test]
 pub fn rust_to_rusthtml_converter_peek_reserved_char() {
     let parser_context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let converter = RustToRustHtmlConverter::new(parser_context);

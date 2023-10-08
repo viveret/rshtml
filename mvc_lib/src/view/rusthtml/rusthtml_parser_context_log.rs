@@ -37,12 +37,7 @@ impl IRustHtmlParserContext for RustHtmlParserContextLog {
         self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_is_raw_tokenstream));
         self.real_context.get_is_raw_tokenstream()
     }
-
-    fn get_should_panic_or_return_error(self: &Self) -> bool {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_should_panic_or_return_error));
-        self.real_context.get_should_panic_or_return_error()
-    }
-
+    
     fn get_model_type_name(self: &Self) -> String {
         self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_model_type_name));
         self.real_context.get_model_type_name()

@@ -19,8 +19,6 @@ use super::tag_helpers::itag_parsed::IHtmlTagParsed;
 pub trait IRustHtmlParserContext {
     // whether or not the RustHtml code is raw tokenstream.
     fn get_is_raw_tokenstream(self: &Self) -> bool;
-    // whether or not to panic or return an error when an error occurs.
-    fn get_should_panic_or_return_error(self: &Self) -> bool;
     // get the model type name as a string.
     fn get_model_type_name(self: &Self) -> String;
     // get the model type as a token tree.

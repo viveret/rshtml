@@ -1,3 +1,7 @@
+use std::rc::Rc;
+
+use mvc_lib::view::rusthtml::peekable_tokentree::PeekableTokenTree;
+use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::{RustHtmlParserRust, IRustHtmlParserRust};
 use proc_macro2::{TokenTree, Delimiter, TokenStream};
 use quote::quote;
 
@@ -26,14 +30,17 @@ fn rusthtml_parser_print_as_code_works() {
 
 #[test]
 fn rusthtml_parser_expect_punct_works() {
-    let parser = RustHtmlParser::new(false, "test".to_string());
+    let parser = RustHtmlParserRust::new();
     let rust_output = quote! {
         <div></div>
     };
 
-    let mut it = rust_output.into_iter().peekable();
-    match parser.expect_punct('<', &mut it) {
-        Ok(_) => {},
+    let it = Rc::new(PeekableTokenTree::new(rust_output));
+    match parser.expect_punct('<', it) {
+        Ok((t, c)) => {
+            assert_eq!(t.to_string(), "<");
+            assert_eq!(c.as_char(), '<');
+        },
         Err(e) => panic!("Expected punct, not {:?}", e)
     }
 }

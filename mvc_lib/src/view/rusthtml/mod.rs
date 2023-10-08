@@ -3,6 +3,7 @@ pub mod html_string;
 pub mod html_tag_parse_context;
 pub mod html_tag_parse_context_log;
 pub mod helpers;
+pub mod parsers;
 pub mod peekable_tokentree;
 pub mod peekable_rusthtmltoken;
 pub mod processors;

@@ -3,7 +3,6 @@ use std::rc::Rc;
 use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
-use crate::core::panic_or_return_error::PanicOrReturnError;
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
@@ -36,7 +35,7 @@ impl HtmlFileDirective {
                             buffer
                         },
                         Err(e) => {
-                            panic!("cannot read external HTML file '{}', could not open: {:?}", #path, e);
+                            return Err(RustHtmlError::from_string(format!("cannot read external HTML file '{}', could not open: {:?}", #path, e)));
                         }
                     }
                 };
@@ -46,7 +45,7 @@ impl HtmlFileDirective {
                 Ok(())
             },
             Err(RustHtmlError(e)) => {
-                return PanicOrReturnError::panic_or_return_error(parser.get_context().get_should_panic_or_return_error(), format!("(@{}) cannot read external HTML file, could not parse path: {}", identifier, e));
+                return Err(RustHtmlError::from_string(format!("(@{}) cannot read external HTML file, could not parse path: {}", identifier, e)));
             }
         }
     }

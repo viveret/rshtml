@@ -1,5 +1,4 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
-use std::borrow::Cow;
 use std::rc::Rc;
 use std::str::FromStr;
 
@@ -12,10 +11,7 @@ use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use super::html_tag_parse_context::HtmlTagParseContext;
 use super::ihtml_tag_parse_context::IHtmlTagParseContext;
 use super::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
-use super::parsers::rusthtmlparser_html::RustHtmlParserHtml;
-use super::parsers::rusthtmlparser_rust::{RustHtmlParserRust, IRustHtmlParserRust};
 use super::parsers::rusthtmlparser_all::{RustHtmlParserAll, IRustHtmlParserAll};
-use super::parsers::rusthtmlparser_rusthtml::{RustHtmlParserRustOrHtml, IRustHtmlParserRustOrHtml};
 use super::peekable_tokentree::{IPeekableTokenTree, PeekableTokenTree};
 use super::rusthtml_directive_result::RustHtmlDirectiveResult;
 use super::irusthtml_parser_context::IRustHtmlParserContext;
@@ -467,28 +463,12 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
         Ok(())
     }
 
-    // convert a Rust identifier expression to a path string relative to the current working directory.
-    // identifier: the identifier to convert.
-    // it: the iterator to use.
-    // returns: the path string or an error.
-    fn next_path_str(self: &Self, identifier: &Ident, _identifier_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
-        let mut path = std::path::PathBuf::new();
-        let cwd = std::env::current_dir().unwrap();
-        path.push(cwd);
-        let relative_path = self.parse_string_with_quotes(false, identifier.clone(), it)?;
-        path.push(relative_path.clone());
-
-        Ok(path.to_str().unwrap().to_string())
+    fn next_path_str(self: &Self, identifier: &Ident, identifier_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
+        self.new_parser.get_rust_or_html_parser().next_path_str(self.context.clone(), identifier, identifier_token, it)
     }
 
-    fn peek_path_str(self: &Self, identifier: &Ident, _identifier_token: &TokenTree,  it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
-        let mut path = std::path::PathBuf::new();
-        let cwd = std::env::current_dir().unwrap();
-        path.push(cwd);
-        let relative_path = self.parse_string_with_quotes(true, identifier.clone(), it)?;
-        path.push(relative_path.clone());
-
-        Ok(path.to_str().unwrap().to_string())
+    fn peek_path_str(self: &Self, identifier: &Ident, identifier_token: &TokenTree,  it: Rc<dyn IPeekableTokenTree>, _is_raw_tokenstream: bool) -> Result<String, RustHtmlError> {
+        self.new_parser.get_rust_or_html_parser().peek_path_str(self.context.clone(), identifier, identifier_token, it)
     }
 
     // expand an external token stream into RustHtml tokens.
@@ -555,14 +535,15 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
     // it: the iterator to use.
     // returns: the string or an error.
     fn parse_string_with_quotes(self: &Self, peek_or_next: bool, identifier: Ident, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError> {
-        match self.new_parser.get_rust_parser().parse_string_with_quotes(peek_or_next, &identifier, it) {
-            Ok(s) => {
-                Ok(s)
-            },
-            Err(e) => {
-                Err(RustHtmlError::from_string(format!("error parsing string: {}", e)))
-            }
-        }
+        // match self.new_parser.get_rust_parser().parse_string_with_quotes(peek_or_next, &identifier, it) {
+        //     Ok(s) => {
+        //         Ok(s)
+        //     },
+        //     Err(e) => {
+        //         Err(RustHtmlError::from_string(format!("error parsing string: {}", e)))
+        //     }
+        // }
+        self.new_parser.get_rust_parser().parse_string_with_quotes(peek_or_next, &identifier, it)
     }
 
     // parse Rust identifier expression and convert it to RustHtml tokens.

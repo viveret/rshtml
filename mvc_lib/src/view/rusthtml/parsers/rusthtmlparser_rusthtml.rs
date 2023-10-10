@@ -2,7 +2,7 @@ use std::{rc::Rc, cell::RefCell};
 
 use proc_macro2::{TokenTree, Ident};
 
-use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::{peekable_tokentree::IPeekableTokenTree, irusthtml_parser_context::IRustHtmlParserContext};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
@@ -14,8 +14,8 @@ pub trait IRustHtmlParserRustOrHtml: IRustHtmlParserAssignSharedParts {
     fn parse_rust_or_html(self: &Self, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
     fn convert_vec(&self, tokens: &Vec<TokenTree>) -> Vec<RustHtmlToken>;
 
-    fn peek_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError>;
-    fn next_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError>;
+    fn peek_path_str(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError>;
+    fn next_path_str(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError>;
 }
 
 pub struct RustHtmlParserRustOrHtml {
@@ -46,12 +46,27 @@ impl IRustHtmlParserRustOrHtml for RustHtmlParserRustOrHtml {
         tokens.iter().map(|x| RustHtmlToken::from(x)).collect::<Vec<RustHtmlToken>>()
     }
 
-    fn peek_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError> {
-        todo!("peek_path_str")
+    fn peek_path_str(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>,identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError> {
+        let mut path = std::path::PathBuf::new();
+        let cwd = std::env::current_dir().unwrap();
+        path.push(cwd);
+        let relative_path = self.shared_parser.borrow().as_ref().unwrap().get_rust_parser().parse_string_with_quotes(true, identifier, it)?;
+        // do match instead
+        if let Some(current_path) = ctx.get_current_path() {
+            path.push(current_path);
+        }
+
+        Ok(path.to_str().unwrap().to_string())
     }
 
-    fn next_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError> {
-        todo!("next_path_str")
+    fn next_path_str(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError> {
+        let mut path = std::path::PathBuf::new();
+        let cwd = std::env::current_dir().unwrap();
+        path.push(cwd);
+        let relative_path = self.shared_parser.borrow().as_ref().unwrap().get_rust_parser().parse_string_with_quotes(false, identifier, it)?;
+        path.push(relative_path.clone());
+
+        Ok(path.to_str().unwrap().to_string())
     }
 }
 

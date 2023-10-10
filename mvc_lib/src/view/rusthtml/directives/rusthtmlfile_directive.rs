@@ -26,8 +26,8 @@ impl RustHtmlFileDirective {
     // output: the destination for the RustHtml tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    pub fn convert_externalrusthtml_directive(identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
-        if let Ok(path) = parser.get_rust_or_html_parser().next_path_str(identifier, ident_token, it.clone()) {
+    pub fn convert_externalrusthtml_directive(ctx: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
+        if let Ok(path) = parser.get_rust_or_html_parser().next_path_str(ctx, identifier, ident_token, it.clone()) {
             let code = quote::quote!{
                 let v = view_context.get_view(#path);
                 v.render()
@@ -49,7 +49,7 @@ impl IRustHtmlDirective for RustHtmlFileDirective {
 
     fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // do match instead of if let to access error
-        match Self::convert_externalrusthtml_directive(identifier, ident_token, parser, output, it) {
+        match Self::convert_externalrusthtml_directive(context, identifier, ident_token, parser, output, it) {
             Ok(_) => Ok(RustHtmlDirectiveResult::OkContinue),
             Err(e) => Err(e)
         }

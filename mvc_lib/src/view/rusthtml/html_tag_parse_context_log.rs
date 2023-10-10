@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fmt::format;
 use std::rc::Rc;
 
 use core_macro_lib::nameof_member_fn;

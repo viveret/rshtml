@@ -2,7 +2,6 @@ use std::rc::Rc;
 
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
-use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
 use super::itag_parsed::IHtmlTagParsed;

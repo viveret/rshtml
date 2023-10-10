@@ -25,7 +25,7 @@ impl IHtmlTagParsed for EnvironmentHtmlTagParsed {
         tag_name == "environment" && is_opening_tag
     }
 
-    fn on_tag_parsed(&self, tag_context: Rc<dyn IHtmlTagParseContext>, _html_context: Rc<dyn IRustHtmlParserContext>, _output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError> {
+    fn on_tag_parsed(&self, tag_context: Rc<dyn IHtmlTagParseContext>, _output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError> {
         if tag_context.is_opening_tag() {
             // let environment_name = tag_context.html_attrs.get("name").unwrap();
             // let environment_value = tag_context.html_attrs.get("value").unwrap();

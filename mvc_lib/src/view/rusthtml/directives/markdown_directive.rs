@@ -3,6 +3,8 @@ use std::rc::Rc;
 use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
@@ -25,7 +27,7 @@ impl IRustHtmlDirective for MarkdownDirective {
         name == "md" || name == "markdown"
     }
 
-    fn execute(self: &Self, _identifier: &Ident, _ident_token: &TokenTree, _parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, _it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         Ok(RustHtmlDirectiveResult::OkContinue)
     }
 }

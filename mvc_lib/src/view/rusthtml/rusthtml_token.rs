@@ -1,6 +1,6 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
 
-use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, Span};
+use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, Span, TokenTree};
 
 // a RustHtml token for a Rust identifier or punctuation.
 #[derive(Clone, Debug)]
@@ -140,6 +140,23 @@ impl RustHtmlToken {
                     Delimiter::Bracket => "]".to_string(),
                     Delimiter::Parenthesis => ")".to_string(),
                     Delimiter::None => "".to_string(),
+                }
+            },
+        }
+    }
+}
+
+
+impl From<&TokenTree> for RustHtmlToken {
+    fn from(value: &TokenTree) -> Self {
+        match value {
+            TokenTree::Group(group) => RustHtmlToken::Group(group.delimiter(), group.clone()),
+            TokenTree::Ident(ident) => RustHtmlToken::Identifier(ident.clone()),
+            TokenTree::Literal(literal) => RustHtmlToken::Literal(Some(literal.clone()), None),
+            TokenTree::Punct(punct) => {
+                match punct.as_char() {
+                    ' ' => RustHtmlToken::Space(' '),
+                    _ => RustHtmlToken::ReservedChar(punct.as_char(), punct.clone()),
                 }
             },
         }

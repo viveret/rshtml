@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use mvc_lib::view::rusthtml::directives::irusthtml_directive::IRustHtmlDirective;
 use mvc_lib::view::rusthtml::directives::htmlfile_directive::HtmlFileDirective;
+use mvc_lib::view::rusthtml::parsers::rusthtmlparser_all::RustHtmlParserAll;
 use mvc_lib::view::rusthtml::peekable_tokentree::{PeekableTokenTree, IPeekableTokenTree};
 use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
 use mvc_lib::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
@@ -24,7 +25,7 @@ fn htmlfile_directive_basic_cannot_find_file() {
     };
     let it = Rc::new(PeekableTokenTree::new(rust.clone()));
     let ctx = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
-    let parser = Rc::new(RustToRustHtmlConverter::new(ctx));
+    let parser = RustHtmlParserAll::new_default();
     let ident_token = it.next().unwrap();
     let identifier = match &ident_token {
         TokenTree::Ident(i) => i,
@@ -35,7 +36,7 @@ fn htmlfile_directive_basic_cannot_find_file() {
 
     let x = HtmlFileDirective::new();
 
-    match x.execute(&identifier, &ident_token, parser, &mut output, it) {
+    match x.execute(ctx, &identifier, &ident_token, parser, &mut output, it) {
         Err(RustHtmlError(e)) =>
             assert!(e.starts_with("(@htmlfile) cannot read external HTML file, could not parse path")),
         Ok(x) => {
@@ -52,7 +53,7 @@ fn htmlfile_directive_basic_readme() {
     };
     let it = Rc::new(PeekableTokenTree::new(rust.clone()));
     let ctx = Rc::new(RustHtmlParserContext::new(false, true, "test".to_string()));
-    let parser = Rc::new(RustToRustHtmlConverter::new(ctx));
+    let parser = RustHtmlParserAll::new_default();
     let ident_token = it.next().unwrap();
     let identifier = match &ident_token {
         TokenTree::Ident(i) => i,
@@ -63,7 +64,7 @@ fn htmlfile_directive_basic_readme() {
 
     let x = HtmlFileDirective::new();
 
-    match x.execute(&identifier, &ident_token, parser, &mut output, it) {
+    match x.execute(ctx, &identifier, &ident_token, parser, &mut output, it) {
         Err(RustHtmlError(e)) =>
             assert_eq!("", e),
         Ok(r) => {

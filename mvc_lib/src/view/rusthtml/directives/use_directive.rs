@@ -2,6 +2,8 @@ use std::rc::Rc;
 
 use proc_macro2::{Ident, TokenTree, TokenStream};
 
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
@@ -24,11 +26,11 @@ impl IRustHtmlDirective for UseDirective {
         name == "use"
     }
 
-    fn execute(self: &Self, _: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, _: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // expecting type identifier
-        if let Ok(type_ident_tokens) = parser.parse_type_identifier(it) {
+        if let Ok(type_ident_tokens) = parser.get_rust_parser().parse_type_identifier(it) {
             let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_tokens));
-            parser.get_context().mut_use_statements().push(TokenStream::from(quote::quote! { use #inner_tokenstream; }));
+            context.mut_use_statements().push(TokenStream::from(quote::quote! { use #inner_tokenstream; }));
             Ok(RustHtmlDirectiveResult::OkContinue)
         } else {
             Err(RustHtmlError::from_str("Error parsing use directive"))

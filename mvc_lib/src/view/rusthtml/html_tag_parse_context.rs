@@ -43,6 +43,8 @@ pub struct HtmlTagParseContext {
     is_opening_tag: RefCell<bool>,
     // the equals punct
     equals_punct: RefCell<Option<Punct>>,
+    // end tag punct
+    tag_end_punct: RefCell<Vec<Punct>>,
 }
 impl HtmlTagParseContext {
     pub fn new(main_ctx: Option<Rc<dyn IRustHtmlParserContext>>) -> Self {
@@ -61,6 +63,7 @@ impl HtmlTagParseContext {
             is_self_contained_tag: RefCell::new(false),
             is_opening_tag: RefCell::new(true),
             equals_punct: RefCell::new(None),
+            tag_end_punct: RefCell::new(vec![]),
         }
     }
 }
@@ -365,5 +368,13 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
         } else {
             Ok(None)
         }
+    }
+
+    fn add_tag_end_punct(&self, punct: &Punct) {
+        self.tag_end_punct.borrow_mut().push(punct.clone());
+    }
+
+    fn get_tag_end_punct(&self) -> Option<Punct> {
+        self.tag_end_punct.borrow().last().cloned()
     }
 }

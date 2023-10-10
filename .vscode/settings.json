@@ -5,5 +5,5 @@
         "./dnn_lib/Cargo.toml"
     ],
     "rust-analyzer.showUnlinkedFileNotification": false,
-    "rust-analyzer.checkOnSave": false
+    "rust-analyzer.checkOnSave": true
 }

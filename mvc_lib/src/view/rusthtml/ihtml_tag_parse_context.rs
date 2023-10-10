@@ -123,7 +123,8 @@ pub trait IHtmlTagParseContext {
 
     fn set_parse_attrs(&self, parse_attrs: bool);
 
-
+    fn add_tag_end_punct(&self, punct: &Punct);
+    fn get_tag_end_punct(&self) -> Option<Punct>;
 
     fn on_kvp_defined(&self) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
     fn create_key_for_kvp(&self) -> Result<(RustHtmlToken, String), RustHtmlError>;

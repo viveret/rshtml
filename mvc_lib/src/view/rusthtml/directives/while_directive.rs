@@ -2,6 +2,8 @@ use std::rc::Rc;
 
 use proc_macro2::{Ident, TokenTree, Delimiter};
 
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
@@ -26,7 +28,7 @@ impl IRustHtmlDirective for WhileDirective {
         name == "while"
     }
 
-    fn execute(self: &Self, identifier: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         output.push(RustHtmlToken::Identifier(identifier.clone()));
         
         // read until we reach the loop body {}
@@ -49,8 +51,9 @@ impl IRustHtmlDirective for WhileDirective {
                         let delimiter = group.delimiter();
                         match delimiter {
                             Delimiter::Brace => {
-                                match parser.as_ref().convert_group_to_rusthtmltoken(group, false, false, output, false) {
-                                    Ok(_) => {
+                                match parser.get_rust_parser().convert_group(&group, false) {
+                                    Ok(tokens) => {
+                                        output.extend(tokens);
                                         break;
                                     },
                                     Err(RustHtmlError(err)) => {

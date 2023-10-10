@@ -3,6 +3,8 @@ use std::rc::Rc;
 use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
@@ -24,8 +26,8 @@ impl RustHtmlFileDirective {
     // output: the destination for the RustHtml tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    pub fn convert_externalrusthtml_directive(identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
-        if let Ok(path) = parser.next_path_str(identifier, ident_token, it.clone(), parser.get_context().get_is_raw_tokenstream()) {
+    pub fn convert_externalrusthtml_directive(identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
+        if let Ok(path) = parser.get_rust_or_html_parser().next_path_str(identifier, ident_token, it.clone()) {
             let code = quote::quote!{
                 let v = view_context.get_view(#path);
                 v.render()
@@ -45,7 +47,7 @@ impl IRustHtmlDirective for RustHtmlFileDirective {
         name == "rshtmlfile" || name == "rusthtmlfile"
     }
 
-    fn execute(self: &Self, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // do match instead of if let to access error
         match Self::convert_externalrusthtml_directive(identifier, ident_token, parser, output, it) {
             Ok(_) => Ok(RustHtmlDirectiveResult::OkContinue),

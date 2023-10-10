@@ -1,6 +1,8 @@
 use std::rc::Rc;
 
 use mvc_lib::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
+use mvc_lib::view::rusthtml::parsers::rusthtmlparser_all::RustHtmlParserAll;
+use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
 use mvc_lib::view::rusthtml::{directives::markdownfile_const_directive::MarkdownFileConstDirective, rusthtml_token::RustHtmlToken};
 use mvc_lib::view::rusthtml::peekable_tokentree::PeekableTokenTree;
 use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
@@ -14,7 +16,7 @@ use proc_macro2::{Ident, TokenTree, Span};
 #[test]
 pub fn convert_mdfile_const_directive_test() {
     let parser_context = Rc::new(RustHtmlParserContext::new(false, false, "Test".to_string()));
-    let parser = RustToRustHtmlConverter::new(parser_context);
+    let parser = RustHtmlParserAll::new_default();
     let mut output = vec![];
     let it = PeekableTokenTree::new(quote::quote! { "test.md" });
 
@@ -22,7 +24,7 @@ pub fn convert_mdfile_const_directive_test() {
     let ident_token = TokenTree::Ident(identifier.clone());
 
     let _result = MarkdownFileConstDirective::convert_mdfile_const_directive(
-        &identifier, &ident_token, Rc::new(parser), &mut output, Rc::new(it)
+        &identifier, &ident_token, parser, &mut output, Rc::new(it)
     ).unwrap();
 
     assert_eq!(output.len(), 1);

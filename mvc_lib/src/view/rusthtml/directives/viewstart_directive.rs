@@ -4,6 +4,8 @@ use std::borrow::Cow;
 use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
@@ -28,10 +30,10 @@ impl IRustHtmlDirective for ViewStartDirective {
         name == "viewstart"
     }
 
-    fn execute(self: &Self, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
-        match parser.next_path_str(identifier, ident_token, it.clone(), false) {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        match parser.get_rust_or_html_parser().next_path_str(identifier, ident_token, it.clone()) {
             Ok(param_value) => {
-                parser.get_context().mut_params().insert("viewstart".to_string(), param_value);
+                context.mut_params().insert("viewstart".to_string(), param_value);
                 Ok(RustHtmlDirectiveResult::OkBreak)
             },
             Err(RustHtmlError(e)) => {

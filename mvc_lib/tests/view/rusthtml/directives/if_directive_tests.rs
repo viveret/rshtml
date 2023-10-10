@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use mvc_lib::view::rusthtml::parsers::rusthtmlparser_all::RustHtmlParserAll;
 use mvc_lib::view::rusthtml::peekable_tokentree::{PeekableTokenTree, IPeekableTokenTree};
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
@@ -33,11 +34,11 @@ pub fn if_directive_process_rust_basic() {
     let first_ident = if let TokenTree::Ident(x) = &first_token { x } else { panic!("expected ident, not {:?}", first_token); };
 
     let context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
-    let parser = Rc::new(RustToRustHtmlConverter::new(context));
+    let parser = RustHtmlParserAll::new_default();
 
     // begin processing
     let mut output = Vec::new();
-    let result = processor.execute(&first_ident, &first_token, parser, &mut output, it).unwrap();
+    let result = processor.execute(context, &first_ident, &first_token, parser, &mut output, it).unwrap();
     assert_ne!(0, output.len());
     match result {
         RustHtmlDirectiveResult::OkContinue => {
@@ -77,11 +78,11 @@ fn if_directive_process_rust_basic_else() {
     let first_ident = if let TokenTree::Ident(x) = &first_token { x } else { panic!("expected ident, not {:?}", first_token); };
 
     let context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
-    let parser = Rc::new(RustToRustHtmlConverter::new(context));
+    let parser = RustHtmlParserAll::new_default();
 
     // begin processing
     let mut output = Vec::new();
-    let result = processor.execute(&first_ident, &first_token, parser, &mut output, it).unwrap();
+    let result = processor.execute(context, &first_ident, &first_token, parser, &mut output, it).unwrap();
     assert_ne!(0, output.len());
     match result {
         RustHtmlDirectiveResult::OkContinue => {

@@ -1,5 +1,7 @@
 use std::{rc::Rc, cell::RefCell};
 
+use proc_macro2::{TokenTree, Ident};
+
 use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
@@ -10,6 +12,10 @@ use super::rusthtmlparser_all::{IRustHtmlParserAssignSharedParts, IRustHtmlParse
 
 pub trait IRustHtmlParserRustOrHtml: IRustHtmlParserAssignSharedParts {
     fn parse_rust_or_html(self: &Self, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn convert_vec(&self, tokens: &Vec<TokenTree>) -> Vec<RustHtmlToken>;
+
+    fn peek_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError>;
+    fn next_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError>;
 }
 
 pub struct RustHtmlParserRustOrHtml {
@@ -34,6 +40,18 @@ impl IRustHtmlParserRustOrHtml for RustHtmlParserRustOrHtml {
         } else {
             Err(RustHtmlError::from_str("RustHtmlParserRustOrHtml: shared_parser is None"))
         }
+    }
+
+    fn convert_vec(&self, tokens: &Vec<TokenTree>) -> Vec<RustHtmlToken> {
+        tokens.iter().map(|x| RustHtmlToken::from(x)).collect::<Vec<RustHtmlToken>>()
+    }
+
+    fn peek_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError> {
+        todo!()
+    }
+
+    fn next_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError> {
+        todo!()
     }
 }
 

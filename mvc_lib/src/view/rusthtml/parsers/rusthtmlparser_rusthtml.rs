@@ -47,11 +47,11 @@ impl IRustHtmlParserRustOrHtml for RustHtmlParserRustOrHtml {
     }
 
     fn peek_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError> {
-        todo!()
+        todo!("peek_path_str")
     }
 
     fn next_path_str(self: &Self, identifier: &Ident, ident_token: &TokenTree, it: Rc<dyn IPeekableTokenTree>) -> Result<String, RustHtmlError> {
-        todo!()
+        todo!("next_path_str")
     }
 }
 

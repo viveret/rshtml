@@ -35,7 +35,7 @@ impl<T> IDbSet<T> for VecDbSet<T> where T: 'static + Clone + PartialEq {
     }
 
     fn create(self: &Self) -> T {
-        todo!()
+        todo!("create")
     }
 
     fn find(self: &Self) -> Vec<T> {
@@ -69,39 +69,39 @@ impl<T> IDbSet<T> for VecDbSet<T> where T: 'static + Clone + PartialEq {
 
 impl<T> IDbSetAny for VecDbSet<T> where T: 'static + Clone + PartialEq {
     fn add_any(self: &Self, _item: Box<dyn std::any::Any>) {
-        todo!()
+        todo!("add_any")
     }
 
     fn add_range_any(self: &Self, _items: Vec<Box<dyn std::any::Any>>) {
-        todo!()
+        todo!("add_range_any")
     }
 
     fn attach_any(self: &Self, _item: Box<dyn std::any::Any>) {
-        todo!()
+        todo!("attach_any")
     }
 
     fn create_any(self: &Self) -> Box<dyn std::any::Any> {
-        todo!()
+        todo!("create_any")
     }
 
     fn find_any(self: &Self) -> Vec<Box<dyn std::any::Any>> {
-        todo!()
+        todo!("find_any")
     }
 
     fn get_all_any(self: &Self) -> Vec<Box<dyn std::any::Any>> {
-        todo!()
+        todo!("get_all_any")
     }
 
     fn remove_any(self: &Self, _item: Box<dyn std::any::Any>) {
-        todo!()
+        todo!("remove_any")
     }
 
     fn remove_range_any(self: &Self, _item: Vec<Box<dyn std::any::Any>>) {
-        todo!()
+        todo!("remove_range_any")
     }
 
     fn as_any(self: &Self, _type_info: TypeInfo) -> &dyn std::any::Any {
-        todo!()
+        todo!("as_any")
     }
 
     fn entity_type_info(self: &Self) -> TypeInfo {

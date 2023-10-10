@@ -44,7 +44,7 @@ impl IModelBinder for JsonDecoder {
     }
 
     fn bind_model(self: &Self, _: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
-        todo!()
+        todo!("bind_model")
 
         // let mut body_bytes = vec![];
         // if let Some(content_length) = found_content_length {

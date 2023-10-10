@@ -63,7 +63,7 @@ impl IModel for MockIViewModelObject {
     }
 
     fn get_underlying_value(&self) -> &dyn std::any::Any {
-        todo!()
+        todo!("get_underlying_value")
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

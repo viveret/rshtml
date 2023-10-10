@@ -259,27 +259,27 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
     }
 
     fn parse_rust_literal_expression(self: &Self, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
-        todo!()
+        todo!("parse_rust_literal_expression")
     }
 
     fn parse_rust_group_expression(self: &Self, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
-        todo!()
+        todo!("parse_rust_group_expression")
     }
 
     fn parse_rust_punct_expression(self: &Self, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
-        todo!()
+        todo!("parse_rust_punct_expression")
     }
 
     fn parse_rust_string_or_ident(self: &Self, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
-        todo!()
+        todo!("parse_rust_string_or_ident")
     }
 
     fn parse_rust_string_or_ident_or_punct_or_group(self: &Self, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
-        todo!()
+        todo!("parse_rust_string_or_ident_or_punct_or_group")
     }
 
     fn parse_rust_string_or_ident_or_punct_or_group_or_literal(self: &Self, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
-        todo!()
+        todo!("parse_rust_string_or_ident_or_punct_or_group_or_literal")
     }
 
     fn expect_punct(self: &Self, c: char, it: Rc<dyn IPeekableTokenTree>) -> Result<(TokenTree, Punct), Option<TokenTree>> {

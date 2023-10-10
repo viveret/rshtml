@@ -96,16 +96,16 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
             if let Some(token) = next_token {
                 match token {
                     TokenTree::Group(group) => {
-                        todo!()
+                        todo!("parse_html TokenTree::Group")
                     },
                     TokenTree::Ident(ident) => {
-                        todo!()
+                        todo!("parse_html TokenTree::Ident")
                     },
                     TokenTree::Literal(literal) => {
-                        todo!()
+                        todo!("parse_html TokenTree::Literal")
                     },
                     TokenTree::Punct(punct) => {
-                        todo!()
+                        todo!("parse_html TokenTree::Punct")
                     },
                 }
             }
@@ -117,14 +117,14 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
         // parse tag name
         // parse attributes (key value pairs)
         // parse closing puncts
-        todo!()
+        todo!("parse_html_tag")
     }
 
     // TODO: add tests
     fn parse_html_node(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         let mut output = vec![];
         let mut parse_ctx = Rc::new(HtmlTagParseContext::new(Some(ctx))) as Rc<dyn IHtmlTagParseContext>;
-        todo!();
+        todo!("parse_html_node");
         Ok(output)
     }
 
@@ -214,7 +214,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
     }
 
     fn parse_html_child_nodes(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
-        todo!()
+        todo!("parse_html_child_nodes")
     }
 
     fn convert_html_literal_to_rusthtmltoken(

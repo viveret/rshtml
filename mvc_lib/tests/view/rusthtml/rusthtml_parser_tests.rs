@@ -1,10 +1,11 @@
 use std::rc::Rc;
 
-use mvc_lib::view::rusthtml::peekable_tokentree::PeekableTokenTree;
-use mvc_lib::view::rusthtml::parsers::rusthtmlparser_rust::{RustHtmlParserRust, IRustHtmlParserRust};
+use core_lib::asyncly::cancellation_token::CancellationToken;
 use proc_macro2::{TokenTree, Delimiter, TokenStream};
 use quote::quote;
 
+use mvc_lib::view::rusthtml::parsers::peekable_tokentree::StreamPeekableTokenTree;
+use mvc_lib::view::rusthtml::parsers::rusthtmlparser_rust::{RustHtmlParserRust, IRustHtmlParserRust};
 use mvc_lib::html::gen::HtmlGenerator;
 use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
 
@@ -35,7 +36,7 @@ fn rusthtml_parser_expect_punct_works() {
         <div></div>
     };
 
-    let it = Rc::new(PeekableTokenTree::new(rust_output));
+    let it = Rc::new(StreamPeekableTokenTree::new(rust_output));
     match parser.expect_punct('<', it) {
         Ok((t, c)) => {
             assert_eq!(t.to_string(), "<");
@@ -67,7 +68,8 @@ fn rusthtml_parser_expect_punct_works() {
 fn rusthtml_parser_expand_tokenstream_empty_works() {
     let parser = RustHtmlParser::new(false, "test".to_string());
     let rust_output = quote! {};
-    parser.expand_tokenstream(rust_output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    parser.expand_tokenstream(rust_output, ct).unwrap();
 }
 
 
@@ -80,7 +82,8 @@ fn rusthtml_parser_expand_tokenstream_simple_function_works() {
         }
     };
 
-    parser.expand_tokenstream(rust_output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    parser.expand_tokenstream(rust_output, ct).unwrap();
 }
 
 
@@ -92,7 +95,8 @@ fn rusthtml_parser_expand_tokenstream_simple_struct_works() {
         }
     };
 
-    parser.expand_tokenstream(rust_output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    parser.expand_tokenstream(rust_output, ct).unwrap();
 }
 
 
@@ -109,7 +113,8 @@ fn rusthtml_parser_expand_tokenstream_simple_view_works() {
         #html_tokenstream
     };
 
-    let actual_stream = parser.expand_tokenstream(rust_output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let actual_stream = parser.expand_tokenstream(rust_output, ct).unwrap();
     assert_eq!("html_output . write_html_str (\"<ul><li>test</li></ul>\") ;", actual_stream.to_string());
 }
 
@@ -121,7 +126,8 @@ fn rusthtml_parser_expand_tokenstream_complex_view_works() {
     let html = HtmlGenerator::new().generate();
     let html_tokenstream: TokenStream = html.parse().unwrap();
     let html_tokenstream_str = html_tokenstream.to_string();
-    let actual_stream = parser.expand_tokenstream(html_tokenstream).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let actual_stream = parser.expand_tokenstream(html_tokenstream, ct).unwrap();
     assert_eq_ignore_whitespace(quote::quote! { html_output . write_html_str (#html_tokenstream_str) ; }.to_string(), actual_stream.to_string());
 }
 
@@ -143,7 +149,8 @@ fn rusthtml_parser_expand_tokenstream_for_loop_works() {
         }
     };
 
-    parser.expand_tokenstream(rust_output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    parser.expand_tokenstream(rust_output, ct).unwrap();
 }
 
 
@@ -183,7 +190,8 @@ fn rusthtml_parser_expand_tokenstream_nesting_switches_between_modes_simple_work
         }
     };
 
-    let result = parser.expand_tokenstream(rust_output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let result = parser.expand_tokenstream(rust_output, ct).unwrap();
     assert_eq!(expected.to_string(), result.to_string());
 }
 
@@ -252,7 +260,8 @@ fn rusthtml_parser_expand_tokenstream_for_loop_complex_works() {
     };
     let expected_it = rust_output_expected.into_iter().peekable();
 
-    let actual = parser.expand_tokenstream(rust_output.clone()).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let actual = parser.expand_tokenstream(rust_output.clone(), ct).unwrap();
     let actual_it = actual.into_iter().peekable();
 
     // do simple string comparison
@@ -325,7 +334,8 @@ fn rusthtml_parser_expand_tokenstream_if_else() {
     let expected_it = expected_output.into_iter().peekable();
 
     let parser = RustHtmlParser::new(false, "test".to_string());
-    let actual_output = parser.expand_tokenstream(stream).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let actual_output = parser.expand_tokenstream(stream, ct).unwrap();
     let actual_it = actual_output.into_iter().peekable();
 
     // do simple string comparison
@@ -359,7 +369,8 @@ fn rusthtml_parser_expand_tokenstream_if_else_followed_by_html() {
     let expected_it = expected_output.into_iter().peekable();
 
     let parser = RustHtmlParser::new(false, "test".to_string());
-    let actual_output = parser.expand_tokenstream(stream).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let actual_output = parser.expand_tokenstream(stream, ct).unwrap();
     let actual_it = actual_output.into_iter().peekable();
 
     // do simple string comparison
@@ -383,7 +394,8 @@ pub fn rusthtml_parser_expand_tokenstream_single_tag() {
     let expected_it = expected_output.into_iter().peekable();
 
     let parser = RustHtmlParser::new(false, "test".to_string());
-    let actual_output = parser.expand_tokenstream(stream).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let actual_output = parser.expand_tokenstream(stream, ct).unwrap();
     let actual_it = actual_output.into_iter().peekable();
 
     // do simple string comparison

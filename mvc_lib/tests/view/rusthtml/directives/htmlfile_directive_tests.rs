@@ -1,10 +1,10 @@
 use std::rc::Rc;
 
+use core_lib::asyncly::cancellation_token::CancellationToken;
 use mvc_lib::view::rusthtml::directives::irusthtml_directive::IRustHtmlDirective;
 use mvc_lib::view::rusthtml::directives::htmlfile_directive::HtmlFileDirective;
+use mvc_lib::view::rusthtml::parsers::peekable_tokentree::{StreamPeekableTokenTree, IPeekableTokenTree};
 use mvc_lib::view::rusthtml::parsers::rusthtmlparser_all::RustHtmlParserAll;
-use mvc_lib::view::rusthtml::peekable_tokentree::{PeekableTokenTree, IPeekableTokenTree};
-use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
 use mvc_lib::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
@@ -23,7 +23,7 @@ fn htmlfile_directive_basic_cannot_find_file() {
     let rust = quote::quote! {
         htmlfile "shared/_icon_svg.html"
     };
-    let it = Rc::new(PeekableTokenTree::new(rust.clone()));
+    let it = Rc::new(StreamPeekableTokenTree::new(rust.clone()));
     let ctx = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let parser = RustHtmlParserAll::new_default();
     let ident_token = it.next().unwrap();
@@ -35,8 +35,9 @@ fn htmlfile_directive_basic_cannot_find_file() {
     let mut output = vec![];
 
     let x = HtmlFileDirective::new();
+    let ct = Rc::new(CancellationToken::new());
 
-    match x.execute(ctx, &identifier, &ident_token, parser, &mut output, it) {
+    match x.execute(ctx, &identifier, &ident_token, parser, &mut output, it, ct) {
         Err(RustHtmlError(e)) =>
             assert!(e.starts_with("(@htmlfile) cannot read external HTML file, could not parse path")),
         Ok(x) => {
@@ -51,7 +52,7 @@ fn htmlfile_directive_basic_readme() {
     let rust = quote::quote! {
         htmlfile "../README.md"
     };
-    let it = Rc::new(PeekableTokenTree::new(rust.clone()));
+    let it = Rc::new(StreamPeekableTokenTree::new(rust.clone()));
     let ctx = Rc::new(RustHtmlParserContext::new(false, true, "test".to_string()));
     let parser = RustHtmlParserAll::new_default();
     let ident_token = it.next().unwrap();
@@ -63,8 +64,9 @@ fn htmlfile_directive_basic_readme() {
     let mut output = vec![];
 
     let x = HtmlFileDirective::new();
+    let ct = Rc::new(CancellationToken::new());
 
-    match x.execute(ctx, &identifier, &ident_token, parser, &mut output, it) {
+    match x.execute(ctx, &identifier, &ident_token, parser, &mut output, it, ct) {
         Err(RustHtmlError(e)) =>
             assert_eq!("", e),
         Ok(r) => {

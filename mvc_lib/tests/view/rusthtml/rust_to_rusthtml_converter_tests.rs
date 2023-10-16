@@ -2,11 +2,12 @@ use std::rc::Rc;
 
 use assert_str::assert_str_eq;
 
+use core_lib::asyncly::cancellation_token::CancellationToken;
 use mvc_lib::view::rusthtml::html_tag_parse_context::HtmlTagParseContext;
 use mvc_lib::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
 use mvc_lib::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 use mvc_lib::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use mvc_lib::view::rusthtml::peekable_tokentree::{PeekableTokenTree, IPeekableTokenTree};
+use mvc_lib::view::rusthtml::parsers::peekable_tokentree::{StreamPeekableTokenTree, IPeekableTokenTree};
 use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
@@ -26,10 +27,10 @@ pub fn rust_to_rusthtml_converter_constructor_works() {
 pub fn rust_to_rusthtml_converter_peek_reserved_char() {
     let parser_context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let converter = RustToRustHtmlConverter::new(parser_context);
-    let it = Rc::new(PeekableTokenTree::new(quote::quote! { . }));
+    let it = Rc::new(StreamPeekableTokenTree::new(quote::quote! { . }));
     let mut output = vec![];
-    assert_eq!(false, converter.peek_reserved_char('a', &mut output, it.clone(), false).unwrap());
-    assert_eq!(true, converter.peek_reserved_char('.', &mut output, it, false).unwrap());
+    assert_eq!(false, converter.peek_reserved_char('a', &mut output, it.clone()).unwrap());
+    assert_eq!(true, converter.peek_reserved_char('.', &mut output, it).unwrap());
 }
 
 #[test]
@@ -41,8 +42,9 @@ pub fn rust_to_rusthtml_converter_parse_tokenstream_to_rusthtmltokens_works() {
             println!("test");
         }
     };
-    let it = Rc::new(PeekableTokenTree::new(rust_output));
-    let p = converter.parse_tokenstream_to_rusthtmltokens(false, it, false).unwrap();
+    let it = Rc::new(StreamPeekableTokenTree::new(rust_output));
+    let ct = Rc::new(CancellationToken::new());
+    let p = converter.parse_tokenstream_to_rusthtmltokens(false, it, ct).unwrap();
     assert_eq!(true, p.len() > 0);
 }
 
@@ -55,9 +57,10 @@ pub fn rust_to_rusthtml_converter_loop_next_and_convert_works() {
             println!("test");
         }
     };
-    let it = Rc::new(PeekableTokenTree::new(rust_output));
+    let it = Rc::new(StreamPeekableTokenTree::new(rust_output));
     let mut output = vec![];
-    converter.loop_next_and_convert(false, &mut output, it, false).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    converter.loop_next_and_convert(false, &mut output, it, ct).unwrap();
     assert_eq!(true, output.len() > 0);
 }
 
@@ -70,9 +73,10 @@ pub fn rust_to_rusthtml_converter_next_and_convert_works() {
             println!("test");
         }
     };
-    let it = Rc::new(PeekableTokenTree::new(rust_output));
+    let it = Rc::new(StreamPeekableTokenTree::new(rust_output));
     let mut output = vec![];
-    converter.next_and_convert(false, &mut output, it, false).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    converter.next_and_convert(false, &mut output, it, ct).unwrap();
     assert_eq!(true, output.len() > 0);
 }
 
@@ -85,11 +89,12 @@ pub fn rust_to_rusthtml_converter_convert_tokentree_to_rusthtmltoken_works() {
             println!("test");
         }
     };
-    let it = Rc::new(PeekableTokenTree::new(rust_output));
+    let it = Rc::new(StreamPeekableTokenTree::new(rust_output));
     let mut output = vec![];
     let is_in_html_mode = false;
     let token = it.next().unwrap();
-    converter.convert_tokentree_to_rusthtmltoken(token, is_in_html_mode, &mut output, it, false).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    converter.convert_tokentree_to_rusthtmltoken(token, is_in_html_mode, &mut output, it, ct).unwrap();
     assert_eq!(true, output.len() > 0);
 }
 
@@ -105,7 +110,8 @@ pub fn rust_to_rusthtml_converter_convert_group_to_rusthtmltoken_works() {
         let mut output = vec![];
 
         let group_token = Group::new(*delimiter, TokenStream::new());
-        converter.convert_group_to_rusthtmltoken(group_token, expect_return_html, is_in_html_mode, &mut output, false).unwrap();
+        let ct = Rc::new(CancellationToken::new());
+        converter.convert_group_to_rusthtmltoken(group_token, expect_return_html, is_in_html_mode, &mut output, ct).unwrap();
         assert_eq!(true, output.len() > 0);
     }
 }
@@ -122,11 +128,12 @@ pub fn rust_to_rusthtml_converter_convert_punct_to_rusthtmltoken_works() {
         for expected_c in ['.', ',', ';', ':', '(', ')', '[', ']', '{', '}', '<', '>', '=', '!', '+', '-', '*', '/', '&', '|', '^', '%', '@', '#', '$', '~', '?'].iter() {
             let parser_context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
             let converter = RustToRustHtmlConverter::new(parser_context);
-            let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
+            let it = Rc::new(StreamPeekableTokenTree::new(TokenStream::new()));
 
             let mut output = vec![];
             let punct_token = Punct::new(*expected_c, *spacing);
-            let actual_result = converter.convert_punct_to_rusthtmltoken(punct_token, is_in_html_mode, &mut output, it.clone(), false).unwrap();
+            let ct = Rc::new(CancellationToken::new());
+            let actual_result = converter.convert_punct_to_rusthtmltoken(punct_token, is_in_html_mode, &mut output, it.clone(), ct).unwrap();
             let expected_result = returns_true_chars.contains(expected_c);
             if expected_result != actual_result {
                 panic!("expected_result != actual_result for c: '{}'", expected_c);
@@ -156,22 +163,24 @@ pub fn rust_to_rusthtml_converter_convert_html_entry_to_rusthtmltoken() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let mut output = vec![];
     let html_entry = quote::quote! { <div> };
-    let it = Rc::new(PeekableTokenTree::new(html_entry));
+    let it = Rc::new(StreamPeekableTokenTree::new(html_entry));
     it.next();
     let is_in_html_mode = false;
     let c = '<';
     let punct = Punct::new(c, Spacing::Alone);
-    converter.convert_html_entry_to_rusthtmltoken(c, punct, is_in_html_mode, &mut output, it.clone(), false).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    converter.convert_html_entry_to_rusthtmltoken(c, punct, is_in_html_mode, &mut output, it.clone(), ct).unwrap();
 }
 
 #[test]
 pub fn rust_to_rusthtml_converter_convert_rust_directive_to_rusthtmltoken_ident() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let mut output = vec![];
-    let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
+    let it = Rc::new(StreamPeekableTokenTree::new(TokenStream::new()));
     let rust_directive = quote::quote! { fn test() {} };
     let token = rust_directive.into_iter().next().unwrap();
-    let actual_result = converter.convert_rust_directive_to_rusthtmltoken(token, None, &mut output, it.clone(), false).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let actual_result = converter.convert_rust_directive_to_rusthtmltoken(token, None, &mut output, it.clone(), ct).unwrap();
     assert_eq!(true, actual_result);
 }
 
@@ -179,10 +188,11 @@ pub fn rust_to_rusthtml_converter_convert_rust_directive_to_rusthtmltoken_ident(
 pub fn rust_to_rusthtml_converter_convert_rust_directive_to_rusthtmltoken_group() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let mut output = vec![];
-    let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
+    let it = Rc::new(StreamPeekableTokenTree::new(TokenStream::new()));
     let rust_directive = quote::quote! { (fn test() {}) };
     let token = rust_directive.into_iter().next().unwrap();
-    let actual_result = converter.convert_rust_directive_to_rusthtmltoken(token, None, &mut output, it.clone(), false).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let actual_result = converter.convert_rust_directive_to_rusthtmltoken(token, None, &mut output, it.clone(), ct).unwrap();
     assert_eq!(true, actual_result);
 }
 
@@ -190,10 +200,11 @@ pub fn rust_to_rusthtml_converter_convert_rust_directive_to_rusthtmltoken_group(
 pub fn rust_to_rusthtml_converter_convert_rust_directive_to_rusthtmltoken_literal() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let mut output = vec![];
-    let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
+    let it = Rc::new(StreamPeekableTokenTree::new(TokenStream::new()));
     let rust_directive = quote::quote! { "fn test() {}" };
     let token = rust_directive.into_iter().next().unwrap();
-    let actual_result = converter.convert_rust_directive_to_rusthtmltoken(token, None, &mut output, it.clone(), false).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let actual_result = converter.convert_rust_directive_to_rusthtmltoken(token, None, &mut output, it.clone(), ct).unwrap();
     assert_eq!(true, actual_result);
 }
 
@@ -201,23 +212,24 @@ pub fn rust_to_rusthtml_converter_convert_rust_directive_to_rusthtmltoken_litera
 pub fn rust_to_rusthtml_converter_convert_rust_directive_to_rusthtmltoken_punct() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let mut output = vec![];
-    let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
+    let it = Rc::new(StreamPeekableTokenTree::new(TokenStream::new()));
     let rust_directive = quote::quote! { _ };
     let token = rust_directive.into_iter().next().unwrap();
-    let actual_result = converter.convert_rust_directive_to_rusthtmltoken(token, None, &mut output, it.clone(), false).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let actual_result = converter.convert_rust_directive_to_rusthtmltoken(token, None, &mut output, it.clone(), ct).unwrap();
     assert_eq!(true, actual_result);
 }
 
 #[test]
 pub fn rust_to_rusthtml_converter_convert_views_path_str() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
-    let it = Rc::new(PeekableTokenTree::new(quote::quote! {
+    let it = Rc::new(StreamPeekableTokenTree::new(quote::quote! {
         test "_"
     }));
+    let ct = Rc::new(CancellationToken::new());
     let token = it.next().unwrap();
     if let TokenTree::Ident(identifier) = &token {
-        let is_raw_tokenstream = false;
-        let result = converter.next_path_str(identifier, &token, it, is_raw_tokenstream).unwrap();
+        let result = converter.next_path_str(identifier, &token, it, ct).unwrap();
         assert_eq!(true, result.len() > 0);
     } else {
         panic!("expected TokenTree::Ident");
@@ -235,7 +247,8 @@ pub fn rust_to_rusthtml_converter_convert_views_path_str() {
 pub fn rust_to_rusthtml_converter_expand_external_rshtml_string() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let mut output = vec![];
-    converter.expand_external_rshtml_string(&"".to_string(), &mut output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    converter.expand_external_rshtml_string(&"".to_string(), &mut output, ct).unwrap();
 }
 
 #[test]
@@ -252,27 +265,29 @@ pub fn rust_to_rusthtml_converter_parse_identifier_expression() {
     let identifier = Ident::new("test", Span::call_site());
     let ident_token = TokenTree::Ident(identifier.clone());
 
-    let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
-    let is_raw_tokenstream = false;
+    let it = Rc::new(StreamPeekableTokenTree::new(TokenStream::new()));
 
     let mut output = vec![];
-    converter.parse_identifier_expression(true, &identifier, &ident_token, false, &mut output, it, is_raw_tokenstream).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    converter.parse_identifier_expression(true, &identifier, &ident_token, false, &mut output, it, ct).unwrap();
 }
 
 #[test]
 pub fn rust_to_rusthtml_converter_convert_string_or_ident_empty_error() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
-    let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
-    assert_eq!(true, converter.convert_string_or_ident(it, false).is_err());
+    let it = Rc::new(StreamPeekableTokenTree::new(TokenStream::new()));
+    let ct = Rc::new(CancellationToken::new());
+    assert_eq!(true, converter.convert_string_or_ident(it, ct).is_err());
 }
 
 #[test]
 pub fn rust_to_rusthtml_converter_convert_string_or_ident_basic_works() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
-    let it = Rc::new(PeekableTokenTree::new(quote::quote! {
+    let it = Rc::new(StreamPeekableTokenTree::new(quote::quote! {
         test
     }));
-    let result = converter.convert_string_or_ident(it, false).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let result = converter.convert_string_or_ident(it, ct).unwrap();
     match result {
         RustHtmlIdentAndPunctAndGroupOrLiteral::IdentAndPunctAndGroup(ident_or_punct_or_group) => {
             let x = ident_or_punct_or_group.first().unwrap();
@@ -308,9 +323,9 @@ pub fn rust_to_rusthtml_converter_next_and_parse_html_tag() {
     let converter = RustToRustHtmlConverter::new(ctx.clone());
     let token = TokenTree::Ident(Ident::new("test", Span::call_site()));
     let mut output = vec![];
-    let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
-    let is_raw_tokenstream = false;
-    let result = converter.next_and_parse_html_tag(&token, tag_ctx, &mut output, it, is_raw_tokenstream).unwrap();
+    let it = Rc::new(StreamPeekableTokenTree::new(TokenStream::new()));
+    let ct = Rc::new(CancellationToken::new());
+    let result = converter.next_and_parse_html_tag(&token, tag_ctx, &mut output, it, ct).unwrap();
     assert_eq!(false, result);
 }
 
@@ -319,12 +334,12 @@ pub fn rust_to_rusthtml_converter_convert_html_ident_to_rusthtmltoken() {
     let tag_ctx = Rc::new(HtmlTagParseContext::new(None));
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let mut output = vec![];
-    let it = Rc::new(PeekableTokenTree::new(quote::quote! { test }));
+    let it = Rc::new(StreamPeekableTokenTree::new(quote::quote! { test }));
     let ident = it.next().unwrap();
-    let is_raw_tokenstream = false;
+    let ct = Rc::new(CancellationToken::new());
     match ident {
         TokenTree::Ident(ident) => {
-            match converter.convert_html_ident_to_rusthtmltoken(&ident, tag_ctx, &mut output, it, is_raw_tokenstream) {
+            match converter.convert_html_ident_to_rusthtmltoken(&ident, tag_ctx, &mut output, it, ct) {
                 Ok(_) => {
                     // assert_ne!(0, output.len());
                 },
@@ -344,9 +359,8 @@ pub fn rust_to_rusthtml_converter_convert_html_literal_to_rusthtmltoken() {
     let mut output = vec![];
     let parse_ctx = Rc::new(HtmlTagParseContext::new(None));
     parse_ctx.set_parse_attrs(true);
-    let is_raw_tokenstream = false;
-    
-    converter.convert_html_literal_to_rusthtmltoken(&literal, parse_ctx, &mut output, is_raw_tokenstream).unwrap();
+    let ct = Rc::new(CancellationToken::new());    
+    converter.convert_html_literal_to_rusthtmltoken(&literal, parse_ctx, &mut output, ct).unwrap();
 }
 
 #[test]
@@ -355,9 +369,9 @@ pub fn rust_to_rusthtml_converter_convert_html_punct_to_rusthtmltoken() {
     let punct = Punct::new('_', Spacing::Alone);
     let mut output = vec![];
     let parse_ctx = Rc::new(HtmlTagParseContext::new(None));
-    let is_raw_tokenstream = false;
-    let it = Rc::new(PeekableTokenTree::new(TokenStream::new()));
-    converter.convert_html_punct_to_rusthtmltoken(&punct, parse_ctx, &mut output, it, is_raw_tokenstream).unwrap();
+    let it = Rc::new(StreamPeekableTokenTree::new(TokenStream::new()));
+    let ct = Rc::new(CancellationToken::new());
+    converter.convert_html_punct_to_rusthtmltoken(&punct, parse_ctx, &mut output, it, ct).unwrap();
 }
 
 #[test]
@@ -366,7 +380,8 @@ pub fn rust_to_rusthtml_converter_on_kvp_defined_when_empty_panics() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let ctx = Rc::new(HtmlTagParseContext::new(None));
     let mut output = vec![];
-    converter.on_kvp_defined(ctx, &mut output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    converter.on_kvp_defined(ctx, &mut output, ct).unwrap();
 }
 
 #[test]
@@ -378,15 +393,18 @@ pub fn rust_to_rusthtml_converter_on_kvp_defined_when_not_empty_works() {
     ctx.set_equals_punct(&Punct::new('=', Spacing::Alone));
     ctx.set_html_attr_val_literal(&Literal::string("test"));
     let mut output = vec![];
-    converter.on_kvp_defined(ctx, &mut output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    converter.on_kvp_defined(ctx, &mut output, ct).unwrap();
 }
 
 #[test]
 pub fn rust_to_rusthtml_converter_parse_type_identifier() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
-    let it = Rc::new(PeekableTokenTree::new(quote::quote! { test }));
-    let actual_tokens = converter.parse_type_identifier(it).unwrap();
-    assert_eq!(true, actual_tokens.len() > 0);
+    let it = Rc::new(StreamPeekableTokenTree::new(quote::quote! { test }));
+    let ct = Rc::new(CancellationToken::new());
+    let actual_tokens = converter.parse_type_identifier(it, ct).unwrap();
+    let actual_tokens_slice = actual_tokens.to_splice();
+    assert_eq!(true, actual_tokens_slice.len() > 0);
 }
 
 #[test]
@@ -395,7 +413,8 @@ pub fn rust_to_rusthtml_converter_on_html_tag_parsed() {
     let punct = Punct::new('<', Spacing::Alone);
     let parse_ctx = Rc::new(HtmlTagParseContext::new(None));
     let mut output = vec![];
-    let result = converter.on_html_tag_parsed(Some(&punct), parse_ctx, &mut output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let result = converter.on_html_tag_parsed(Some(&punct), parse_ctx, &mut output, ct).unwrap();
     assert_eq!(true, result);
 }
 
@@ -404,7 +423,8 @@ pub fn rust_to_rusthtml_converter_on_html_node_parsed() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let ctx = Rc::new(HtmlTagParseContext::new(None));
     let mut output = vec![];
-    let result = converter.on_html_node_parsed(ctx, &mut output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let result = converter.on_html_node_parsed(ctx, &mut output, ct).unwrap();
     assert_eq!(true, result);
 }
 
@@ -442,14 +462,15 @@ pub fn rust_to_rusthtml_converter_on_html_node_parsed_when_not_empty() {
     }
     assert_eq!(1, ctx.get_html_attrs().len());
 
-    let r2 = converter.on_html_tag_parsed(ctx.get_equals_punct().as_ref(), ctx.clone(), &mut output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let r2 = converter.on_html_tag_parsed(ctx.get_equals_punct().as_ref(), ctx.clone(), &mut output, ct.clone()).unwrap();
     assert_eq!(true, r2);
     assert_eq!(2, output.len());
     assert_eq!(1, ctx.get_html_attrs().len());
 
     // the context loses context so the attrs are lost and don't work as expected,
     // like for the environment node helper that depends on include and exclude attrs.
-    let result = converter.on_html_node_parsed(ctx.clone(), &mut output).unwrap();
+    let result = converter.on_html_node_parsed(ctx.clone(), &mut output, ct).unwrap();
     assert_eq!(true, result);
     assert_eq!(1, ctx.get_html_attrs().len());
     assert_eq!(3, output.len());
@@ -460,7 +481,8 @@ pub fn rust_to_rusthtml_converter_convert_copy() {
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
     let token = TokenTree::Ident(Ident::new("test", Span::call_site()));
     let mut output = vec![];
-    converter.convert_copy(token, &mut output).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    converter.convert_copy(token, &mut output, ct).unwrap();
     assert_ne!(0, output.len());
 }
 
@@ -496,9 +518,10 @@ pub fn rust_to_rusthtml_converter_handles_strings_correctly() {
             </div>
         </div>
     };
-    let html_stream = Rc::new(PeekableTokenTree::new(html_stream));
+    let html_stream = Rc::new(StreamPeekableTokenTree::new(html_stream));
+    let ct = Rc::new(CancellationToken::new());
     let converter = RustToRustHtmlConverter::new(Rc::new(RustHtmlParserContext::new(false, false, "test".to_string())));
-    let actual_tokens = converter.parse_tokenstream_to_rusthtmltokens(false, html_stream, false).unwrap();
+    let actual_tokens = converter.parse_tokenstream_to_rusthtmltokens(false, html_stream, ct).unwrap();
     let actual_string = actual_tokens.iter().map(|x| x.to_string()).collect::<Vec<String>>().join("");
     
     assert!(actual_string.contains("class=\"container\""));
@@ -514,14 +537,15 @@ pub fn rust_to_rusthtml_converter_get_context() {
 pub fn rust_to_rusthtml_converter_parse_complex() {
     let parse_context = RustHtmlParserContext::new(false, false, "test".to_string());
     let converter = RustToRustHtmlConverter::new(Rc::new(parse_context));
+    let ct = Rc::new(CancellationToken::new());
     let output = converter.parse_tokenstream_to_rusthtmltokens(
         false,
-        Rc::new(PeekableTokenTree::new(quote::quote! {
+        Rc::new(StreamPeekableTokenTree::new(quote::quote! {
             fn test() {
                 println!("test");
             }
         })),
-        false
+        ct
     ).unwrap();
     
     let expected_output = vec![
@@ -547,13 +571,14 @@ pub fn rust_to_rusthtml_converter_parse_complex() {
 pub fn rust_to_rusthtml_converter_parse_complex_if_else_followed_by_html() {
     let parse_context = RustHtmlParserContext::new(false, false, "test".to_string());
     let converter = RustToRustHtmlConverter::new(Rc::new(parse_context));
+    let ct = Rc::new(CancellationToken::new());
     let output = converter.parse_tokenstream_to_rusthtmltokens(
         false,
-        Rc::new(PeekableTokenTree::new(quote::quote! {
+        Rc::new(StreamPeekableTokenTree::new(quote::quote! {
             let html_class = if is_active { "active" } else { "" };
             <p class=@html_class>test</p>
         })),
-        false
+        ct
     ).unwrap();
     
     let expected_output = vec![
@@ -730,12 +755,13 @@ fn assert_vecs_of_rusthtmlidentsorpunct_eq(
 fn rust_to_rusthtml_converter_parse_complex_html() {
     let parse_context = RustHtmlParserContext::new(false, false, "test".to_string());
     let converter = RustToRustHtmlConverter::new(Rc::new(parse_context));
+    let ct = Rc::new(CancellationToken::new());
     let output = converter.parse_tokenstream_to_rusthtmltokens(
         true,
-        Rc::new(PeekableTokenTree::new(quote::quote! {
+        Rc::new(StreamPeekableTokenTree::new(quote::quote! {
             <a class="nav-link" href="/">Home</a>
         })),
-        false
+        ct
     ).unwrap();
     
     let expected_output = vec![
@@ -787,12 +813,13 @@ pub fn test_rust_to_rusthtml_converter_parse_complex_html_inner() {
     let real_ctx = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let parse_context = Rc::new(RustHtmlParserContextLog::new(real_ctx));
     let converter = RustToRustHtmlConverter::new(parse_context.clone());
+    let ct = Rc::new(CancellationToken::new());
     let output = converter.parse_tokenstream_to_rusthtmltokens(
         true,
-        Rc::new(PeekableTokenTree::new(quote::quote! {
+        Rc::new(StreamPeekableTokenTree::new(quote::quote! {
             <a class="nav-link" href="/">Home</a>
         })),
-        false
+        ct
     ).unwrap();
     assert_eq!(true, output.len() > 0);
     // output not used, just testing that the parse context is being called correctly
@@ -833,7 +860,7 @@ pub fn test_html_attr_key_parsing() {
     let ctx = Rc::new(HtmlTagParseContext::new(Some(real_ctx.clone())));
     let mut output = vec![];
     let converter = RustToRustHtmlConverter::new(parse_context.clone());
-    let it = Rc::new(PeekableTokenTree::new(quote::quote! {
+    let it = Rc::new(StreamPeekableTokenTree::new(quote::quote! {
         <a class="nav-link" href="/">Home</a>
     }));
 
@@ -845,10 +872,11 @@ pub fn test_html_attr_key_parsing() {
     my_assert_punct('=', &mut output, &converter, ctx.clone(), it.clone());
 }
 
-fn my_assert_ident(s: &str, output: &mut Vec<RustHtmlToken>, converter: &dyn IRustToRustHtmlConverter, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<PeekableTokenTree>) {
+fn my_assert_ident(s: &str, output: &mut Vec<RustHtmlToken>, converter: &dyn IRustToRustHtmlConverter, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>) {
     let token_option = it.next().unwrap();
     let _ident = core_lib::assert::assert_tokentree::assert_tokentree_ident(&token_option, s);
-    match converter.next_and_parse_html_tag(&token_option, ctx, output, it.clone(), false) {
+    let ct = Rc::new(CancellationToken::new());
+    match converter.next_and_parse_html_tag(&token_option, ctx, output, it.clone(), ct) {
         Ok(x) => assert_eq!(false, x),
         Err(RustHtmlError(e)) => {
             panic!("expected Some: {}", e);
@@ -856,10 +884,11 @@ fn my_assert_ident(s: &str, output: &mut Vec<RustHtmlToken>, converter: &dyn IRu
     }
 }
 
-fn my_assert_punct(c: char, output: &mut Vec<RustHtmlToken>, converter: &dyn IRustToRustHtmlConverter, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<PeekableTokenTree>) {
+fn my_assert_punct(c: char, output: &mut Vec<RustHtmlToken>, converter: &dyn IRustToRustHtmlConverter, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>) {
     let token_option = it.next().unwrap();
     let _punct = core_lib::assert::assert_tokentree::assert_tokentree_punct(&token_option, c);
-    match converter.next_and_parse_html_tag(&token_option, ctx, output, it.clone(), false) {
+    let ct = Rc::new(CancellationToken::new());
+    match converter.next_and_parse_html_tag(&token_option, ctx, output, it.clone(), ct) {
         Ok(_x) => {},
         Err(RustHtmlError(e)) => {
             panic!("expected Some: {}", e);

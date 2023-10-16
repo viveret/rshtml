@@ -1,7 +1,6 @@
 use std::rc::Rc;
 
-use mvc_lib::view::rusthtml::irusthtml_to_rust_converter::IRustHtmlToRustConverter;
-use mvc_lib::view::rusthtml::peekable_rusthtmltoken::PeekableRustHtmlToken;
+use mvc_lib::view::rusthtml::{irusthtml_to_rust_converter::IRustHtmlToRustConverter, parsers::peekable_rusthtmltoken::VecPeekableRustHtmlToken};
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use mvc_lib::view::rusthtml::rusthtml_to_rust_converter::RustHtmlToRustConverter;
 use mvc_lib::view::rusthtml::rusthtml_token::RustHtmlToken;
@@ -64,8 +63,8 @@ pub fn rusthtml_convert_rusthtmltokens_to_plain_rust() {
     let converter = RustHtmlToRustConverter::new(context);
     let mut output = vec![];
     let input = vec![];
-    let it = PeekableRustHtmlToken::new(&input);
-    let result = converter.convert_rusthtmltokens_to_plain_rust(&mut output, &it).unwrap();
+    let it = Rc::new(VecPeekableRustHtmlToken::new(input));
+    let result = converter.convert_rusthtmltokens_to_plain_rust(&mut output, it).unwrap();
     assert_eq!(true, result);
     assert_eq!(0, output.len());
 }
@@ -79,8 +78,8 @@ pub fn rusthtml_to_rust_converter_convert_rusthtmlgroupparsed_to_tokentree() {
     let converter = RustHtmlToRustConverter::new(context);
     let mut output = vec![];
     let input = vec![];
-    let it = PeekableRustHtmlToken::new(&input);
-    converter.convert_rusthtmlgroupparsed_to_tokentree(&Delimiter::Bracket, &vec![], &mut output, &it).unwrap();
+    let it = Rc::new(VecPeekableRustHtmlToken::new(input));
+    converter.convert_rusthtmlgroupparsed_to_tokentree(&Delimiter::Bracket, vec![], &mut output, it).unwrap();
 }
 
 #[test]
@@ -104,9 +103,9 @@ pub fn rusthtml_to_rust_converter_convert_rusthtmltoken_to_tokentree() {
     let converter = RustHtmlToRustConverter::new(context);
     let mut output = vec![];
     let input = vec![];
-    let it = PeekableRustHtmlToken::new(&input);
+    let it = Rc::new(VecPeekableRustHtmlToken::new(input));
     let token = RustHtmlToken::Literal(Some(Literal::string("")), None);
-    converter.convert_rusthtmltoken_to_tokentree(&token, &mut output, &it).unwrap();
+    converter.convert_rusthtmltoken_to_tokentree(&token, &mut output, it).unwrap();
 }
 
 #[test]

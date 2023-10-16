@@ -18,8 +18,8 @@ pub fn test_RustHtmlParserRust_compared_to_RustHtmlParser_parse_type_identifier(
     ];
 
     for input in inputs {
-        let it = Rc::new(PeekableTokenTree::new(input.clone()));
-        let it2 = Rc::new(PeekableTokenTree::new(input.clone()));
+        let it = Rc::new(StreamPeekableTokenTree::new(input.clone()));
+        let it2 = Rc::new(StreamPeekableTokenTree::new(input.clone()));
 
         let old_output = parser_old.parse_type_identifier(it).unwrap();
         let new_output = parser_new.parse_type_identifier(it2).unwrap();

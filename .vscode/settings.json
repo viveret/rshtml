@@ -1,9 +1,8 @@
 {
     "rust-analyzer.linkedProjects": [
         "Cargo.toml",
-        "./dnn_lib/Cargo.toml",
-        "./dnn_lib/Cargo.toml"
     ],
     "rust-analyzer.showUnlinkedFileNotification": false,
-    "rust-analyzer.checkOnSave": true
+    "rust-analyzer.checkOnSave": false,
+    "rust-analyzer.procMacro.enable": false
 }

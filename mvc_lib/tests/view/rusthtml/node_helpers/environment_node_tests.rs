@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use core_lib::asyncly::cancellation_token::CancellationToken;
 use proc_macro2::{Literal, Ident};
 
 use assert_str::assert_str_eq;
@@ -80,7 +81,8 @@ pub fn test_environment_node_on_node_parsed_include_html_tokens() {
     };
 
     let parser = RustHtmlParser::new(true, "test".to_string());
-    let output = parser.expand_tokenstream(input).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let output = parser.expand_tokenstream(input, ct).unwrap();
 
     let expected_output = quote::quote! {
         html_output . write_html_str ("<div></div>");
@@ -99,7 +101,8 @@ pub fn test_environment_node_on_node_parsed_exclude_html_tokens() {
     };
 
     let parser = RustHtmlParser::new(true, "test".to_string());
-    let output = parser.expand_tokenstream(input).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let output = parser.expand_tokenstream(input, ct).unwrap();
 
     let expected_output = quote::quote! {
     };

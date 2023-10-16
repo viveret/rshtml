@@ -1,6 +1,10 @@
+use std::rc::Rc;
+
 use proc_macro2::{TokenTree, Delimiter, Group, TokenStream, Ident, Punct};
 
-use crate::view::rusthtml::peekable_tokentree::{PeekableTokenTree, IPeekableTokenTree};
+use crate::view::rusthtml::parsers::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parsers::peekable_tokentree::StreamPeekableTokenTree;
+use crate::view::rusthtml::parsers::peekable_tokentree::VecPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::irust_processor::IRustProcessor;
 
@@ -17,16 +21,16 @@ impl PostProcessCombineStaticStr {
         is_first: &mut bool,
         current_str: &mut String,
         output: &mut Vec<TokenTree>,
-        it: &PeekableTokenTree,
+        it: Rc<dyn IPeekableTokenTree>,
     ) -> bool {
-        if let Some(html_output) = Self::peek_html_output(it) {
+        if let Some(html_output) = Self::peek_html_output(it.clone()) {
             // next char has to be '.'
-            if let Some(period) = Self::peek_punct_with_char('.', 1, it) {
+            if let Some(period) = Self::peek_punct_with_char('.', 1, it.clone()) {
                 // next ident has to be 'write_html_str'
-                if let Some(write_html) = Self::peek_write_html(it) {
+                if let Some(write_html) = Self::peek_write_html(it.clone()) {
                     // next has to be '('
-                    if let Some(s) = Self::peek_group_with_string_literal_arg(Delimiter::Parenthesis, it) {
-                        Self::handle_string_literal(is_first, current_str, output, html_output, period, write_html, s, it);
+                    if let Some(s) = Self::peek_group_with_string_literal_arg(Delimiter::Parenthesis, it.clone()) {
+                        Self::handle_string_literal(is_first, current_str, output, html_output, period, write_html, s, it.clone());
                         true
                     // } else if Self::peek_group_with_ident_expression_arg(Delimiter::Parenthesis, it) {
                     //     Self::append_and_clear(output, current_str);
@@ -56,7 +60,7 @@ impl PostProcessCombineStaticStr {
         period: (TokenTree, Punct),
         write_html: (TokenTree, Ident),
         s: String,
-        it: &PeekableTokenTree,
+        it: Rc<dyn IPeekableTokenTree>,
     ) {
         current_str.push_str(s.as_str());
 
@@ -68,7 +72,7 @@ impl PostProcessCombineStaticStr {
         }
         
         // next char has to be ';'
-        if Self::peek_punct_with_char(';', 4, it).is_some() {
+        if Self::peek_punct_with_char(';', 4, it.clone()).is_some() {
             // skip all
             it.next();
             it.next();
@@ -89,7 +93,7 @@ impl PostProcessCombineStaticStr {
         }
     }
 
-    pub fn peek_ident_with_name(name: &str, peek_nth: usize, it: &PeekableTokenTree) -> Option<(TokenTree, Ident)> {
+    pub fn peek_ident_with_name(name: &str, peek_nth: usize, it: Rc<dyn IPeekableTokenTree>) -> Option<(TokenTree, Ident)> {
         if let Some(token) = it.peek_nth(peek_nth) {
             match &token {
                 TokenTree::Ident(ident) if ident.to_string().as_str() == name => {
@@ -102,20 +106,20 @@ impl PostProcessCombineStaticStr {
         }
     }
 
-    pub fn peek_write_html(it: &PeekableTokenTree) -> Option<(TokenTree, Ident)> {
+    pub fn peek_write_html(it: Rc<dyn IPeekableTokenTree>) -> Option<(TokenTree, Ident)> {
         for ident_name in ["write_html_str", "write_html"].iter() {
-            if let Some(write_html) = Self::peek_ident_with_name(ident_name, 2, it) {
+            if let Some(write_html) = Self::peek_ident_with_name(ident_name, 2, it.clone()) {
                 return Some(write_html);
             }
         }
         None
     }
 
-    pub fn peek_html_output(it: &PeekableTokenTree) -> Option<(TokenTree, Ident)> {
+    pub fn peek_html_output(it: Rc<dyn IPeekableTokenTree>) -> Option<(TokenTree, Ident)> {
         Self::peek_ident_with_name("html_output", 0, it)
     }
 
-    pub fn peek_punct_with_char(c: char, peek_nth: usize, it: &PeekableTokenTree) -> Option<(TokenTree, Punct)> {
+    pub fn peek_punct_with_char(c: char, peek_nth: usize, it: Rc<dyn IPeekableTokenTree>) -> Option<(TokenTree, Punct)> {
         if let Some(token) = it.peek_nth(peek_nth) {
             match &token {
                 TokenTree::Punct(punct) if punct.as_char() == c => {
@@ -128,7 +132,7 @@ impl PostProcessCombineStaticStr {
         }
     }
 
-    pub fn peek_group(delimiter: Delimiter, peek_nth: usize, it: &PeekableTokenTree) -> Option<Group> {
+    pub fn peek_group(delimiter: Delimiter, peek_nth: usize, it: Rc<dyn IPeekableTokenTree>) -> Option<Group> {
         if let Some(token) = it.peek_nth(peek_nth) {
             match token {
                 TokenTree::Group(group) if group.delimiter() == delimiter => {
@@ -141,10 +145,10 @@ impl PostProcessCombineStaticStr {
         }
     }
 
-    pub fn peek_group_with_string_literal_arg(delimiter: Delimiter, it: &PeekableTokenTree) -> Option<String> {
+    pub fn peek_group_with_string_literal_arg(delimiter: Delimiter, it: Rc<dyn IPeekableTokenTree>) -> Option<String> {
         if let Some(group) = Self::peek_group(delimiter, 3, it) {
             // next is string literal
-            if let Some(s) = Self::is_string_literal(PeekableTokenTree::new(group.stream()).next().as_ref()) {
+            if let Some(s) = Self::is_string_literal(StreamPeekableTokenTree::new(group.stream()).next().as_ref()) {
                 // println!("peek_group_with_string_literal_arg: {:?}", s);
                 Some(s)
             } else {
@@ -155,10 +159,10 @@ impl PostProcessCombineStaticStr {
         }
     }
 
-    pub fn peek_group_with_ident_expression_arg(delimiter: Delimiter, it: &PeekableTokenTree) -> bool {
+    pub fn peek_group_with_ident_expression_arg(delimiter: Delimiter, it: Rc<dyn IPeekableTokenTree>) -> bool {
         if let Some(group) = Self::peek_group(delimiter, 3, it) {
             // next is identifier expression
-            if Self::is_ident_expression(&PeekableTokenTree::new(group.stream())) {
+            if Self::is_ident_expression(Rc::new(StreamPeekableTokenTree::new(group.stream()))) {
                 true
             } else {
                 // println!("peek_group_with_ident_expression_arg: {:?}", it.peek());
@@ -170,7 +174,7 @@ impl PostProcessCombineStaticStr {
         }
     }
 
-    pub fn is_ident_expression(it: &PeekableTokenTree) -> bool {
+    pub fn is_ident_expression(it: Rc<dyn IPeekableTokenTree>) -> bool {
         loop {
             if let Some(token) = it.next() {
                 match &token {
@@ -181,7 +185,7 @@ impl PostProcessCombineStaticStr {
                         continue;
                     },
                     TokenTree::Group(group) if group.delimiter() == Delimiter::Parenthesis => {
-                        if Self::is_ident_expression(&PeekableTokenTree::new(group.stream())) {
+                        if Self::is_ident_expression(Rc::new(StreamPeekableTokenTree::new(group.stream()))) {
                             continue;
                         } else {
                             println!("is_ident_expression: {:?}", token);
@@ -209,7 +213,7 @@ impl PostProcessCombineStaticStr {
                 },
                 TokenTree::Group(group) if group.delimiter() == Delimiter::Parenthesis => {
                     // check if contents are string literal or group with string literal
-                    Self::is_string_literal(PeekableTokenTree::new(group.stream()).next().as_ref())
+                    Self::is_string_literal(StreamPeekableTokenTree::new(group.stream()).next().as_ref())
                 },
                 _ => None,
             }
@@ -229,15 +233,16 @@ impl IRustProcessor for PostProcessCombineStaticStr {
         let mut current_str = String::new();
         let mut is_first = true;
 
-        let it = PeekableTokenTree::from_vec(rusthtml);
+        // todo: remove clone
+        let it = Rc::new(VecPeekableTokenTree::new(rusthtml.clone()));
         loop {
             if Self::try_html_output_write_html_str_with_string_literal_arg_and_semicolon(
                 &mut is_first,
                 &mut current_str,
                 &mut output,
-                &it
+                it.clone()
             ) {
-            } else if let Some(group) = Self::peek_group(Delimiter::Brace, 0, &it) {
+            } else if let Some(group) = Self::peek_group(Delimiter::Brace, 0, it.clone()) {
                 // recurse
                 it.next();
                 let inner = self.process_rust(&group.stream().into_iter().collect::<Vec<TokenTree>>())?;

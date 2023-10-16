@@ -1,4 +1,6 @@
-use mvc_lib::view::rusthtml::{irust_processor::IRustProcessor, peekable_tokentree::PeekableTokenTree};
+use std::rc::Rc;
+
+use mvc_lib::view::rusthtml::{parsers::peekable_tokentree::VecPeekableTokenTree, irust_processor::IRustProcessor};
 use mvc_lib::view::rusthtml::processors::post_process_combine_static_str::PostProcessCombineStaticStr;
 use proc_macro2::{TokenTree, TokenStream, Punct, Group, Delimiter, Spacing, Literal, Ident};
 
@@ -8,8 +10,8 @@ pub fn peek_ident_with_name_true() {
     let input = vec![
         TokenTree::Ident(Ident::new("foobar", proc_macro2::Span::call_site())),
     ];
-    let it = PeekableTokenTree::from_vec(&input);
-    let result = PostProcessCombineStaticStr::peek_ident_with_name("foobar", 0, &it);
+    let it = Rc::new(VecPeekableTokenTree::new(input));
+    let result = PostProcessCombineStaticStr::peek_ident_with_name("foobar", 0, it);
 
     assert!(result.is_some());
 }
@@ -20,8 +22,8 @@ pub fn peek_ident_with_name_false() {
         TokenTree::Ident(Ident::new("foobar1", proc_macro2::Span::call_site())),
     ];
 
-    let it = PeekableTokenTree::from_vec(&input);
-    let result = PostProcessCombineStaticStr::peek_ident_with_name("foobar", 0, &it);
+    let it = Rc::new(VecPeekableTokenTree::new(input));
+    let result = PostProcessCombineStaticStr::peek_ident_with_name("foobar", 0, it);
 
     assert!(result.is_none());
 }
@@ -34,8 +36,8 @@ pub fn post_process_combine_static_str_try_group() {
             TokenStream::from_iter(vec![ TokenTree::Ident(Ident::new("foobar", proc_macro2::Span::call_site())) ])
         )),
     ];
-    let it = PeekableTokenTree::from_vec(&input);
-    let result = PostProcessCombineStaticStr::peek_group(Delimiter::Parenthesis, 0, &it).unwrap();
+    let it = Rc::new(VecPeekableTokenTree::new(input));
+    let result = PostProcessCombineStaticStr::peek_group(Delimiter::Parenthesis, 0, it).unwrap();
 
     assert_eq!(1, result.stream().into_iter().collect::<Vec<TokenTree>>().len());
 }
@@ -51,8 +53,8 @@ pub fn post_process_combine_static_str_is_group_with_string_literal_arg_some() {
             TokenStream::from_iter(vec![ TokenTree::Literal(Literal::string("Hello, world!")) ])
         )),
     ];
-    let it = PeekableTokenTree::from_vec(&input);
-    let result = PostProcessCombineStaticStr::peek_group_with_string_literal_arg(Delimiter::Parenthesis, &it);
+    let it = Rc::new(VecPeekableTokenTree::new(input));
+    let result = PostProcessCombineStaticStr::peek_group_with_string_literal_arg(Delimiter::Parenthesis, it);
 
     assert!(result.is_some());
     assert_eq!("Hello, world!", result.unwrap());
@@ -66,8 +68,8 @@ pub fn post_process_combine_static_str_is_group_with_string_literal_arg_none() {
             TokenStream::from_iter(Vec::<TokenTree>::new())
         )),
     ];
-    let it = PeekableTokenTree::from_vec(&input);
-    let result = PostProcessCombineStaticStr::peek_group_with_string_literal_arg(Delimiter::Parenthesis, &it);
+    let it = Rc::new(VecPeekableTokenTree::new(input));
+    let result = PostProcessCombineStaticStr::peek_group_with_string_literal_arg(Delimiter::Parenthesis, it);
 
     assert!(result.is_none());
 }
@@ -88,8 +90,8 @@ pub fn post_process_combine_static_str_is_html_output() {
     let input = vec![
         TokenTree::Ident(Ident::new("html_output", proc_macro2::Span::call_site())),
     ];
-    let it = PeekableTokenTree::from_vec(&input);
-    let result = PostProcessCombineStaticStr::peek_html_output(&it);
+    let it = Rc::new(VecPeekableTokenTree::new(input.clone()));
+    let result = PostProcessCombineStaticStr::peek_html_output(it);
 
     assert!(result.is_some());
     assert_eq!(0, output.len());
@@ -97,8 +99,8 @@ pub fn post_process_combine_static_str_is_html_output() {
 
     // test when is_first is false
     output.clear();
-    let it = PeekableTokenTree::from_vec(&input);
-    let result = PostProcessCombineStaticStr::peek_html_output(&it);
+    let it = Rc::new(VecPeekableTokenTree::new(input.clone()));
+    let result = PostProcessCombineStaticStr::peek_html_output(it);
 
     assert!(result.is_some());
     assert_eq!(0, output.len());
@@ -109,8 +111,8 @@ pub fn post_process_combine_static_str_is_html_output() {
     let input = vec![
         TokenTree::Ident(Ident::new("foobar", proc_macro2::Span::call_site())),
     ];
-    let it = PeekableTokenTree::from_vec(&input);
-    let result = PostProcessCombineStaticStr::peek_html_output(&it);
+    let it = Rc::new(VecPeekableTokenTree::new(input));
+    let result = PostProcessCombineStaticStr::peek_html_output(it);
 
     assert!(result.is_none());
     assert_eq!(0, output.len());
@@ -133,13 +135,13 @@ pub fn test_try_html_output_write_html_str_with_string_literal_arg_and_semicolon
     let input_len = input.len();
     // multiply input
     let input = if n > 1 { input.into_iter().cycle().take(input_len * n).collect::<Vec<TokenTree>>() } else { input };
-    let it = PeekableTokenTree::from_vec(&input);
+    let it = Rc::new(VecPeekableTokenTree::new(input));
     loop {
         if PostProcessCombineStaticStr::try_html_output_write_html_str_with_string_literal_arg_and_semicolon(
             &mut is_first,
             &mut current_str,
             &mut output,
-            &it
+            it.clone()
         ) {
             // do nothing
             println!("do nothing")

@@ -1,12 +1,13 @@
 use std::{cell::RefCell, borrow::Cow};
 use std::rc::Rc;
 
+use core_lib::asyncly::icancellation_token::ICancellationToken;
 use core_macro_lib::nameof_member_fn;
 use proc_macro2::{TokenTree, Literal, Punct};
 
 use crate::view::rusthtml::html_tag_parse_context::HtmlTagParseContext;
 use crate::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
-use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parsers::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
@@ -16,16 +17,16 @@ use super::rusthtmlparser_all::{IRustHtmlParserAll, IRustHtmlParserAssignSharedP
 
 
 pub trait IRustHtmlParserHtml: IRustHtmlParserAssignSharedParts {
-    fn parse_html(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn parse_html(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, it: Rc<dyn IPeekableTokenTree>, cancellation_token: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
 
-    fn parse_html_tag(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
-    fn parse_html_node(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
-    fn parse_html_attr_key(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
-    fn parse_html_attr_val(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn parse_html_tag(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>, cancellation_token: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn parse_html_node(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, it: Rc<dyn IPeekableTokenTree>, cancellation_token: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn parse_html_attr_key(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>, cancellation_token: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn parse_html_attr_val(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>, cancellation_token: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
 
-    fn parse_html_child_nodes(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn parse_html_child_nodes(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>, cancellation_token: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
 
-    fn on_kvp_defined(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn on_kvp_defined(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, cancellation_token: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
 
     // called when a HTML tag is parsed.
     // punct: the punct token.
@@ -35,7 +36,8 @@ pub trait IRustHtmlParserHtml: IRustHtmlParserAssignSharedParts {
     fn on_html_tag_parsed(
         self: &Self,
         parse_ctx: Rc<dyn IHtmlTagParseContext>,
-        output: &mut Vec<RustHtmlToken>
+        output: &mut Vec<RustHtmlToken>,
+        cancellation_token: Rc<dyn ICancellationToken>
     ) -> Result<bool, RustHtmlError>;
 
     // convert a Rust literal to a RustHtml token in the context of a HTML tag.
@@ -47,6 +49,7 @@ pub trait IRustHtmlParserHtml: IRustHtmlParserAssignSharedParts {
         self: &Self, 
         literal: &Literal,
         parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        ct: Rc<dyn ICancellationToken>
     ) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
 
     // convert a Rust punct to a RustHtml token in the context of a HTML tag.
@@ -62,7 +65,7 @@ pub trait IRustHtmlParserHtml: IRustHtmlParserAssignSharedParts {
         parse_ctx: Rc<dyn IHtmlTagParseContext>,
         output: &mut Vec<RustHtmlToken>, 
         it: Rc<dyn IPeekableTokenTree>,
-        is_raw_tokenstream: bool,
+        cancellation_token: Rc<dyn ICancellationToken>
     ) -> Result<bool, RustHtmlError>;
 }
 
@@ -89,9 +92,13 @@ impl IRustHtmlParserAssignSharedParts for RustHtmlParserHtml {
 
 impl IRustHtmlParserHtml for RustHtmlParserHtml {
     // TODO: add tests
-    fn parse_html(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn parse_html(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         let mut output = vec![];
         loop {
+            if ct.is_cancelled() {
+                return Err(RustHtmlError::from_string(format!("parse_html cancelled")));
+            }
+
             let next_token = it.peek();
             if let Some(token) = next_token {
                 match token {
@@ -113,7 +120,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
         Ok(output)
     }
 
-    fn parse_html_tag(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn parse_html_tag(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         // parse tag name
         // parse attributes (key value pairs)
         // parse closing puncts
@@ -121,7 +128,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
     }
 
     // TODO: add tests
-    fn parse_html_node(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn parse_html_node(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         let mut output = vec![];
         let mut parse_ctx = Rc::new(HtmlTagParseContext::new(Some(ctx))) as Rc<dyn IHtmlTagParseContext>;
         todo!("parse_html_node");
@@ -129,11 +136,15 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
     }
 
     // TODO: add tests
-    fn parse_html_attr_key(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn parse_html_attr_key(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         // must be an identifier punct combo
         let mut output = vec![];
         let mut last_was_ident = false;
         loop {
+            if ct.is_cancelled() {
+                return Err(RustHtmlError::from_string(format!("parse_html_attr_key cancelled")));
+            }
+
             let token = it.peek();
             if let Some(ref token) = token {
                 match token {
@@ -169,11 +180,15 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
     }
 
     // TODO: add tests
-    fn parse_html_attr_val(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn parse_html_attr_val(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         // can only be literal or identifier punct combo
         let mut output = vec![];
         let mut last_was_ident = false;
         loop {
+            if ct.is_cancelled() {
+                return Err(RustHtmlError::from_string(format!("parse_html_attr_val cancelled")));
+            }
+
             let token = it.peek();
             if let Some(ref token) = token {
                 match token {
@@ -213,7 +228,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
         Ok(output)
     }
 
-    fn parse_html_child_nodes(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn parse_html_child_nodes(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         todo!("parse_html_child_nodes")
     }
 
@@ -221,6 +236,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
         self: &Self, 
         literal: &Literal,
         parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        ct: Rc<dyn ICancellationToken>
     ) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         parse_ctx.add_operation_to_ooo_log(format!("{}({})", nameof_member_fn!(Self::convert_html_literal_to_rusthtmltoken), literal.to_string()));
         
@@ -228,7 +244,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
             if parse_ctx.is_parsing_attr_val() {
                 if parse_ctx.is_key_defined() {
                     parse_ctx.set_html_attr_val_literal(literal);
-                    self.on_kvp_defined(parse_ctx)
+                    self.on_kvp_defined(parse_ctx, ct)
                 } else {
                     Err(RustHtmlError::from_string(format!("was supposed to call on_kvp_defined but key was None (literal: {:?})", literal)))
                 }
@@ -244,7 +260,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
         }
     }
 
-    fn on_kvp_defined(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn on_kvp_defined(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         let r = ctx.on_kvp_defined();
         match r {
             Ok(x) => {
@@ -262,14 +278,18 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
         parse_ctx: Rc<dyn IHtmlTagParseContext>,
         output: &mut Vec<RustHtmlToken>, 
         it: Rc<dyn IPeekableTokenTree>,
-        is_raw_tokenstream: bool,
+        ct: Rc<dyn ICancellationToken>
     ) -> Result<bool, RustHtmlError> {
+        if ct.is_cancelled() {
+            return Err(RustHtmlError::from_string(format!("convert_html_punct_to_rusthtmltoken cancelled")));
+        }
+
         let c = punct.as_char();
         if parse_ctx.is_parsing_attrs() {
             parse_ctx.get_main_context().add_operation_to_ooo_log(format!("{}({})", nameof_member_fn!(Self::convert_html_punct_to_rusthtmltoken), c));
             match c {
                 '>' => {
-                    return self.on_html_tag_parsed(parse_ctx, output);
+                    return self.on_html_tag_parsed(parse_ctx, output, ct);
                 },
                 '=' => {
                     if parse_ctx.is_key_defined() {
@@ -287,7 +307,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                             if closing_punct.as_char() == '>' {
                                 parse_ctx.set_is_self_contained_tag(true);
                                 parse_ctx.add_tag_end_punct(punct);
-                                return self.on_html_tag_parsed(parse_ctx, output);
+                                return self.on_html_tag_parsed(parse_ctx, output, ct);
                             } else {
                                 return Err(RustHtmlError::from_string(format!("convert_html_punct_to_rusthtmltoken Unexpected character '{}' (expected '>', prev: '{}')", closing_punct, c)));
                             }
@@ -301,7 +321,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                     if parse_ctx.has_html_attr_key() {
                         parse_ctx.set_parse_attr_val(true);
                     } else if parse_ctx.has_html_attr_val() {
-                        let tokens = self.on_kvp_defined(parse_ctx)?;
+                        let tokens = self.on_kvp_defined(parse_ctx, ct)?;
                         output.extend(tokens);
                     }
                 },
@@ -326,10 +346,10 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                                     true, 
                                     &directive_token,
                                     false,
-                                    it) {
+                                    it, ct.clone()) {
                                 Ok(rust_ident_exp) => {
                                     let parser = self.parser.borrow().as_ref().unwrap().get_rust_or_html_parser();
-                                    let rushtml_ident_expr = parser.convert_vec(&rust_ident_exp);
+                                    let rushtml_ident_expr = parser.convert_vec(&rust_ident_exp.to_splice().to_vec());
 
                                     parse_ctx.set_html_attr_val_rust(rushtml_ident_expr);
                                 },
@@ -348,7 +368,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
 
                     // can't just call this, need to wrap in if
                     if parse_ctx.is_kvp_defined() {
-                        let tokens = self.on_kvp_defined(parse_ctx)?;
+                        let tokens = self.on_kvp_defined(parse_ctx, ct)?;
                         output.extend(tokens);
                     }
                 },
@@ -367,7 +387,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
         } else {
             match c {
                 '>' => {
-                    return self.on_html_tag_parsed(parse_ctx, output);
+                    return self.on_html_tag_parsed(parse_ctx, output, ct);
                 },
                 '/' => {
                     if parse_ctx.has_tag_name() {
@@ -377,7 +397,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                                 if closing_punct.as_char() == '>' {
                                     parse_ctx.set_is_self_contained_tag(true);
                                     parse_ctx.add_tag_end_punct(punct);
-                                    return self.on_html_tag_parsed(parse_ctx, output);
+                                    return self.on_html_tag_parsed(parse_ctx, output, ct);
                                 } else {
                                     Err(RustHtmlError::from_string(format!("Unexpected character '{}' (expected '>', prev: '{}')", closing_punct, c)))
                                 }
@@ -404,11 +424,16 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
     fn on_html_tag_parsed(
         self: &Self,
         parse_ctx: Rc<dyn IHtmlTagParseContext>,
-        output: &mut Vec<RustHtmlToken>
+        output: &mut Vec<RustHtmlToken>,
+        ct: Rc<dyn ICancellationToken>
     ) -> Result<bool, RustHtmlError> {
+        if ct.is_cancelled() {
+            return Err(RustHtmlError::from_string(format!("on_html_tag_parsed cancelled")));
+        }
+
         if parse_ctx.is_opening_tag() {
             if parse_ctx.is_kvp_defined() {
-                let tokens = self.on_kvp_defined(parse_ctx.clone())?;
+                let tokens = self.on_kvp_defined(parse_ctx.clone(), ct)?;
                 output.extend(tokens);
             }
         }
@@ -445,5 +470,4 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
             return Ok(true); // break when closing
         }
     }
-
 }

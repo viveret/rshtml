@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
+use core_lib::asyncly::cancellation_token::CancellationToken;
+use mvc_lib::view::rusthtml::parsers::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree};
 use mvc_lib::view::rusthtml::parsers::rusthtmlparser_all::RustHtmlParserAll;
-use mvc_lib::view::rusthtml::peekable_tokentree::{PeekableTokenTree, IPeekableTokenTree};
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
-use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
 use mvc_lib::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use mvc_lib::view::rusthtml::directives::irusthtml_directive::IRustHtmlDirective;
 use mvc_lib::view::rusthtml::directives::if_directive::IfDirective;
@@ -26,7 +26,7 @@ pub fn if_directive_process_rust_basic() {
     };
     let rusthtml_expected_string = rusthtml_expected.to_string();
 
-    let it = Rc::new(PeekableTokenTree::new(rusthtml)) as Rc<dyn IPeekableTokenTree>;
+    let it = Rc::new(StreamPeekableTokenTree::new(rusthtml)) as Rc<dyn IPeekableTokenTree>;
     // skip the '@' and 'if' tokens
     it.as_ref().next();
 
@@ -38,7 +38,8 @@ pub fn if_directive_process_rust_basic() {
 
     // begin processing
     let mut output = Vec::new();
-    let result = processor.execute(context, &first_ident, &first_token, parser, &mut output, it).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let result = processor.execute(context, &first_ident, &first_token, parser, &mut output, it, ct).unwrap();
     assert_ne!(0, output.len());
     match result {
         RustHtmlDirectiveResult::OkContinue => {
@@ -70,7 +71,7 @@ fn if_directive_process_rust_basic_else() {
     };
     let rusthtml_expected_string = rusthtml_expected.to_string();
 
-    let it = Rc::new(PeekableTokenTree::new(rusthtml)) as Rc<dyn IPeekableTokenTree>;
+    let it = Rc::new(StreamPeekableTokenTree::new(rusthtml)) as Rc<dyn IPeekableTokenTree>;
     // skip the '@' and 'if' tokens
     it.as_ref().next();
 
@@ -82,7 +83,8 @@ fn if_directive_process_rust_basic_else() {
 
     // begin processing
     let mut output = Vec::new();
-    let result = processor.execute(context, &first_ident, &first_token, parser, &mut output, it).unwrap();
+    let ct = Rc::new(CancellationToken::new());
+    let result = processor.execute(context, &first_ident, &first_token, parser, &mut output, it, ct).unwrap();
     assert_ne!(0, output.len());
     match result {
         RustHtmlDirectiveResult::OkContinue => {

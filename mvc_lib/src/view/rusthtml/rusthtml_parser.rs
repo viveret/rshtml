@@ -1,12 +1,15 @@
+use std::fmt::format;
 use std::iter::Peekable;
 use std::rc::Rc;
 
+use core_lib::asyncly::cancellation_token::CancellationToken;
+use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{ Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
-use crate::view::rusthtml::peekable_tokentree::PeekableTokenTree;
+use crate::view::rusthtml::parsers::peekable_tokentree::StreamPeekableTokenTree;
 use super::irusthtml_parser_context::IRustHtmlParserContext;
 use super::irusthtml_to_rust_converter::IRustHtmlToRustConverter;
 use super::rust_to_rusthtml_converter::RustToRustHtmlConverter;
@@ -44,10 +47,13 @@ impl RustHtmlParser {
     // expand a token stream from a token stream. this is used for compiling the RustHtml code into Rust code.
     // input: the tokens to expand.
     // returns: the expanded tokens.
-    pub fn expand_tokenstream(self: &Self, input: TokenStream) -> Result<TokenStream, RustHtmlError> {
-        let it = Rc::new(PeekableTokenTree::new(input));
+    pub fn expand_tokenstream(self: &Self, input: TokenStream, ct: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
+        let it = Rc::new(StreamPeekableTokenTree::new(input));
+        if ct.is_cancelled() {
+            return Err(RustHtmlError::from_string(format!("Task Cancelled")));
+        }
 
-        let rusthtml_tokens_for_view = self.parser.parse_tokenstream_to_rusthtmltokens(true, it, false)?;
+        let rusthtml_tokens_for_view = self.parser.parse_tokenstream_to_rusthtmltokens(true, it, ct)?;
 
         // prefix with _view_start
         let rusthtml = match self.parse_context.get_param_string("viewstart") {

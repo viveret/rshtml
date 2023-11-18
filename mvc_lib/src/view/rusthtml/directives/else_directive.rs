@@ -4,8 +4,8 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{Ident, TokenTree, Delimiter};
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
-use crate::view::rusthtml::parsers::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
@@ -27,11 +27,11 @@ impl IRustHtmlDirective for ElseDirective {
         name == "else"
     }
 
-    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, _identifier: &Ident, _ident_token: &TokenTree, _parser: Rc<dyn IRustHtmlParserAll>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, _identifier: &Ident, _ident_token: &RustHtmlToken, _parser: Rc<dyn IRustHtmlParserAll>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // output directive identifier and opening bracket to output.
         
         // check if the next token is a '{'
-        if let Some(TokenTree::Punct(punct)) = it.peek() {
+        if let Some(RustHtmlToken::ReservedChar(c, punct)) = it.peek() {
             if punct.as_char() == '{' {
                 it.next();
                 // parse the body of the else block
@@ -39,8 +39,8 @@ impl IRustHtmlDirective for ElseDirective {
 
                 if let Some(token) = it.peek() {
                     match token.clone() {
-                        TokenTree::Group(group) => {
-                            if group.delimiter() == Delimiter::Brace {
+                        RustHtmlToken::Group(delimiter, stream, group) => {
+                            if delimiter == Delimiter::Brace {
                                 it.next();
                                 todo!("parse the else body")
                                 // parser.convert_rust_directive_group_to_rusthtmltoken(group, identifier, &mut else_body, is_raw_tokenstream)?;

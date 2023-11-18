@@ -1,6 +1,10 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
 
+use std::rc::Rc;
+
 use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, Span, TokenTree};
+
+use super::parser_parts::peekable_rusthtmltoken::{IPeekableRustHtmlToken, VecPeekableRustHtmlToken};
 
 // a RustHtml token for a Rust identifier or punctuation.
 #[derive(Clone, Debug)]
@@ -71,7 +75,7 @@ pub enum RustHtmlToken {
     Identifier(Ident),
     ReservedChar(char, Punct),
     ReservedIndent(String, Ident),
-    Group(Delimiter, Group),
+    Group(Delimiter, Rc<dyn IPeekableRustHtmlToken>, Group),
     GroupParsed(Delimiter, Vec<RustHtmlToken>),
     GroupOpen(Delimiter, Span),
     GroupClose(Delimiter, Span),

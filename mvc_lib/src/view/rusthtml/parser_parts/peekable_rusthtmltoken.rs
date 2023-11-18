@@ -1,15 +1,17 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, fmt::Debug};
 
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
 
 
 // this is used to peek at the next token in a RustHtml token stream.
-pub trait IPeekableRustHtmlToken {
+pub trait IPeekableRustHtmlToken: Debug {
     fn peek(self: &Self) -> Option<&RustHtmlToken>;
+    fn peek_nth(self: &Self, n: usize) -> Option<&RustHtmlToken>;
     fn next(self: &Self) -> Option<&RustHtmlToken>;
 }
 
+#[derive(Clone, Debug)]
 pub struct VecPeekableRustHtmlToken {
     data: Vec<RustHtmlToken>,
     index: RefCell<usize>,
@@ -38,5 +40,9 @@ impl <'a> IPeekableRustHtmlToken for VecPeekableRustHtmlToken {
             *self.peek_index.borrow_mut() += 1;
         }
         token
+    }
+
+    fn peek_nth(self: &Self, n: usize) -> Option<&RustHtmlToken> {
+        todo!()
     }
 }

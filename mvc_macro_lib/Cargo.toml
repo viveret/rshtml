@@ -26,6 +26,7 @@ rustc_lexer = "0.1.0"
 syn = "2.0.17"
 
 mvc_lib = { path = "../mvc_lib" }
+core_lib = { path = "../core_lib" }
 
 
 [dev-dependencies]

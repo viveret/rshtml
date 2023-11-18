@@ -1,5 +1,5 @@
-use mvc_lib::view::rusthtml::parsers::peekable_tokentree::IPeekableTokenTree;
-use mvc_lib::view::rusthtml::parsers::peekable_tokentree::StreamPeekableTokenTree;
+use mvc_lib::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
+use mvc_lib::view::rusthtml::parser_parts::peekable_tokentree::StreamPeekableTokenTree;
 use proc_macro2::TokenStream;
 
 

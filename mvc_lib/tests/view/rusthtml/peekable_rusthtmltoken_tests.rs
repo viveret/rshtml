@@ -1,6 +1,6 @@
 // maybe no tests for this
 
-use mvc_lib::view::rusthtml::parsers::peekable_rusthtmltoken::{VecPeekableRustHtmlToken, IPeekableRustHtmlToken};
+use mvc_lib::view::rusthtml::parser_parts::peekable_rusthtmltoken::{VecPeekableRustHtmlToken, IPeekableRustHtmlToken};
 use mvc_lib::view::rusthtml::rusthtml_token::RustHtmlToken;
 use proc_macro2::Ident;
 

@@ -1,8 +1,5 @@
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
-use std::pin::Pin;
-use std::rc::Rc;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::time::Duration;
@@ -30,13 +27,23 @@ impl TimerCancellationToken {
         }
     }
 
-    pub fn wait_for_timer(&self) {
-        self.timer.borrow_mut().take().unwrap().join().unwrap();
+    pub fn wait_for_timer(&self) -> std::io::Result<()> {
+        match self.timer.borrow_mut().take() {
+            Some(handle) => {
+                match handle.join() {
+                    Ok(_) => Ok(()),
+                    Err(e) => {
+                        Err(std::io::Error::new(std::io::ErrorKind::ConnectionAborted, format!("{:?}", e)))
+                    },
+                }
+            }
+            None => Ok(()),
+        }
     }
 
-    pub fn stop(&self) {
+    pub fn stop(&self) -> std::io::Result<()> {
         self.cancelled.store(true, Ordering::Release);
-        self.wait_for_timer();
+        self.wait_for_timer()
     }
 }
 

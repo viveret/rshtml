@@ -4,8 +4,8 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{Ident, TokenTree, Delimiter};
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
-use crate::view::rusthtml::parsers::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 
@@ -28,32 +28,31 @@ impl IRustHtmlDirective for WhileDirective {
         name == "while"
     }
 
-    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         output.push(RustHtmlToken::Identifier(identifier.clone()));
         
         // read until we reach the loop body {}
         loop {
             if let Some(token) = it.peek() {
                 match token {
-                    TokenTree::Ident(ident) => {
-                        output.push(RustHtmlToken::Identifier(ident.clone()));
+                    RustHtmlToken::Identifier(ident) => {
+                        output.push(token.clone());
                         it.next();
                     },
-                    TokenTree::Literal(literal) => {
-                        output.push(RustHtmlToken::Literal(Some(literal.clone()), None));
+                    RustHtmlToken::Literal(literal, s) => {
+                        output.push(token.clone());
                         it.next();
                     },
-                    TokenTree::Punct(punct) => {
-                        output.push(RustHtmlToken::ReservedChar(punct.as_char(), punct.clone()));
+                    RustHtmlToken::ReservedChar(c, punct) => {
+                        output.push(token.clone());
                         it.next();
                     },
-                    TokenTree::Group(group) => {
-                        let delimiter = group.delimiter();
+                    RustHtmlToken::Group(delimiter, stream, group) => {
                         match delimiter {
                             Delimiter::Brace => {
-                                match parser.get_rust_parser().convert_group(&group, false, ct) {
-                                    Ok(tokens) => {
-                                        output.extend(tokens);
+                                match parser.get_converter().convert_group(&group, false, ct) {
+                                    Ok(group) => {
+                                        output.push(group);
                                         break;
                                     },
                                     Err(RustHtmlError(err)) => {
@@ -65,6 +64,9 @@ impl IRustHtmlDirective for WhileDirective {
                                 panic!("unexpected group delimiter: {:?}", delimiter);
                             }
                         }
+                    },
+                    _ => {
+                        return Err(RustHtmlError::from_string(format!("unexpected token: {:?}", token)));
                     }
                 }
             } else {

@@ -1,22 +1,30 @@
-
 extern crate proc_macro;
 extern crate proc_macro2;
 extern crate mvc_lib;
 
+use std::rc::Rc;
+
+use core_lib::asyncly::timer_cancellation_token::TimerCancellationToken;
+use mvc_lib::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
+use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_all::RustHtmlParserAll;
+use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use proc_macro2::TokenStream;
 use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 use quote::quote;
 
-use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
 
 #[proc_macro]
 pub fn rusthtml_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let parser = RustHtmlParser::new(false, "Development".to_string());
-    // let input = input);
-    let result = parser.expand_tokenstream(input.into());
+    let parser = RustHtmlParserAll::new_default();
+    let ct = Rc::new(TimerCancellationToken::new(std::time::Duration::from_secs(5)));
+    let result = parser.expand_rust(input.into(), ct.clone());
+    ct.stop().expect("could not stop timer");
     match result {
-        Ok(tokens) => tokens.into(),
+        Ok(tokens) => {
+            tokens.into()
+        },
         Err(err) => {
             let err_str = format!("could not compile rust html: {:?}", err);
             quote! { compile_error!(#err_str); }.into()
@@ -27,29 +35,32 @@ pub fn rusthtml_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 // puts render function into a structure with additional functionality and information
 #[proc_macro]
 pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let parser = RustHtmlParser::new(false, "Development".to_string());
-    let result = parser.expand_tokenstream(input.into());
+    let parse_context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
+    let parser = RustHtmlParserAll::new_default();
+    let ct = Rc::new(TimerCancellationToken::new(std::time::Duration::from_secs(5)));
+    let result = parser.expand_rust_with_context(parse_context, input.into(), ct.clone());
+    ct.stop().expect("could not stop timer");
     match result {
         Ok(html_render_fn2) => {
-            let html_render_fn = html_render_fn2;//.into();
-            let view_name = parser.parse_context.get_param_string("name").unwrap();
+            let html_render_fn = TokenStream::from_iter(html_render_fn2.into_iter());
+            let view_name = parse_context.get_param_string("name").expect("could not get name");
             let view_name_ident = quote::format_ident!("view_{}", view_name);
             let _view_name_context_ident = quote::format_ident!("view_{}_context", view_name);
-            let view_functions = match parser.parse_context.get_functions_section() {
+            let view_functions = match parse_context.get_functions_section() {
                 Some(functions_section) => functions_section.into(),
                 None => quote! {},
             };
-            let view_impl = match parser.parse_context.get_impl_section() {
+            let view_impl = match parse_context.get_impl_section() {
                 Some(impl_section) => impl_section.into(),
                 None => quote! {},
             };
-            let view_struct = match parser.parse_context.get_struct_section() {
+            let view_struct = match parse_context.get_struct_section() {
                 Some(struct_section) => struct_section.into(),
                 None => quote! {},
             };
-            let model_type_name = parser.parse_context.get_model_type_name();
-            let model_type = TokenStream::from_iter(parser.parse_context.get_model_type().iter().cloned());
-            let raw = parser.parse_context.get_raw();
+            let model_type_name = parse_context.get_model_type_name();
+            let model_type = TokenStream::from_iter(parse_context.get_model_type().iter().cloned());
+            let raw = parse_context.get_raw();
 
             let view_model_tokens = if model_type_name.len() > 0 {
                 let concrete_type_tokens = if model_type_name != "dyn IModel" {
@@ -78,11 +89,11 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
                 quote! {}
             };
 
-            let use_statements = TokenStream::from_iter(parser.parse_context.mut_use_statements().iter().cloned().map(|s| s.into_iter()).flatten());
-            let inject_tokens = parser.parse_context.get_inject_statements_stream();
+            let use_statements = TokenStream::from_iter(parse_context.mut_use_statements().iter().cloned().map(|s| s.into_iter()).flatten());
+            let inject_tokens = parse_context.get_inject_statements_stream();
             let when_compiled = chrono::prelude::Utc::now().to_rfc2822();
             let mut view_start_tokens: Option<TokenStream> = None;
-            if let Some(view_start) = parser.parse_context.try_get_param_string("viewstart") {
+            if let Some(view_start) = parse_context.try_get_param_string("viewstart") {
                 // println!("view_start_path: {}", view_start_path);
                 view_start_tokens = Some(quote! {
                     match view_context.get_view_renderer()
@@ -120,7 +131,8 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
                             model_type_name: #model_type_name,
                             ViewPath: file!(),
                             raw: #raw,
-                            when_compiled: DateTime::parse_from_rfc2822(#when_compiled).unwrap().into(),
+                            when_compiled: DateTime::parse_from_rfc2822(#when_compiled)
+                                                        .expect("could not parse when compiled").into(),
                         }
                     }
 
@@ -180,8 +192,8 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
 
 
 fn rc_controller_action_impl(new_fn: &Ident, input: TokenStream) -> TokenStream {
-    let action_name = match input.into_iter().next().unwrap() {
-        TokenTree::Ident(ident) => ident.clone(),
+    let action_name = match input.into_iter().next() {
+        Some(TokenTree::Ident(ident)) => ident.clone(),
         _ => panic!("expected ident"),
     };
     quote! {

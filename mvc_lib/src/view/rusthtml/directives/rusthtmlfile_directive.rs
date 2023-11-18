@@ -5,8 +5,10 @@ use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
-use crate::view::rusthtml::parsers::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 
@@ -26,14 +28,16 @@ impl RustHtmlFileDirective {
     // output: the destination for the RustHtml tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    pub fn convert_externalrusthtml_directive(ctx: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
+    pub fn convert_externalrusthtml_directive(ctx: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError<'static>> {
         if let Ok(path) = parser.get_rust_or_html_parser().next_path_str(ctx, identifier, ident_token, it.clone()) {
             let code = quote::quote!{
                 let v = view_context.get_view(#path);
                 v.render()
             };
-            let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
-            output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Group(proc_macro2::Delimiter::Brace, g)]));
+            // let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
+            // let t = TokenTree::Group(g);
+            let converted = parser.get_converter().convert_stream(code, ct)?;
+            output.push(RustHtmlToken::AppendToHtml(converted));
 
             Ok(())
         } else {
@@ -47,9 +51,9 @@ impl IRustHtmlDirective for RustHtmlFileDirective {
         name == "rshtmlfile" || name == "rusthtmlfile"
     }
 
-    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // do match instead of if let to access error
-        match Self::convert_externalrusthtml_directive(context, identifier, ident_token, parser, output, it) {
+        match Self::convert_externalrusthtml_directive(context, identifier, ident_token, parser, output, it, ct) {
             Ok(_) => Ok(RustHtmlDirectiveResult::OkContinue),
             Err(e) => Err(e)
         }

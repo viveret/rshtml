@@ -4,8 +4,9 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{Ident, TokenStream, TokenTree};
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
-use crate::view::rusthtml::parsers::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 
@@ -28,15 +29,15 @@ impl MarkdownFileNoCacheDirective {
     pub fn convert_mdfile_nocache_directive(
         ctx: Rc<dyn IRustHtmlParserContext>,
         identifier: &Ident,
-        ident_token: &TokenTree,
+        ident_token: &RustHtmlToken,
         parser: Rc<dyn IRustHtmlParserAll>,
         output: &mut Vec<RustHtmlToken>,
-        it: Rc<dyn IPeekableTokenTree>,
+        it: Rc<dyn IPeekableRustHtmlToken>,
         ct: Rc<dyn ICancellationToken>
     ) -> Result<(), RustHtmlError<'static>> {
         // peek for prefix token
         let mut prefix_token = it.peek();
-        let prefix_punct = if let TokenTree::Punct(p) = prefix_token.unwrap() {
+        let prefix_punct = if let TokenTree::Punct(p) = prefix_token.expect("expected punct") {
             prefix_token = it.next();
             Some(p)
         } else {
@@ -95,7 +96,7 @@ impl IRustHtmlDirective for MarkdownFileNoCacheDirective {
         name == "mdfile_nocache" || name == "md_file_nocache" || name == "markdownfile_nocache" || name == "markdown_file_nocache"
     }
 
-    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         match Self::convert_mdfile_nocache_directive(context, identifier, ident_token, parser, output, it, ct) {
             Ok(_) => {
                 Ok(RustHtmlDirectiveResult::OkContinue)

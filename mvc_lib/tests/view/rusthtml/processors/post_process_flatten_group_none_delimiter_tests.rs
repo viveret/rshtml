@@ -8,7 +8,8 @@ use proc_macro2::{TokenTree, Group, Delimiter, TokenStream, Literal};
 pub fn post_process_flatten_group_none_delimiter_process_rust_empty() {
     let processor = PostProcessFlattenGroupNoneDelimiter::new();
     let input = vec![];
-    let result = processor.process_rust(&input).unwrap();
+    let result = processor.process_rust(&input)
+                                    .expect("post_process_flatten_group_none_delimiter_process_rust_empty");
     assert_eq!(0, result.len());
 }
 
@@ -20,7 +21,8 @@ pub fn post_process_flatten_group_none_delimiter_process_rust_basic() {
             TokenTree::Literal(Literal::string("test")),
         ]))),
     ];
-    let result = processor.process_rust(&input).unwrap();
+    let result = processor.process_rust(&input)
+                                    .expect("post_process_flatten_group_none_delimiter_process_rust_basic");
     assert_eq!(1, result.len());
 
     let output_stream = TokenStream::from_iter(result).to_string();

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use mvc_lib::view::rusthtml::{parsers::peekable_tokentree::VecPeekableTokenTree, irust_processor::IRustProcessor};
+use mvc_lib::view::rusthtml::{parser_parts::peekable_tokentree::VecPeekableTokenTree, irust_processor::IRustProcessor};
 use mvc_lib::view::rusthtml::processors::post_process_combine_static_str::PostProcessCombineStaticStr;
 use proc_macro2::{TokenTree, TokenStream, Punct, Group, Delimiter, Spacing, Literal, Ident};
 

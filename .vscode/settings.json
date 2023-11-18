@@ -3,6 +3,6 @@
         "Cargo.toml",
     ],
     "rust-analyzer.showUnlinkedFileNotification": false,
-    "rust-analyzer.checkOnSave": false,
+    "rust-analyzer.checkOnSave": true,
     "rust-analyzer.procMacro.enable": false
 }

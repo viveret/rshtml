@@ -20,38 +20,35 @@ mod iviewmodel_macro;
 pub fn nameof_member_fn(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let mut it = TokenStream::from(input).into_iter();
     // expect type name
-    let type_name = it.next().unwrap();
-    match type_name {
-        TokenTree::Ident(_) => {
-            // let type_name = ident.to_string();
+    let type_name = match it.next() {
+        Some(TokenTree::Ident(ident)) => {
+            ident.to_string()
         },
         _ => panic!("Expected type name."),
-    }
+    };
 
     // expect ::
-    let colon_first = it.next().unwrap();
-    match colon_first {
-        TokenTree::Punct(punct) => {
+    let colon_first = match it.next() {
+        Some(TokenTree::Punct(punct)) => {
             if punct.as_char() != ':' {
                 panic!("Expected ::");
             }
         },
         _ => panic!("Expected ::"),
-    }
-    let colon_second = it.next().unwrap();
-    match colon_second {
-        TokenTree::Punct(punct) => {
+    };
+    
+    let colon_second = match it.next() {
+        Some(TokenTree::Punct(punct)) => {
             if punct.as_char() != ':' {
                 panic!("Expected ::");
             }
         },
         _ => panic!("Expected ::"),
-    }
+    };
 
     // expect member fn name
-    let member_fn_name = it.next().unwrap();
-    match member_fn_name {
-        TokenTree::Ident(ident) => {
+    match it.next() {
+        Some(TokenTree::Ident(ident)) => {
             let member_fn_name = ident.to_string();
             return quote! {
                 #member_fn_name
@@ -69,20 +66,24 @@ pub fn expr_quote(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let mut it = TokenStream::from(input).into_iter().peekable();
     // expecting closure ||
     for _ in 0..3 {
-        let closure_pipe_or_model_ident = it.next().unwrap();
-        match closure_pipe_or_model_ident {
-            TokenTree::Punct(punct) => {
-                if punct.as_char() != '|' {
-                    panic!("Expected closure pipe |, not {}.", punct.as_char());
-                } else {
-                    expr_tokens.push(punct.into());
+        match it.next() {
+            Some(token) => {
+                match &token {
+                    TokenTree::Punct(punct) => {
+                        if punct.as_char() != '|' {
+                            panic!("Expected closure pipe |, not {}.", punct.as_char());
+                        } else {
+                            expr_tokens.push(token);
+                        }
+                    },
+                    TokenTree::Ident(closure_pipe_or_model_ident) => {
+                        // start of identitifer for model argument
+                        expr_tokens.push(token);
+                    },
+                    _ => panic!("Expected closure pipe |"),
                 }
             },
-            TokenTree::Ident(_) => {
-                // start of identitifer for model argument
-                expr_tokens.push(closure_pipe_or_model_ident);
-            },
-            _ => panic!("Expected closure pipe |"),
+            None => panic!("Expected closure pipe |"),
         }
     }
 
@@ -91,11 +92,21 @@ pub fn expr_quote(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         if let Some(next) = it.peek() {
             match next {
                 TokenTree::Ident(_) => {
-                    expr_tokens.push(it.next().unwrap());
+                    match it.next() {
+                        Some(token) => {
+                            expr_tokens.push(token);
+                        },
+                        None => panic!("Expected closure body"),
+                    }
                 },
                 TokenTree::Punct(punct) => {
                     if punct.as_char() == '.' || punct.as_char() == '&' {
-                        expr_tokens.push(it.next().unwrap());
+                        match it.next() {
+                            Some(token) => {
+                                expr_tokens.push(token);
+                            },
+                            None => panic!("Expected closure body"),
+                        }
                     } else {
                         // break;
                         panic!("Expected dot / period between identifier parts, not {}.", punct.as_char());
@@ -116,19 +127,19 @@ pub fn expr_quote(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
 #[proc_macro_derive(IModel)]
 pub fn imodel_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let ast = syn::parse(input).unwrap();
+    let ast = syn::parse(input).expect("Couldn't parse input.");
     imodel_macro::impl_imodel(&ast).into()
 }
 
 #[proc_macro_derive(IViewModel)]
 pub fn iviewmodel_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let ast = syn::parse(input).unwrap();
+    let ast = syn::parse(input).expect("Couldn't parse input.");
     iviewmodel_macro::impl_iviewmodel(&ast).into()
 }
 
 #[proc_macro_derive(IHazAttributes)]
 pub fn ihaz_attributes_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let ast = syn::parse(input).unwrap();
+    let ast = syn::parse(input).expect("Couldn't parse input.");
     ihaz_attributes_macro::impl_ihaz_attributes(&ast).into()
 }
 

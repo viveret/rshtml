@@ -4,8 +4,9 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{Ident, TokenTree, Delimiter};
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
-use crate::view::rusthtml::parsers::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
@@ -27,34 +28,31 @@ impl IRustHtmlDirective for IfDirective {
         name == "if"
     }
 
-    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, _ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         output.push(RustHtmlToken::Identifier(identifier.clone()));
         
         loop {
             if let Some(token) = it.peek() {
                 match token {
-                    TokenTree::Ident(ident) => {
-                        output.push(RustHtmlToken::Identifier(ident.clone()));
-                        it.next();
+                    RustHtmlToken::Identifier(ident) => {
+                        output.push(it.next().unwrap().clone());
                     },
-                    TokenTree::Literal(literal) => {
-                        output.push(RustHtmlToken::Literal(Some(literal.clone()), None));
-                        it.next();
+                    RustHtmlToken::Literal(literal, s) => {
+                        output.push(it.next().unwrap().clone());
                     },
-                    TokenTree::Punct(punct) => {
-                        output.push(RustHtmlToken::ReservedChar(punct.as_char(), punct.clone()));
-                        it.next();
+                    RustHtmlToken::ReservedChar(c, punct) => {
+                        output.push(it.next().unwrap().clone());
                         if punct.as_char() == ';' {
                             break;
                         }
                     },
-                    TokenTree::Group(group) => {
+                    RustHtmlToken::Group(delimiter, stream, group) => {
                         let delimiter = group.delimiter();
                         match delimiter {
                             Delimiter::Brace => {
-                                match parser.get_rust_parser().convert_group(&group, false, ct.clone()) {
-                                    Ok(tokens) => {
-                                        output.extend(tokens);
+                                match parser.get_converter().convert_group(&group, false, ct.clone()) {
+                                    Ok(token) => {
+                                        output.push(token);
                                         // let last = output.last().unwrap();
                                         // match last {
                                         //     RustHtmlToken::GroupParsed(delimiter, tokens) => {
@@ -69,14 +67,14 @@ impl IRustHtmlDirective for IfDirective {
                                         // need to check for else if and else
                                         if let Some(token) = it.peek() {
                                             match token {
-                                                TokenTree::Ident(ident) => {
+                                                RustHtmlToken::Identifier(ident) => {
                                                     if ident.to_string() == "else" {
                                                         it.next();
                                                         output.push(RustHtmlToken::Identifier(ident.clone()));
 
                                                         if let Some(token) = it.peek() {
                                                             match token {
-                                                                TokenTree::Ident(ident) => {
+                                                                RustHtmlToken::Identifier(ident) => {
                                                                     if ident.to_string() == "if" {
                                                                         // else if
                                                                         output.push(RustHtmlToken::Identifier(ident.clone()));
@@ -91,10 +89,10 @@ impl IRustHtmlDirective for IfDirective {
                                                         // just else, expecting brace group
                                                         if let Some(token) = it.peek() {
                                                             match token {
-                                                                TokenTree::Group(group) if group.delimiter() == Delimiter::Brace => {
-                                                                    match parser.get_rust_parser().convert_group(&group, false, ct) {
-                                                                        Ok(tokens) => {
-                                                                            output.extend(tokens);
+                                                                RustHtmlToken::Group(delimiter, stream, group) if group.delimiter() == Delimiter::Brace => {
+                                                                    match parser.get_converter().convert_group(&group, false, ct) {
+                                                                        Ok(group) => {
+                                                                            output.push(group);
                                                                             it.next();
                                                                         },
                                                                         Err(RustHtmlError(err)) => {
@@ -119,10 +117,13 @@ impl IRustHtmlDirective for IfDirective {
                                 }
                             },
                             _ => {
-                                output.push(RustHtmlToken::Group(group.delimiter(), group.clone()));
+                                output.push(token.clone());
                                 it.next();
                             }
                         }
+                    },
+                    _ => {
+                        panic!("unexpected token: {:?}", token)
                     }
                 }
             } else {

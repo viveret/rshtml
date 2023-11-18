@@ -6,8 +6,9 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{Ident, TokenTree, Group, Delimiter, Literal};
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
-use crate::view::rusthtml::parsers::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree};
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::{VecPeekableRustHtmlToken, IPeekableRustHtmlToken};
+use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -26,7 +27,7 @@ impl HtmlFormDirective {
 
     // parse the form function call and add the form tokens to the output.
     // the form function call is called between the form opening and closing tags.
-    fn parse_form_function_call(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: &dyn IPeekableTokenTree, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
+    fn parse_form_function_call(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
         // println!("parsing form function call");
 
         // parse method
@@ -34,20 +35,26 @@ impl HtmlFormDirective {
         let method =
             if let Some(token_method) = it.peek() {
                 match token_method {
-                    TokenTree::Literal(literal) => {
+                    RustHtmlToken::Literal(literal, s) => {
                         it.next();
-                        (literal.to_string(), Some(literal.clone()), None)
+                        if let Some(literal) = literal {
+                            (literal.to_string(), Some(literal.clone()), None)
+                        } else if let Some(s) = s {
+                            (s.clone(), None, None)
+                        } else {
+                            return Err(RustHtmlError::from_str("expected string / literal, both are None"));
+                        }
                     },
-                    TokenTree::Ident(ident) => {
+                    RustHtmlToken::Identifier(ident) => {
                         it.next();
                         (ident.to_string(), None, Some(ident.clone()))
                     },
-                    TokenTree::Group(_group) => {
+                    RustHtmlToken::Group(_delimiter, _stream, _group) => {
                         // this is the main form render closure function.
                         // just use default method and action.
                         ("POST".to_string(), None, None)
                     },
-                    _ => return Err(RustHtmlError::from_string(format!("expected string literal or identifier for method, not \"{}\"", token_method)))
+                    _ => return Err(RustHtmlError::from_string(format!("expected string literal or identifier for method, not \"{:?}\"", token_method)))
                 }
             } else {
                 return Err(RustHtmlError::from_str("expected string literal, not EOF"));
@@ -68,13 +75,17 @@ impl HtmlFormDirective {
             // expecting string literal
             action =
                 if let Some(token_action) = it.peek() {
-                    if let TokenTree::Literal(literal) = token_action {
+                    if let RustHtmlToken::Literal(literal, s) = token_action {
                         // skip literal
                         it.next();
 
-                        // unescape string literal
-                        // Some(snailquote::unescape(&literal.to_string()).unwrap())
-                        Some(literal.clone())
+                        if let Some(literal) = literal {
+                            Some(literal.clone())
+                        } else if let Some(s) = s {
+                            Some(Literal::string(s))
+                        } else {
+                            return Err(RustHtmlError::from_str("expected string / literal, both are None"));
+                        }
                     } else {
                         None
                     }
@@ -89,12 +100,12 @@ impl HtmlFormDirective {
             }
 
             // check for comma separator between action and form attributes
-            if Self::check_for_comma(it) {
+            if Self::check_for_comma(it.clone()) {
                 // skip comma
                 it.next();
 
                 // check for an object and parse form attributes
-                attributes = Self::try_parse_object_html_attributes(it).clone()?;
+                attributes = Self::try_parse_object_html_attributes(it.clone()).clone()?;
 
                 // check for comma separator between form attributes and action route values.
                 if Self::check_for_comma(it) {
@@ -102,7 +113,7 @@ impl HtmlFormDirective {
                     it.next();
 
                     // parse action route values
-                    _route_values = self.try_parse_object_route_values(it).clone()?;
+                    _route_values = self.try_parse_object_route_values(it.clone()).clone()?;
                     
                     // check for comma separator between action route values and form render closure.
                     if Self::check_for_comma(it) {
@@ -115,7 +126,7 @@ impl HtmlFormDirective {
 
         // parse form closure
         let mut form_render_fn_token_values = vec![];
-        self.parse_form_render_closure(ctx, parser, &mut form_render_fn_token_values, it, ct)?;
+        self.parse_form_render_closure(ctx, parser, &mut form_render_fn_token_values, it.clone(), ct)?;
         _form_render_fn_tokens = Some(form_render_fn_token_values);
 
         // add opening form tag
@@ -168,7 +179,7 @@ impl HtmlFormDirective {
         ctx: Rc<dyn IRustHtmlParserContext>,
         parser: Rc<dyn IRustHtmlParserAll>,
         output: &mut Vec<RustHtmlToken>,
-        it: &dyn IPeekableTokenTree,
+        it: Rc<dyn IPeekableRustHtmlToken>,
         ct: Rc<dyn ICancellationToken>
     ) -> Result<(), RustHtmlError<'static>> {
         // expecting closure to render contents of form
@@ -176,17 +187,16 @@ impl HtmlFormDirective {
         match it.next() {
             Some(token) => {
                 match token {
-                    TokenTree::Group(group) => {
+                    RustHtmlToken::Group(delimiter, stream, group) => {
                         if group.delimiter() == Delimiter::Parenthesis {
                             // parse closure tokens in {}
                             match it.next() {
                                 Some(token) => {
                                     match token {
-                                        TokenTree::Group(group) => {
-                                            let inner_it = Rc::new(StreamPeekableTokenTree::new(group.stream()));
-                                            match parser.get_html_parser().parse_html(ctx, inner_it, ct) {
-                                                Ok(tokens) => {
-                                                    output.extend_from_slice(tokens.as_slice());
+                                        RustHtmlToken::Group(delimiter, inner_it, group) => {
+                                            match parser.get_html_parser().parse_html(ctx, inner_it.clone(), ct) {
+                                                Ok((tokens, break_loop)) => {
+                                                    output.extend(tokens);
                                                     return Ok(());
                                                 },
                                                 Err(RustHtmlError(err)) => {
@@ -194,24 +204,24 @@ impl HtmlFormDirective {
                                                 }
                                             }
                                         },
-                                        _ => return Err(RustHtmlError::from_string(format!("expected closure, not \"{}\"", token)))
+                                        _ => return Err(RustHtmlError::from_string(format!("expected closure, not \"{:?}\"", token)))
                                     }
                                 },
                                 None => return Err(RustHtmlError::from_str("expected closure, not EOF"))
                             }
                         } else {
-                            return Err(RustHtmlError::from_string(format!("expected braces, not \"{}\"", group)))
+                            return Err(RustHtmlError::from_string(format!("expected braces, not \"{:?}\"", group)))
                         }
                     },
-                    _ => return Err(RustHtmlError::from_string(format!("expected closure, not \"{}\"", token)))
+                    _ => return Err(RustHtmlError::from_string(format!("expected closure, not \"{:?}\"", token)))
                 }
             },
             None => return Err(RustHtmlError::from_str("expected closure, not EOF"))
         }
     }
     
-    fn try_parse_object_route_values(self: &Self, it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
-        if let Some(group_object) = Self::peek_group_with_braces(it) {
+    fn try_parse_object_route_values(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
+        if let Some(group_object) = Self::peek_group_with_braces(it.clone()) {
             // skip group after peeking
             it.next();
 
@@ -271,7 +281,7 @@ impl HtmlFormDirective {
         Ok(Some(object_route_values))
     }
     
-    fn try_parse_object_html_attributes(it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>>, RustHtmlError<'static>> {
+    fn try_parse_object_html_attributes(it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>>, RustHtmlError<'static>> {
         if let Some(group_object) = Self::peek_group_with_braces(it) {
             // skip group after peeking
             it.next();
@@ -283,11 +293,11 @@ impl HtmlFormDirective {
         }
     }
     
-    fn peek_group_with_braces(it: &dyn IPeekableTokenTree) -> Option<Group> {
+    fn peek_group_with_braces(it: Rc<dyn IPeekableRustHtmlToken>) -> Option<Group> {
         if let Some(token) = it.peek() {
-            if let TokenTree::Group(group) = token {
-                if group.delimiter() == Delimiter::Brace {
-                    return Some(group);
+            if let RustHtmlToken::Group(delimiter, stream, group) = token {
+                if *delimiter == Delimiter::Brace {
+                    return Some(group.clone());
                 }
             }
         }
@@ -342,9 +352,9 @@ impl HtmlFormDirective {
         Ok(Some(object_attributes))
     }
     
-    fn check_for_comma(it: &dyn IPeekableTokenTree) -> bool {
+    fn check_for_comma(it: Rc<dyn IPeekableRustHtmlToken>) -> bool {
         if let Some(token) = it.peek() {
-            if let TokenTree::Punct(punct) = &token {
+            if let RustHtmlToken::ReservedChar(c, punct) = &token {
                 if punct.as_char() == ',' {
                     return true;
                 }
@@ -360,16 +370,16 @@ impl IRustHtmlDirective for HtmlFormDirective {
         name == "form"
     }
 
-    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, _identifier: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, _identifier: &Ident, _ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // parse form function parameter values
         // top level ()
         // print!("parsing form function call");
 
         if let Some(token) = it.next() {
-            if let TokenTree::Group(group) = token {
-                return self.parse_form_function_call(context, parser, output, &StreamPeekableTokenTree::new(group.stream()), ct);
+            if let RustHtmlToken::Group(delimiter, inner_it, group) = token {
+                return self.parse_form_function_call(context, parser, output, inner_it.clone(), ct);
             } else {
-                return Err(RustHtmlError::from_string(format!("expected function call group, not \"{}\"", token)));
+                return Err(RustHtmlError::from_string(format!("expected function call group, not \"{:?}\"", token)));
             }
         } else {
             return Err(RustHtmlError::from_str("expected function call group, not EOF"));

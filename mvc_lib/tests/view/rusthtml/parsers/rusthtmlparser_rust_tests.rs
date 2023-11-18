@@ -1,34 +1,75 @@
+use std::rc::Rc;
+
+use core_lib::asyncly::cancellation_token::CancellationToken;
+use mvc_lib::view::rusthtml::parser_parts::{rusthtmlparser_rust::{RustHtmlParserRust, IRustHtmlParserRust}, peekable_tokentree::{StreamPeekableTokenTree, VecPeekableTokenTree}};
+use proc_macro2::{Ident, TokenTree};
+
 
 #[test]
-pub fn test_RustHtmlParserRust_compared_to_RustHtmlParser_parse_type_identifier() {
-    let ctx = Rc::new(RustHtmlParserContext::new(false, true, "test".to_string()));
-    let parser_old = RustToRustHtmlConverter::new(ctx);
-    let parser_new = RustHtmlParserRust::new();
+pub fn test_rusthtmlparser_rust_constructor_works() {
+    let _ = RustHtmlParserRust::new();
+}
 
-    let inputs = vec![
-        quote::quote! {
-            std::rc::Rc<std::cell::RefCell<std::vec::Vec<std::string::String>>>
+#[test]
+pub fn test_rusthtmlparser_rust_parse_string_with_quotes_works() {
+    let ident = Ident::new("test", proc_macro2::Span::call_site());
+
+    let parser = RustHtmlParserRust::new();
+    let it = Rc::new(VecPeekableTokenTree::new(vec![]));
+
+    let result = parser.parse_string_with_quotes(true, &ident, it).unwrap();
+    assert_eq!(result, "test".to_string());
+}
+
+#[test]
+pub fn test_rusthtmlparser_rust_parse_type_identifier_works() {
+    let ident = Ident::new("test", proc_macro2::Span::call_site());
+    let token = TokenTree::Ident(ident.clone());
+
+    let parser = RustHtmlParserRust::new();
+    let it = Rc::new(VecPeekableTokenTree::new(vec![token]));
+    let ct = Rc::new(CancellationToken::new());
+
+    let result = parser.parse_type_identifier(it, ct).unwrap();
+
+    let token_actual = result.next().unwrap();
+    match token_actual {
+        TokenTree::Ident(ident_actual) => {
+            assert_eq!(ident_actual, ident);
         },
-        quote::quote! {
-            String
-        },
-        quote::quote! {
-            std::vec::Vec<std::string::String>
-        },
-    ];
-
-    for input in inputs {
-        let it = Rc::new(StreamPeekableTokenTree::new(input.clone()));
-        let it2 = Rc::new(StreamPeekableTokenTree::new(input.clone()));
-
-        let old_output = parser_old.parse_type_identifier(it).unwrap();
-        let new_output = parser_new.parse_type_identifier(it2).unwrap();
-
-        let old_str = old_output.iter().map(|x| x.to_string()).collect::<Vec<String>>().join("");
-        let new_str = new_output.iter().map(|x| x.to_string()).collect::<Vec<String>>().join("");
-
-        assert_ne!(old_str, "");
-        assert_ne!(new_str, "");
-        assert_eq!(old_str, new_str);
+        _ => {
+            panic!("Expected Ident");
+        }
     }
+}
+
+#[test]
+pub fn test_rusthtmlparser_rust_parse_identifier_expression_works() {
+    let ident = Ident::new("test", proc_macro2::Span::call_site());
+    let first_token = TokenTree::Ident(ident.clone());
+
+    let parser = RustHtmlParserRust::new();
+    let it = Rc::new(VecPeekableTokenTree::new(vec![first_token.clone()]));
+    let ct = Rc::new(CancellationToken::new());
+
+    let result = parser.parse_rust_identifier_expression(true, &first_token, true, it, ct).unwrap();
+
+    let token_actual = result.next().unwrap();
+    match token_actual {
+        TokenTree::Ident(ident_actual) => {
+            assert_eq!(ident_actual, ident);
+        },
+        _ => {
+            panic!("Expected Ident");
+        }
+    }
+}
+
+#[test]
+pub fn test_rusthtmlparser_rust_expect_punct_works() {
+    let token = proc_macro2::Punct::new(',', proc_macro2::Spacing::Alone);
+    let parser = RustHtmlParserRust::new();
+    let it = Rc::new(VecPeekableTokenTree::new(vec![TokenTree::Punct(token)]));
+    let result = parser.expect_punct(',', it).unwrap();
+    assert_eq!(result.1.as_char(), ',');
 }

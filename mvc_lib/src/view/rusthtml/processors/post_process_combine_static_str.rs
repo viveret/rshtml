@@ -2,9 +2,9 @@ use std::rc::Rc;
 
 use proc_macro2::{TokenTree, Delimiter, Group, TokenStream, Ident, Punct};
 
-use crate::view::rusthtml::parsers::peekable_tokentree::IPeekableTokenTree;
-use crate::view::rusthtml::parsers::peekable_tokentree::StreamPeekableTokenTree;
-use crate::view::rusthtml::parsers::peekable_tokentree::VecPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::StreamPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::VecPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::irust_processor::IRustProcessor;
 

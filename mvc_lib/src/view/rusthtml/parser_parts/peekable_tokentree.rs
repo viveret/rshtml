@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, rc::Rc};
 
 use proc_macro2::{TokenTree, TokenStream};
 
@@ -27,6 +27,7 @@ pub trait IPeekableTokenTree {
     fn disable_log_next(&self);
 }
 
+#[derive(Clone)]
 pub struct StreamPeekableTokenTree {
     it: RefCell<proc_macro2::token_stream::IntoIter>,
     n_peeked: RefCell<Vec<TokenTree>>,
@@ -56,6 +57,10 @@ impl StreamPeekableTokenTree {
             log_next_msg: RefCell::new(String::new()),
             is_raw: true,
         }
+    }
+
+    pub fn rc(self: &Self) -> Rc<dyn IPeekableTokenTree> {
+        Rc::new(self.clone())
     }
 }
 
@@ -193,5 +198,12 @@ impl IPeekableTokenTree for VecPeekableTokenTree {
             stream.extend(std::iter::once(token.clone()));
         }
         stream
+    }
+}
+
+
+impl From<TokenStream> for StreamPeekableTokenTree {
+    fn from(stream: TokenStream) -> Self {
+        Self::new(stream)
     }
 }

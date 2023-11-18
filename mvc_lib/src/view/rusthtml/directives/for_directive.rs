@@ -6,8 +6,9 @@ use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
-use crate::view::rusthtml::parsers::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 
@@ -28,30 +29,29 @@ impl IRustHtmlDirective for ForDirective {
         name == "for"
     }
 
-    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken> ) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, _ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken> ) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         output.push(RustHtmlToken::Identifier(identifier.clone()));
         
         let is_raw_tokenstream = false;
         loop {
             if let Some(token) = it.peek() {
                 match &token {
-                    TokenTree::Ident(ident) => {
+                    RustHtmlToken::Identifier(ident) => {
                         output.push(RustHtmlToken::Identifier(ident.clone()));
                         it.next();
                     },
-                    TokenTree::Literal(literal) => {
-                        output.push(RustHtmlToken::Literal(Some(literal.clone()), None));
+                    RustHtmlToken::Literal(literal, s) => {
+                        output.push(token.clone());
                         it.next();
                     },
-                    TokenTree::Punct(punct) => {
+                    RustHtmlToken::ReservedChar(c, punct) => {
                         output.push(RustHtmlToken::ReservedChar(punct.as_char(), punct.clone()));
                         it.next();
                     },
-                    TokenTree::Group(group) => {
-                        let delimiter = group.delimiter();
+                    RustHtmlToken::Group(delimiter, stream, group) => {
                         match delimiter {
                             Delimiter::Brace => {
-                                match parser.get_rust_parser().convert_group(group, false, ct) {
+                                match parser.get_converter().convert_group(group, false, ct) {
                                     Ok(_) => {
                                         // println!("for_directive: {} -> {:?}", token.to_string(), output.last());
                                         it.next();
@@ -63,7 +63,7 @@ impl IRustHtmlDirective for ForDirective {
                                 }
                             },
                             _ => {
-                                output.push(RustHtmlToken::Group(delimiter, group.clone()));
+                                output.push(token.clone());
                                 it.next();
                             },
                         }

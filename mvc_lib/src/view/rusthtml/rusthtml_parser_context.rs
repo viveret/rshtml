@@ -264,7 +264,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
     fn try_get_param_string(self: &Self, key: &str) -> Option<String> {
         match self.params.borrow().get(&key.to_string()) {
             Some(str_val) => {
-                let s = snailquote::unescape(str_val).unwrap();
+                let s = snailquote::unescape(str_val).expect("couldn't unescape string");
                 Some(s)
             },
             None => {
@@ -276,7 +276,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
     fn get_param_string(self: &Self, key: &str) -> Result<String, RustHtmlError> {
         match self.params.borrow().get(&key.to_string()) {
             Some(str_val) => {
-                let s = snailquote::unescape(str_val).unwrap();
+                let s = snailquote::unescape(str_val).expect("couldn't unescape string");
                 Ok(s)
             },
             None => {
@@ -335,8 +335,8 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         self.punctuation_scope_stack.borrow_mut()
     }
 
-    fn mut_use_statements(self: &Self) -> RefMut<Vec<TokenStream>> {
-        self.use_statements.borrow_mut()
+    fn push_use_statements(self: &Self, rshtml: TokenStream) {
+        self.use_statements.borrow_mut().push(rshtml)
     }
 
     fn mut_params(self: &Self) -> RefMut<HashMap<String, String>> {
@@ -413,8 +413,8 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
 
-    fn mut_inject_statements(self: &Self) -> RefMut<Vec<TokenStream>> {
-        self.inject_statements.borrow_mut()
+    fn push_inject_statements(self: &Self, rust: TokenStream) {
+        self.inject_statements.borrow_mut().push(rust);
     }
 
     fn get_inject_statements_stream(self: &Self) -> proc_macro2::TokenStream {
@@ -443,7 +443,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         model_based_injections.push(
             proc_macro2::TokenStream::from(
                 TokenStream::from_iter(
-                    self.mut_inject_statements()
+                    self.inject_statements.borrow()
                         .iter()
                         .cloned()
                         .map(|s| s.into_iter())
@@ -483,5 +483,10 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
 
     fn get_ooo(self: &Self) -> Vec<String> {
         vec![]
+    }
+
+    fn push_inject_statements_rshtml(self: &Self, rshtml: Vec<super::rusthtml_token::RustHtmlToken>, parser: Rc<dyn IRustHtmlParserAll>, ct: Rc<dyn super::parser_parts::rusthtmlparser_all::ICancellationToken>) {
+        let rust = self.pars
+        self.push_inject_statements(rust);
     }
 }

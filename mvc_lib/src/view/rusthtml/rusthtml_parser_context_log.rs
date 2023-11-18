@@ -93,14 +93,14 @@ impl IRustHtmlParserContext for RustHtmlParserContextLog {
         self.real_context.mut_punct_scope_stack()
     }
 
-    fn mut_use_statements(self: &Self) -> std::cell::RefMut<Vec<TokenStream>> {
+    fn push_use_statements(self: &Self, rust: TokenStream) {
         self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::mut_use_statements));
-        self.real_context.mut_use_statements()
+        self.real_context.push_use_statements(rust);
     }
 
-    fn mut_inject_statements(self: &Self) -> std::cell::RefMut<Vec<TokenStream>> {
+    fn push_inject_statements(self: &Self, rust: TokenStream) {
         self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::mut_inject_statements));
-        self.real_context.mut_inject_statements()
+        self.real_context.push_inject_statements(rust)
     }
 
     fn get_inject_statements_stream(self: &Self) -> proc_macro2::TokenStream {

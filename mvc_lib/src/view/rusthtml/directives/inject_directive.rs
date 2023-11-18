@@ -4,8 +4,9 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{Ident, TokenStream, TokenTree};
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::parsers::rusthtmlparser_all::IRustHtmlParserAll;
-use crate::view::rusthtml::parsers::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 
@@ -20,21 +21,23 @@ impl InjectDirective {
         Self {}
     }
 
-    fn parse_identifier_for_variable_name(self: &Self, context: Rc<dyn IRustHtmlParserContext>, type_ident_tokens: Rc<dyn IPeekableTokenTree>, parser: Rc<dyn IRustHtmlParserAll>, _output: &mut Vec<RustHtmlToken>, it: &Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
-        if let Some(inject_name_token) = it.next() {
-            match &inject_name_token {
-                TokenTree::Ident(_) => {
-                    let mut inject_name_vec: Vec<TokenTree> = Vec::new();
-                    inject_name_vec.push(inject_name_token.clone());
-        
-                    let inject_name_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(inject_name_vec));
-                    let type_ident_tokenstream = type_ident_tokens.to_stream();
-                    context.mut_inject_statements().push(quote::quote! { let #inject_name_tokenstream = #type_ident_tokenstream ::new(view_context, services); }.into());
-                    Ok(RustHtmlDirectiveResult::OkContinue)
-                },
-                _ => {
-                    Err(RustHtmlError::from_string(format!("Unexpected token for variable name after inject directive: {:?}", inject_name_token)))
-                }
+    fn parse_identifier_for_variable_name(
+        self: &Self,
+        context: Rc<dyn IRustHtmlParserContext>,
+        type_ident_tokens: Rc<dyn IPeekableRustHtmlToken>,
+        parser: Rc<dyn IRustHtmlParserAll>,
+        _output: &mut Vec<RustHtmlToken>,
+        it: &Rc<dyn IPeekableRustHtmlToken>,
+        ct: Rc<dyn ICancellationToken>,
+    ) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
+        if let Some(RustHtmlToken::Identifier(inject_name)) = it.next() {
+            if let Some(RustHtmlToken::Identifier(type_ident)) = it.next() {
+                let rust = quote::quote! { let #inject_name = #type_ident ::new(view_context, services); }.into();
+                let converted = parser.get_converter().convert_stream(rust, ct.clone())?;
+                context.push_inject_statements_rshtml(converted);
+                Ok(RustHtmlDirectiveResult::OkContinue)
+            } else {
+                Err(RustHtmlError::from_string(format!("Unexpected token after inject directive: {:?}", it.peek())))
             }
         } else {
             Err(RustHtmlError::from_string(format!("Unexpected end of input after inject directive")))
@@ -47,27 +50,27 @@ impl IRustHtmlDirective for InjectDirective {
         name == "inject"
     }
 
-    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, _: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, _: &Ident, _ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // expecting type identifier
         if let Ok(type_ident_tokens) = parser.get_rust_parser().parse_type_identifier(it.clone(), ct) {
             // next token should be "as"
             if let Some(ref as_token) = it.peek() {
                 match as_token {
-                    TokenTree::Ident(ident) => {
+                    RustHtmlToken::Identifier(ident) => {
                         if ident.to_string() == "as" {
                             it.next();
                             // next token should be identifier for the injected variable
-                            self.parse_identifier_for_variable_name(context, type_ident_tokens, parser, output, &it)
+                            self.parse_identifier_for_variable_name(context, type_ident_tokens, parser, output, &it, ct.clone())
                         } else {
                             Err(RustHtmlError::from_string(format!("Unexpected ident after inject directive: {:?}", ident)))
                         }
                     },
-                    TokenTree::Punct(punct) => {
+                    RustHtmlToken::ReservedChar(c, punct) => {
                         match punct.as_char() {
                             ':' => {
                                 it.next();
                                 // next token should be identifier for the injected variable
-                                self.parse_identifier_for_variable_name(context, type_ident_tokens, parser, output, &it)
+                                self.parse_identifier_for_variable_name(context, type_ident_tokens, parser, output, &it, ct.clone())
                             },
                             _ => {
                                 Err(RustHtmlError::from_string(format!("Unexpected punct after inject directive: {:?}", punct)))

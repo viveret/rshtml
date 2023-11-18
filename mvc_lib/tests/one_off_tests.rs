@@ -1,7 +1,10 @@
 use std::rc::Rc;
 
-use core_lib::asyncly::{cancellation_token::CancellationToken, timer_cancellation_token::TimerCancellationToken};
-use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
+use core_lib::asyncly::timer_cancellation_token::TimerCancellationToken;
+use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
+use mvc_lib::view::rusthtml::parser_parts::peekable_tokentree::StreamPeekableTokenTree;
+use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_all::{RustHtmlParserAll, IRustHtmlParserAll};
+use proc_macro2::TokenStream;
 
 
 #[test]
@@ -236,9 +239,12 @@ test one_off_tests::test_html_tag_attributes_bug ... FAILED
     };
 
     let ct = Rc::new(TimerCancellationToken::new(core::time::Duration::from_secs(5)));
-    let parser = RustHtmlParser::new(true, "test".to_string());
-    let result = parser.expand_tokenstream(view_tokenstream, ct).unwrap();
-
+    let parser_context = Rc::new(RustHtmlParserContext::new(false, true, "test".to_string()));
+    let parser = RustHtmlParserAll::new_default(); // parser_context
+    let it = Rc::new(StreamPeekableTokenTree::new(view_tokenstream.clone()));
+    let result_rusthtml = parser.get_html_parser().parse_html(parser_context.clone(), it, ct.clone()).unwrap();
+    let result_vec = parser.get_converter_out().convert_vec(result_rusthtml, ct.clone()).unwrap();
+    let result = TokenStream::from_iter(result_vec.into_iter());
     let expected_result = quote::quote! {};
 
     // this fails
@@ -271,8 +277,8 @@ pub fn test_html_tag_attributes_bug2() {
     };
 
     let ct = Rc::new(TimerCancellationToken::new(core::time::Duration::from_secs(5)));
-    let parser = RustHtmlParser::new(true, "test".to_string());
-    let result = parser.expand_tokenstream(input, ct.clone()).unwrap();
+    let parser = RustHtmlParserAll::new_default();
+    let result = parser.expand_rust(input, ct.clone()).unwrap();
 
     let expected_result = quote::quote! {
         html.write_str("<li><a class=");
@@ -290,6 +296,6 @@ pub fn test_html_tag_attributes_bug2() {
         html.write_str(">\"Dev Tools\"</a></li>");
     };
 
-    ct.stop();
+    ct.stop().expect("failed to stop cancellation token");
     assert_eq!(expected_result.to_string(), result.to_string());
 }

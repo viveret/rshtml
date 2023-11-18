@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 use core_lib::asyncly::cancellation_token::CancellationToken;
-use mvc_lib::view::rusthtml::parsers::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree};
-use mvc_lib::view::rusthtml::parsers::rusthtmlparser_all::RustHtmlParserAll;
+use mvc_lib::view::rusthtml::parser_parts::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree};
+use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_all::RustHtmlParserAll;
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use mvc_lib::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use mvc_lib::view::rusthtml::directives::irusthtml_directive::IRustHtmlDirective;

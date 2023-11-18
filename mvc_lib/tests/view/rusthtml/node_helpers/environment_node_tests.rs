@@ -1,10 +1,11 @@
 use std::rc::Rc;
 use core_lib::asyncly::cancellation_token::CancellationToken;
-use proc_macro2::{Literal, Ident};
+use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_all::{RustHtmlParserAll, IRustHtmlParserAll};
+use mvc_lib::view::rusthtml::parser_parts::peekable_tokentree::StreamPeekableTokenTree;
+use proc_macro2::{Literal, Ident, TokenStream};
 
 use assert_str::assert_str_eq;
 
-use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
 use mvc_lib::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
 use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
@@ -80,9 +81,9 @@ pub fn test_environment_node_on_node_parsed_include_html_tokens() {
         </environment>
     };
 
-    let parser = RustHtmlParser::new(true, "test".to_string());
+    let parser = RustHtmlParserAll::new_default();
     let ct = Rc::new(CancellationToken::new());
-    let output = parser.expand_tokenstream(input, ct).unwrap();
+    let output = parser.expand_rust(input, ct.clone()).unwrap();
 
     let expected_output = quote::quote! {
         html_output . write_html_str ("<div></div>");
@@ -100,9 +101,9 @@ pub fn test_environment_node_on_node_parsed_exclude_html_tokens() {
         </environment>
     };
 
-    let parser = RustHtmlParser::new(true, "test".to_string());
+    let parser = RustHtmlParserAll::new_default();
     let ct = Rc::new(CancellationToken::new());
-    let output = parser.expand_tokenstream(input, ct).unwrap();
+    let output = parser.expand_rust(input, ct.clone()).unwrap();
 
     let expected_output = quote::quote! {
     };

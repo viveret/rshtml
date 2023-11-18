@@ -46,7 +46,14 @@ pub fn assert_tokentree_stream(stream: &proc_macro2::TokenStream, expected: &str
                 assert_tokentree_ident(&token, expected);
             },
             proc_macro2::TokenTree::Punct(_) => {
-                assert_tokentree_punct(&token, expected.chars().next().unwrap());
+                match expected.chars().next() {
+                    Some(next) => {
+                        assert_tokentree_punct(&token, next)
+                    },
+                    None => {
+                        panic!("expected punct, received {:?}", token);
+                    }
+                }
             },
             proc_macro2::TokenTree::Literal(_) => {
                 assert_tokentree_literal(&token, expected);

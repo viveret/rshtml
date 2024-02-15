@@ -52,7 +52,7 @@ pub fn assert_tokentree_stream(stream: &proc_macro2::TokenStream, expected: &str
             proc_macro2::TokenTree::Punct(_) => {
                 match expected.chars().next() {
                     Some(next) => {
-                        assert_tokentree_punct(&token, next)
+                        assert_tokentree_punct(&token, next);
                     },
                     None => {
                         panic!("expected punct, received {:?}", token);

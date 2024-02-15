@@ -1,11 +1,15 @@
 use std::rc::Rc;
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
+use core_lib::sys::call_tracker::CallstackTrackerScope;
+use core_macro_lib::nameof_member_fn;
 use proc_macro2::TokenStream;
 
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 
+use super::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use super::peekable_tokentree::StreamPeekableTokenTree;
 use super::rusthtmlparser_converter_in::{IRustHtmlParserConverterIn, RustHtmlParserConverterIn};
 use super::rusthtmlparser_converter_out::{IRustHtmlParserConverterOut, RustHtmlParserConverterOut};
@@ -112,12 +116,20 @@ impl IRustHtmlParserAll for RustHtmlParserAll {
     }
 
     fn expand_rust_with_context(self: &Self, context: Rc<RustHtmlParserContext>, input: TokenStream, cancellation_token: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
+        let _scope = CallstackTrackerScope::enter(context.get_call_stack(), nameof::name_of_type!(RustHtmlParserAll), nameof_member_fn!(RustHtmlParserAll::expand_rust_with_context));
         let it = Rc::new(StreamPeekableTokenTree::new(input));
-        match self.get_expander().expand_rust(context, it, cancellation_token.clone()) {
-            Ok(output_rshtml) => {
-                match self.get_converter_out().convert_vec(output_rshtml, cancellation_token) {
-                    Ok(output) => {
-                        Ok(TokenStream::from_iter(output.into_iter()))
+        match self.get_expander().convert_rust_to_rusthtml(context.clone(), it, cancellation_token.clone()) {
+            Ok(input_rshtml) => {
+                match self.get_expander().expand_rshtml(context.clone(), Rc::new(VecPeekableRustHtmlToken::new(input_rshtml.clone())), cancellation_token.clone()) {
+                    Ok(output_rshtml) => {
+                        match self.get_converter_out().convert_vec(output_rshtml, context.clone(), cancellation_token) {
+                            Ok(output) => {
+                                Ok(TokenStream::from_iter(output.into_iter()))
+                            },
+                            Err(RustHtmlError(err)) => {
+                                Err(RustHtmlError::from_string(err.into_owned()))
+                            }
+                        }
                     },
                     Err(RustHtmlError(err)) => {
                         Err(RustHtmlError::from_string(err.into_owned()))

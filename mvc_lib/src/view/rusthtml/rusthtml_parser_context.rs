@@ -3,6 +3,8 @@ use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use core_lib::asyncly::icancellation_token::ICancellationToken;
+use core_lib::sys::call_tracker::CallstackTracker;
 use proc_macro2::{TokenStream, TokenTree};
 
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -31,16 +33,22 @@ use super::directives::section_struct_directive::StructSectionDirective;
 use super::directives::use_directive::UseDirective;
 use super::directives::viewstart_directive::ViewStartDirective;
 use super::directives::while_directive::WhileDirective;
+use super::ihtml_tag_parse_context::IHtmlTagParseContext;
 use super::irust_processor::IRustProcessor;
 use super::irusthtml_parser_context::IRustHtmlParserContext;
 use super::irusthtml_processor::IRustHtmlProcessor;
 use super::node_helpers::environment_node::EnvironmentHtmlNodeParsed;
 use super::node_helpers::inode_parsed::IHtmlNodeParsed;
+use super::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use super::processors::post_process_combine_static_str::PostProcessCombineStaticStr;
+use super::rusthtml_token::RustHtmlToken;
 use super::tag_helpers::environment_tag::EnvironmentHtmlTagParsed;
 use super::tag_helpers::itag_parsed::IHtmlTagParsed;
 
 pub struct RustHtmlParserContext {
+    // the current stack trace.
+    pub call_stack: CallstackTracker,
+
     // whether or not the RustHtml code is raw tokenstream.
     pub is_raw_tokenstream: bool,
 
@@ -51,6 +59,8 @@ pub struct RustHtmlParserContext {
     pub punctuation_scope_stack: RefCell<Vec<char>>,
     // the current scope stack for HTML tags.
     pub htmltag_scope_stack: RefCell<Vec<String>>,
+    // the current scope stack for parsing HTML tags
+    pub htmltag_parse_scope_stack: RefCell<Vec<Rc<dyn IHtmlTagParseContext>>>,
 
     // current parameters in the global scope used while parsing.
     pub params: RefCell<HashMap<String, String>>,
@@ -63,7 +73,7 @@ pub struct RustHtmlParserContext {
     // the impl section of the RustHtml code.
     pub impl_section: RefCell<Option<TokenStream>>,
     // the model type of the RustHtml code.
-    pub model_type: RefCell<Option<Vec<TokenTree>>>,
+    pub model_type: RefCell<Option<TokenStream>>,
     // the use statements of the RustHtml code.
     pub use_statements: RefCell<Vec<TokenStream>>,
     // the inject statements of the RustHtml code.
@@ -115,9 +125,11 @@ impl RustHtmlParserContext {
         environment_name: String,
     ) -> Self {
         Self {
+            call_stack: CallstackTracker::new(),
             is_raw_tokenstream: is_raw_tokenstream,
             should_panic_or_return_error: should_panic_or_return_error,
             htmltag_scope_stack: RefCell::new(vec![]),
+            htmltag_parse_scope_stack: RefCell::new(vec![]),
             punctuation_scope_stack: RefCell::new(vec![]),
             params: RefCell::new(HashMap::new()),
             sections: RefCell::new(HashMap::new()),
@@ -255,8 +267,8 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         s
     }
 
-    fn get_model_type(self: &Self) -> Vec<TokenTree> {
-        self.model_type.borrow().clone().unwrap_or(vec![])
+    fn get_model_type(self: &Self) -> TokenStream {
+        self.model_type.borrow().clone().unwrap_or_default()
     }
 
     // try to get a parameter value as a string.
@@ -311,16 +323,28 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
 
-    fn get_model_ident(self: &Self) -> Option<TokenStream> {
-        if let Some(has_model) = self.model_type.borrow().as_ref() {
-            Some(TokenStream::from_iter(has_model.clone()))
-        } else {
-            None
-        }
-    }
+    // fn get_model_ident(self: &Self) -> Option<TokenStream> {
+    //     if let Some(has_model) = self.model_type.borrow().as_ref() {
+    //         Some(TokenStream::from_iter(has_model.iter().map(|x| x.into()).clone()))
+    //     } else {
+    //         None
+    //     }
+    // }
 
-    fn set_model_type(self: &Self, value: Option<Vec<TokenTree>>) {
-        *self.model_type.borrow_mut() = value;
+    fn set_model_type(self: &Self, value: Option<Vec<RustHtmlToken>>, parser: Rc<dyn IRustHtmlParserAll>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) {
+        *self.model_type.borrow_mut() = 
+            if let Some(value) = value {
+                Some(
+                    TokenStream::from_iter(
+                        parser
+                            .get_converter_out()
+                            .convert_vec(value, ctx, ct)
+                            .unwrap()
+                    )
+                )
+            } else {
+                None
+            };
     }
 
     fn htmltag_scope_stack_push(self: &Self, s: String) {
@@ -337,6 +361,18 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
 
     fn push_use_statements(self: &Self, rshtml: TokenStream) {
         self.use_statements.borrow_mut().push(rshtml)
+    }
+
+    fn get_use_statements_stream(self: &Self) -> proc_macro2::TokenStream {
+        let tokens = 
+            self.use_statements.borrow()
+                .iter()
+                .map(|s| s.clone().into_iter())
+                .flatten()
+                .collect::<Vec<TokenTree>>();
+        proc_macro2::TokenStream::from_iter(
+            tokens
+        )
     }
 
     fn mut_params(self: &Self) -> RefMut<HashMap<String, String>> {
@@ -421,18 +457,20 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         let mut model_based_injections = vec![];
 
         if let Some(model_type) = self.model_type.borrow().as_ref() {
-            if model_type.len() > 0 {
-                    let model_type_stream = 
-                    proc_macro2::TokenStream::from(
-                        model_type.into_iter()
-                            .cloned()
-                            .collect::<TokenStream>()
-                    );
+            if !model_type.is_empty() {
+                    // let model_type_stream = 
+                    // proc_macro2::TokenStream::from(
+                    //     model_type.into_iter()
+                    //         .cloned()
+                    //         .collect::<TokenStream>()
+                    // );
+                    // let modeltype_rust_tokens = model_type.iter().map(|x| x.).collect::<Vec<TokenTree>>();
+                    let model_type_stream = model_type;
                     model_based_injections.push(quote::quote!{
                         let html = HtmlHelpers::<#model_type_stream>::new(view_context, services);
                     });
             } else {
-                panic!("model type must be a single type, not {}: {}", model_type.len(), self.get_model_type_name());
+                panic!("model type must be a single type, not {}: {}", model_type.is_empty(), self.get_model_type_name());
             }
         } else {
             model_based_injections.push(quote::quote!{
@@ -485,8 +523,28 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         vec![]
     }
 
-    fn push_inject_statements_rshtml(self: &Self, rshtml: Vec<super::rusthtml_token::RustHtmlToken>, parser: Rc<dyn IRustHtmlParserAll>, ct: Rc<dyn super::parser_parts::rusthtmlparser_all::ICancellationToken>) {
-        let rust = self.pars
-        self.push_inject_statements(rust);
+    fn push_inject_statements_rshtml(self: &Self, rshtml: Vec<RustHtmlToken>, parser: Rc<dyn IRustHtmlParserAll>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) {
+        let rust = parser.get_converter_out().convert_vec(rshtml, ctx, ct).unwrap();
+        self.push_inject_statements(TokenStream::from_iter(rust));
+    }
+
+    fn get_call_stack(&self) -> &CallstackTracker {
+        &self.call_stack
+    }
+    
+    fn get_max_call_stack_count(&self) -> usize {
+        30
+    }
+
+    fn check_call_stack_count(&self) -> Result<(), RustHtmlError> {
+        if self.call_stack.len() > self.get_max_call_stack_count() {
+            let callstack = self.call_stack.to_string();
+            return Err(RustHtmlError::from_string(format!("call stack count is greater than the max call stack count of {}. call stack: {}", self.get_max_call_stack_count(), callstack)));
+        }
+        Ok(())
+    }
+
+    fn push_html_tag_parse_context(self: &Self, tag: Rc<dyn IHtmlTagParseContext>) {
+        self.htmltag_parse_scope_stack.borrow_mut().push(tag);
     }
 }

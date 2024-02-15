@@ -30,8 +30,9 @@ impl IRustHtmlDirective for UseDirective {
     fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // expecting type identifier
         if let Ok(type_ident_tokens) = parser.get_rust_parser().parse_type_identifier(it, ct) {
-            let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_tokens.to_splice().to_vec()));
-            context.push_use_statements(type_ident_tokens);
+            todo!("use directive");
+            // let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_tokens.to_splice().to_vec()));
+            // context.push_use_statements(type_ident_tokens);
             Ok(RustHtmlDirectiveResult::OkContinue)
         } else {
             Err(RustHtmlError::from_str("Error parsing use directive"))

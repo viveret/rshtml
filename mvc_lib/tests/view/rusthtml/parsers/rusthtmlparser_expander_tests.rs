@@ -19,7 +19,7 @@ pub fn test_rusthtmlparser_expander_expand_rust() {
     };
     let ctx = Rc::new(RustHtmlParserContext::new(false, false, "Test".to_string()));
     let ct = Rc::new(CancellationToken::new());
-    let actual_tokens = parser.get_expander().expand_rust(ctx, it, ct.clone()).unwrap();
+    let actual_tokens = parser.get_expander().convert_rust_to_rusthtml(ctx, it, ct.clone()).unwrap();
     let actual_rust = parser.get_converter_out().convert_vec(actual_tokens, ct).unwrap();
     let actual = TokenStream::from_iter(actual_rust.into_iter());
 

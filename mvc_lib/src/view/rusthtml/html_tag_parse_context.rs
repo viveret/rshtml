@@ -66,6 +66,18 @@ impl HtmlTagParseContext {
             tag_end_punct: RefCell::new(vec![]),
         }
     }
+
+    pub fn new_and_attach(parent_ctx: Rc<dyn IRustHtmlParserContext>) -> Rc<dyn IHtmlTagParseContext> {
+        let ctx = Rc::new(Self::new(Some(parent_ctx.clone())));
+        parent_ctx.push_html_tag_parse_context(ctx.clone());
+        ctx
+    }
+
+    // pub fn new_and_attach_child(parent_ctx: Rc<dyn IRustHtmlParserContext>) -> Rc<dyn IHtmlTagParseContext> {
+    //     let ctx = Rc::new(Self::new(Some(parent_ctx.clone())));
+    //     parent_ctx.push_html_tag_parse_context(ctx.clone());
+    //     ctx
+    // }
 }
 
 impl IHtmlTagParseContext for HtmlTagParseContext {

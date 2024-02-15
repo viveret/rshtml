@@ -46,7 +46,7 @@ impl IRustHtmlDirective for ElseDirective {
                                 // parser.convert_rust_directive_group_to_rusthtmltoken(group, identifier, &mut else_body, is_raw_tokenstream)?;
 
                             } else {
-                                return Err(RustHtmlError::from_string(format!("Expected '}}' after else group and directive, found '{:?}'", group.delimiter())));
+                                return Err(RustHtmlError::from_string(format!("Expected '}}' after else group and directive, found '{:?}'", group)));
                             }
                         },
                         _ => {

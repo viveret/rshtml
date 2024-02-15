@@ -47,10 +47,10 @@ impl IRustHtmlDirective for IfDirective {
                         }
                     },
                     RustHtmlToken::Group(delimiter, stream, group) => {
-                        let delimiter = group.delimiter();
                         match delimiter {
                             Delimiter::Brace => {
-                                match parser.get_converter().convert_group(&group, false, ct.clone()) {
+                                let g = group.clone().unwrap();
+                                match parser.get_converter().convert_group(&g, false, context.clone(), ct.clone()) {
                                     Ok(token) => {
                                         output.push(token);
                                         // let last = output.last().unwrap();
@@ -89,14 +89,18 @@ impl IRustHtmlDirective for IfDirective {
                                                         // just else, expecting brace group
                                                         if let Some(token) = it.peek() {
                                                             match token {
-                                                                RustHtmlToken::Group(delimiter, stream, group) if group.delimiter() == Delimiter::Brace => {
-                                                                    match parser.get_converter().convert_group(&group, false, ct) {
-                                                                        Ok(group) => {
-                                                                            output.push(group);
-                                                                            it.next();
-                                                                        },
-                                                                        Err(RustHtmlError(err)) => {
-                                                                            return Err(RustHtmlError::from_string(err.to_string()));
+                                                                RustHtmlToken::Group(delimiter, stream, group) => {
+                                                                    let d = delimiter.clone();
+                                                                    if d == Delimiter::Brace {
+                                                                        let g = group.clone().unwrap();
+                                                                        match parser.get_converter().convert_group(&g, false, context, ct) {
+                                                                            Ok(group) => {
+                                                                                output.push(group);
+                                                                                it.next();
+                                                                            },
+                                                                            Err(RustHtmlError(err)) => {
+                                                                                return Err(RustHtmlError::from_string(err.to_string()));
+                                                                            }
                                                                         }
                                                                     }
                                                                 },

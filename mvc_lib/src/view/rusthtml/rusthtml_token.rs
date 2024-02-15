@@ -2,7 +2,7 @@
 
 use std::rc::Rc;
 
-use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, Span, TokenTree};
+use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, Span, TokenTree, Spacing};
 
 use super::parser_parts::peekable_rusthtmltoken::{IPeekableRustHtmlToken, VecPeekableRustHtmlToken};
 
@@ -32,9 +32,9 @@ pub enum RustHtmlIdentAndPunctOrLiteral {
 // a RustHtml token for a Rust identifier or punctuation or group.
 #[derive(Clone, Debug)]
 pub enum RustHtmlIdentOrPunctOrGroup {
-    Ident(Ident),
-    Punct(Punct),
-    Group(Group),
+    Ident(RustHtmlToken),
+    Punct(RustHtmlToken),
+    Group(RustHtmlToken),
 }
 
 // a RustHtml token for a Rust identifier or punctuation or group or literal.
@@ -75,7 +75,7 @@ pub enum RustHtmlToken {
     Identifier(Ident),
     ReservedChar(char, Punct),
     ReservedIndent(String, Ident),
-    Group(Delimiter, Rc<dyn IPeekableRustHtmlToken>, Group),
+    Group(Delimiter, Rc<dyn IPeekableRustHtmlToken>, Option<Group>),
     GroupParsed(Delimiter, Vec<RustHtmlToken>),
     GroupOpen(Delimiter, Span),
     GroupClose(Delimiter, Span),
@@ -120,7 +120,7 @@ impl RustHtmlToken {
             RustHtmlToken::Identifier(ident) => ident.to_string(),
             RustHtmlToken::ReservedChar(c, _) => c.to_string(),
             RustHtmlToken::ReservedIndent(s, _) => s.to_string(),
-            RustHtmlToken::Group(_, group) => group.to_string(),
+            RustHtmlToken::Group(_, stream, group) => group.clone().unwrap().to_string(),
             RustHtmlToken::GroupParsed(delimiter, tokens) => {
                 let inner = tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" ");
                 match delimiter {
@@ -154,7 +154,8 @@ impl RustHtmlToken {
 impl From<&TokenTree> for RustHtmlToken {
     fn from(value: &TokenTree) -> Self {
         match value {
-            TokenTree::Group(group) => RustHtmlToken::Group(group.delimiter(), group.clone()),
+            // TokenTree::Group(group) => RustHtmlToken::Group(group.delimiter(), , group.clone()),
+            TokenTree::Group(group) => todo!("fix me fix me fix me"),
             TokenTree::Ident(ident) => RustHtmlToken::Identifier(ident.clone()),
             TokenTree::Literal(literal) => RustHtmlToken::Literal(Some(literal.clone()), None),
             TokenTree::Punct(punct) => {
@@ -166,3 +167,70 @@ impl From<&TokenTree> for RustHtmlToken {
         }
     }
 }
+
+// impl Into<TokenTree> for RustHtmlToken {
+//     fn into(self) -> TokenTree {
+//         match self {
+//             RustHtmlToken::Space(c) => TokenTree::Punct(Punct::new(c, Spacing::Alone)),
+//             RustHtmlToken::HtmlTextNode(s, _) => TokenTree::Literal(Literal::string(&s)),
+//             RustHtmlToken::HtmlTagVoid(s, _) => TokenTree::Literal(Literal::string(&format!("<{} />", s))),
+//             RustHtmlToken::HtmlTagStart(s, _) => TokenTree::Literal(Literal::string(&format!("<{}", s))),
+//             RustHtmlToken::HtmlTagEnd(s, _) => TokenTree::Literal(Literal::string(&format!("</{}>", s))),
+//             RustHtmlToken::HtmlTagAttributeName(s, _) => TokenTree::Literal(Literal::string(&s)),
+//             RustHtmlToken::HtmlTagAttributeEquals(c, _) => TokenTree::Literal(Literal::string(&c.to_string())),
+//             RustHtmlToken::HtmlTagAttributeValue(s, literal, _, _) => {
+//                 if let Some(s) = s {
+//                     TokenTree::Literal(Literal::string(&s))
+//                 } else if let Some(literal) = literal {
+//                     TokenTree::Literal(literal.clone())
+//                 } else {
+//                     TokenTree::Literal(Literal::string(""))
+//                 }
+//             },
+//             RustHtmlToken::HtmlTagCloseVoidPunct(c)RustHtmlToken::Group(group.delimiter(), , group.clone()) => if c.is_some() { TokenTree::Literal(Literal::string("/>")) } else { TokenTree::Literal(Literal::string(">")) },
+//             RustHtmlToken::HtmlTagCloseSelfContainedPunct => TokenTree::Literal(Literal::string("/>")),
+//             RustHtmlToken::HtmlTagCloseStartChildrenPunct => TokenTree::Literal(Literal::string(">")),
+//             // RustHtmlToken::ExternalRustHtml(s, _) => TokenTree::Literal(Literal::string(&s)),
+//             // RustHtmlToken::ExternalHtml(s, _) => TokenTree::Literal(Literal::string(&s)),
+//             RustHtmlToken::AppendToHtml(tokens) => {
+//                 let inner = tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" ");
+//                 TokenTree::Literal(Literal::string(&inner))
+//             },
+//             RustHtmlToken::Literal(l, s) => {
+//                 match l {
+//                     Some(l) => TokenTree::Literal(l.clone()),
+//                     None => TokenTree::Literal(Literal::string(&s.unwrap_or("".to_string()))),
+//                 }
+//             },
+//             RustHtmlToken::Identifier(ident) => TokenTree::Ident(ident.clone()),
+//             RustHtmlToken::ReservedChar(c, punct) => TokenTree::Punct(punct.clone()),
+//             RustHtmlToken::ReservedIndent(s, ident) => TokenTree::Ident(ident.clone()),
+//             RustHtmlToken::Group(delimiter, group) => TokenTree::Group(group.clone()),
+//             RustHtmlToken::GroupParsed(delimiter, tokens) => {
+//                 let inner = tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" ");
+//                 match delimiter {
+//                     Delimiter::Brace => TokenTree::Literal(Literal::string(&format!("{{ {} }}", inner))),
+//                     Delimiter::Bracket => TokenTree::Literal(Literal::string(&format!("[ {} ]", inner))),
+//                     Delimiter::Parenthesis => TokenTree::Literal(Literal::string(&format!("( {} )", inner))),
+//                     Delimiter::None => TokenTree::Literal(Literal::string(&inner)),
+//                 }
+//             },
+//             RustHtmlToken::GroupOpen(delimiter, _) => {
+//                 match delimiter {
+//                     Delimiter::Brace => TokenTree::Literal(Literal::string("{")),
+//                     Delimiter::Bracket => TokenTree::Literal(Literal::string("[")),
+//                     Delimiter::Parenthesis => TokenTree::Literal(Literal::string("(")),
+//                     Delimiter::None => TokenTree::Literal(Literal::string("")),
+//                 }
+//             },
+//             RustHtmlToken::GroupClose(delimiter, _) => {
+//                 match delimiter {
+//                     Delimiter::Brace => TokenTree::Literal(Literal::string("}")),
+//                     Delimiter::Bracket => TokenTree::Literal(Literal::string("]")),
+//                     Delimiter::Parenthesis => TokenTree::Literal(Literal::string(")")),
+//                     Delimiter::None => TokenTree::Literal(Literal::string("")),
+//                 }
+//             },
+//         }
+//     }
+// }

@@ -36,7 +36,7 @@ impl HtmlFileDirective {
         it: Rc<dyn IPeekableRustHtmlToken>,
         ct: Rc<dyn ICancellationToken>
     ) -> Result<(), RustHtmlError<'static>> {
-        match parser.get_rust_or_html_parser().next_path_str(context, identifier, identifier_token, it.clone()) {
+        match parser.get_rust_or_html_parser().next_path_str(context.clone(), identifier, identifier_token, it.clone()) {
             Ok(path) => {
                 let code = quote::quote! {
                     match view_context.open_view_file(#path) {
@@ -51,9 +51,12 @@ impl HtmlFileDirective {
                     }
                 };
                 let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
-                let code_converted = parser.get_converter().convert_group(&g, true, ct.clone())?;
-                output.push(RustHtmlToken::AppendToHtml(vec![code_converted]));
-        
+                // let code_converted = parser.get_converter().convert_group(&g, true, ct.clone())?;
+                if let Ok(code_converted) = parser.get_converter().convert_group(&g, true, context, ct.clone()) {
+                    output.push(RustHtmlToken::AppendToHtml(vec![code_converted]));
+                } else {
+                    return Err(RustHtmlError::from_string(format!("cannot read external HTML file '{}', could not convert to Rust", identifier)));
+                }
                 Ok(())
             },
             Err(RustHtmlError(e)) => {

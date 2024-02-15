@@ -36,7 +36,7 @@ impl IRustHtmlDirective for ImplSectionDirective {
             Some(group_token) => {
                 match group_token {
                     RustHtmlToken::Group(delimiter, stream, group) => {
-                        context.set_impl_section(Some(group.stream()));
+                        context.set_impl_section(Some(group.clone().unwrap().stream()));
                         Ok(RustHtmlDirectiveResult::OkContinue)
                     },
                     _ => {

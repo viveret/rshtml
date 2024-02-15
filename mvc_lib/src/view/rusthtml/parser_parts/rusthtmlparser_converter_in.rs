@@ -1,10 +1,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use core_lib::asyncly::icancellation_token::ICancellationToken;
+use core_lib::{asyncly::icancellation_token::ICancellationToken, sys::call_tracker::CallstackTrackerScope};
+use core_macro_lib::nameof_member_fn;
 use proc_macro2::{TokenTree, Punct, Delimiter, Group, Ident, TokenStream, Literal};
 
-use crate::view::rusthtml::rusthtml_error::RustHtmlError;
+use crate::view::rusthtml::{irusthtml_parser_context::IRustHtmlParserContext, rusthtml_error::RustHtmlError};
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 
@@ -12,11 +13,11 @@ use super::rusthtmlparser_all::{IRustHtmlParserAssignSharedParts, IRustHtmlParse
 
 
 pub trait IRustHtmlParserConverterIn: IRustHtmlParserAssignSharedParts {
-    fn convert(self: &Self, token: TokenTree, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlToken, RustHtmlError>;
-    fn convert_rust(self: &Self, tokens: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
-    fn convert_stream(self: &Self, tokens: TokenStream, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
-    fn convert_vec(self: &Self, tokens: Vec<TokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
-    fn convert_group(self: &Self, group: &Group, expect_return_html: bool, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlToken, RustHtmlError>;
+    fn convert(self: &Self, token: TokenTree, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlToken, RustHtmlError>;
+    fn convert_rust(self: &Self, tokens: Rc<dyn IPeekableTokenTree>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn convert_stream(self: &Self, tokens: TokenStream, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn convert_vec(self: &Self, tokens: Vec<TokenTree>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
+    fn convert_group(self: &Self, group: &Group, expect_return_html: bool, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlToken, RustHtmlError>;
     fn convert_literal(self: &Self, literal: &Literal, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlToken, RustHtmlError>;
     fn convert_punct(self: &Self, punct: &Punct) -> Result<RustHtmlToken, RustHtmlError>;
     fn convert_ident(self: &Self, ident: &Ident) -> Result<RustHtmlToken, RustHtmlError>;
@@ -42,10 +43,11 @@ impl IRustHtmlParserAssignSharedParts for RustHtmlParserConverterIn {
 }
 
 impl IRustHtmlParserConverterIn for RustHtmlParserConverterIn {
-    fn convert(self: &Self, token: TokenTree, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlToken, RustHtmlError> {
+    fn convert(self: &Self, token: TokenTree, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlToken, RustHtmlError> {
+        let _scope = CallstackTrackerScope::enter(ctx.get_call_stack(), nameof::name_of_type!(RustHtmlParserConverterIn), nameof_member_fn!(RustHtmlParserConverterIn::convert));
         match token {
             TokenTree::Group(group) => {
-                self.convert_group(&group, false, ct)
+                self.convert_group(&group, false, ctx.clone(), ct)
             },
             TokenTree::Ident(ident) => {
                 self.convert_ident(&ident)
@@ -59,18 +61,20 @@ impl IRustHtmlParserConverterIn for RustHtmlParserConverterIn {
         }
     }
 
-    fn convert_vec(self: &Self, tokens: Vec<TokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn convert_vec(self: &Self, tokens: Vec<TokenTree>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+        let _scope = CallstackTrackerScope::enter(ctx.get_call_stack(), nameof::name_of_type!(RustHtmlParserConverterIn), nameof_member_fn!(RustHtmlParserConverterIn::convert_vec));
         let mut output = vec![];
         for token in tokens {
             if ct.is_cancelled() {
                 return Err(RustHtmlError::from_str("convert_vec cancelled"));
             }
-            output.push(self.convert(token, ct.clone())?);
+            output.push(self.convert(token, ctx.clone(), ct.clone())?);
         }
         Ok(output)
     }
 
-    fn convert_group(self: &Self, group: &Group, expect_return_html: bool, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlToken, RustHtmlError> {
+    fn convert_group(self: &Self, group: &Group, expect_return_html: bool, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlToken, RustHtmlError> {
+        let _scope = CallstackTrackerScope::enter(ctx.get_call_stack(), nameof::name_of_type!(RustHtmlParserConverterIn), nameof_member_fn!(RustHtmlParserConverterIn::convert_group));
         if ct.is_cancelled() {
             return Err(RustHtmlError::from_str("convert_group cancelled"));
         }
@@ -86,15 +90,15 @@ impl IRustHtmlParserConverterIn for RustHtmlParserConverterIn {
             
             // prefix and postfix with html_output decorators
             if expect_return_html {
-                let tokens = self.convert_stream(quote::quote! { let html_output = HtmlBuffer::new(); }, ct.clone())?;
+                let tokens = self.convert_stream(quote::quote! { let html_output = HtmlBuffer::new(); }, ctx.clone(), ct.clone())?;
                 inner_tokens.extend_from_slice(&tokens);
             }
             
-            let inner2 = self.convert_stream(group.stream(), ct.clone())?;
+            let inner2 = self.convert_stream(group.stream(), ctx.clone(), ct.clone())?;
             inner_tokens.extend_from_slice(&inner2);
             
             if expect_return_html {
-                let tokens = self.convert_stream(quote::quote! { html_output.collect_html() }, ct)?;
+                let tokens = self.convert_stream(quote::quote! { html_output.collect_html() }, ctx.clone(), ct)?;
                 inner_tokens.extend_from_slice(&tokens);
             }
 
@@ -104,13 +108,14 @@ impl IRustHtmlParserConverterIn for RustHtmlParserConverterIn {
         // }
     }
 
-    fn convert_stream(self: &Self, tokens: TokenStream, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn convert_stream(self: &Self, tokens: TokenStream, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+        let _scope = CallstackTrackerScope::enter(ctx.get_call_stack(), nameof::name_of_type!(RustHtmlParserConverterIn), nameof_member_fn!(RustHtmlParserConverterIn::convert_stream));
         let mut output = vec![];
         for token in tokens {
             if ct.is_cancelled() {
                 return Err(RustHtmlError::from_str("convert_stream cancelled"));
             }
-            output.push(self.convert(token, ct.clone())?);
+            output.push(self.convert(token, ctx.clone(), ct.clone())?);
         }
         Ok(output)
     }
@@ -127,7 +132,8 @@ impl IRustHtmlParserConverterIn for RustHtmlParserConverterIn {
         Ok(RustHtmlToken::Identifier(ident.clone()))
     }
 
-    fn convert_rust(self: &Self, tokens: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn convert_rust(self: &Self, tokens: Rc<dyn IPeekableTokenTree>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+        let _scope = CallstackTrackerScope::enter(ctx.get_call_stack(), nameof::name_of_type!(RustHtmlParserConverterIn), nameof_member_fn!(RustHtmlParserConverterIn::convert_rust));
         let mut output = vec![];
         loop {
             if ct.is_cancelled() {
@@ -137,7 +143,7 @@ impl IRustHtmlParserConverterIn for RustHtmlParserConverterIn {
             let next_token = tokens.next();
             match next_token {
                 Some(token) => {
-                    output.push(self.convert(token, ct.clone())?);
+                    output.push(self.convert(token, ctx.clone(), ct.clone())?);
                 },
                 None => {
                     break;

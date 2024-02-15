@@ -1,15 +1,21 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
+use core_lib::asyncly::icancellation_token::ICancellationToken;
+use core_lib::sys::call_tracker::CallstackTracker;
 use core_macro_lib::nameof_member_fn;
 use proc_macro2::{TokenTree, TokenStream};
 
 use super::directives::irusthtml_directive::IRustHtmlDirective;
+use super::ihtml_tag_parse_context::IHtmlTagParseContext;
 use super::irust_processor::IRustProcessor;
 use super::irusthtml_parser_context::IRustHtmlParserContext;
 use super::irusthtml_processor::IRustHtmlProcessor;
 use super::node_helpers::inode_parsed::IHtmlNodeParsed;
+use super::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use super::rusthtml_error::RustHtmlError;
+use super::rusthtml_parser_context::RustHtmlParserContext;
+use super::rusthtml_token::RustHtmlToken;
 use super::tag_helpers::itag_parsed::IHtmlTagParsed;
 
 
@@ -43,14 +49,14 @@ impl IRustHtmlParserContext for RustHtmlParserContextLog {
         self.real_context.get_model_type_name()
     }
 
-    fn get_model_type(self: &Self) -> Vec<TokenTree> {
+    fn get_model_type(self: &Self) -> TokenStream {
         self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_model_type));
         self.real_context.get_model_type()
     }
 
-    fn set_model_type(self: &Self, value: Option<Vec<TokenTree>>) {
+    fn set_model_type(self: &Self, value: Option<Vec<RustHtmlToken>>, parser: Rc<dyn IRustHtmlParserAll>, context: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) {
         self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::set_model_type));
-        self.real_context.set_model_type(value);
+        self.real_context.set_model_type(value, parser, context, ct);
     }
 
     fn try_get_param_string(self: &Self, key: &str) -> Option<String> {
@@ -78,10 +84,10 @@ impl IRustHtmlParserContext for RustHtmlParserContextLog {
         self.real_context.get_impl_section()
     }
 
-    fn get_model_ident(self: &Self) -> Option<TokenStream> {
-        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_model_ident));
-        self.real_context.get_model_ident()
-    }
+    // fn get_model_ident(self: &Self) -> Option<TokenStream> {
+    //     self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_model_ident));
+    //     self.real_context.get_model_ident()
+    // }
 
     fn htmltag_scope_stack_push(self: &Self, s: String) {
         self.add_operation_to_ooo_log(format!("{}({})", nameof_member_fn!(Self::htmltag_scope_stack_push), s));
@@ -204,5 +210,35 @@ impl IRustHtmlParserContext for RustHtmlParserContextLog {
 
     fn get_ooo(self: &Self) -> Vec<String> {
         self.order_of_operations.borrow().clone()
+    }
+
+    fn push_inject_statements_rshtml(self: &Self, rust: Vec<super::rusthtml_token::RustHtmlToken>, parser: Rc<dyn super::parser_parts::rusthtmlparser_all::IRustHtmlParserAll>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn core_lib::asyncly::icancellation_token::ICancellationToken>) {
+        todo!()
+    }
+
+    fn get_use_statements_stream(self: &Self) -> proc_macro2::TokenStream {
+        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_use_statements_stream));
+        self.real_context.get_use_statements_stream()
+    }
+
+
+    fn get_max_call_stack_count(&self) -> usize {
+        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_max_call_stack_count));
+        self.real_context.get_max_call_stack_count()
+    }
+
+    fn check_call_stack_count(&self) -> Result<(), RustHtmlError> {
+        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::check_call_stack_count));
+        self.real_context.check_call_stack_count()
+    }
+
+    fn get_call_stack(&self) -> &CallstackTracker {
+        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_call_stack));
+        self.real_context.get_call_stack()
+    }
+
+    fn push_html_tag_parse_context(self: &Self, tag: Rc<dyn IHtmlTagParseContext>) {
+        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::push_html_tag_parse_context));
+        self.real_context.push_html_tag_parse_context(tag);
     }
 }

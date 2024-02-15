@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use core_lib::asyncly::timer_cancellation_token::TimerCancellationToken;
+use mvc_lib::view::rusthtml::parser_parts::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use mvc_lib::view::rusthtml::parser_parts::peekable_tokentree::StreamPeekableTokenTree;
 use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_all::{RustHtmlParserAll, IRustHtmlParserAll};
@@ -241,9 +242,10 @@ test one_off_tests::test_html_tag_attributes_bug ... FAILED
     let ct = Rc::new(TimerCancellationToken::new(core::time::Duration::from_secs(5)));
     let parser_context = Rc::new(RustHtmlParserContext::new(false, true, "test".to_string()));
     let parser = RustHtmlParserAll::new_default(); // parser_context
-    let it = Rc::new(StreamPeekableTokenTree::new(view_tokenstream.clone()));
-    let result_rusthtml = parser.get_html_parser().parse_html(parser_context.clone(), it, ct.clone()).unwrap();
-    let result_vec = parser.get_converter_out().convert_vec(result_rusthtml, ct.clone()).unwrap();
+    let it_converted = parser.get_converter().convert_stream(view_tokenstream, parser_context.clone(), ct.clone()).unwrap();
+    let it = Rc::new(VecPeekableRustHtmlToken::new(it_converted));
+    let result_rusthtml = parser.get_rust_or_html_parser().parse_rust_or_html(it, parser_context.clone(), ct.clone()).unwrap();
+    let result_vec = parser.get_converter_out().convert_vec(result_rusthtml, parser_context.clone(), ct.clone()).unwrap();
     let result = TokenStream::from_iter(result_vec.into_iter());
     let expected_result = quote::quote! {};
 

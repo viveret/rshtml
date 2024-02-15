@@ -38,12 +38,13 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
     let parse_context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let parser = RustHtmlParserAll::new_default();
     let ct = Rc::new(TimerCancellationToken::new(std::time::Duration::from_secs(5)));
-    let result = parser.expand_rust_with_context(parse_context, input.into(), ct.clone());
+    let result = parser.expand_rust_with_context(parse_context.clone(), input.into(), ct.clone());
     ct.stop().expect("could not stop timer");
     match result {
         Ok(html_render_fn2) => {
             let html_render_fn = TokenStream::from_iter(html_render_fn2.into_iter());
-            let view_name = parse_context.get_param_string("name").expect("could not get name");
+            let view_name = parse_context.get_param_string("name");
+            let view_name = view_name.expect("could not get name");
             let view_name_ident = quote::format_ident!("view_{}", view_name);
             let _view_name_context_ident = quote::format_ident!("view_{}_context", view_name);
             let view_functions = match parse_context.get_functions_section() {
@@ -59,7 +60,7 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
                 None => quote! {},
             };
             let model_type_name = parse_context.get_model_type_name();
-            let model_type = TokenStream::from_iter(parse_context.get_model_type().iter().cloned());
+            let model_type = parse_context.get_model_type();
             let raw = parse_context.get_raw();
 
             let view_model_tokens = if model_type_name.len() > 0 {
@@ -89,7 +90,7 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
                 quote! {}
             };
 
-            let use_statements = TokenStream::from_iter(parse_context.mut_use_statements().iter().cloned().map(|s| s.into_iter()).flatten());
+            let use_statements = parse_context.get_use_statements_stream();
             let inject_tokens = parse_context.get_inject_statements_stream();
             let when_compiled = chrono::prelude::Utc::now().to_rfc2822();
             let mut view_start_tokens: Option<TokenStream> = None;

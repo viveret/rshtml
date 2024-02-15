@@ -33,9 +33,15 @@ impl InjectDirective {
         if let Some(RustHtmlToken::Identifier(inject_name)) = it.next() {
             if let Some(RustHtmlToken::Identifier(type_ident)) = it.next() {
                 let rust = quote::quote! { let #inject_name = #type_ident ::new(view_context, services); }.into();
-                let converted = parser.get_converter().convert_stream(rust, ct.clone())?;
-                context.push_inject_statements_rshtml(converted);
-                Ok(RustHtmlDirectiveResult::OkContinue)
+                // let converted = parser.get_converter().convert_stream(rust, ct.clone());
+                // use if let instead
+                if let Ok(converted) = parser.get_converter().convert_stream(rust, context.clone(), ct.clone()) {
+                    context.push_inject_statements_rshtml(converted, parser, context.clone(), ct);
+                    Ok(RustHtmlDirectiveResult::OkContinue)
+                } else {
+                    Err(RustHtmlError::from_string(format!("Error converting inject directive to Rust")))
+                    
+                }
             } else {
                 Err(RustHtmlError::from_string(format!("Unexpected token after inject directive: {:?}", it.peek())))
             }
@@ -52,7 +58,7 @@ impl IRustHtmlDirective for InjectDirective {
 
     fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, _: &Ident, _ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // expecting type identifier
-        if let Ok(type_ident_tokens) = parser.get_rust_parser().parse_type_identifier(it.clone(), ct) {
+        if let Ok(type_ident_tokens) = parser.get_rust_parser().parse_type_identifier(it.clone(), ct.clone()) {
             // next token should be "as"
             if let Some(ref as_token) = it.peek() {
                 match as_token {

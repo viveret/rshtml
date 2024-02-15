@@ -34,7 +34,7 @@ impl IRustHtmlDirective for StructSectionDirective {
         if let Some(group_token) = it.next() {
             match group_token {
                 RustHtmlToken::Group(delimiter, stream, group) => {
-                    context.set_struct_section(Some(group.stream()));
+                    context.set_struct_section(Some(group.clone().unwrap().stream()));
                     Ok(RustHtmlDirectiveResult::OkContinue)
                 },
                 _ => {

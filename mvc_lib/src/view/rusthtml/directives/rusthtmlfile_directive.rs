@@ -29,17 +29,20 @@ impl RustHtmlFileDirective {
     // it: the iterator to use.
     // returns: nothing or an error.
     pub fn convert_externalrusthtml_directive(ctx: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError<'static>> {
-        if let Ok(path) = parser.get_rust_or_html_parser().next_path_str(ctx, identifier, ident_token, it.clone()) {
+        if let Ok(path) = parser.get_rust_or_html_parser().next_path_str(ctx.clone(), identifier, ident_token, it.clone()) {
             let code = quote::quote!{
                 let v = view_context.get_view(#path);
                 v.render()
             };
             // let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
             // let t = TokenTree::Group(g);
-            let converted = parser.get_converter().convert_stream(code, ct)?;
-            output.push(RustHtmlToken::AppendToHtml(converted));
-
-            Ok(())
+            // let converted = parser.get_converter().convert_stream(code, ct)?;
+            if let Ok(converted) = parser.get_converter().convert_stream(code, ctx, ct.clone()) {
+                output.push(RustHtmlToken::AppendToHtml(converted));
+                Ok(())
+            } else {
+                Err(RustHtmlError::from_string(format!("cannot read external Rust HTML file '{}', could not convert to Rust", identifier)))
+            }
         } else {
             Err(RustHtmlError::from_string(format!("cannot read external Rust HTML file '{}', could not parse path", identifier)))
         }

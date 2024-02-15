@@ -2,7 +2,8 @@ use std::{cell::RefCell, borrow::Cow};
 use std::rc::Rc;
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
-use core_macro_lib::nameof_member_fn;
+use core_lib::sys::call_tracker::CallstackTrackerScope;
+use core_macro_lib::{callstack_tracker_scope_and_assert, nameof_member_fn};
 use proc_macro2::{TokenTree, Literal, Punct};
 
 use crate::view::rusthtml::html_tag_parse_context::HtmlTagParseContext;
@@ -82,8 +83,6 @@ impl RustHtmlParserHtml {
     }
 }
 
-
-
 impl IRustHtmlParserAssignSharedParts for RustHtmlParserHtml {
     fn assign_shared_parser(self: &Self, parser: Rc<dyn IRustHtmlParserAll>) {
         *self.parser.borrow_mut() = Some(parser);
@@ -93,17 +92,19 @@ impl IRustHtmlParserAssignSharedParts for RustHtmlParserHtml {
 impl IRustHtmlParserHtml for RustHtmlParserHtml {
     // TODO: add tests
     fn parse_html(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> RustHtmlExpandLoopResult {
+        callstack_tracker_scope_and_assert!(ctx, RustHtmlParserHtml::parse_html);        
         let mut output = vec![];
         let html_ctx = Rc::new(HtmlTagParseContext::new(Some(ctx.clone())));
         loop {
             if ct.is_cancelled() {
-                return RustHtmlExpandLoopResult::Err(RustHtmlError::from_string(format!("parse_html cancelled")));
+                let callstack = ctx.get_call_stack().to_string();
+                return RustHtmlExpandLoopResult::Err(RustHtmlError::from_string(format!("parse_html cancelled at callstack: {}", callstack)));
             }
 
             let next_token = it.peek();
             if let Some(token) = next_token {
-                let (tokens, break_loop) = match &token {
-                    RustHtmlToken::Group(delimiter, group) => {
+                let (tokens, break_loop) = match token {
+                    RustHtmlToken::Group(delimiter, stream, group) => {
                         todo!("parse_html TokenTree::Group")
                     },
                     RustHtmlToken::Identifier(ident) => {
@@ -121,6 +122,9 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                     RustHtmlToken::ReservedChar(c, punct) => {
                         self.convert_html_punct_to_rusthtmltoken(&punct, html_ctx.clone(), it.clone(), ct.clone())?
                     },
+                    _ => {
+                        return RustHtmlExpandLoopResult::Err(RustHtmlError::from_string(format!("parse_html Unexpected token: {:?}", token)));
+                    }
                 };
                 output.extend(tokens);
                 if break_loop {
@@ -226,7 +230,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                         }
                     },
                     RustHtmlToken::Literal(literal, s) => {
-                        output.push(RustHtmlToken::Literal(Some(literal.clone()), None));
+                        output.push(RustHtmlToken::Literal(literal.clone(), None));
                         it.next();
                         break;
                     },
@@ -290,6 +294,8 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
         it: Rc<dyn IPeekableRustHtmlToken>,
         ct: Rc<dyn ICancellationToken>
     ) -> RustHtmlExpandLoopResult {
+        let main_ctx = parse_ctx.get_main_context();
+        let _scope = CallstackTrackerScope::enter(main_ctx.get_call_stack(), nameof::name_of_type!(RustHtmlParserHtml), nameof_member_fn!(Self::convert_html_punct_to_rusthtmltoken));
         if ct.is_cancelled() {
             return Err(RustHtmlError::from_string(format!("convert_html_punct_to_rusthtmltoken cancelled")));
         }
@@ -346,6 +352,8 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                 '@' => {
                     // escaping the html to insert value
                     let directive_token = it.next().unwrap();
+                    // output to console for debugging
+                    print!("directive_token: {:?}", directive_token);
 
                     // fixme: this needs to be fixed, it is not checking directive logic
                     match directive_token {
@@ -356,10 +364,10 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                                     true, 
                                     &directive_token,
                                     false,
-                                    it, ct.clone()) {
+                                    it.clone(), parse_ctx.get_main_context(), ct.clone()) {
                                 Ok(rust_ident_exp) => {
                                     let parser = self.parser.borrow().as_ref().unwrap().get_rust_or_html_parser();
-                                    let rushtml_ident_expr = parser.convert_vec(&rust_ident_exp.to_splice().to_vec(), ct.clone());
+                                    let rushtml_ident_expr = rust_ident_exp.to_splice().to_vec();
 
                                     parse_ctx.set_html_attr_val_rust(rushtml_ident_expr);
                                 },
@@ -429,8 +437,15 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                 '-' | '_' | '!' => {
                     parse_ctx.tag_name_push_punct(punct);
                 },
+                '@' => {
+                    // key name is a directive, must be a string
+                    let directive_token_before = it.next().unwrap();
+                    let directive_token = it.next().unwrap();
+                    let callstack = parse_ctx.get_main_context().get_call_stack().to_string();
+                    todo!("convert_html_punct_to_rusthtmltoken directive_token: {:?} {:?} {:?}", directive_token_before, directive_token, callstack);
+                },
                 _ => {
-                    return Err(RustHtmlError::from_string(format!("Unexpected character '{}'", c)));
+                    return Err(RustHtmlError::from_string(format!("Unexpected character '{}' (expected one of '>', '/', '-', '_', '!')", c)));
                 },
             }
         }
@@ -450,7 +465,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
 
         if parse_ctx.is_opening_tag() {
             if parse_ctx.is_kvp_defined() {
-                let (tokens, break_loop) = self.on_kvp_defined(parse_ctx.clone(), ct)?;
+                let (tokens, break_loop) = self.on_kvp_defined(parse_ctx.clone(), ct.clone())?;
                 output.extend(tokens);
             }
         }
@@ -458,9 +473,11 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
         for tag_helper in parse_ctx.get_main_context().get_tag_parsed_handler() {
             if tag_helper.matches(parse_ctx.tag_name_as_str().as_str(), parse_ctx.is_opening_tag()) {
                 match tag_helper.on_tag_parsed(parse_ctx.clone(), ct.clone()) {
-                    Ok(should_break) => {
+                    Ok((tokens, should_break)) => {
                         if should_break {
                             break;
+                        } else {
+                            output.extend(tokens);
                         }
                     },
                     Err(e) => {

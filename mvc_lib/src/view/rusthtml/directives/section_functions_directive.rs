@@ -34,9 +34,9 @@ impl IRustHtmlDirective for FunctionsSectionDirective {
         // expecting group
         match it.next() {
             Some(group_token) => {
-                match group_token {
-                    TokenTree::Group(group) => {
-                        context.set_functions_section(Some(group.stream()));
+                match group_token.clone() {
+                    RustHtmlToken::Group(d, _, group) => {
+                        context.set_functions_section(Some(group.unwrap().stream()));
                         Ok(RustHtmlDirectiveResult::OkContinue)
                     },
                     _ => {

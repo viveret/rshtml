@@ -13,6 +13,7 @@ mod reflect_properties_macro;
 mod ihaz_attributes_macro;
 mod imodel_macro;
 mod iviewmodel_macro;
+mod sys;
 
 
 
@@ -173,3 +174,108 @@ pub fn fake_property_attribute(_attr: proc_macro::TokenStream, item: proc_macro:
     item
 }
 
+
+
+
+// macro that adds the following code where it is called with (ctx) as input:
+// match <ctx>.check_call_stack_count() {
+//     Ok(_) => {},
+//     Err(RustHtmlError(err)) => {
+//         return Err(RustHtmlError::from_string(err.into_owned()));
+//     }
+// }
+#[proc_macro]
+pub fn callstack_assert(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let mut it = TokenStream::from(input).into_iter();
+    // expect context variable name
+    let context_var_name = match it.next() {
+        Some(TokenTree::Ident(ident)) => {
+            ident
+        },
+        _ => panic!("Expected context variable name."),
+    };
+
+    quote! {
+        match #context_var_name.check_call_stack_count() {
+            Ok(_) => {},
+            Err(RustHtmlError(err)) => {
+                return Err(RustHtmlError::from_string(err.into_owned()));
+            }
+        }
+    }.into()
+}
+
+
+// macro that adds the following code where it is called with (ctx, RustHtmlParserExpander::expand_rshtmltoken) as input:
+// let _scope = CallstackTrackerScope::enter(ctx.get_call_stack(), nameof::name_of_type!(RustHtmlParserExpander), nameof_member_fn!(RustHtmlParserExpander::expand_rshtmltoken));
+#[proc_macro]
+pub fn callstack_tracker_scope(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let mut it = TokenStream::from(input).into_iter();
+    // expect context variable name
+    let context_var_name = match it.next() {
+        Some(TokenTree::Ident(ident)) => {
+            ident
+        },
+        _ => panic!("Expected context variable name."),
+    };
+
+    // expect ,
+    let comma = match it.next() {
+        Some(TokenTree::Punct(punct)) => {
+            if punct.as_char() != ',' {
+                panic!("Expected ,");
+            }
+        },
+        _ => panic!("Expected ,"),
+    };
+
+    // expect type name
+    let type_name = match it.next() {
+        Some(TokenTree::Ident(ident)) => {
+            ident
+        },
+        _ => panic!("Expected type name."),
+    };
+
+    // expect ::
+    let colon_first = match it.next() {
+        Some(TokenTree::Punct(punct)) => {
+            if punct.as_char() != ':' {
+                panic!("Expected ::");
+            }
+        },
+        _ => panic!("Expected ::"),
+    };
+    
+    let colon_second = match it.next() {
+        Some(TokenTree::Punct(punct)) => {
+            if punct.as_char() != ':' {
+                panic!("Expected ::");
+            }
+        },
+        _ => panic!("Expected ::"),
+    };
+
+    // expect member fn name
+    let member_fn_name = match it.next() {
+        Some(TokenTree::Ident(ident)) => {
+            ident
+        },
+        _ => panic!("Expected member fn name."),
+    };
+
+    quote! {
+        let _scope = CallstackTrackerScope::enter(#context_var_name.get_call_stack(), nameof::name_of_type!(#type_name), nameof_member_fn!(#type_name::#member_fn_name));
+    }.into()
+}
+
+// macro that does both callstack_tracker_scope and callstack_assert
+#[proc_macro]
+pub fn callstack_tracker_scope_and_assert(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let callstack_tracker_scope_output: TokenStream = callstack_tracker_scope(input.clone()).into();
+    let callstack_assert_output: TokenStream = callstack_assert(input).into();
+    quote! {
+        #callstack_tracker_scope_output
+        #callstack_assert_output
+    }.into()
+}

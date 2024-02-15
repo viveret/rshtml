@@ -67,7 +67,7 @@ impl HtmlFormDirective {
         let mut _route_values: Option<HashMap<String, Vec<RustHtmlToken>>> = None;
 
         // check for comma separator between method and action
-        if Self::check_for_comma(it) {
+        if Self::check_for_comma(it.clone()) {
             // skip comma
             it.next();
 
@@ -108,7 +108,7 @@ impl HtmlFormDirective {
                 attributes = Self::try_parse_object_html_attributes(it.clone()).clone()?;
 
                 // check for comma separator between form attributes and action route values.
-                if Self::check_for_comma(it) {
+                if Self::check_for_comma(it.clone()) {
                     // skip comma
                     it.next();
 
@@ -116,7 +116,7 @@ impl HtmlFormDirective {
                     _route_values = self.try_parse_object_route_values(it.clone()).clone()?;
                     
                     // check for comma separator between action route values and form render closure.
-                    if Self::check_for_comma(it) {
+                    if Self::check_for_comma(it.clone()) {
                         // skip comma
                         it.next();
                     }
@@ -188,7 +188,7 @@ impl HtmlFormDirective {
             Some(token) => {
                 match token {
                     RustHtmlToken::Group(delimiter, stream, group) => {
-                        if group.delimiter() == Delimiter::Parenthesis {
+                        if group.clone().unwrap().delimiter() == Delimiter::Parenthesis {
                             // parse closure tokens in {}
                             match it.next() {
                                 Some(token) => {
@@ -282,7 +282,7 @@ impl HtmlFormDirective {
     }
     
     fn try_parse_object_html_attributes(it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>>, RustHtmlError<'static>> {
-        if let Some(group_object) = Self::peek_group_with_braces(it) {
+        if let Some(group_object) = Self::peek_group_with_braces(it.clone()) {
             // skip group after peeking
             it.next();
 
@@ -297,7 +297,7 @@ impl HtmlFormDirective {
         if let Some(token) = it.peek() {
             if let RustHtmlToken::Group(delimiter, stream, group) = token {
                 if *delimiter == Delimiter::Brace {
-                    return Some(group.clone());
+                    return Some(group.clone().unwrap().clone());
                 }
             }
         }

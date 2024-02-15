@@ -50,7 +50,7 @@ impl IRustHtmlDirective for WhileDirective {
                     RustHtmlToken::Group(delimiter, stream, group) => {
                         match delimiter {
                             Delimiter::Brace => {
-                                match parser.get_converter().convert_group(&group, false, ct) {
+                                match parser.get_converter().convert_group(&group.clone().unwrap(), false, context, ct) {
                                     Ok(group) => {
                                         output.push(group);
                                         break;

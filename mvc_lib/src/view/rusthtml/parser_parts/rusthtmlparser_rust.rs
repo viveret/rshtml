@@ -4,12 +4,12 @@ use std::rc::Rc;
 use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{TokenTree, Punct, Delimiter, Group, Ident, TokenStream, Literal};
 
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 
 use super::peekable_rusthtmltoken::{IPeekableRustHtmlToken, VecPeekableRustHtmlToken};
-use super::peekable_tokentree::VecPeekableTokenTree;
 use super::rusthtmlparser_all::{IRustHtmlParserAssignSharedParts, IRustHtmlParserAll};
 
 
@@ -17,15 +17,13 @@ pub trait IRustHtmlParserRust: IRustHtmlParserAssignSharedParts {
     fn parse_string_with_quotes(self: &Self, peek_or_next: bool, identifier: &Ident, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<String, RustHtmlError>;
     
     fn parse_type_identifier(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>, cancellation_token: Rc<dyn ICancellationToken>) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError>;
-    fn parse_rust_identifier_expression(self: &Self, add_first_ident: bool, identifier_token: &RustHtmlToken, last_token_was_ident: bool, it: Rc<dyn IPeekableRustHtmlToken>, cancellation_token: Rc<dyn ICancellationToken>) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError>;
+    fn parse_rust_identifier_expression(self: &Self, add_first_ident: bool, identifier_token: &RustHtmlToken, last_token_was_ident: bool, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError>;
     // fn convert_rust_identifier_expression(self: &Self, tokens: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
     //fn parse_rust_literal_expression(self: &Self, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
     //fn parse_rust_group_expression(self: &Self, it: Rc<dyn IPeekableTokenTree>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
     fn parse_rust_string_or_ident(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
     fn parse_rust_string_or_ident_or_punct_or_group(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
     fn parse_rust_string_or_ident_or_punct_or_group_or_literal(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
-
-    
 
     // assert that the next token is a punct. if it is, return nothing. otherwise, return the unexpected token.
     // c: the punct to expect.
@@ -54,48 +52,6 @@ impl IRustHtmlParserAssignSharedParts for RustHtmlParserRust {
 }
 
 impl IRustHtmlParserRust for RustHtmlParserRust {
-    // fn parse_rust(self: &Self, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
-    //     let mut output = vec![];
-    //     loop {
-    //         if ct.is_cancelled() {
-    //             return Err(RustHtmlError::from_str("parse_rust cancelled"));
-    //         }
-
-    //         let next_token = it.peek();
-    //         if let Some(ref token) = next_token {
-    //             match token {
-    //                 TokenTree::Ident(ident) => {
-    //                     // consume the token from the stream
-    //                     it.next();
-    //                     // not entirely correct, this needs to take into account 
-    //                     let tokens = self.parse_rust_identifier_expression(true, token, false, it.clone(), ct.clone())?;
-    //                     output.extend_from_slice(&self.convert_rust(tokens, ct.clone())?);
-    //                 },
-    //                 TokenTree::Punct(punct) => {
-    //                     // consume the token from the stream
-    //                     it.next(); // this should be conditional in case we peek a terminal token
-    //                     // for example, <div>hello</div> should not consume the </div> token
-
-    //                     output.extend_from_slice(&self.convert_punct(&punct)?);
-    //                 },
-    //                 TokenTree::Literal(literal) => {
-    //                     // consume the token from the stream
-    //                     it.next();
-    //                     output.extend_from_slice(&self.convert_literal(&literal, ct.clone())?);
-    //                 },
-    //                 TokenTree::Group(group) => {
-    //                     // consume the token from the stream
-    //                     it.next();
-    //                     output.extend_from_slice(&self.convert_group(&group, false, ct.clone())?);
-    //                 },
-    //             }
-    //         } else {
-    //             break;
-    //         }
-    //     }
-    //     Ok(output)
-    // }
-
     fn parse_type_identifier(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
         let mut output = Vec::<RustHtmlToken>::new();
         loop {
@@ -186,7 +142,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
         Ok(Rc::new(VecPeekableRustHtmlToken::new(output)))
     }
 
-    fn parse_rust_identifier_expression(self: &Self, add_first_ident: bool, identifier_token: &RustHtmlToken, last_token_was_ident: bool, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
+    fn parse_rust_identifier_expression(self: &Self, add_first_ident: bool, identifier_token: &RustHtmlToken, last_token_was_ident: bool, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
         let mut output = vec![];
         if add_first_ident {
             output.push(identifier_token.clone());
@@ -273,7 +229,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
         let r = if peek_or_next { it.peek() } else { it.next() };
         if let Some(expect_string_token) = r {
             match expect_string_token {
-                RustHtmlToken::Literal(literal, s) => Ok(snailquote::unescape(&literal.to_string()).unwrap()),
+                RustHtmlToken::Literal(literal, s) => Ok(snailquote::unescape(&literal.clone().unwrap().to_string()).unwrap()),
                 _ => Err(RustHtmlError::from_string(format!("unexpected token after {} directive: {:?}", identifier, expect_string_token))),
             }
         } else {

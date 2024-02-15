@@ -35,7 +35,7 @@ impl IRustHtmlDirective for ForDirective {
         let is_raw_tokenstream = false;
         loop {
             if let Some(token) = it.peek() {
-                match &token {
+                match token {
                     RustHtmlToken::Identifier(ident) => {
                         output.push(RustHtmlToken::Identifier(ident.clone()));
                         it.next();
@@ -51,15 +51,19 @@ impl IRustHtmlDirective for ForDirective {
                     RustHtmlToken::Group(delimiter, stream, group) => {
                         match delimiter {
                             Delimiter::Brace => {
-                                match parser.get_converter().convert_group(group, false, ct) {
-                                    Ok(_) => {
-                                        // println!("for_directive: {} -> {:?}", token.to_string(), output.last());
-                                        it.next();
-                                        break;
-                                    },
-                                    Err(RustHtmlError(e)) => {
-                                        return Err(RustHtmlError::from_string(e.to_string()));
-                                    }
+                                if let Some(group) = group {
+                                    match parser.get_converter().convert_group(group, false, context.clone(), ct) {
+                                        Ok(_) => {
+                                            // println!("for_directive: {} -> {:?}", token.to_string(), output.last());
+                                            it.next();
+                                            break;
+                                        },
+                                        Err(RustHtmlError(e)) => {
+                                            return Err(RustHtmlError::from_string(e.to_string()));
+                                        }
+                                    }   
+                                } else {
+                                    return Err(RustHtmlError::from_string(format!("Expected group after for directive, found '{:?}'", token)));
                                 }
                             },
                             _ => {
@@ -68,6 +72,9 @@ impl IRustHtmlDirective for ForDirective {
                             },
                         }
                     },
+                    _ => {
+                        return Err(RustHtmlError::from_string(format!("Unexpected token after for directive: {:?}", token)));
+                    }
                 }
                 // println!("for_directive: {} -> {:?}", token.to_string(), output.last());
             } else {

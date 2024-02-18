@@ -24,7 +24,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
         return tag_name == "environment";
     }
 
-    fn on_node_parsed(&self, tag_context: Rc<dyn IHtmlTagParseContext>, html_context: Rc<dyn IRustHtmlParserContext>, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError> {
+    fn on_node_parsed(&self, tag_context: Rc<dyn IHtmlTagParseContext>, html_context: Rc<dyn IRustHtmlParserContext>) -> Result<bool, RustHtmlError> {
         // look for include or exclude attributes
         let mut keep_or_remove: Option<bool> = None;
 

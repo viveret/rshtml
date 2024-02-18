@@ -25,20 +25,20 @@ impl LetDirective {
     // output: the destination for the RustHtml tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    pub fn parse_let(parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError> {
+    pub fn parse_let(parser: Rc<dyn IRustHtmlParserAll>, ctx: Rc<dyn IRustHtmlParserContext>, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError<'static>> {
         loop
         {
             match it.next() {
                 Some(token) => {
                     match token {
                         RustHtmlToken::ReservedChar(c, punct) => {
-                            output.push(token.clone());
+                            ctx.push_output_token(token.clone());
                             if *c == ';' {
                                 break;
                             }
                         },
                         _ => {
-                            output.push(token.clone())
+                            ctx.push_output_token(token.clone())
                         }
                     }
                 },
@@ -56,9 +56,9 @@ impl IRustHtmlDirective for LetDirective {
         name == "let"
     }
 
-    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, _ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
-        output.push(RustHtmlToken::Identifier(identifier.clone()));
-        if let Ok(_) = Self::parse_let(parser, output, it) {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, _ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        context.push_output_token(RustHtmlToken::Identifier(identifier.clone()));
+        if let Ok(_) = Self::parse_let(parser, context, it) {
             Ok(RustHtmlDirectiveResult::OkContinue)
         } else {
             return Err(RustHtmlError::from_str("Error parsing let statement"));

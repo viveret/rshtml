@@ -130,7 +130,7 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
 
     // called when the tag name is parsed.
     // output: the output RustHtml token stream to add the tag name to.
-    fn on_html_tag_name_parsed(self: &Self, output: &mut Vec<RustHtmlToken>) {
+    fn on_html_tag_name_parsed(self: &Self) {
         *self.parse_attrs.borrow_mut() = true;
         if self.is_opening_tag() {
             if self.is_void_tag() {

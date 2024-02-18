@@ -34,7 +34,7 @@ pub trait IHtmlTagParseContext {
 
     // called when the tag name is parsed.
     // output: the output RustHtml token stream to add the tag name to.
-    fn on_html_tag_name_parsed(&self, output: &mut Vec<RustHtmlToken>);
+    fn on_html_tag_name_parsed(&self);
 
     // returns true if the key-value pair is defined.
     fn is_kvp_defined(&self) -> bool;

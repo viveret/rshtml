@@ -1,5 +1,5 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
-use std::cell::RefMut;
+use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -29,6 +29,23 @@ pub trait IRustHtmlParserContext {
     fn get_max_call_stack_count(&self) -> usize;
     // return an error if the stack trace count is greater than the max stack count.
     fn check_call_stack_count(&self) -> Result<(), RustHtmlError>;
+
+    // get if the parser is in a tag (true) or in a Rust block (false). True by default and at start of stream.
+    fn get_is_in_html_mode(&self) -> bool;
+    fn push_is_in_html_mode(&self, v: bool);
+    fn pop_is_in_html_mode(&self) -> bool;
+
+    // push a buffer to the buffer stack that is used to store RustHtml tokens.
+    fn push_output_buffer(&self, buffer: Rc<RefCell<Vec<RustHtmlToken>>>);
+    // pop a buffer from the buffer stack that is used to store RustHtml tokens.
+    fn pop_output_buffer(&self) -> Option<Rc<RefCell<Vec<RustHtmlToken>>>>;
+    // get the current buffer from the buffer stack that is used to store RustHtml tokens.
+    fn get_output_buffer(&self) -> Option<Rc<RefCell<Vec<RustHtmlToken>>>>;
+
+    // push to output buffer / stream
+    fn push_output_token(&self, token: RustHtmlToken);
+    // push vec to output buffer / stream
+    fn push_output_tokens(&self, token: &[RustHtmlToken]);
     
     // whether or not the RustHtml code is raw tokenstream.
     fn get_is_raw_tokenstream(self: &Self) -> bool;

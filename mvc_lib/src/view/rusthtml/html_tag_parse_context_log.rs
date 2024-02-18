@@ -47,8 +47,8 @@ impl IHtmlTagParseContext for HtmlTagParseContextLog {
         self.real_context.fmt_tag_name_as_str(tag_name)
     }
 
-    fn on_html_tag_name_parsed(&self, output: &mut Vec<RustHtmlToken>) {
-        self.real_context.on_html_tag_name_parsed(output)
+    fn on_html_tag_name_parsed(&self) {
+        self.real_context.on_html_tag_name_parsed()
     }
 
     fn is_kvp_defined(&self) -> bool {

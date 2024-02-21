@@ -64,6 +64,8 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
                 std::io::Result::Ok(Self::new(file_path, f, factory_method, parse_item_method, jsonify_item_method))
             },
             Ok(false) => {
+                let parent_dir = path.parent().unwrap();
+                std::fs::create_dir_all(parent_dir)?;
                 let f = File::create(file_path.clone())?;
                 std::io::Result::Ok(Self::new(file_path, f, factory_method, parse_item_method, jsonify_item_method))
             },

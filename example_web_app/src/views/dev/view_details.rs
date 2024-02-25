@@ -1,5 +1,5 @@
 mvc_macro_lib::rusthtml_view_macro! {
-    @viewstart "dev/_view_start.rshtml"
+    @viewstart "dev/_view_start.rs"
     @name "dev_view_details"
     @model crate::view_models::dev::view_details::ViewDetailsViewModel
     @{

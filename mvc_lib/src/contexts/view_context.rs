@@ -232,7 +232,7 @@ impl <'a> IViewContext for ViewContext<'a> {
                 std::fs::File::open(path)
             },
             None => {
-                Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Could not resolve data file path"))
+                Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Could not resolve view file path"))
             },
         }
     }

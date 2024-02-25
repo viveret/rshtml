@@ -46,7 +46,7 @@ enough similarities and differences that they should be mentioned here.
 - Can render partial views in a template or on own from action in controller, or by using view renderer.
 - View paths are search by closest first, with the Shared folder being last.
 - Default list of imports required to support the view template.
-- Automatically prepend _view_start.rshtml to views in folder unless "" is specified
+- Automatically prepend _view_start.rs to views in folder unless "" is specified
 
 
 #### Differences

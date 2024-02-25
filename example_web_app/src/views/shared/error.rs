@@ -1,5 +1,5 @@
 mvc_macro_lib::rusthtml_view_macro! {
-    @viewstart "dev/_view_start.rshtml"
+    @viewstart "dev/_view_start.rs"
     @name "error"
     @model mvc_lib::error::error_viewmodel_service::BasicErrorViewModel
     @{

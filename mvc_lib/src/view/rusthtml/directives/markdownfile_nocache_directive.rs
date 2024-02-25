@@ -39,7 +39,7 @@ impl MarkdownFileNoCacheDirective {
             quote::quote! {}
         };
         let open_inner_tokenstream = 
-        match parser.peek_path_str(identifier, ident_token, it.clone(), parser.get_context().get_is_raw_tokenstream()) {
+        match parser.parse_string_with_quotes(true, identifier.clone(), it.clone()) {
             Ok(path) => {
                 it.next();
                 quote::quote! { #prefix_stream #path }

@@ -25,9 +25,11 @@ impl HtmlFileDirective {
     // it: the iterator to use.
     // returns: nothing or an error.
     pub fn convert_externalhtml_directive(identifier: &Ident, identifier_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
+        // match parser.parse_string_with_quotes(false, identifier.clone(), it.clone()) {
         match parser.next_path_str(identifier, identifier_token, it.clone(), parser.get_context().get_is_raw_tokenstream()) {
             Ok(path) => {
                 let code = quote::quote! {
+                    println!("cwd: {:?}", std::env::current_dir());
                     match view_context.open_view_file(#path) {
                         Ok(mut f) => {
                             let mut buffer = String::new();

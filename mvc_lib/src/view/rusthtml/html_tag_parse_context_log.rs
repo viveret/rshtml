@@ -10,6 +10,7 @@ use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
 use super::ihtml_tag_parse_context::IHtmlTagParseContext;
 use super::irusthtml_parser_context::IRustHtmlParserContext;
+use super::rusthtml_error::RustHtmlError;
 
 
 pub struct HtmlTagParseContextLog {
@@ -47,8 +48,8 @@ impl IHtmlTagParseContext for HtmlTagParseContextLog {
         self.real_context.fmt_tag_name_as_str(tag_name)
     }
 
-    fn on_html_tag_name_parsed(&self, output: &mut Vec<RustHtmlToken>) {
-        self.real_context.on_html_tag_name_parsed(output)
+    fn on_html_tag_name_parsed(&self) -> Result<(), RustHtmlError<'static>> {
+        self.real_context.on_html_tag_name_parsed()
     }
 
     fn is_kvp_defined(&self) -> bool {
@@ -243,5 +244,14 @@ impl IHtmlTagParseContext for HtmlTagParseContextLog {
     fn create_val_for_kvp(&self, attr_name: String) -> Result<Option<(RustHtmlToken, String)>, super::rusthtml_error::RustHtmlError> {
         self.add_operation_to_ooo_log(nameof_member_fn!(Self::create_val_for_kvp).to_string());
         self.real_context.create_val_for_kvp(attr_name)
+    }
+
+    fn add_tag_end_punct(&self, punct: &Punct) {
+        self.add_operation_to_ooo_log(nameof_member_fn!(Self::add_tag_end_punct).to_string());
+        self.real_context.add_tag_end_punct(punct)
+    }
+
+    fn get_tag_end_punct(&self) -> Option<Punct> {
+        self.real_context.get_tag_end_punct()
     }
 }

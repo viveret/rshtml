@@ -1,11 +1,10 @@
 use std::rc::Rc;
 
-use mvc_lib::view::rusthtml::peekable_tokentree::PeekableTokenTree;
-use mvc_lib::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
-use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
-use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
-use mvc_lib::view::rusthtml::rusthtml_token::RustHtmlToken;
+use core_lib::asyncly::cancellation_token::CancellationToken;
+use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_all::{RustHtmlParserAll, IRustHtmlParserAll};
 use proc_macro2::Span;
+
+use mvc_lib::view::rusthtml::rusthtml_token::RustHtmlToken;
 
 
 
@@ -76,10 +75,10 @@ fn rusthtml_token_to_string_spacing() {
             </div>
         </div>
     };
-    let it = Rc::new(PeekableTokenTree::new(stream.clone()));
-    let converter_context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
-    let converter = RustToRustHtmlConverter::new(converter_context);
-    let output = converter.parse_tokenstream_to_rusthtmltokens(true, it, false).unwrap();
-    let output_string = output.iter().map(|t| t.to_string()).collect::<Vec<String>>().join("");
+    let parser = RustHtmlParserAll::new_default();
+    
+    let ct = Rc::new(CancellationToken::new());
+    let output = parser.expand_rust(stream.clone(), ct).unwrap();
+    let output_string = output.to_string();
     assert_eq!(stream.to_string().replace(" ", ""), output_string);
 }

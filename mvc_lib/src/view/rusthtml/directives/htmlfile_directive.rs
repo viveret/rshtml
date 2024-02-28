@@ -26,10 +26,9 @@ impl HtmlFileDirective {
     // returns: nothing or an error.
     pub fn convert_externalhtml_directive(identifier: &Ident, identifier_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
         // match parser.parse_string_with_quotes(false, identifier.clone(), it.clone()) {
-        match parser.next_path_str(identifier, identifier_token, it.clone(), parser.get_context().get_is_raw_tokenstream()) {
+        match parser.parse_string_with_quotes(false, identifier.clone(), it.clone()) {
             Ok(path) => {
                 let code = quote::quote! {
-                    println!("cwd: {:?}", std::env::current_dir());
                     match view_context.open_view_file(#path) {
                         Ok(mut f) => {
                             let mut buffer = String::new();
@@ -37,7 +36,8 @@ impl HtmlFileDirective {
                             buffer
                         },
                         Err(e) => {
-                            return Err(RustHtmlError::from_string(format!("cannot read external HTML file '{}', could not open: {:?}", #path, e)));
+                            let cwd = std::env::current_dir().unwrap();
+                            return Err(RustHtmlError::from_string(format!("cannot read external HTML file '{}' in '{:?}', could not open: {:?}", #path, cwd, e)));
                         }
                     }
                 };
@@ -47,7 +47,7 @@ impl HtmlFileDirective {
                 Ok(())
             },
             Err(RustHtmlError(e)) => {
-                return Err(RustHtmlError::from_string(format!("(@{}) cannot read external HTML file, could not parse path: {}", identifier, e)));
+                Err(RustHtmlError::from_string(format!("(@{}) cannot read external HTML file, could not parse path: {}", identifier, e)))
             }
         }
     }

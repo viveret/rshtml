@@ -62,136 +62,136 @@ impl IModelProperty for ReflectedProperty {
     }
 
     fn get_value_as_string(&self) -> String {
-        todo!()
+        todo!("get_value_as_string")
     }
-
+    
     fn get_value_as_str(&self) -> &str {
-        todo!()
+        todo!("get_value_as_str")
     }
-
+    
     fn get_value_as_bool(&self) -> bool {
-        todo!()
+        todo!("get_value_as_bool")
     }
-
+    
     fn get_value_as_i32(&self) -> i32 {
-        todo!()
+        todo!("get_value_as_i32")
     }
-
+    
     fn get_value_as_i64(&self) -> i64 {
-        todo!()
+        todo!("get_value_as_i64")
     }
-
+    
     fn get_value_as_f32(&self) -> f32 {
-        todo!()
+        todo!("get_value_as_f32")
     }
-
+    
     fn get_value_as_f64(&self) -> f64 {
-        todo!()
+        todo!("get_value_as_f64")
     }
-
+    
     fn get_value_as_char(&self) -> char {
-        todo!()
+        todo!("get_value_as_char")
     }
-
+    
     fn get_value_as_u8(&self) -> u8 {
-        todo!()
+        todo!("get_value_as_u8")
     }
-
+    
     fn get_value_as_u16(&self) -> u16 {
-        todo!()
+        todo!("get_value_as_u16")
     }
-
+    
     fn get_value_as_u32(&self) -> u32 {
-        todo!()
+        todo!("get_value_as_u32")
     }
-
+    
     fn get_value_as_u64(&self) -> u64 {
-        todo!()
+        todo!("get_value_as_u64")
     }
-
+    
     fn get_value_as_usize(&self) -> usize {
-        todo!()
+        todo!("get_value_as_usize")
     }
-
+    
     fn get_value_as_i8(&self) -> i8 {
-        todo!()
+        todo!("get_value_as_i8")
     }
-
+    
     fn get_value_as_i16(&self) -> i16 {
-        todo!()
+        todo!("get_value_as_i16")
     }
-
+    
     fn set_value(&mut self, _value: String) {
-        todo!()
+        todo!("set_value")
     }
-
+    
     fn set_value_as_string(&mut self, _value: String) {
-        todo!()
+        todo!("set_value_as_string")
     }
-
+    
     fn set_value_as_str(&mut self, _value: &str) {
-        todo!()
+        todo!("set_value_as_str")
     }
-
+    
     fn set_value_as_bool(&mut self, _value: bool) {
-        todo!()
+        todo!("set_value_as_bool")
     }
-
+    
     fn set_value_as_i32(&mut self, _value: i32) {
-        todo!()
+        todo!("set_value_as_i32")
     }
-
+    
     fn set_value_as_i64(&mut self, _value: i64) {
-        todo!()
+        todo!("set_value_as_i64")
     }
-
+    
     fn set_value_as_f32(&mut self, _value: f32) {
-        todo!()
+        todo!("set_value_as_f32")
     }
-
+    
     fn set_value_as_f64(&mut self, _value: f64) {
-        todo!()
+        todo!("set_value_as_f64")
     }
-
+    
     fn set_value_as_char(&mut self, _value: char) {
-        todo!()
+        todo!("set_value_as_char")
     }
-
+    
     fn set_value_as_u8(&mut self, _value: u8) {
-        todo!()
+        todo!("set_value_as_u8")
     }
-
+    
     fn set_value_as_u16(&mut self, _value: u16) {
-        todo!()
+        todo!("set_value_as_u16")
     }
-
+    
     fn set_value_as_u32(&mut self, _value: u32) {
-        todo!()
+        todo!("set_value_as_u32")
     }
-
+    
     fn set_value_as_u64(&mut self, _value: u64) {
-        todo!()
+        todo!("set_value_as_u64")
     }
 
-    fn set_value_as_usize(&mut self, _value: usize) {
-        todo!()
+    fn set_value_as_usize(&mut self, value: usize) {
+        todo!("set_value_as_usize")
     }
 
-    fn set_value_as_i8(&mut self, _value: i8) {
-        todo!()
+    fn set_value_as_i8(&mut self, value: i8) {
+        todo!("set_value_as_i8")
     }
 
-    fn set_value_as_i16(&mut self, _value: i16) {
-        todo!()
+    fn set_value_as_i16(&mut self, value: i16) {
+        todo!("set_value_as_i16")
     }
 }
 
 impl IHazAttributes for ReflectedProperty {
     fn get_attributes(&self) -> Vec<std::rc::Rc<dyn super::imodel_attribute::IAttribute>> {
-        todo!()
+        todo!("get_attributes")
     }
 
     fn get_attribute(&self, _typeinfo: &crate::core::type_info::TypeInfo) -> Option<std::rc::Rc<dyn super::imodel_attribute::IAttribute>> {
-        todo!()
+        todo!("get_attribute")
     }
 }

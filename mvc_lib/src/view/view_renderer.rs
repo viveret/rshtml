@@ -82,12 +82,12 @@ pub struct ViewRenderer {
 
 impl ViewRenderer  {
     pub fn new() -> Self {
-        let project_path = std::env::current_dir().unwrap().to_str().unwrap().to_string();
+        let project_path = std::env::current_dir().unwrap().to_str().unwrap().to_string() + "/example_web_app";
         Self {
             cached_views: RefCell::new(None),
             views_path_resolvers: vec![
                 Rc::new(RegularViewsPathResolver::new(
-                    project_path,
+                    project_path.clone(),
                 )),
             ],
         }
@@ -109,7 +109,6 @@ impl IViewRenderer for ViewRenderer {
         self: &Self,
         view_path: &String,
         view_model: Option<Rc<dyn IViewModel>>,
-        // response_context: &dyn IResponseContext,
         request_context: &dyn IRequestContext,
         services: &dyn IServiceCollection
     ) -> Result<HtmlString, RustHtmlError> {
@@ -117,7 +116,10 @@ impl IViewRenderer for ViewRenderer {
         let mut body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model, view_renderer_service_instance.clone(), request_context);
         match body_view_ctx.get_view_as_ref().render(&body_view_ctx, services) {
             Ok(body_html) => {
-
+                // print viewdata keys
+                for (key, value) in body_view_ctx.get_view_data().borrow().iter() {
+                    println!("{}: {:?}", key, value);
+                }
                 let layout_view_option = self.get_layout_view_from_context(&mut body_view_ctx, services);
                 match layout_view_option {
                     Some(ref layout_view) => {
@@ -141,6 +143,7 @@ impl IViewRenderer for ViewRenderer {
 
     fn get_layout_view_from_context(self: &Self, view_context: &mut ViewContext, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>> {
         let layout_view_path_option = view_context.get_str("Layout");
+        println!("layout_view_path_option: {:?}", layout_view_path_option);
         if layout_view_path_option.len() > 0 {
             Some(self.get_view(&layout_view_path_option, services))
         } else {

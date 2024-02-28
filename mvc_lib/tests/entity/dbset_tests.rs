@@ -18,7 +18,7 @@ impl TestPerson {
     }
 
     fn parse(_x: serde_json::Value) -> TestPerson {
-        todo!()
+        todo!("parse")
     }
 
     fn jsonify(self: &TestPerson) -> serde_json::Value {

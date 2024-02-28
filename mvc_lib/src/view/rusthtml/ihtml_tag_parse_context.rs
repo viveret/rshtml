@@ -34,7 +34,7 @@ pub trait IHtmlTagParseContext {
 
     // called when the tag name is parsed.
     // output: the output RustHtml token stream to add the tag name to.
-    fn on_html_tag_name_parsed(&self, output: &mut Vec<RustHtmlToken>);
+    fn on_html_tag_name_parsed(&self) -> Result<(), RustHtmlError<'static>>;
 
     // returns true if the key-value pair is defined.
     fn is_kvp_defined(&self) -> bool;
@@ -123,7 +123,8 @@ pub trait IHtmlTagParseContext {
 
     fn set_parse_attrs(&self, parse_attrs: bool);
 
-
+    fn add_tag_end_punct(&self, punct: &Punct);
+    fn get_tag_end_punct(&self) -> Option<Punct>;
 
     fn on_kvp_defined(&self) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
     fn create_key_for_kvp(&self) -> Result<(RustHtmlToken, String), RustHtmlError>;

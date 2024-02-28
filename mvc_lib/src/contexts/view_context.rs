@@ -172,8 +172,8 @@ impl <'a> IViewContext for ViewContext<'a> {
 
     fn get_string(self: &Self, key: String) -> String {
         match self.get_view_data().as_ref().borrow().get(&key) {
-            Some(s) => s.clone(),
-            None => {
+            Some(s) if s.len() > 0 => s.clone(),
+            Some(_) | None => {
                 // match self.response_context.get_string(key.clone()) {
                     // Some(s) => s.clone(),
                     // None => {

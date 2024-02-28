@@ -35,28 +35,79 @@ impl <'a> IRenderHelpers<'a> for RenderHelpers<'a> {
     fn body<'b>(self: &Self) -> Result<HtmlString, RustHtmlError<'b>> {
         let ctxdata_rc = self.view_context.get_ctx_data();
         let ctxdata = ctxdata_rc.as_ref().borrow();
-        let body_view_option = ctxdata.get("BodyView");
-        match body_view_option {
-            Some(body_view_any) => {
-                let body_view = body_view_any.downcast_ref::<Rc<dyn IView>>().expect("could not downcast Any to Box<dyn IView>").clone();
-                // need new context for child view
-                let new_ctx = ViewContext::recurse_into_new_context(self.view_context, body_view.clone());
-                match body_view.render(&new_ctx, self.services) {
-                    Ok(html) => {
-                        Ok(html)
-                    },
-                    Err(RustHtmlError(e)) => Err(RustHtmlError::from_string(e.to_string())),
+        let viewdata_rc = self.view_context.get_view_data();
+        let viewdata = viewdata_rc.as_ref().borrow();
+
+        // print the keys
+        // println!("ctxdata keys ({:?}):", ctxdata.len());
+        // for (key, value) in ctxdata.iter() {
+        //     println!("{}: {:?}", key, value);
+        // }
+        // println!("viewdata keys ({:?}):", viewdata.len());
+        // for (key, value) in viewdata.iter() {
+        //     println!("{}: {:?}", key, value);
+        // }
+
+        // function to get from either ctxdata or viewdata by key and return as string
+        let get_str = |key: &str| -> Option<String> {
+            match ctxdata.get(key) {
+                Some(val) => {
+                    // try getting as iview
+                    match val.downcast_ref::<Rc<dyn IView>>() {
+                        Some(body_view) => {
+                            // need new context for child view
+                            let new_ctx = ViewContext::recurse_into_new_context(self.view_context, body_view.clone());
+                            match body_view.render(&new_ctx, self.services) {
+                                Ok(html) => {
+                                    Some(html.content)
+                                },
+                                Err(RustHtmlError(e)) => Some(e.to_string()),
+                            }
+                        },
+                        None => {
+                            // try getting as string
+                            match val.downcast_ref::<String>() {
+                                Some(val_any) => {
+                                    Some(val_any.to_string())
+                                },
+                                None => {
+                                    None
+                                }
+                            }
+                        }
+                    }
+                },
+                None => {
+                    match viewdata.get(key) {
+                        Some(val) => {
+                            Some(val.to_string())
+                        },
+                        None => {
+                            None
+                        }
+                    }
                 }
-                
-            },
-            None => {
-                let body_html = self.view_context.get_str("BodyHtml");
-                if body_html.len() > 0 {
-                    Ok(HtmlString::new_from_html(body_html))
-                } else {
-                    panic!("BodyView and BodyHtml not found for call to render_body()")
+            }
+        };
+
+        let keys_to_try = vec![
+            "BodyView",
+            "BodyHtml",
+            "body_view",
+            "body_html",
+            "Body",
+            "body",
+        ];
+        for key in keys_to_try {
+            match get_str(key) {
+                Some(val) => {
+                    return Ok(HtmlString::new_from_html(val));
+                },
+                None => {
+                    continue;
                 }
-            },
+            }
         }
+        Ok(HtmlString::new_from_html("BodyView and BodyHtml not found for call to render_body()".to_string()))
     }
 }

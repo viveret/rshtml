@@ -58,7 +58,7 @@ impl HtmlFormDirective {
         let mut _route_values: Option<HashMap<String, Vec<RustHtmlToken>>> = None;
 
         // check for comma separator between method and action
-        if Self::check_for_comma(it) {
+        if Self::check_for_comma(it.clone()) {
             // skip comma
             it.next();
 
@@ -87,7 +87,7 @@ impl HtmlFormDirective {
             }
 
             // check for comma separator between action and form attributes
-            if Self::check_for_comma(it) {
+            if Self::check_for_comma(it.clone()) {
                 // skip comma
                 it.next();
 
@@ -95,7 +95,7 @@ impl HtmlFormDirective {
                 attributes = Self::try_parse_object_html_attributes(it).clone()?;
 
                 // check for comma separator between form attributes and action route values.
-                if Self::check_for_comma(it) {
+                if Self::check_for_comma(it.clone()) {
                     // skip comma
                     it.next();
 
@@ -103,7 +103,7 @@ impl HtmlFormDirective {
                     _route_values = self.try_parse_object_route_values(it).clone()?;
                     
                     // check for comma separator between action route values and form render closure.
-                    if Self::check_for_comma(it) {
+                    if Self::check_for_comma(it.clone()) {
                         // skip comma
                         it.next();
                     }

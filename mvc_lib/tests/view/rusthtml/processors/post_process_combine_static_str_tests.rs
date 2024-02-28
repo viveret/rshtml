@@ -133,13 +133,13 @@ pub fn test_try_html_output_write_html_str_with_string_literal_arg_and_semicolon
     let input_len = input.len();
     // multiply input
     let input = if n > 1 { input.into_iter().cycle().take(input_len * n).collect::<Vec<TokenTree>>() } else { input };
-    let it = PeekableTokenTree::from_vec(&input);
+    let it = Rc::new(VecPeekableTokenTree::new(input));
     loop {
         if PostProcessCombineStaticStr::try_html_output_write_html_str_with_string_literal_arg_and_semicolon(
             &mut is_first,
             &mut current_str,
             &mut output,
-            &it
+            it.clone()
         ) {
             // do nothing
             println!("do nothing")

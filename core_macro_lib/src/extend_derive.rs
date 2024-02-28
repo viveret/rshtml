@@ -154,13 +154,19 @@ impl<'a> ExtendDerive<'a> {
                     match ident_str.as_str() {
                         "struct" | "fn" => {
                             // get name
-                            let token = it.next().unwrap();
-                            match token {
-                                TokenTree::Ident(ident) => {
-                                    struct_name = Some(ident.clone());
+                            match it.next() {
+                                Some(token) => {
+                                    match token {
+                                        TokenTree::Ident(ident) => {
+                                            struct_name = Some(ident.clone());
+                                        },
+                                        _ => {
+                                            panic!("Expected struct or function name, not {:?}.", token.clone());
+                                        }
+                                    }
                                 },
-                                _ => {
-                                    panic!("Expected struct or function name, not {:?}.", token.clone());
+                                None => {
+                                    panic!("Expected struct or function name, not end of stream.");
                                 }
                             }
 

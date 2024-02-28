@@ -43,6 +43,8 @@ pub struct HtmlTagParseContext {
     is_opening_tag: RefCell<bool>,
     // the equals punct
     equals_punct: RefCell<Option<Punct>>,
+    // end tag punct
+    tag_end_punct: RefCell<Vec<Punct>>,
 }
 impl HtmlTagParseContext {
     pub fn new(main_ctx: Option<Rc<dyn IRustHtmlParserContext>>) -> Self {
@@ -61,8 +63,21 @@ impl HtmlTagParseContext {
             is_self_contained_tag: RefCell::new(false),
             is_opening_tag: RefCell::new(true),
             equals_punct: RefCell::new(None),
+            tag_end_punct: RefCell::new(vec![]),
         }
     }
+
+    pub fn new_and_attach(parent_ctx: Rc<dyn IRustHtmlParserContext>) -> Rc<dyn IHtmlTagParseContext> {
+        let ctx = Rc::new(Self::new(Some(parent_ctx.clone())));
+        parent_ctx.push_html_tag_parse_context(ctx.clone());
+        ctx
+    }
+
+    // pub fn new_and_attach_child(parent_ctx: Rc<dyn IRustHtmlParserContext>) -> Rc<dyn IHtmlTagParseContext> {
+    //     let ctx = Rc::new(Self::new(Some(parent_ctx.clone())));
+    //     parent_ctx.push_html_tag_parse_context(ctx.clone());
+    //     ctx
+    // }
 }
 
 impl IHtmlTagParseContext for HtmlTagParseContext {
@@ -115,18 +130,19 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
 
     // called when the tag name is parsed.
     // output: the output RustHtml token stream to add the tag name to.
-    fn on_html_tag_name_parsed(self: &Self, output: &mut Vec<RustHtmlToken>) {
+    fn on_html_tag_name_parsed(self: &Self) -> Result<(), RustHtmlError<'static>> {
         *self.parse_attrs.borrow_mut() = true;
+        let context = self.get_main_context();
         if self.is_opening_tag() {
             if self.is_void_tag() {
-                output.push(RustHtmlToken::HtmlTagVoid(self.tag_name_as_str(), Some(self.tag_name.borrow().clone())));
+                context.push_output_token(RustHtmlToken::HtmlTagVoid(self.tag_name_as_str(), Some(self.tag_name.borrow().clone())))
             } else if self.is_self_contained_tag() {
-                output.push(RustHtmlToken::HtmlTagStart(self.tag_name_as_str(), Some(self.tag_name.borrow().clone())));
+                context.push_output_token(RustHtmlToken::HtmlTagStart(self.tag_name_as_str(), Some(self.tag_name.borrow().clone())))
             } else {
-                output.push(RustHtmlToken::HtmlTagStart(self.tag_name_as_str(), Some(self.tag_name.borrow().clone())));
+                context.push_output_token(RustHtmlToken::HtmlTagStart(self.tag_name_as_str(), Some(self.tag_name.borrow().clone())))
             }
         } else {
-            output.push(RustHtmlToken::HtmlTagEnd(self.tag_name_as_str(), Some(self.tag_name.borrow().clone())));
+            context.push_output_token(RustHtmlToken::HtmlTagEnd(self.tag_name_as_str(), Some(self.tag_name.borrow().clone())))
         }
     }
 
@@ -365,5 +381,13 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
         } else {
             Ok(None)
         }
+    }
+
+    fn add_tag_end_punct(&self, punct: &Punct) {
+        self.tag_end_punct.borrow_mut().push(punct.clone());
+    }
+
+    fn get_tag_end_punct(&self) -> Option<Punct> {
+        self.tag_end_punct.borrow().last().cloned()
     }
 }

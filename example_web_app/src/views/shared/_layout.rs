@@ -51,7 +51,7 @@ mvc_macro_lib::rusthtml_view_macro! {
         <div class="s-topbar--container px8">
             <a href="#" class="s-topbar--menu-btn d-none md:d-flex js-hamburger-btn"><span></span></a>
             <a class="s-topbar--logo" href="/">
-                <span class="v-visible-sr">Site home</span>
+                <span class="v-visible-sr">@"Site home"</span>
                 @htmlfile "shared/_icon_svg.html"
                 <environment include="Development"><i>Beta</i></environment>
             </a>

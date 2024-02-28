@@ -89,31 +89,31 @@ impl GzipBodyStream {
 
 impl ITcpStreamWrapper for GzipBodyStream {
     fn shutdown(&self, _how: std::net::Shutdown) -> std::io::Result<()> {
-        todo!()
+        todo!("shutdown not implemented for GzipBodyStream")
     }
 
     fn flush(&self) -> std::io::Result<()> {
-        todo!()
+        todo!("flush not implemented for GzipBodyStream")
     }
 
     fn read(&self, _b: &mut [u8]) -> std::io::Result<usize> {
-        todo!()
+        todo!("read not implemented for GzipBodyStream")
     }
 
     fn read_line(&self) -> std::io::Result<String> {
-        todo!()
+        todo!("read_line not implemented for GzipBodyStream")
     }
 
     fn write(&self, _b: &[u8]) -> std::io::Result<usize> {
-        todo!()
+        todo!("write not implemented for GzipBodyStream")
     }
 
     fn write_line(&self, _b: &String) -> std::io::Result<usize> {
-        todo!()
+        todo!("write_line not implemented for GzipBodyStream")
     }
 
     fn remote_addr(&self) -> std::net::SocketAddr {
-        todo!()
+        todo!("remote_addr not implemented for GzipBodyStream")
     }
 }
 

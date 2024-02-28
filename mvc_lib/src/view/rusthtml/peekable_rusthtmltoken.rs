@@ -16,7 +16,7 @@ pub struct PeekableRustHtmlToken<'a> {
 }
 
 impl <'a> PeekableRustHtmlToken<'a> {
-    pub fn new(iter: &'a Vec<RustHtmlToken>) -> Self {
+    pub fn new_vec(iter: &'a Vec<RustHtmlToken>) -> Self {
         Self {
             it: RefCell::new(iter.iter().peekable()),
         }

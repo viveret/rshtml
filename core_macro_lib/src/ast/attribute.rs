@@ -20,7 +20,7 @@ impl AstAttribute {
     pub fn finalize(&self) -> Vec<TokenTree> {
         let name = self.name.to_string();
         let content = self.content.as_ref().map(|x| x.to_string()).unwrap_or("".to_string());
-        let type_name_tokens = if name.chars().nth(0).unwrap().is_uppercase() {
+        let type_name_tokens = if name.chars().nth(0).expect("name is empty string, cannot get first char").is_uppercase() {
             let type_name = Ident::new(name.as_str(), Span::call_site());
             quote::quote! {
                 Some(Box::new(TypeInfo::of::<#type_name>()))

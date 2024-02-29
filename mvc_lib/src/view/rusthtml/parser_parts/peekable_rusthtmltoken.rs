@@ -17,6 +17,7 @@ pub trait IPeekableRustHtmlToken: Debug {
 #[derive(Clone, Debug)]
 pub struct VecPeekableRustHtmlToken {
     data: Vec<RustHtmlToken>,
+    n_peeked: RefCell<Vec<RustHtmlToken>>,
     index: RefCell<usize>,
     peek_index: RefCell<usize>,
 }
@@ -25,6 +26,7 @@ impl <'a> VecPeekableRustHtmlToken {
     pub fn new(data: Vec<RustHtmlToken>) -> Self {
         Self {
             data,
+            n_peeked: RefCell::new(vec![]),
             index: RefCell::new(0),
             peek_index: RefCell::new(0),
         }
@@ -46,24 +48,24 @@ impl <'a> IPeekableRustHtmlToken for VecPeekableRustHtmlToken {
     }
 
     fn peek_nth(self: &Self, n: usize) -> Option<&RustHtmlToken> {
-        self.data.get(*self.peek_index.borrow() + n)
+        todo!()
     }
 
     fn to_string(self: &Self) -> String {
         let mut s = String::new();
-        for token in self.data.iter() {
+        for token in self.n_peeked.borrow().iter() {
             s.push_str(&token.to_string());
         }
         s
     }
 
     fn to_splice(self: &Self) -> &[RustHtmlToken] {
-        &self.data
+        unimplemented!("to_splice not implemented for PeekableTokenTree")
     }
 
     fn to_stream(self: &Self) -> Rc<dyn IPeekableRustHtmlToken> {
         let mut stream = vec![];
-        for token in self.data.iter() {
+        for token in self.n_peeked.borrow().iter() {
             stream.extend(std::iter::once(token.clone()));
         }
         Rc::new(VecPeekableRustHtmlToken::new(stream))

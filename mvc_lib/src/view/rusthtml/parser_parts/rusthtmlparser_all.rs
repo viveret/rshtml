@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
@@ -119,11 +118,11 @@ impl IRustHtmlParserAll for RustHtmlParserAll {
     fn expand_rust_with_context(self: &Self, context: Rc<RustHtmlParserContext>, input: TokenStream, cancellation_token: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
         let _scope = CallstackTrackerScope::enter(context.get_call_stack(), nameof::name_of_type!(RustHtmlParserAll), nameof_member_fn!(RustHtmlParserAll::expand_rust_with_context));
         let it = Rc::new(StreamPeekableTokenTree::new(input));
-        match self.get_converter().convert_rust(it, context.clone(), cancellation_token.clone()) {
+        match self.get_expander().convert_rust_to_rusthtml(context.clone(), it, cancellation_token.clone()) {
             Ok(input_rshtml) => {
                 match self.get_expander().expand_rshtml(context.clone(), Rc::new(VecPeekableRustHtmlToken::new(input_rshtml.clone())), cancellation_token.clone()) {
-                    Ok(()) => {
-                        match self.get_converter_out().convert_out(context.clone(), cancellation_token) {
+                    Ok(output_rshtml) => {
+                        match self.get_converter_out().convert_vec(output_rshtml, context.clone(), cancellation_token) {
                             Ok(output) => {
                                 Ok(TokenStream::from_iter(output.into_iter()))
                             },

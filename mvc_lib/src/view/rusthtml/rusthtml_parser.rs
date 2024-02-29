@@ -6,9 +6,9 @@ use proc_macro2::{ Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
-use crate::view::rusthtml::peekable_tokentree::PeekableTokenTree;
 use super::irusthtml_parser_context::IRustHtmlParserContext;
 use super::irusthtml_to_rust_converter::IRustHtmlToRustConverter;
+use super::parser_parts::peekable_tokentree::StreamPeekableTokenTree;
 use super::rust_to_rusthtml_converter::RustToRustHtmlConverter;
 use super::rusthtml_parser_context::RustHtmlParserContext;
 use super::rusthtml_to_rust_converter::RustHtmlToRustConverter;
@@ -45,7 +45,7 @@ impl RustHtmlParser {
     // input: the tokens to expand.
     // returns: the expanded tokens.
     pub fn expand_tokenstream(self: &Self, input: TokenStream) -> Result<TokenStream, RustHtmlError> {
-        let it = Rc::new(PeekableTokenTree::new(input));
+        let it = Rc::new(StreamPeekableTokenTree::new(input));
 
         let rusthtml_tokens_for_view = self.parser.parse_tokenstream_to_rusthtmltokens(true, it, false)?;
 

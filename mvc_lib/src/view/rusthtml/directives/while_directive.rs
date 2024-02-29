@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use proc_macro2::{Ident, TokenTree, Delimiter};
 
-use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;

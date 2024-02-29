@@ -5,7 +5,7 @@ use std::vec;
 use proc_macro2::{Ident, TokenTree, Group, Delimiter, Literal};
 
 use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
-use crate::view::rusthtml::peekable_tokentree::{IPeekableTokenTree, PeekableTokenTree};
+use crate::view::rusthtml::parser_parts::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree, VecPeekableTokenTree};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -24,7 +24,7 @@ impl HtmlFormDirective {
 
     // parse the form function call and add the form tokens to the output.
     // the form function call is called between the form opening and closing tags.
-    fn parse_form_function_call(self: &Self, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: &dyn IPeekableTokenTree) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
+    fn parse_form_function_call(self: &Self, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
         // println!("parsing form function call");
 
         // parse method
@@ -162,7 +162,7 @@ impl HtmlFormDirective {
         Ok(RustHtmlDirectiveResult::OkContinue)
     }
 
-    fn parse_form_render_closure(self: &Self, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: &dyn IPeekableTokenTree) -> Result<(), RustHtmlError<'static>> {
+    fn parse_form_render_closure(self: &Self, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
         // expecting closure to render contents of form
         // must start with () to indicate it is a function
         match it.next() {
@@ -175,7 +175,7 @@ impl HtmlFormDirective {
                                 Some(token) => {
                                     match token {
                                         TokenTree::Group(group) => {
-                                            let inner_it = Rc::new(PeekableTokenTree::new(group.stream()));
+                                            let inner_it = Rc::new(StreamPeekableTokenTree::new(group.stream()));
                                             match parser.parse_tokenstream_to_rusthtmltokens(true, inner_it, parser.get_context().get_is_raw_tokenstream()) {
                                                 Ok(tokens) => {
                                                     output.extend_from_slice(tokens.as_slice());
@@ -202,7 +202,7 @@ impl HtmlFormDirective {
         }
     }
     
-    fn try_parse_object_route_values(self: &Self, it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
+    fn try_parse_object_route_values(self: &Self, it: Rc<dyn IPeekableTokenTree>) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
         if let Some(group_object) = Self::peek_group_with_braces(it) {
             // skip group after peeking
             it.next();
@@ -263,7 +263,7 @@ impl HtmlFormDirective {
         Ok(Some(object_route_values))
     }
     
-    fn try_parse_object_html_attributes(it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>>, RustHtmlError<'static>> {
+    fn try_parse_object_html_attributes(it: Rc<dyn IPeekableTokenTree>) -> Result<Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>>, RustHtmlError<'static>> {
         if let Some(group_object) = Self::peek_group_with_braces(it) {
             // skip group after peeking
             it.next();
@@ -275,7 +275,7 @@ impl HtmlFormDirective {
         }
     }
     
-    fn peek_group_with_braces(it: &dyn IPeekableTokenTree) -> Option<Group> {
+    fn peek_group_with_braces(it: Rc<dyn IPeekableTokenTree>) -> Option<Group> {
         if let Some(token) = it.peek() {
             if let TokenTree::Group(group) = token {
                 if group.delimiter() == Delimiter::Brace {
@@ -334,7 +334,7 @@ impl HtmlFormDirective {
         Ok(Some(object_attributes))
     }
     
-    fn check_for_comma(it: &dyn IPeekableTokenTree) -> bool {
+    fn check_for_comma(it: Rc<dyn IPeekableTokenTree>) -> bool {
         if let Some(token) = it.peek() {
             if let TokenTree::Punct(punct) = &token {
                 if punct.as_char() == ',' {
@@ -359,7 +359,7 @@ impl IRustHtmlDirective for HtmlFormDirective {
 
         if let Some(token) = it.next() {
             if let TokenTree::Group(group) = token {
-                return self.parse_form_function_call(parser, output, &PeekableTokenTree::new(group.stream()));
+                return self.parse_form_function_call(parser, output, Rc::new(StreamPeekableTokenTree::new(group.stream())));
             } else {
                 return Err(RustHtmlError::from_string(format!("expected function call group, not \"{}\"", token)));
             }

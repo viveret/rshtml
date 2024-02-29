@@ -12,7 +12,6 @@ use super::irust_processor::IRustProcessor;
 use super::irusthtml_parser_context::IRustHtmlParserContext;
 use super::irusthtml_processor::IRustHtmlProcessor;
 use super::node_helpers::inode_parsed::IHtmlNodeParsed;
-use super::parsers::rusthtmlparser_all::IRustHtmlParserAll;
 use super::rusthtml_error::RustHtmlError;
 use super::rusthtml_token::RustHtmlToken;
 use super::tag_helpers::itag_parsed::IHtmlTagParsed;
@@ -211,9 +210,9 @@ impl IRustHtmlParserContext for RustHtmlParserContextLog {
         self.order_of_operations.borrow().clone()
     }
 
-    fn push_inject_statements_rshtml(self: &Self, rust: Vec<RustHtmlToken>, parser: Rc<dyn IRustHtmlParserAll>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) {
+    fn push_inject_statements_rshtml(self: &Self, rust: Vec<RustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) {
         self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::push_inject_statements_rshtml));
-        self.real_context.push_inject_statements_rshtml(rust, parser, ctx, ct);
+        self.real_context.push_inject_statements_rshtml(rust, ctx, ct);
     }
 
     fn get_use_statements_stream(self: &Self) -> proc_macro2::TokenStream {

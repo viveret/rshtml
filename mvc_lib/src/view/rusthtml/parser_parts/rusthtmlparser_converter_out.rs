@@ -16,7 +16,6 @@ use super::rusthtmlparser_all::{IRustHtmlParserAssignSharedParts, IRustHtmlParse
 
 
 pub trait IRustHtmlParserConverterOut: IRustHtmlParserAssignSharedParts {
-    fn convert_out(self: &Self, context: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError>;
     fn convert_token(self: &Self, token: RustHtmlToken) -> Result<Vec<TokenTree>, RustHtmlError>;
     fn convert_peek_stream(self: &Self, tokens: Rc<dyn IPeekableRustHtmlToken>, context: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<TokenTree>, RustHtmlError>;
     fn convert_vec(self: &Self, tokens: Vec<RustHtmlToken>, context: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<TokenTree>, RustHtmlError>;
@@ -104,9 +103,9 @@ impl IRustHtmlParserConverterOut for RustHtmlParserConverterOut {
     fn convert_rusthtmltoken_to_tokentree(self: &Self, token: &RustHtmlToken, it: Rc<dyn IPeekableRustHtmlToken>, context: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
         let _scope = CallstackTrackerScope::enter(context.get_call_stack(), nameof::name_of_type!(RustHtmlParserConverterOut), nameof_member_fn!(RustHtmlParserConverterOut::convert_rusthtmltoken_to_tokentree));
         match token {
-            // RustHtmlToken::GroupParsed(delimiter, inner_tokens) => {
-            //     self.convert_rusthtmlgroupparsed_to_tokentree(delimiter, inner_tokens.clone(), it, context.clone(), ct)
-            // },
+            RustHtmlToken::GroupParsed(delimiter, inner_tokens) => {
+                self.convert_rusthtmlgroupparsed_to_tokentree(delimiter, inner_tokens.clone(), it, context.clone(), ct)
+            },
             RustHtmlToken::Identifier(ident) => Ok(vec![TokenTree::Ident(ident.clone())]),
             RustHtmlToken::Literal(literal, string) => {
                 if let Some(literal) = literal {
@@ -118,9 +117,9 @@ impl IRustHtmlParserConverterOut for RustHtmlParserConverterOut {
                 }
             },
             RustHtmlToken::ReservedChar(_, punct) => Ok(vec![TokenTree::Punct(punct.clone())]),
-            RustHtmlToken::Group(_delimiter, s, group) => Ok(vec![TokenTree::Group(group.clone().unwrap().clone())]),
-            // RustHtmlToken::GroupParsed(delimiter, inner_tokens) => 
-            //     self.convert_rusthtmlgroupparsed_to_tokentree(delimiter, inner_tokens.clone(), it, context.clone(), ct),
+            RustHtmlToken::Group(_delimiter, group) => Ok(vec![TokenTree::Group(group.clone().unwrap().clone())]),
+            RustHtmlToken::GroupParsed(delimiter, inner_tokens) => 
+                self.convert_rusthtmlgroupparsed_to_tokentree(delimiter, inner_tokens.clone(), it, context.clone(), ct),
             RustHtmlToken::HtmlTagStart(tag, tag_tokens) =>
                 self.convert_rusthtmltagstart_to_tokentree(tag, tag_tokens.as_ref(), it),
             RustHtmlToken::HtmlTagVoid(tag, tag_tokens) =>
@@ -329,12 +328,12 @@ impl IRustHtmlParserConverterOut for RustHtmlParserConverterOut {
             .join("")
     }
 
-    fn convert_out(self: &Self, context: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
-        let output = context.pop_output_buffer().unwrap();
-        let output_it = Rc::new(VecPeekableRustHtmlToken::new(output.borrow().clone()));
-        match self.convert_peek_stream(output_it, context, ct) {
-            Ok(output) => Ok(TokenStream::from_iter(output.into_iter())),
-            Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.into_owned()))
-        }
-    }
+    // fn convert_out(self: &Self, context: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
+    //     let output = context.pop_output_buffer().unwrap();
+    //     let output_it = Rc::new(VecPeekableRustHtmlToken::new(output.borrow().clone()));
+    //     match self.convert_peek_stream(output_it, context, ct) {
+    //         Ok(output) => Ok(TokenStream::from_iter(output.into_iter())),
+    //         Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.into_owned()))
+    //     }
+    // }
 }

@@ -5,7 +5,7 @@ use proc_macro2::{TokenTree, Punct, Delimiter};
 
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
-use crate::view::rusthtml::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 
 use super::rusthtmlparser_all::{IRustHtmlParserAssignSharedParts, IRustHtmlParserAll};
 

@@ -118,6 +118,20 @@ pub trait IRustHtmlParserExpander: IRustHtmlParserAssignSharedParts {
     // returns: the expanded tokens or an error.
     fn expand_string_or_ident(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlIdentAndPunctAndGroupOrLiteral, RustHtmlError>;
 
+    // iterate the iterator by one step (next) and expand a token tree to RustHtml tokens in the context of a HTML tag.
+    // token_option: the token to expand.
+    // parse_ctx: the parse context.
+    // it: the iterator to use.
+    // is_raw_tokenstream: whether the token stream is raw or not.
+    // returns: whether we should break the outer loop or not, or an error.
+    fn next_and_parse_html_tag(
+        self: &Self,
+        token: &RustHtmlToken,
+        parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        it: Rc<dyn IPeekableRustHtmlToken>,
+        ct: Rc<dyn ICancellationToken>,
+    ) -> Result<bool, RustHtmlError>;
+
     // expand RustHtml tokens to a RustHtml identifier or punct or group.
     // tokens: the tokens to expand.
     // returns: the expanded tokens or an error.
@@ -127,18 +141,18 @@ pub trait IRustHtmlParserExpander: IRustHtmlParserAssignSharedParts {
         ct: Rc<dyn ICancellationToken>
     ) -> Result<Vec<RustHtmlIdentOrPunctOrGroup>, RustHtmlError>;
 
-    // // expand a Rust identifier to a RustHtml token in the context of a HTML tag.
-    // // ident: the identifier to expand.
-    // // parse_ctx: the parse context.
-    // // it: the iterator to use.
-    // // returns: nothing or an error.
-    // fn expand_html_ident_to_rusthtmltoken(
-    //     self: &Self, 
-    //     ident: &Ident,
-    //     parse_ctx: Rc<dyn IHtmlTagParseContext>,
-    //     it: Rc<dyn IPeekableRustHtmlToken>,
-    //     ct: Rc<dyn ICancellationToken>,
-    // ) -> Result<(), RustHtmlError>;
+    // expand a Rust identifier to a RustHtml token in the context of a HTML tag.
+    // ident: the identifier to expand.
+    // parse_ctx: the parse context.
+    // it: the iterator to use.
+    // returns: nothing or an error.
+    fn expand_html_ident_to_rusthtmltoken(
+        self: &Self, 
+        ident: &Ident,
+        parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        it: Rc<dyn IPeekableRustHtmlToken>,
+        ct: Rc<dyn ICancellationToken>,
+    ) -> Result<(), RustHtmlError>;
     
     // // expand a Rust literal to a RustHtml token in the context of a HTML tag.
     // // literal: the literal to expand.
@@ -169,17 +183,36 @@ pub trait IRustHtmlParserExpander: IRustHtmlParserAssignSharedParts {
     // parse_ctx: the parse context.
     // output: the destination for the RustHtml tokens.
     // returns: nothing.
-    // fn on_kvp_defined(
-    //     self: &Self,
-    //     parse_ctx: Rc<dyn IHtmlTagParseContext>,
-    //     ct: Rc<dyn ICancellationToken>
-    // ) -> Result<(), RustHtmlError>;
+    fn on_kvp_defined(
+        self: &Self,
+        parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        ct: Rc<dyn ICancellationToken>
+    ) -> Result<(), RustHtmlError>;
 
     // parse a Rust type identifier from a stream of tokens.
     // it: the iterator to use.
     // returns: the type identifier or an error.
     fn parse_type_identifier(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError>;
     
+    // parse a Rust type identifier from a stream of tokens.
+    fn on_html_tag_parsed(
+        self: &Self,
+        end_punct: Option<&Punct>,
+        parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        ctx: Rc<dyn IRustHtmlParserContext>,
+        ct: Rc<dyn ICancellationToken>
+    ) -> Result<bool, RustHtmlError>;
+
+    // called when a HTML node is parsed.
+    // parse_ctx: the parse context.
+    // output: the destination for the RustHtml tokens.
+    // returns: whether we should break the outer loop or not, or an error.
+    fn on_html_node_parsed(
+        self: &Self,
+        parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        ctx: Rc<dyn IRustHtmlParserContext>,
+        ct: Rc<dyn ICancellationToken>
+    ) -> Result<bool, RustHtmlError>;
 
     // expand a Rust group, identifier, or literal to RustHtml tokens.
     // token: the token to expand.
@@ -199,6 +232,7 @@ pub trait IRustHtmlParserExpander: IRustHtmlParserAssignSharedParts {
     fn expand_tokenstream_to_rusthtmltokens(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>,  ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;
     fn loop_next_and_expand(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>,  ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError>;
     fn next_and_expand(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>,  ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<bool, RustHtmlError>;
+    fn expand_html_entry_to_rusthtmltoken(self: &Self, c: char, punct: &Punct, it: Rc<dyn IPeekableRustHtmlToken>,  ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError>;
 
     // expand a Rust group to a RustHtml token.
     // group: the group to expand.
@@ -224,16 +258,17 @@ impl RustHtmlParserExpander {
         self.parser.borrow().as_ref().expect("self.parser was None").clone()
     }
 
-    // fn expand_group(&self, delimiter: &Delimiter, it: Rc<dyn IPeekableRustHtmlToken>, group: &Option<Group>, expect_return_html: bool, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
-    //     let inner_tokens_sharable = Rc::new(RefCell::new(vec![]));
-    //     ctx.push_output_buffer(inner_tokens_sharable.clone());
-    //     self.loop_next_and_expand(it, ctx.clone(), ct)?;
-    //     ctx.pop_output_buffer();
-    //     if inner_tokens_sharable.borrow().len() > 0 {
-    //         ctx.push_output_token(RustHtmlToken::Group(delimiter.clone(), Rc::new(VecPeekableRustHtmlToken::new(inner_tokens_sharable.borrow().clone())), None));
-    //     }
-    //     Ok(())
-    // }
+    fn expand_group(&self, delimiter: &Delimiter, it: Rc<dyn IPeekableRustHtmlToken>, group: &Option<Group>, is_in_html_mode: bool, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
+        let mut inner_tokens = vec![];
+        let inner_tokens_sharable = Rc::new(RefCell::new(inner_tokens));
+        ctx.push_output_buffer(inner_tokens_sharable);
+        self.loop_next_and_expand(it, ctx, ct)?;
+        ctx.pop_output_buffer();
+        if inner_tokens.len() > 0 {
+            ctx.push_output_token(RustHtmlToken::Group(delimiter.clone(), Rc::new(VecPeekableRustHtmlToken::new(inner_tokens)), None));
+        }
+        Ok(())
+    }
 }
 
 impl IRustHtmlParserAssignSharedParts for RustHtmlParserExpander {
@@ -322,7 +357,7 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
         callstack_tracker_scope_and_assert!(ctx, RustHtmlParserExpander::expand_rusthtml);
 
         loop {
-            let next_token = it.next();
+            let next_token = it.peek();
             match next_token {
                 Some(token) => {
                     self.expand_rshtmltoken(token, it.clone(), ctx.clone(), ct.clone())?;
@@ -343,37 +378,20 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             RustHtmlToken::ReservedChar(c, p) => {
                 match self.expand_rshtml_punct(p, it.clone(), ctx.clone(), ct.clone()) {
                     Ok(b) => {
-                        Ok(())
+                        return Ok(());
                     },
                     Err(RustHtmlError(err)) => {
-                        Err(RustHtmlError::from_string(err.into_owned()))
+                        return Err(RustHtmlError::from_string(err.into_owned()));
                     }
                 }
             },
-            RustHtmlToken::Group(d, stream, group) => {
-                // consume the token from the stream
-                // it.next();
-                match self.expand_group_to_rusthtmltoken(d, group, stream.clone(), false, ctx.clone(), ct.clone()) {
-                    Ok(_) => {
-                        Ok(())
-                    },
-                    Err(RustHtmlError(err)) => {
-                        Err(RustHtmlError::from_string(err.into_owned()))
-                    }
-                }
-            },
-            // RustHtmlToken::GroupParsed(d, tokens) => {
-            //     self.expand_group_to_rusthtmltoken(delimiter, group, it, expect_return_html, ctx, ct)
-            // },
             _ => {
-                Err(RustHtmlError::from_string(format!("Unexpected token for expand_rshtmltoken: {:?}", token)))
+                Err(RustHtmlError::from_string(format!("Unexpected token: {:?}", token)))
             }
         }
     }
 
     fn expand_rshtml_punct(&self, punct: &Punct, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<bool, RustHtmlError> {
-        callstack_tracker_scope_and_assert!(ctx, RustHtmlParserExpander::expand_rshtml_punct);
-
         let c = punct.as_char();
         let is_in_html_mode = ctx.get_is_in_html_mode();
         match c {
@@ -382,16 +400,16 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             },
             '<' => {
                 ctx.push_is_in_html_mode(true);
-                self.get_parser().get_html_parser().expand_html_entry_to_rusthtmltoken(c, punct, it, ctx.clone(), ct)?
+                self.expand_html_entry_to_rusthtmltoken(c, punct, it, ctx.clone(), ct)?
             },
             '}' if !is_in_html_mode => {
                 return Ok(true); // do not continue
             },
             '>' if !is_in_html_mode => {
-                ctx.push_output_token(RustHtmlToken::ReservedChar(c, punct.clone()))?;
+                ctx.push_output_token(RustHtmlToken::ReservedChar(c, punct.clone()));
             },
             '|' if !is_in_html_mode => {
-                ctx.push_output_token(RustHtmlToken::ReservedChar(c, punct.clone()))?;
+                ctx.push_output_token(RustHtmlToken::ReservedChar(c, punct.clone()));
 
                 // peek ahead to see if this is a || -> or something else
                 if self.peek_reserved_chars_in_str("|->", ctx.clone(), it.clone())? {
@@ -402,7 +420,7 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                                 if next_ident.to_string() == "HtmlString" {
                                     // this is a function that returns HtmlString
                                     it.next();
-                                    ctx.push_output_token(RustHtmlToken::Identifier(next_ident.clone()))?;
+                                    ctx.push_output_token(RustHtmlToken::Identifier(next_ident.clone()));
 
                                     // parse the rest of the function, which should be in a {} group
                                     if let Some(group_token) = it.next() {
@@ -427,9 +445,9 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             },
             _ => {
                 if is_in_html_mode {
-                    ctx.push_output_token(RustHtmlToken::HtmlTextNode(punct.as_char().to_string(), punct.span().clone()))?;
+                    ctx.push_output_token(RustHtmlToken::HtmlTextNode(punct.as_char().to_string(), punct.span().clone()));
                 } else {
-                    ctx.push_output_token(RustHtmlToken::ReservedChar(c, punct.clone()))?;
+                    ctx.push_output_token(RustHtmlToken::ReservedChar(c, punct.clone()));
                 }
             },
         }
@@ -437,30 +455,26 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
     }
 
     fn expand_rust_entry_to_rusthtmltoken(self: &Self, _c: char, _punct: &Punct, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>,  ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
-        callstack_tracker_scope_and_assert!(ctx, RustHtmlParserExpander::expand_rust_entry_to_rusthtmltoken);
         if let Some(directive_token) = it.next() {
-            self.expand_rust_directive_to_rusthtmltoken(directive_token, None, it.clone(), ctx.clone(), ct)?;
+            self.expand_rust_directive_to_rusthtmltoken(directive_token, None, it.clone(), ctx, ct)?;
         }
         Ok(())
     }
     
     fn expand_rust_directive_to_rusthtmltoken(self: &Self, token: &RustHtmlToken, prefix_token_option: Option<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>,  ct: Rc<dyn ICancellationToken>) -> Result<bool, RustHtmlError>  {
-        callstack_tracker_scope_and_assert!(ctx, RustHtmlParserExpander::expand_rust_directive_to_rusthtmltoken);
         if ct.is_cancelled() {
             return Err(RustHtmlError::from_string(format!("Task Cancelled")));
         }
 
-        // println!("expand_rust_directive_to_rusthtmltoken: {:?}", token);
-
         match token {
             RustHtmlToken::Identifier(ref ident) => {
-                self.expand_rust_directive_identifier_to_rusthtmltoken(ident, &token, prefix_token_option, it, ctx.clone(), ct)?;
+                self.expand_rust_directive_identifier_to_rusthtmltoken(ident, &token, prefix_token_option, it, ctx, ct)?;
             },
             RustHtmlToken::Group(d, stream, group) => {
-                self.expand_rust_directive_group_to_rusthtmltoken(d, group, stream.clone(), prefix_token_option, ctx.clone(), ct)?;
+                self.expand_rust_directive_group_to_rusthtmltoken(d, group, stream.clone(), prefix_token_option, ctx, ct)?;
             },
             RustHtmlToken::Literal(literal, s) => {
-                ctx.push_output_token(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Literal(literal.clone(), s.clone())]))?;
+                ctx.push_output_token(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Literal(literal.clone(), s.clone())]));
                 // self.expand_rusthtml_literal_to_rusthtmltoken(group, it);
             },
             RustHtmlToken::ReservedChar(c, punct) => {
@@ -468,14 +482,14 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                 match c {
                     '@' => {
                         // escape '@'
-                        ctx.push_output_token(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::ReservedChar(c, punct.clone())]))?;
+                        ctx.push_output_token(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::ReservedChar(c, punct.clone())]));
                     },
                     '&' => {
                         let prefix_token = RustHtmlToken::ReservedChar(c, punct.clone());
                         
                         let next_token = it.next();
                         if let Some(token) = next_token {
-                            return self.expand_rust_directive_to_rusthtmltoken(token, Some(prefix_token), it.clone(), ctx.clone(), ct);
+                            return self.expand_rust_directive_to_rusthtmltoken(token, Some(prefix_token), it.clone(), ctx, ct);
                         }
                     },
                     _ => {
@@ -492,19 +506,18 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
     
 
     fn expand_rust_directive_group_to_rusthtmltoken(self: &Self, delimiter: &Delimiter, group: &Option<Group>, stream: Rc<dyn IPeekableRustHtmlToken>, _prefix_token_option: Option<RustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
-        callstack_tracker_scope_and_assert!(ctx, RustHtmlParserExpander::expand_rust_directive_group_to_rusthtmltoken);
-        let inner_tokens = Rc::new(RefCell::new(vec![]));
-        ctx.push_output_buffer(inner_tokens.clone());
+        let mut inner_tokens = vec![];
+        // let it = Rc::new(StreamPeekableRustHtmlToken::new(group.stream()));
+        let it = stream;
         ctx.push_is_in_html_mode(false);
-        self.loop_next_and_expand(stream.clone(), ctx.clone(), ct)?;
-        ctx.pop_output_buffer();
-        if inner_tokens.borrow().len() > 0 {
+        self.loop_next_and_expand(it, ctx, ct)?;
+        if inner_tokens.len() > 0 {
             match delimiter {
                 Delimiter::Brace => {
-                    ctx.push_output_tokens(&inner_tokens.borrow())?;
+                    ctx.push_output_tokens(&inner_tokens);
                 },
                 Delimiter::Parenthesis => {
-                    ctx.push_output_token(RustHtmlToken::AppendToHtml(inner_tokens.borrow().clone()))?;
+                    ctx.push_output_token(RustHtmlToken::AppendToHtml(inner_tokens));
                 },
                 _ => {
                     return Err(RustHtmlError::from_string(format!("unexpected delimiter: {:?}", delimiter)));
@@ -516,17 +529,14 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
 
 
     fn expand_rust_directive_identifier_to_rusthtmltoken(self: &Self, identifier: &Ident, ident_token: &RustHtmlToken, prefix_token_option: Option<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
-        callstack_tracker_scope_and_assert!(ctx, RustHtmlParserExpander::expand_rust_directive_identifier_to_rusthtmltoken);
         if let Some(directive) = ctx.try_get_directive(identifier.to_string()) {
-            let r = directive.execute(ctx.clone(), &identifier, ident_token, self.get_parser(), it, ct);
+            let r = directive.execute(ctx.clone(), &identifier, ident_token, self.parser.borrow().as_ref().unwrap().clone(), it, ct);
             match r {
                 Ok(r) => {
                     match r {
                         RustHtmlDirectiveResult::OkContinue => { },
                         RustHtmlDirectiveResult::OkBreak => { },
-                        RustHtmlDirectiveResult::OkBreakAppendHtml => {
-                            ctx.push_output_token(RustHtmlToken::AppendToHtml(vec![]))?;
-                        },
+                        RustHtmlDirectiveResult::OkBreakAppendHtml => ctx.push_output_token(RustHtmlToken::AppendToHtml(vec![])),
                     }
                 },
                 Err(RustHtmlError(e)) => {
@@ -534,14 +544,15 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                 }
             }
         } else {
-            let inner_tokens = Rc::new(RefCell::new(vec![]));
-            ctx.push_output_buffer(inner_tokens.clone());
+            let mut inner_tokens = vec![];
+            let inner_tokens_sharable = Rc::new(RefCell::new(inner_tokens));
+            ctx.push_output_buffer(inner_tokens_sharable);
             if let Some(prefix_token) = prefix_token_option {
-                inner_tokens.borrow_mut().push(prefix_token);
+                inner_tokens.push(prefix_token);
             }
-            self.parse_identifier_expression(true, identifier, ident_token, true, it, ctx.clone(), ct)?;
+            self.parse_identifier_expression(true, identifier, ident_token, true, it, ctx, ct)?;
             ctx.pop_output_buffer();
-            ctx.push_output_token(RustHtmlToken::AppendToHtml(inner_tokens.borrow().clone()))?;
+            ctx.push_output_token(RustHtmlToken::AppendToHtml(inner_tokens));
         }
         Ok(())
     }
@@ -553,13 +564,12 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
     // is_raw_tokenstream: whether the token stream is raw or not.
     // returns: the RustHtml tokens.
     fn expand_tokenstream_to_rusthtmltokens(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
-        callstack_tracker_scope_and_assert!(ctx, RustHtmlParserExpander::expand_tokenstream_to_rusthtmltokens);
-        let rusthtml_tokens = Rc::new(RefCell::new(vec![]));
-        ctx.push_output_buffer(rusthtml_tokens.clone());
-        self.loop_next_and_expand(it, ctx.clone(), ct)?;
+        let mut rusthtml_tokens = Vec::new();
+        let sharable_buffer = Rc::new(RefCell::new(rusthtml_tokens));
+        ctx.push_output_buffer(sharable_buffer);
+        self.loop_next_and_expand(it, ctx, ct)?;
         ctx.pop_output_buffer();
-        let borrowed = rusthtml_tokens.borrow();
-        Ok(borrowed.clone())
+        Ok(rusthtml_tokens)
     }
 
     // loop through the token stream and expand it to RustHtml tokens.
@@ -568,8 +578,7 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
     // it: the token stream to parse.
     // is_raw_tokenstream: whether the token stream is raw or not.
     // returns: nothing or error.
-    fn loop_next_and_expand(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
-        callstack_tracker_scope_and_assert!(ctx, RustHtmlParserExpander::loop_next_and_expand);
+    fn loop_next_and_expand(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>,  ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
         loop {
             if ct.is_cancelled() {
                 return Err(RustHtmlError::from_string(format!("Task Cancelled")));
@@ -624,16 +633,16 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
         match token {
             RustHtmlToken::Identifier(ident) => {
                 if is_in_html_mode {
-                    ctx.push_output_token(RustHtmlToken::HtmlTextNode(ident.to_string(), ident.span().clone()))?;
+                    ctx.push_output_token(RustHtmlToken::HtmlTextNode(ident.to_string(), ident.span().clone()));
                 } else {
-                    ctx.push_output_token(RustHtmlToken::Identifier(ident.clone()))?;
+                    ctx.push_output_token(RustHtmlToken::Identifier(ident.clone()));
                 }
             },
             RustHtmlToken::Literal(literal, s) => {
                 if is_in_html_mode {
-                    ctx.push_output_token(RustHtmlToken::HtmlTextNode(literal.clone().unwrap().to_string(), literal.clone().unwrap().span().clone()))?;
+                    ctx.push_output_token(RustHtmlToken::HtmlTextNode(literal.clone().unwrap().to_string(), literal.clone().unwrap().span().clone()));
                 } else {
-                    ctx.push_output_token(RustHtmlToken::Literal(literal.clone(), None))?;
+                    ctx.push_output_token(RustHtmlToken::Literal(literal.clone(), None));
                 }
             },
             RustHtmlToken::ReservedChar(c, punct) => {
@@ -690,7 +699,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
         path.push(cwd);
         
         // do match instead
-        match self.get_parser()
+        match self.parser.borrow().as_ref()
+                    .expect("shared_parser was None")
                     .get_rust_parser()
                     .parse_string_with_quotes(true, identifier, it) {
             Ok(relative_path) => {
@@ -709,9 +719,10 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
         let mut path = std::path::PathBuf::new();
         let cwd = std::env::current_dir().expect("couldn't get current working directory");
         path.push(cwd);
-        match self.get_parser()
+        match self.parser.borrow().as_ref()
+                    .expect("shared_parser was None")
                     .get_rust_parser()
-                    .parse_string_with_quotes(false, identifier, it) {
+                    .parse_string_with_quotes(true, identifier, it) {
             Ok(relative_path) => {
                 path.push(relative_path.clone());
             },
@@ -767,6 +778,85 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
         }
     }
 
+    // expand a Rust HTML entry to a RustHtml token.
+    // punct: the punctuation to expand.
+    // it: the iterator to use.
+    // is_raw_tokenstream: whether the token stream is raw or not.
+    // returns: nothing or an error.
+    fn expand_html_entry_to_rusthtmltoken(self: &Self, c: char, punct: &Punct, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
+        let is_in_html_mode = ctx.get_is_in_html_mode();
+        if is_in_html_mode || self.is_start_of_current_expression_ctx(ctx.clone()) {
+            // the below context is orphaned by not passing the parent html tag parse context.
+            // this is usually fine. but we need to pass the main context to call add_operation_to_ooo_log
+            // let ctx = Rc::new(HtmlTagParseContext::new(Some(ctx.clone())));
+            let htmlctx = HtmlTagParseContext::new_and_attach(ctx.clone());
+            let mut output_inner = vec![];
+            let output_inner_sharable = Rc::new(RefCell::new(output_inner));
+            ctx.push_output_buffer(output_inner_sharable);
+            // it.enable_log_next("expand_html_entry_to_rusthtmltoken");
+            loop {
+                if ct.is_cancelled() {
+                    return Err(RustHtmlError::from_string(format!("Task Cancelled")));
+                }
+
+                let token_option = it.next();
+                if let Some(token) = token_option {
+                    if self.next_and_parse_html_tag(&token, htmlctx.clone(), it.clone(), ct.clone())? {
+                        // println!("expand_html_entry_to_rusthtmltoken: breaking on {:?}", token);
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+            // it.disable_log_next();
+
+            let mut add_inner = true;
+            if htmlctx.is_opening_tag() && !htmlctx.is_void_tag() && !htmlctx.is_self_contained_tag() {
+                // parse inner elements / code until we find closing tag
+                ctx.htmltag_scope_stack_push(htmlctx.tag_name_as_str());
+                loop {
+                    if ct.is_cancelled() {
+                        return Err(RustHtmlError::from_string(format!("Task Cancelled")));
+                    }
+
+                    // might need to pass true to ctx.push_is_in_html_mode
+                    if self.next_and_expand(it.clone(), ctx.clone(), ct.clone())? {
+                        break;
+                    }
+                    match output_inner.last() {
+                        Some(RustHtmlToken::HtmlTagEnd(tag_end, _tag_end_tokens)) => {
+                            if tag_end == &htmlctx.tag_name_as_str() {
+                                break;
+                            }
+                        },
+                        _ => {
+                        }
+                    }
+                }
+                let last_scope_from_stack = ctx.htmltag_scope_stack_pop().expect("expected tag name on stack");
+                if last_scope_from_stack != htmlctx.tag_name_as_str() {
+                    return Err(RustHtmlError::from_string(format!("Mismatched HTML tags (found {} but expected {})", last_scope_from_stack, htmlctx.tag_name_as_str())));
+                }
+
+                if let Some(output_inner_last) = output_inner.last() {
+                    if let RustHtmlToken::HtmlTagEnd(_tag_end, _tag_end_tokens) = output_inner_last {
+                        add_inner = self.on_html_node_parsed(htmlctx, ctx, ct)?;
+                    }
+                }
+            }
+
+            if add_inner {
+                ctx.pop_output_buffer();
+                ctx.push_output_tokens(&output_inner);
+            }
+        } else {
+            ctx.push_output_token(RustHtmlToken::ReservedChar(c, punct.clone()));
+        }
+
+        Ok(())
+    }
+
     // expand a Rust group to a RustHtml token.
     // group: the group to expand.
     // is_in_html_mode: whether we are in HTML mode or not.
@@ -774,30 +864,28 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
     // is_raw_tokenstream: whether the token stream is raw or not.
     // returns: nothing or an error.
     fn expand_group_to_rusthtmltoken(self: &Self, delimiter: &Delimiter, group: &Option<Group>, group_stream: Rc<dyn IPeekableRustHtmlToken>, expect_return_html: bool, ctx: Rc<dyn IRustHtmlParserContext>,  ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
-        callstack_tracker_scope_and_assert!(ctx, RustHtmlParserExpander::expand_group_to_rusthtmltoken);
-
         // let it = Rc::new(StreamPeekableRustHtmlToken::new(group.stream()));
+        let it = group_stream;
         if ctx.get_is_in_html_mode() {
             ctx.add_operation_to_ooo_log(format!("expand_group_to_rusthtmltoken: {:?}", group));
             let c_start = self.get_opening_delim(delimiter);
             let c_end = self.get_closing_delim(delimiter);
 
-            ctx.push_output_token(RustHtmlToken::HtmlTextNode(c_start.to_string(), group.clone().unwrap().span()))?;
+            ctx.push_output_token(RustHtmlToken::HtmlTextNode(c_start.to_string(), group.clone().unwrap().span()));
             // might need to pass true to ctx.push_is_in_html_mode
-            self.loop_next_and_expand(group_stream.clone(), ctx.clone(), ct)?;
-            ctx.push_output_token(RustHtmlToken::HtmlTextNode(c_end.to_string(), group.clone().unwrap().span()))?;
+            self.loop_next_and_expand(it, ctx, ct)?;
+            ctx.push_output_token(RustHtmlToken::HtmlTextNode(c_end.to_string(), group.clone().unwrap().span()));
 
             Ok(())
         } else {
-            self.loop_next_and_expand(group_stream.clone(), ctx.clone(), ct)
-            // match self.expand_group_to_rusthtmltoken(delimiter, group, group_stream, expect_return_html, ctx.clone(), ct) {
-            //     Ok(_) => {
-            //         Ok(())
-            //     },
-            //     Err(RustHtmlError(e)) => {
-            //         Err(RustHtmlError::from_string(format!("error expanding group: {}", e)))
-            //     }
-            // }
+            match self.expand_group(delimiter, group_stream, group, expect_return_html, ctx, ct) {
+                Ok(_) => {
+                    Ok(())
+                },
+                Err(RustHtmlError(e)) => {
+                    Err(RustHtmlError::from_string(format!("error expanding group: {}", e)))
+                }
+            }
         }
     }
 
@@ -902,9 +990,13 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
     // ctx: the context to use.
     // returns: if the current output is the start of a new expression or not.
     fn is_start_of_current_expression_ctx(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>) -> bool {
-        let output = ctx.get_output_buffer().unwrap();
-        let output = output.borrow();
-        self.is_start_of_current_expression(output.as_slice())
+        let output = ctx.get_output_buffer();
+        if let Some(output) = output {
+            let output = output.borrow().as_slice();
+            self.is_start_of_current_expression(output)
+        } else {
+            true
+        }
     }
 
     // parse a Rust string literal with quotes.
@@ -952,7 +1044,7 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                 // }
                 match self.parser.borrow().as_ref().unwrap().get_rust_parser().parse_rust_identifier_expression(add_first_ident, identifier_token, last_token_was_ident, it, ctx.clone(), ct.clone()) {
                     Ok(tokens_parsed) => {
-                        ctx.push_output_tokens(tokens_parsed.to_splice())?;
+                        ctx.push_output_tokens(tokens_parsed.to_splice());
                         Ok(())
                     },
                     Err(RustHtmlError(e)) => {
@@ -977,11 +1069,11 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                     Ok(RustHtmlIdentAndPunctAndGroupOrLiteral::Literal(literal.clone().unwrap()))
                 },
                 RustHtmlToken::Identifier(ref ident2) => {
-                    let inner_tokens = Rc::new(RefCell::new(vec![]));
-                    ctx.push_output_buffer(inner_tokens.clone());
+                    let mut inner_tokens = vec![];
+                    let inner_tokens_sharable = Rc::new(RefCell::new(inner_tokens));
+                    ctx.push_output_buffer(inner_tokens_sharable);
                     self.parse_identifier_expression(true, ident2, &expect_string_or_ident_token, true, it.clone(), ctx.clone(), ct.clone())?;
-                    let inner_tokens_raw = inner_tokens.borrow().clone();
-                    Ok(RustHtmlIdentAndPunctAndGroupOrLiteral::IdentAndPunctAndGroup(self.expand_rusthtmltokens_to_ident_or_punct_or_group(inner_tokens_raw, ctx.clone(), ct.clone())?))
+                    Ok(RustHtmlIdentAndPunctAndGroupOrLiteral::IdentAndPunctAndGroup(self.expand_rusthtmltokens_to_ident_or_punct_or_group(inner_tokens, ctx.clone(), ct.clone())?))
                 },
                 _ => {
                     Err(RustHtmlError::from_string(format!("expand_string_or_ident did not find string or ident")))
@@ -1000,7 +1092,6 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
         ctx: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
     ) -> Result<Vec<RustHtmlIdentOrPunctOrGroup>, RustHtmlError> {
-        
         if tokens.len() == 0 {
             return Err(RustHtmlError::from_string(format!("tokens was empty")));
         }
@@ -1010,7 +1101,7 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             RustHtmlToken::Identifier(ident) => RustHtmlIdentOrPunctOrGroup::Ident(x.clone()),
             RustHtmlToken::ReservedChar(_, punct) => RustHtmlIdentOrPunctOrGroup::Punct(x.clone()),
             RustHtmlToken::Group(d, stream, group) => RustHtmlIdentOrPunctOrGroup::Group(x.clone()),
-            // RustHtmlToken::GroupParsed(delimiter, tokens) => {
+            RustHtmlToken::GroupParsed(delimiter, tokens) => {
                 // let grouped: TokenStream = tokens.iter().map(|x| match x {
                 //         RustHtmlToken::Identifier(ident) => TokenTree::Ident(ident.clone()),
                 //         RustHtmlToken::ReservedChar(c, punct) => TokenTree::Punct(punct.clone()),
@@ -1023,120 +1114,109 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                 //     Ok(grouped_rusthtml) => grouped_rusthtml,
                 //     Err(RustHtmlError(e)) => panic!("expand_rusthtmltokens_to_ident_or_punct_or_group error expanding group: {}", e),
                 // };
-            //     let grouped_rusthtml = Rc::new(VecPeekableRustHtmlToken::new(tokens.clone()));
-            //     RustHtmlIdentOrPunctOrGroup::Group(
-            //         RustHtmlToken::Group(
-            //             delimiter.clone(),
-            //             grouped_rusthtml,
-            //             None,
-            //         )
-            //     )
-            // },
+                let grouped_rusthtml = Rc::new(VecPeekableRustHtmlToken::new(tokens.clone()));
+                RustHtmlIdentOrPunctOrGroup::Group(
+                    RustHtmlToken::Group(
+                        delimiter.clone(),
+                        grouped_rusthtml,
+                        None,
+                    )
+                )
+            },
             _ => panic!("expand_rusthtmltokens_to_ident_or_punct_or_group Unexpected token {:?}", x),
         })
         .collect();
         Ok(tokens_vec)
     }
 
-    // // iterate the iterator by one step (next) and expand a token tree to RustHtml tokens in the context of a HTML tag.
-    // // token_option: the token to expand.
-    // // parse_ctx: the parse context.
-    // // output: the destination for the RustHtml tokens.
-    // // it: the iterator to use.
-    // // is_raw_tokenstream: whether the token stream is raw or not.
-    // // returns: whether we should break the outer loop or not, or an error.
-    // fn next_and_parse_html_tag(
-    //     self: &Self,
-    //     token: &RustHtmlToken,
-    //     parse_ctx: Rc<dyn IHtmlTagParseContext>,
-    //     it: Rc<dyn IPeekableRustHtmlToken>,
-    //     ct: Rc<dyn ICancellationToken>,
-    // ) -> Result<bool, RustHtmlError> {
-    //     match token {
-    //         RustHtmlToken::Identifier(ident) => {
-    //             // println!("next_and_parse_html_tag: {:?}", token);
-    //             self.expand_html_ident_to_rusthtmltoken(&ident, parse_ctx, it, ct)?;
-    //         },
-    //         RustHtmlToken::Literal(literal, s) => {
-    //             // self.expand_html_literal_to_rusthtmltoken(literal.as_ref().unwrap(), parse_ctx, ct)?;
-    //             match parse_ctx.get_main_context().push_output_token(token.clone()) {
-    //                 Ok(_) => {},
-    //                 Err(RustHtmlError(e)) => {
-    //                     return Err(RustHtmlError::from_string(e.into_owned()));
-    //                 }
-    //             }
-    //         },
-    //         RustHtmlToken::ReservedChar(c, punct) => {
-    //             println!("next_and_parse_html_tag: {:?}", token);
-    //             return self.expand_html_punct_to_rusthtmltoken(&punct, parse_ctx, it, ct);
-    //             match parse_ctx.get_main_context().push_output_token(token.clone()) {
-    //                 Ok(_) => {},
-    //                 Err(RustHtmlError(e)) => {
-    //                     return Err(RustHtmlError::from_string(e.into_owned()));
-    //                 }
-    //             }
-    //         },
-    //         _ => {
-    //             return Err(RustHtmlError::from_string(format!("Unexpected token for next_and_parse_html_tag: {:?}", token)));
-    //         },
-    //     }
-    //     Ok(false)
-    // }
+    // iterate the iterator by one step (next) and expand a token tree to RustHtml tokens in the context of a HTML tag.
+    // token_option: the token to expand.
+    // parse_ctx: the parse context.
+    // output: the destination for the RustHtml tokens.
+    // it: the iterator to use.
+    // is_raw_tokenstream: whether the token stream is raw or not.
+    // returns: whether we should break the outer loop or not, or an error.
+    fn next_and_parse_html_tag(
+        self: &Self,
+        token: &RustHtmlToken,
+        parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        it: Rc<dyn IPeekableRustHtmlToken>,
+        ct: Rc<dyn ICancellationToken>,
+    ) -> Result<bool, RustHtmlError> {
+        match token {
+            RustHtmlToken::Identifier(ident) => {
+                // println!("next_and_parse_html_tag: {:?}", token);
+                self.expand_html_ident_to_rusthtmltoken(&ident, parse_ctx, it, ct)?;
+            },
+            RustHtmlToken::Literal(literal, s) => {
+                // self.expand_html_literal_to_rusthtmltoken(literal.as_ref().unwrap(), parse_ctx, ct)?;
+                parse_ctx.get_main_context().push_output_token(token.clone());
+            },
+            RustHtmlToken::ReservedChar(c, punct) => {
+                // return self.expand_html_punct_to_rusthtmltoken(&punct, parse_ctx, it, ct);
+                parse_ctx.get_main_context().push_output_token(token.clone());
+            },
+            _ => {
+                return Err(RustHtmlError::from_string(format!("next_and_parse_html_tag Unexpected token {:?}", token)));
+            },
+        }
+        Ok(false)
+    }
 
-    // // expand a Rust identifier to a RustHtml token in the context of a HTML tag.
-    // // ident: the identifier to expand.
-    // // parse_ctx: the parse context.
-    // // output: the destination for the RustHtml tokens.
-    // // it: the iterator to use.
-    // // returns: nothing or an error.
-    // fn expand_html_ident_to_rusthtmltoken(
-    //     self: &Self, 
-    //     ident: &Ident,
-    //     parse_ctx: Rc<dyn IHtmlTagParseContext>,
-    //     it: Rc<dyn IPeekableRustHtmlToken>,
-    //     ct: Rc<dyn ICancellationToken>,
-    // ) -> Result<(), RustHtmlError> {
-    //     if parse_ctx.is_parsing_attrs() {
-    //         if parse_ctx.is_parsing_attr_val() {
-    //             parse_ctx.html_attr_val_ident_push(ident);
-    //             self.on_kvp_defined(parse_ctx, ct)?;
-    //         } else {
-    //             parse_ctx.html_attr_key_ident_push(ident);
-    //             parse_ctx.html_attr_key_push_str(&ident.to_string());
-    //         }
-    //     } else {
-    //         parse_ctx.tag_name_push_ident(ident);
-    //         let mut last_token_was_ident = true;
-    //         loop {
-    //             if ct.is_cancelled() {
-    //                 return Err(RustHtmlError::from_string(format!("Task Cancelled")));
-    //             }
+    // expand a Rust identifier to a RustHtml token in the context of a HTML tag.
+    // ident: the identifier to expand.
+    // parse_ctx: the parse context.
+    // output: the destination for the RustHtml tokens.
+    // it: the iterator to use.
+    // returns: nothing or an error.
+    fn expand_html_ident_to_rusthtmltoken(
+        self: &Self, 
+        ident: &Ident,
+        parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        it: Rc<dyn IPeekableRustHtmlToken>,
+        ct: Rc<dyn ICancellationToken>,
+    ) -> Result<(), RustHtmlError> {
+        if parse_ctx.is_parsing_attrs() {
+            if parse_ctx.is_parsing_attr_val() {
+                parse_ctx.html_attr_val_ident_push(ident);
+                self.on_kvp_defined(parse_ctx, ct)?;
+            } else {
+                parse_ctx.html_attr_key_ident_push(ident);
+                parse_ctx.html_attr_key_push_str(&ident.to_string());
+            }
+        } else {
+            parse_ctx.tag_name_push_ident(ident);
+            let mut last_token_was_ident = true;
+            loop {
+                if ct.is_cancelled() {
+                    return Err(RustHtmlError::from_string(format!("Task Cancelled")));
+                }
                 
-    //             if let Some(next_token) = it.peek() {
-    //                 match next_token {
-    //                     RustHtmlToken::ReservedChar(ref c, ref punct) if punct.as_char() == '-' => {
-    //                         parse_ctx.tag_name_push_punct(punct);
-    //                         it.next();
-    //                         last_token_was_ident = false;
-    //                     },
-    //                     RustHtmlToken::Identifier(ident) if last_token_was_ident == false => {
-    //                         parse_ctx.tag_name_push_ident(ident);
-    //                         it.next();
-    //                         last_token_was_ident = true;
-    //                     },
-    //                     _ => {
-    //                         parse_ctx.on_html_tag_name_parsed()?;
-    //                         break;
-    //                     }
-    //                 }
-    //             } else {
-    //                 break;
-    //             }
-    //         }
-    //     }
+                if let Some(next_token) = it.peek() {
+                    match next_token {
+                        RustHtmlToken::ReservedChar(ref c, ref punct) if punct.as_char() == '-' => {
+                            parse_ctx.tag_name_push_punct(punct);
+                            it.next();
+                            last_token_was_ident = false;
+                        },
+                        RustHtmlToken::Identifier(ident) if last_token_was_ident == false => {
+                            parse_ctx.tag_name_push_ident(ident);
+                            it.next();
+                            last_token_was_ident = true;
+                        },
+                        _ => {
+                            parse_ctx.on_html_tag_name_parsed();
+                            break;
+                        }
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     // // expand a Rust literal to a RustHtml token in the context of a HTML tag.
     // // literal: the literal to expand.
@@ -1188,26 +1268,26 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
     //     }
     // }
 
-    // // called when a HTML tag attribute key/value pair is defined.
-    // // parse_ctx: the parse context.
-    // // output: the destination for the RustHtml tokens.
-    // // returns: nothing.
-    // fn on_kvp_defined(
-    //     self: &Self,
-    //     parse_ctx: Rc<dyn IHtmlTagParseContext>,
-    //     ct: Rc<dyn ICancellationToken>
-    // ) -> Result<(), RustHtmlError> {
-    //     let r = parse_ctx.on_kvp_defined();
-    //     match r {
-    //         Ok(x) => {
-    //             parse_ctx.get_main_context().push_output_tokens(&x)?;
-    //             Ok(())
-    //         },
-    //         Err(RustHtmlError(e)) => {
-    //             Err(RustHtmlError::from_string(format!("error on_kvp_defined: {}", e)))
-    //         }
-    //     }
-    // }
+    // called when a HTML tag attribute key/value pair is defined.
+    // parse_ctx: the parse context.
+    // output: the destination for the RustHtml tokens.
+    // returns: nothing.
+    fn on_kvp_defined(
+        self: &Self,
+        parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        ct: Rc<dyn ICancellationToken>
+    ) -> Result<(), RustHtmlError> {
+        let r = parse_ctx.on_kvp_defined();
+        match r {
+            Ok(x) => {
+                parse_ctx.get_main_context().push_output_tokens(&x);
+                Ok(())
+            },
+            Err(RustHtmlError(e)) => {
+                Err(RustHtmlError::from_string(format!("error on_kvp_defined: {}", e)))
+            }
+        }
+    }
 
     // parse a Rust type identifier from a stream of tokens.
     // it: the iterator to use.
@@ -1220,55 +1300,55 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
         }
     }
 
-    // fn on_html_tag_parsed(
-    //     self: &Self,
-    //     end_punct: Option<&Punct>,
-    //     parse_ctx: Rc<dyn IHtmlTagParseContext>,
-    //     ctx: Rc<dyn IRustHtmlParserContext>,
-    //     ct: Rc<dyn ICancellationToken>
-    // ) -> Result<bool, RustHtmlError> {
-    //     if let Some(end_punct) = end_punct {
-    //         parse_ctx.add_tag_end_punct(end_punct);   
-    //     }
-    //     let parser = self.parser.borrow().as_ref().unwrap().get_html_parser();
-    //     match parser.on_html_tag_parsed(parse_ctx, ct) {
-    //         Ok((tokens, r)) => {
-    //             ctx.push_output_tokens(&tokens)?;
-    //             Ok(r)
-    //         },
-    //         Err(RustHtmlError(e)) => {
-    //             Err(RustHtmlError::from_string(e.into_owned()))
-    //         }
-    //     }
-    // }
+    fn on_html_tag_parsed(
+        self: &Self,
+        end_punct: Option<&Punct>,
+        parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        ctx: Rc<dyn IRustHtmlParserContext>,
+        ct: Rc<dyn ICancellationToken>
+    ) -> Result<bool, RustHtmlError> {
+        if let Some(end_punct) = end_punct {
+            parse_ctx.add_tag_end_punct(end_punct);   
+        }
+        let parser = self.parser.borrow().as_ref().unwrap().get_html_parser();
+        match parser.on_html_tag_parsed(parse_ctx, ct) {
+            Ok((tokens, r)) => {
+                ctx.push_output_tokens(&tokens);
+                Ok(r)
+            },
+            Err(RustHtmlError(e)) => {
+                Err(RustHtmlError::from_string(e.into_owned()))
+            }
+        }
+    }
 
-    // // called when a HTML node is parsed.
-    // // parse_ctx: the parse context.
-    // // output: the destination for the RustHtml tokens.
-    // // returns: whether we should break the outer loop or not, or an error.
-    // fn on_html_node_parsed(
-    //     self: &Self,
-    //     parse_ctx: Rc<dyn IHtmlTagParseContext>,
-    //     ctx: Rc<dyn IRustHtmlParserContext>,
-    //     ct: Rc<dyn ICancellationToken>
-    // ) -> Result<bool, RustHtmlError> {
-    //     for node_helper in ctx.get_node_parsed_handler() {
-    //         if node_helper.matches(parse_ctx.tag_name_as_str().as_str()) {
-    //             match node_helper.on_node_parsed(parse_ctx, ctx.clone()) {
-    //                 Ok(should_break) => {
-    //                     if should_break {
-    //                         break;
-    //                     }
-    //                 },
-    //                 Err(e) => {
-    //                     return Err(RustHtmlError::from_string(format!("error while processing tag helper: {}", e)));
-    //                 }
-    //             }
-    //             break;
-    //         }
-    //     }
-    //     Ok(true)
-    // }
+    // called when a HTML node is parsed.
+    // parse_ctx: the parse context.
+    // output: the destination for the RustHtml tokens.
+    // returns: whether we should break the outer loop or not, or an error.
+    fn on_html_node_parsed(
+        self: &Self,
+        parse_ctx: Rc<dyn IHtmlTagParseContext>,
+        ctx: Rc<dyn IRustHtmlParserContext>,
+        ct: Rc<dyn ICancellationToken>
+    ) -> Result<bool, RustHtmlError> {
+        for node_helper in ctx.get_node_parsed_handler() {
+            if node_helper.matches(parse_ctx.tag_name_as_str().as_str()) {
+                match node_helper.on_node_parsed(parse_ctx, ctx.clone()) {
+                    Ok(should_break) => {
+                        if should_break {
+                            break;
+                        }
+                    },
+                    Err(e) => {
+                        return Err(RustHtmlError::from_string(format!("error while processing tag helper: {}", e)));
+                    }
+                }
+                break;
+            }
+        }
+        Ok(true)
+    }
 
     // expand a Rust group, identifier, or literal to RustHtml tokens.
     // token: the token to expand.
@@ -1282,9 +1362,9 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                 RustHtmlToken::Group(d, stream, group)
             },
             _ => {
-                return Err(RustHtmlError::from_string(format!("unexpected token in expand_copy: {:?}", token)));
+                return Err(RustHtmlError::from_string(format!("unexpected token: {:?}", token)));
             },
-        })?;
+        });
         Ok(())
     }
 
@@ -1317,7 +1397,7 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                     if *next_char == expected_char {
                         // this is the expected char, so consume it
                         it.next();
-                        ctx.push_output_token(next_token.clone())?;
+                        ctx.push_output_token(next_token.clone());
                         Ok(true)
                     } else {
                         Ok(false)

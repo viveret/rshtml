@@ -9,7 +9,6 @@ use crate::view::rusthtml::{irusthtml_parser_context::IRustHtmlParserContext, ru
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 
-use super::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use super::rusthtmlparser_all::{IRustHtmlParserAssignSharedParts, IRustHtmlParserAll};
 
 
@@ -103,7 +102,7 @@ impl IRustHtmlParserConverterIn for RustHtmlParserConverterIn {
                 inner_tokens.extend_from_slice(&tokens);
             }
 
-            Ok(RustHtmlToken::Group(delimiter, Rc::new(VecPeekableRustHtmlToken::new(inner_tokens)), Some(group.clone())))
+            Ok(RustHtmlToken::GroupParsed(delimiter, inner_tokens))
         // } else {
         //     Ok(RustHtmlToken::Group(delimiter, group.clone()))
         // }

@@ -39,7 +39,6 @@ use super::irusthtml_parser_context::IRustHtmlParserContext;
 use super::irusthtml_processor::IRustHtmlProcessor;
 use super::node_helpers::environment_node::EnvironmentHtmlNodeParsed;
 use super::node_helpers::inode_parsed::IHtmlNodeParsed;
-use super::parsers::rusthtmlparser_all::IRustHtmlParserAll;
 use super::processors::post_process_combine_static_str::PostProcessCombineStaticStr;
 use super::rusthtml_token::RustHtmlToken;
 use super::tag_helpers::environment_tag::EnvironmentHtmlTagParsed;
@@ -519,9 +518,10 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         vec![]
     }
 
-    fn push_inject_statements_rshtml(self: &Self, rshtml: Vec<RustHtmlToken>, parser: Rc<dyn IRustHtmlParserAll>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) {
-        let rust = parser.get_converter_out().convert_vec(rshtml, ctx, ct).unwrap();
-        self.push_inject_statements(TokenStream::from_iter(rust));
+    fn push_inject_statements_rshtml(self: &Self, rshtml: Vec<RustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) {
+        // let rust = parser.get_converter_out().convert_vec(rshtml, ctx, ct).unwrap();
+        // self.push_inject_statements(TokenStream::from_iter(rust));
+        panic!("push_inject_statements_rshtml not implemented");
     }
 
     fn get_call_stack(&self) -> &CallstackTracker {

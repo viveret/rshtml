@@ -1,6 +1,7 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
 use std::rc::Rc;
 
+use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, TokenStream, TokenTree};
 
 use crate::view::rusthtml::rusthtml_token::RustHtmlIdentOrPunctOrGroup;
@@ -9,7 +10,7 @@ use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use super::ihtml_tag_parse_context::IHtmlTagParseContext;
-use super::peekable_tokentree::IPeekableTokenTree;
+use super::parser_parts::peekable_tokentree::IPeekableTokenTree;
 use super::irusthtml_parser_context::IRustHtmlParserContext;
 
 
@@ -36,7 +37,7 @@ pub trait IRustToRustHtmlConverter {
     fn convert_punct_to_rusthtmltoken(self: &Self, punct: Punct, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError>;
     fn convert_html_entry_to_rusthtmltoken(self: &Self, c: char, punct: Punct, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
     fn convert_html_ident_to_rusthtmltoken(self: &Self, ident: &Ident, ctx: Rc<dyn IHtmlTagParseContext>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
-    fn convert_html_punct_to_rusthtmltoken(self: &Self, punct: &Punct, ctx: Rc<dyn IHtmlTagParseContext>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError>;
+    fn convert_html_punct_to_rusthtmltoken(self: &Self, punct: &Punct, ctx: Rc<dyn IHtmlTagParseContext>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool, ct: Rc<dyn ICancellationToken>) -> Result<bool, RustHtmlError>;
     fn convert_html_literal_to_rusthtmltoken(self: &Self, literal: &Literal, parse_ctx: Rc<dyn IHtmlTagParseContext>, output: &mut Vec<RustHtmlToken>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
     fn convert_ident_and_punct_and_group_or_literal_to_tokenstream(self: &Self, tag: &RustHtmlIdentAndPunctAndGroupOrLiteral) -> Result<TokenStream, RustHtmlError>;
     fn convert_group_to_rusthtmltoken(self: &Self, group: Group, expect_return_html: bool, is_in_html_mode: bool, output: &mut Vec<RustHtmlToken>, is_raw_tokenstream: bool) -> Result<(), RustHtmlError>;
@@ -47,10 +48,10 @@ pub trait IRustToRustHtmlConverter {
     fn convert_rusthtmltokens_to_ident_or_punct_or_group(self: &Self, rusthtml_tokens: Vec<RustHtmlToken>) -> Result<Vec<RustHtmlIdentOrPunctOrGroup>, RustHtmlError>;
 
     fn is_start_of_current_expression(self: &Self, output: &mut Vec<RustHtmlToken>) -> bool;
-    fn next_and_parse_html_tag(self: &Self, token_option: &TokenTree, ctx: Rc<dyn IHtmlTagParseContext>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<bool, RustHtmlError>;
-    fn on_html_tag_parsed(self: &Self, punct: Option<&Punct>, parse_ctx: Rc<dyn IHtmlTagParseContext>, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError>;
+    fn next_and_parse_html_tag(self: &Self, token_option: &TokenTree, ctx: Rc<dyn IHtmlTagParseContext>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool, ct: Rc<dyn ICancellationToken>) -> Result<bool, RustHtmlError>;
+    fn on_html_tag_parsed(self: &Self, punct: Option<&Punct>, parse_ctx: Rc<dyn IHtmlTagParseContext>, ct: Rc<dyn ICancellationToken>) -> Result<bool, RustHtmlError>;
     fn on_html_node_parsed(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError>;
-    fn on_kvp_defined(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>, output: &mut Vec<RustHtmlToken>) -> Result<(), RustHtmlError>;
+    fn on_kvp_defined(self: &Self, ctx: Rc<dyn IHtmlTagParseContext>) -> Result<(), RustHtmlError>;
     fn get_opening_delim(self: &Self, delim: Delimiter) -> &'static str;
     fn get_closing_delim(self: &Self, delim: Delimiter) -> &'static str;
 

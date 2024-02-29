@@ -14,7 +14,6 @@ use super::ihtml_tag_parse_context::IHtmlTagParseContext;
 use super::irust_processor::IRustProcessor;
 use super::irusthtml_processor::IRustHtmlProcessor;
 use super::node_helpers::inode_parsed::IHtmlNodeParsed;
-use super::parsers::rusthtmlparser_all::IRustHtmlParserAll;
 use super::rusthtml_token::RustHtmlToken;
 use super::tag_helpers::itag_parsed::IHtmlTagParsed;
 
@@ -81,7 +80,7 @@ pub trait IRustHtmlParserContext {
     // push the inject statements to a list of statements to be injected into the view.
     fn push_inject_statements(self: &Self, rust: TokenStream);
     // push the inject statements to a list of statements to be injected into the view, using RustHtmlToken.
-    fn push_inject_statements_rshtml(self: &Self, rust: Vec<RustHtmlToken>, parser: Rc<dyn IRustHtmlParserAll>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>);
+    fn push_inject_statements_rshtml(self: &Self, rust: Vec<RustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>);
     // get the inject statements as a token stream.
     fn get_inject_statements_stream(self: &Self) -> proc_macro2::TokenStream;
     // get the params as mutable.

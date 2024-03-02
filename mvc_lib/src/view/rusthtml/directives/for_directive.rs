@@ -5,6 +5,7 @@ use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::StreamPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
@@ -46,9 +47,9 @@ impl IRustHtmlDirective for ForDirective {
                         it.next();
                     },
                     TokenTree::Group(group) => {
-                        let delimiter = group.delimiter();
-                        match delimiter {
-                            Delimiter::Brace => {
+                        // let delimiter = group.delimiter();
+                        // match delimiter {
+                        //     Delimiter::Brace => {
                                 match parser.convert_group_to_rusthtmltoken(group.clone(), false, false, output, is_raw_tokenstream) {
                                     Ok(_) => {
                                         // println!("for_directive: {} -> {:?}", token.to_string(), output.last());
@@ -59,12 +60,14 @@ impl IRustHtmlDirective for ForDirective {
                                         return Err(RustHtmlError::from_string(e.to_string()));
                                     }
                                 }
-                            },
-                            _ => {
-                                output.push(RustHtmlToken::Group(delimiter, group.clone()));
-                                it.next();
-                            },
-                        }
+                        //     },
+                        //     _ => {
+                        //         let group_stream = Rc::new(StreamPeekableTokenTree::new(group.stream()));
+                        //         let group_stream_converted = parser.convert_stream_to_rusthtmltoken(group_stream, is_raw_tokenstream);
+                        //         output.push(RustHtmlToken::Group(delimiter, group_stream_converted, Some(group.clone())));
+                        //         it.next();
+                        //     },
+                        // }
                     },
                 }
                 // println!("for_directive: {} -> {:?}", token.to_string(), output.last());

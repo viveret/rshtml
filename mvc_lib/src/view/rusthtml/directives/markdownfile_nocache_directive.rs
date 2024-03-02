@@ -2,7 +2,8 @@ use std::rc::Rc;
 
 use proc_macro2::{Ident, TokenStream, TokenTree};
 
-use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree};
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
@@ -73,9 +74,17 @@ impl MarkdownFileNoCacheDirective {
         };
 
         let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
-        output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Group(proc_macro2::Delimiter::Brace, g)]));
-
-        Ok(())
+        let group_stream = Rc::new(StreamPeekableTokenTree::new(code));
+        match parser.parse_tokenstream_to_rusthtmltokens(false, group_stream, false) {
+            Ok(tokens) => {
+                let group_stream_converted = Rc::new(VecPeekableRustHtmlToken::new(tokens));
+                output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Group(proc_macro2::Delimiter::Brace, group_stream_converted, Some(g))]));
+                Ok(())
+            },
+            Err(RustHtmlError(e)) => {
+                Err(RustHtmlError::from_string(format!("cannot read external markdown file nocache '{}', could not parse: {}", identifier, e)))
+            }
+        }
     }
 }
 

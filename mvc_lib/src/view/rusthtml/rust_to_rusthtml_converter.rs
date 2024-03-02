@@ -254,7 +254,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             loop {
                 let token_option = it.next();
                 if let Some(token) = token_option {
-                    if self.next_and_parse_html_tag(&token, ctx.clone(), &mut output_inner, it.clone(), is_raw_tokenstream)? {
+                    if self.next_and_parse_html_tag(&token, ctx.clone(), &mut output_inner, it.clone(), is_raw_tokenstream, ct)? {
                         // println!("convert_html_entry_to_rusthtmltoken: breaking on {:?}", token);
                         break;
                     }
@@ -338,7 +338,8 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
 
                 output.push(RustHtmlToken::GroupParsed(delimiter, inner_tokens));
             } else {
-                output.push(RustHtmlToken::Group(delimiter, group));
+                panic!("not implemented");
+                // output.push(RustHtmlToken::Group(delimiter, stream, Some(group)));
             }
         }
 
@@ -642,11 +643,11 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             .map(|x| match x {
                 RustHtmlToken::Identifier(ident) => RustHtmlIdentOrPunctOrGroup::Ident(ident.clone()),
                 RustHtmlToken::ReservedChar(_, punct) => RustHtmlIdentOrPunctOrGroup::Punct(punct.clone()),
-                RustHtmlToken::Group(_, group) => RustHtmlIdentOrPunctOrGroup::Group(group.clone()),
+                RustHtmlToken::Group(_, stream, group) => RustHtmlIdentOrPunctOrGroup::Group(group.unwrap().clone()),
                 RustHtmlToken::GroupParsed(delimiter, tokens) => RustHtmlIdentOrPunctOrGroup::Group(Group::new(delimiter.clone(), tokens.iter().map(|x| match x {
                     RustHtmlToken::Identifier(ident) => TokenTree::Ident(ident.clone()),
                     RustHtmlToken::ReservedChar(_, punct) => TokenTree::Punct(punct.clone()),
-                    RustHtmlToken::Group(_, group) => TokenTree::Group(group.clone()),
+                    RustHtmlToken::Group(_, stream, group) => TokenTree::Group(group.unwrap().clone()),
                     _ => panic!("convert_rusthtmltokens_to_ident_or_punct_or_group Unexpected token {:?}", x),
                 }).collect())),
                 _ => panic!("convert_rusthtmltokens_to_ident_or_punct_or_group Unexpected token {:?}", x),
@@ -1026,7 +1027,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
         output.push(match token.clone() {
             TokenTree::Literal(literal) => RustHtmlToken::Literal(Some(literal), None),
             TokenTree::Ident(ident) => RustHtmlToken::Identifier(ident),
-            TokenTree::Group(group) => RustHtmlToken::Group(group.delimiter(), group),
+            TokenTree::Group(group) => RustHtmlToken::Group(group.delimiter(), stream, Some(group)),
             _ => {
                 return Err(RustHtmlError::from_string(format!("unexpected token: {:?}", token)));
             },

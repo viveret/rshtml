@@ -44,10 +44,10 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
         let rusthtml = self.preprocess_rusthtmltokens(rusthtml_tokens)?;
 
         let mut rust_output = Vec::new();
-        let it = VecPeekableRustHtmlToken::new(&rusthtml);
+        let it = Rc::new(VecPeekableRustHtmlToken::new(rusthtml));
         loop 
         {
-            if self.convert_rusthtmltokens_to_plain_rust(&mut rust_output, &it)? {
+            if self.convert_rusthtmltokens_to_plain_rust(&mut rust_output, it)? {
                 if it.peek().is_none() {
                     break;
                 }
@@ -88,8 +88,8 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // returns: nothing or an error.
     fn convert_rusthtmlgroupparsed_to_tokentree(self: &Self, delimiter: &Delimiter, inner_tokens: &Vec<RustHtmlToken>, output: &mut Vec<TokenTree>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError> {
         let mut group = vec![];
-        let inner_it = VecPeekableRustHtmlToken::new(inner_tokens);
-        self.convert_rusthtmltokens_to_plain_rust(&mut group, &inner_it)?;
+        let inner_it = Rc::new(VecPeekableRustHtmlToken::new(inner_tokens.clone()));
+        self.convert_rusthtmltokens_to_plain_rust(&mut group, inner_it)?;
         output.push(TokenTree::Group(Group::new(delimiter.clone(), TokenStream::from_iter(group.iter().cloned()))));
         Ok(())
     }
@@ -116,8 +116,8 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 }
             }
             
-            let inner_it = VecPeekableRustHtmlToken::new(inner);
-            self.convert_rusthtmltokens_to_plain_rust(&mut inner_tokens, &inner_it)?;
+            let inner_it = Rc::new(VecPeekableRustHtmlToken::new(inner.clone()));
+            self.convert_rusthtmltokens_to_plain_rust(&mut inner_tokens, inner_it)?;
             let inner_tokenstream1 = TokenStream::from_iter(inner_tokens);
             let inner_tokenstream = proc_macro2::TokenStream::from(inner_tokenstream1);
             output.push(TokenTree::Group(Group::new(Delimiter::None, self.write_html_stream(inner_tokenstream))));
@@ -165,7 +165,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 }
             },
             RustHtmlToken::ReservedChar(_, punct) => output.push(TokenTree::Punct(punct.clone())),
-            RustHtmlToken::Group(_delimiter, group) => output.push(TokenTree::Group(group.clone())),
+            RustHtmlToken::Group(_delimiter, stream, group) => output.push(TokenTree::Group(group.unwrap().clone())),
             RustHtmlToken::GroupParsed(delimiter, inner_tokens) => 
                 self.convert_rusthtmlgroupparsed_to_tokentree(delimiter, inner_tokens, output, it)?,
             RustHtmlToken::HtmlTagStart(tag, tag_tokens) =>

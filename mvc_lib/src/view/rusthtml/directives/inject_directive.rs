@@ -27,7 +27,7 @@ impl InjectDirective {
         
                     let inject_name_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(inject_name_vec));
                     let type_ident_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_tokens));
-                    parser.get_context().mut_inject_statements().push(quote::quote! { let #inject_name_tokenstream = #type_ident_tokenstream ::new(view_context, services); }.into());
+                    parser.get_context().push_inject_statements(quote::quote! { let #inject_name_tokenstream = #type_ident_tokenstream ::new(view_context, services); }.into());
                     Ok(RustHtmlDirectiveResult::OkContinue)
                 },
                 _ => {

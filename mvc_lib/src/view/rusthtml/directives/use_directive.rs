@@ -28,7 +28,7 @@ impl IRustHtmlDirective for UseDirective {
         // expecting type identifier
         if let Ok(type_ident_tokens) = parser.parse_type_identifier(it) {
             let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_tokens));
-            parser.get_context().mut_use_statements().push(TokenStream::from(quote::quote! { use #inner_tokenstream; }));
+            parser.get_context().push_use_statements(TokenStream::from(quote::quote! { use #inner_tokenstream; }));
             Ok(RustHtmlDirectiveResult::OkContinue)
         } else {
             Err(RustHtmlError::from_str("Error parsing use directive"))

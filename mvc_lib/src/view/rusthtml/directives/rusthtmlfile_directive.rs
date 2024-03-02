@@ -3,7 +3,9 @@ use std::rc::Rc;
 use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::parser_parts::peekable_tokentree::StreamPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
@@ -30,10 +32,16 @@ impl RustHtmlFileDirective {
                 let v = view_context.get_view(#path);
                 v.render()
             };
-            let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
-            output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Group(proc_macro2::Delimiter::Brace, g)]));
-
-            Ok(())
+            match parser.parse_tokenstream_to_rusthtmltokens(false, Rc::new(StreamPeekableTokenTree::new(code)), true) {
+                Ok(tokens) => {
+                    let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
+                    output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Group(proc_macro2::Delimiter::Brace, Rc::new(VecPeekableRustHtmlToken::new(tokens)), Some(g))]));
+                    Ok(())
+                },
+                Err(RustHtmlError(e)) => {
+                    Err(RustHtmlError::from_string(format!("cannot read external Rust HTML file '{}', could not parse: {}", identifier, e)))
+                }
+            }
         } else {
             Err(RustHtmlError::from_string(format!("cannot read external Rust HTML file '{}', could not parse path", identifier)))
         }

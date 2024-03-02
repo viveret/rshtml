@@ -117,7 +117,7 @@ impl IRustHtmlParserConverterOut for RustHtmlParserConverterOut {
                 }
             },
             RustHtmlToken::ReservedChar(_, punct) => Ok(vec![TokenTree::Punct(punct.clone())]),
-            RustHtmlToken::Group(_delimiter, group) => Ok(vec![TokenTree::Group(group.clone().unwrap().clone())]),
+            RustHtmlToken::Group(_delimiter, stream, group) => Ok(vec![TokenTree::Group(group.clone().unwrap().clone())]),
             RustHtmlToken::GroupParsed(delimiter, inner_tokens) => 
                 self.convert_rusthtmlgroupparsed_to_tokentree(delimiter, inner_tokens.clone(), it, context.clone(), ct),
             RustHtmlToken::HtmlTagStart(tag, tag_tokens) =>

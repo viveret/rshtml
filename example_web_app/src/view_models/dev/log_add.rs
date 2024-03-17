@@ -143,18 +143,18 @@ impl IModelBinder for LogAddInputModelBinder {
     fn bind_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
         let mut model = LogAddInputModel::default();
         // if let Some(body) = request_context.get_body_content() {
-            let content_type = request_context.get_content_type().unwrap();
+            let content_type = request_context.get_content_type().expect("LogAddInputModelBinder.bind_model: content_type is None.");
             let form_encoded = UrlEncodedModel::new_from_body(content_type, request_context);
             let form = &form_encoded.0.entries;
             
             if let Some(message) = form.get("message") {
-                model.message = Box::new(message.first().unwrap().to_string());
+                model.message = Box::new(message.first().expect("expected message").to_string());
             } else {
                 return ModelValidationResult::PropertyError(AnyIModel::new(Rc::new(model)), "message".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Message is required.".to_string())));
             }
     
             if let Some(level) = form.get("level") {
-                model.level = Box::new(level.first().unwrap().to_string());
+                model.level = Box::new(level.first().expect("expected level").to_string());
             } else {
                 return ModelValidationResult::PropertyError(AnyIModel::new(Rc::new(model)), "level".to_string(), Rc::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Level is required.".to_string())));
             }

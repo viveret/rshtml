@@ -64,7 +64,7 @@ impl IActionResult for RedirectToActionResult {
         let route_map_service = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
         let action = route_map_service.get_mapper().get_action(self.action_name.as_str(), self.controller_name.as_str(), self.area_name.as_str());
         // generate the redirect url from the route values.
-        let redirect_url = action.as_ref().get_route_pattern().gen_url(self.route_values.as_ref().unwrap());
+        let redirect_url = action.as_ref().get_route_pattern().gen_url(self.route_values.as_ref().expect("route_values is None"));
         // configure the response to redirect to the redirect url.
         response_context.add_header_string("Location".to_string(), redirect_url);
         Ok(())

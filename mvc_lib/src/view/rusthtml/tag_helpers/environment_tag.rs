@@ -3,10 +3,7 @@ use std::rc::Rc;
 use core_lib::asyncly::icancellation_token::ICancellationToken;
 
 use crate::view::rusthtml::parser_parts::rusthmtl_expand_loop_result::RustHtmlExpandLoopResult;
-use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
-use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
 use super::itag_parsed::IHtmlTagParsed;
 
@@ -28,7 +25,7 @@ impl IHtmlTagParsed for EnvironmentHtmlTagParsed {
         tag_name == "environment" && is_opening_tag
     }
 
-    fn on_tag_parsed(&self, tag_context: Rc<dyn IHtmlTagParseContext>, ct: Rc<dyn ICancellationToken>) -> RustHtmlExpandLoopResult {
+    fn on_tag_parsed(&self, tag_context: Rc<dyn IHtmlTagParseContext>, _ct: Rc<dyn ICancellationToken>) -> RustHtmlExpandLoopResult {
         if tag_context.is_opening_tag() {
             // let environment_name = tag_context.html_attrs.get("name").unwrap();
             // let environment_value = tag_context.html_attrs.get("value").unwrap();

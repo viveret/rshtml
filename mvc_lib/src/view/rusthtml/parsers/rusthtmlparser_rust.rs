@@ -122,7 +122,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                                 output.extend_from_slice(&colons);
                             },
                             _ => {
-                                return Err(RustHtmlError::from_string(format!("unexpected colon count: {}", colons.len())));
+                                return Err(RustHtmlError::from_string(format!("parse_type_identifier unexpected colon count: {}", colons.len())));
                             }
                         }
                     },

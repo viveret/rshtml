@@ -21,7 +21,7 @@ mod sys;
 pub fn nameof_member_fn(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let mut it = TokenStream::from(input).into_iter();
     // expect type name
-    let type_name = match it.next() {
+    let _type_name = match it.next() {
         Some(TokenTree::Ident(ident)) => {
             ident.to_string()
         },
@@ -29,7 +29,7 @@ pub fn nameof_member_fn(input: proc_macro::TokenStream) -> proc_macro::TokenStre
     };
 
     // expect ::
-    let colon_first = match it.next() {
+    let _colon_first = match it.next() {
         Some(TokenTree::Punct(punct)) => {
             if punct.as_char() != ':' {
                 panic!("Expected ::");
@@ -38,7 +38,7 @@ pub fn nameof_member_fn(input: proc_macro::TokenStream) -> proc_macro::TokenStre
         _ => panic!("Expected ::"),
     };
     
-    let colon_second = match it.next() {
+    let _colon_second = match it.next() {
         Some(TokenTree::Punct(punct)) => {
             if punct.as_char() != ':' {
                 panic!("Expected ::");
@@ -77,7 +77,7 @@ pub fn expr_quote(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                             expr_tokens.push(token);
                         }
                     },
-                    TokenTree::Ident(closure_pipe_or_model_ident) => {
+                    TokenTree::Ident(_closure_pipe_or_model_ident) => {
                         // start of identitifer for model argument
                         expr_tokens.push(token);
                     },
@@ -220,7 +220,7 @@ pub fn callstack_tracker_scope(input: proc_macro::TokenStream) -> proc_macro::To
     };
 
     // expect ,
-    let comma = match it.next() {
+    let _comma = match it.next() {
         Some(TokenTree::Punct(punct)) => {
             if punct.as_char() != ',' {
                 panic!("Expected ,");
@@ -238,7 +238,7 @@ pub fn callstack_tracker_scope(input: proc_macro::TokenStream) -> proc_macro::To
     };
 
     // expect ::
-    let colon_first = match it.next() {
+    let _colon_first = match it.next() {
         Some(TokenTree::Punct(punct)) => {
             if punct.as_char() != ':' {
                 panic!("Expected ::");
@@ -247,7 +247,7 @@ pub fn callstack_tracker_scope(input: proc_macro::TokenStream) -> proc_macro::To
         _ => panic!("Expected ::"),
     };
     
-    let colon_second = match it.next() {
+    let _colon_second = match it.next() {
         Some(TokenTree::Punct(punct)) => {
             if punct.as_char() != ':' {
                 panic!("Expected ::");

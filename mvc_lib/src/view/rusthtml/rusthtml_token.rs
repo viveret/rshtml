@@ -120,7 +120,7 @@ impl RustHtmlToken {
             RustHtmlToken::Identifier(ident) => ident.to_string(),
             RustHtmlToken::ReservedChar(c, _) => c.to_string(),
             RustHtmlToken::ReservedIndent(s, _) => s.to_string(),
-            RustHtmlToken::Group(_, stream, group) => group.clone().unwrap().to_string(),
+            RustHtmlToken::Group(_, _stream, group) => group.clone().unwrap().to_string(),
             RustHtmlToken::GroupParsed(delimiter, tokens) => {
                 let inner = tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(" ");
                 match delimiter {

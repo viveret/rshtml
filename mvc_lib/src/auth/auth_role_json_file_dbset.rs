@@ -36,7 +36,7 @@ impl JsonAuthRole {
     // returns a JsonAuthRole struct.
     pub fn parse_json(v: serde_json::Value) -> Self {
         Self {
-            name: v.as_str().unwrap().to_string()
+            name: v.as_str().expect("could not get value as string").to_string()
         }
     }
 

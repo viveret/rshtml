@@ -50,6 +50,8 @@ pub trait IRustHtmlParserContext {
     fn get_is_raw_tokenstream(self: &Self) -> bool;
     // get the model type name as a string.
     fn get_model_type_name(self: &Self) -> String;
+    // get the model type as a token tree stream.
+    fn get_model_type_stream(self: &Self) -> TokenStream;
     // get the model type as a token tree.
     fn get_model_type(self: &Self) -> Vec<TokenTree>;
     // set the model type as a token tree.

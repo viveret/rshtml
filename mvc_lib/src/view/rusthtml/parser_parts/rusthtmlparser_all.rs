@@ -5,12 +5,13 @@ use core_lib::sys::call_tracker::CallstackTrackerScope;
 use core_macro_lib::nameof_member_fn;
 use proc_macro2::TokenStream;
 
+use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 
 use super::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
-use super::peekable_tokentree::StreamPeekableTokenTree;
 use super::rusthtmlparser_converter_in::{IRustHtmlParserConverterIn, RustHtmlParserConverterIn};
 use super::rusthtmlparser_converter_out::{IRustHtmlParserConverterOut, RustHtmlParserConverterOut};
 use super::rusthtmlparser_expander::{IRustHtmlParserExpander, RustHtmlParserExpander};
@@ -30,6 +31,9 @@ pub trait IRustHtmlParserAll {
     fn get_converter(&self) -> Rc<dyn IRustHtmlParserConverterIn>;
     fn get_converter_out(&self) -> Rc<dyn IRustHtmlParserConverterOut>;
     fn get_expander(&self) -> Rc<dyn IRustHtmlParserExpander>;
+
+    // skips a few steps
+    fn get_old_parser(&self) -> Rc<dyn IRustToRustHtmlConverter>;
 }
 
 pub trait IRustHtmlParserAssignSharedParts {
@@ -44,6 +48,7 @@ pub struct RustHtmlParserAll {
     rust_converter_in: Rc<dyn IRustHtmlParserConverterIn>,
     rust_converter_out: Rc<dyn IRustHtmlParserConverterOut>,
     rust_expander: Rc<dyn IRustHtmlParserExpander>,
+    old_parser: Rc<dyn IRustToRustHtmlConverter>,
 }
 
 impl RustHtmlParserAll {
@@ -54,6 +59,7 @@ impl RustHtmlParserAll {
         rust_converter_in: Rc<dyn IRustHtmlParserConverterIn>,
         rust_converter_out: Rc<dyn IRustHtmlParserConverterOut>,
         rust_expander: Rc<dyn IRustHtmlParserExpander>,
+        old_parser: Rc<dyn IRustToRustHtmlConverter>,
     ) -> Rc<RustHtmlParserAll> {
         let s = Rc::new(Self {
             html_parser,
@@ -62,6 +68,7 @@ impl RustHtmlParserAll {
             rust_converter_in,
             rust_converter_out,
             rust_expander,
+            old_parser
         });
 
         s.html_parser.assign_shared_parser(s.clone());
@@ -70,6 +77,7 @@ impl RustHtmlParserAll {
         s.rust_converter_in.assign_shared_parser(s.clone());
         s.rust_converter_out.assign_shared_parser(s.clone());
         s.rust_expander.assign_shared_parser(s.clone());
+        s.old_parser.assign_shared_parser(s.clone());
         s
     }
 
@@ -81,6 +89,7 @@ impl RustHtmlParserAll {
             Rc::new(RustHtmlParserConverterIn::new()),
             Rc::new(RustHtmlParserConverterOut::new()),
             Rc::new(RustHtmlParserExpander::new()),
+            Rc::new(RustToRustHtmlConverter::new(None)),
         )
     }
 }
@@ -109,6 +118,10 @@ impl IRustHtmlParserAll for RustHtmlParserAll {
     fn get_expander(&self) -> Rc<dyn IRustHtmlParserExpander> {
         self.rust_expander.clone()
     }
+    
+    fn get_old_parser(&self) -> Rc<dyn IRustToRustHtmlConverter> {
+        self.old_parser.clone()
+    }
 
     fn expand_rust(self: &Self, input: TokenStream, cancellation_token: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
         let context: Rc<RustHtmlParserContext> = Rc::new(RustHtmlParserContext::new(false, false, "".to_string()));
@@ -117,11 +130,11 @@ impl IRustHtmlParserAll for RustHtmlParserAll {
 
     fn expand_rust_with_context(self: &Self, context: Rc<RustHtmlParserContext>, input: TokenStream, cancellation_token: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
         let _scope = CallstackTrackerScope::enter(context.get_call_stack(), nameof::name_of_type!(RustHtmlParserAll), nameof_member_fn!(RustHtmlParserAll::expand_rust_with_context));
-        let it = Rc::new(StreamPeekableTokenTree::new(input));
-        match self.get_expander().convert_rust_to_rusthtml(context.clone(), it, cancellation_token.clone()) {
+        match self.get_converter().convert_stream(input, context.clone(), cancellation_token.clone()) {
             Ok(input_rshtml) => {
                 match self.get_expander().expand_rshtml(context.clone(), Rc::new(VecPeekableRustHtmlToken::new(input_rshtml.clone())), cancellation_token.clone()) {
-                    Ok((output_rshtml, a)) => {
+                    Ok(()) => {
+                        let output_rshtml = context.pop_output_buffer().unwrap().borrow().clone();
                         match self.get_converter_out().convert_vec(output_rshtml, context.clone(), cancellation_token) {
                             Ok(output) => {
                                 Ok(TokenStream::from_iter(output.into_iter()))

@@ -71,8 +71,8 @@ impl IController for LearnController {
                 let learn_docs: Vec<String> = glob("docs/learn/**/*.md")
                     .expect("Failed to read glob pattern")
                     .map(|path_to_string| {
-                        let p = path_to_string.unwrap();
-                        let path = p.as_path().to_str().unwrap();
+                        let p = path_to_string.expect("Failed to read path");
+                        let path = p.as_path().to_str().expect("Failed to convert path to string");
                         let s = &path["docs/learn/".len()..path.len() - 3];// remove extension ".md"
                         s.to_string()
                     })

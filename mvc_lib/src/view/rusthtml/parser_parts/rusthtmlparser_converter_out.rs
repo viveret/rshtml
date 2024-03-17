@@ -4,11 +4,10 @@ use std::rc::Rc;
 use core_lib::asyncly::icancellation_token::ICancellationToken;
 use core_lib::sys::call_tracker::CallstackTrackerScope;
 use core_macro_lib::nameof_member_fn;
-use proc_macro2::{TokenTree, Punct, Delimiter, Group, Ident, TokenStream, Literal, Span};
+use proc_macro2::{TokenTree, Punct, Delimiter, Group, TokenStream, Literal, Span};
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
-use crate::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct};
 
 use super::peekable_rusthtmltoken::{IPeekableRustHtmlToken, VecPeekableRustHtmlToken};
@@ -71,7 +70,7 @@ impl IRustHtmlParserAssignSharedParts for RustHtmlParserConverterOut {
 }
 
 impl IRustHtmlParserConverterOut for RustHtmlParserConverterOut {
-    fn convert_token(self: &Self, token: RustHtmlToken) -> Result<Vec<TokenTree>, RustHtmlError> {
+    fn convert_token(self: &Self, _token: RustHtmlToken) -> Result<Vec<TokenTree>, RustHtmlError> {
         todo!("convert_token");
     }
 
@@ -103,9 +102,6 @@ impl IRustHtmlParserConverterOut for RustHtmlParserConverterOut {
     fn convert_rusthtmltoken_to_tokentree(self: &Self, token: &RustHtmlToken, it: Rc<dyn IPeekableRustHtmlToken>, context: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
         let _scope = CallstackTrackerScope::enter(context.get_call_stack(), nameof::name_of_type!(RustHtmlParserConverterOut), nameof_member_fn!(RustHtmlParserConverterOut::convert_rusthtmltoken_to_tokentree));
         match token {
-            RustHtmlToken::GroupParsed(delimiter, inner_tokens) => {
-                self.convert_rusthtmlgroupparsed_to_tokentree(delimiter, inner_tokens.clone(), it, context.clone(), ct)
-            },
             RustHtmlToken::Identifier(ident) => Ok(vec![TokenTree::Ident(ident.clone())]),
             RustHtmlToken::Literal(literal, string) => {
                 if let Some(literal) = literal {
@@ -117,7 +113,7 @@ impl IRustHtmlParserConverterOut for RustHtmlParserConverterOut {
                 }
             },
             RustHtmlToken::ReservedChar(_, punct) => Ok(vec![TokenTree::Punct(punct.clone())]),
-            RustHtmlToken::Group(_delimiter, stream, group) => Ok(vec![TokenTree::Group(group.clone().unwrap().clone())]),
+            RustHtmlToken::Group(_delimiter, _stream, group) => Ok(vec![TokenTree::Group(group.clone().unwrap().clone())]),
             RustHtmlToken::GroupParsed(delimiter, inner_tokens) => 
                 self.convert_rusthtmlgroupparsed_to_tokentree(delimiter, inner_tokens.clone(), it, context.clone(), ct),
             RustHtmlToken::HtmlTagStart(tag, tag_tokens) =>
@@ -208,17 +204,17 @@ impl IRustHtmlParserConverterOut for RustHtmlParserConverterOut {
         Ok(vec![TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#text); })))])
     }
 
-    fn convert_rusthtmltagstart_to_tokentree(self: &Self, tag: &String, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
+    fn convert_rusthtmltagstart_to_tokentree(self: &Self, tag: &String, _tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
         let tag_as_html = self.format_tag_open(tag); // true, tag, false, tag_tokens
         Ok(vec![TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#tag_as_html); })))])
     }
 
-    fn convert_rusthtmltagvoid_to_tokentree(self: &Self, tag: &String, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
+    fn convert_rusthtmltagvoid_to_tokentree(self: &Self, tag: &String, _tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
         let tag_as_html = self.format_tag_open(tag); // true, tag, true, tag_tokens
         Ok(vec![TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#tag_as_html); })))])
     }
 
-    fn convert_rusthtmltagend_to_tokentree(self: &Self, tag: &String, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
+    fn convert_rusthtmltagend_to_tokentree(self: &Self, tag: &String, _tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
         let tag_as_html = self.format_tag_close(tag); // false, tag, false, tag_tokens
         Ok(vec![TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#tag_as_html); })))])
     }
@@ -292,7 +288,7 @@ impl IRustHtmlParserConverterOut for RustHtmlParserConverterOut {
         Ok(vec![TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#html_string); })))])
     }
 
-    fn convert_rusthtmlappendhtml_vec_rshtml_to_tokentree(self: &Self, inner: Vec<RustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
+    fn convert_rusthtmlappendhtml_vec_rshtml_to_tokentree(self: &Self, _inner: Vec<RustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
         todo!("convert_rusthtmlappendhtml_vec_rshtml_to_tokentree")
     }
 

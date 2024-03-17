@@ -235,7 +235,7 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
                 Err(Rc::new(std::io::Error::new(std::io::ErrorKind::NotFound, format!("Could not find member_fn_validated for action {}", self.name))) as Rc<dyn Error>)
             }
         } else {
-            (self.member_fn_not_validated.as_ref().unwrap())(controller, controller_context, services)
+            (self.member_fn_not_validated.as_ref().expect("member_fn_not_validated not set"))(controller, controller_context, services)
         }?;
 
         if let Some(result) = result_option {

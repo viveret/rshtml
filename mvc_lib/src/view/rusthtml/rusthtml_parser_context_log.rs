@@ -47,6 +47,11 @@ impl IRustHtmlParserContext for RustHtmlParserContextLog {
         self.real_context.get_model_type_name()
     }
 
+    fn get_model_type_stream(self: &Self) -> TokenStream {
+        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_model_type_stream));
+        self.real_context.get_model_type_stream()
+    }
+
     fn get_model_type(self: &Self) -> Vec<TokenTree> {
         self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::get_model_type));
         self.real_context.get_model_type()

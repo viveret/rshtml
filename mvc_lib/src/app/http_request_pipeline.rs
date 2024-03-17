@@ -85,7 +85,7 @@ impl HttpRequestPipeline {
         self.for_each_set_next(&middleware);
 
         // Get the first middleware service
-        let first = middleware.first().unwrap();
+        let first = middleware.first().expect("middleware.first() is None");
         // Handle the request
         first.handle_request(response_context, request_context, services)?;
         

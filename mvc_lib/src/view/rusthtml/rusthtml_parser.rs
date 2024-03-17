@@ -1,6 +1,7 @@
 use std::iter::Peekable;
 use std::rc::Rc;
 
+use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{ Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
@@ -36,7 +37,7 @@ impl RustHtmlParser {
         let parse_context = Rc::new(RustHtmlParserContext::new(true, should_panic_or_return_error, environment_name));
         Self {
             parse_context: parse_context.clone(),
-            parser: Rc::new(RustToRustHtmlConverter::new(parse_context.clone())),
+            parser: Rc::new(RustToRustHtmlConverter::new(Some(parse_context.clone()))),
             converter: Rc::new(RustHtmlToRustConverter::new(parse_context)),
         }
     }
@@ -44,10 +45,10 @@ impl RustHtmlParser {
     // expand a token stream from a token stream. this is used for compiling the RustHtml code into Rust code.
     // input: the tokens to expand.
     // returns: the expanded tokens.
-    pub fn expand_tokenstream(self: &Self, input: TokenStream) -> Result<TokenStream, RustHtmlError> {
+    pub fn expand_tokenstream(self: &Self, input: TokenStream, ct: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
         let it = Rc::new(StreamPeekableTokenTree::new(input));
 
-        let rusthtml_tokens_for_view = self.parser.parse_tokenstream_to_rusthtmltokens(true, it, false)?;
+        let rusthtml_tokens_for_view = self.parser.parse_tokenstream_to_rusthtmltokens(true, it, false, ct)?;
 
         // prefix with _view_start
         let rusthtml = match self.parse_context.get_param_string("viewstart") {

@@ -2,12 +2,11 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
-use proc_macro2::{TokenTree, Punct, Delimiter, Group, Ident, TokenStream, Literal};
+use proc_macro2::{Ident, Punct};
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
-use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 
 use super::peekable_rusthtmltoken::{IPeekableRustHtmlToken, VecPeekableRustHtmlToken};
 use super::rusthtmlparser_all::{IRustHtmlParserAssignSharedParts, IRustHtmlParserAll};
@@ -61,7 +60,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
             let next_token = it.peek();
             if let Some(token) = next_token {
                 match token {
-                    RustHtmlToken::Identifier(ident) => {
+                    RustHtmlToken::Identifier(_ident) => {
                         output.push(it.next().unwrap().clone());
 
                         // peek for next 3 punct tokens
@@ -70,7 +69,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                         for i in 0..3 {
                             if let Some(peek_colon) = it.peek_nth(i) {
                                 match &peek_colon {
-                                    RustHtmlToken::ReservedChar(c, punct) => {
+                                    RustHtmlToken::ReservedChar(c, _punct) => {
                                         match c {
                                             ':' => {
                                                 colons.push(peek_colon.clone());
@@ -102,8 +101,8 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                             }
                         }
                     },
-                    RustHtmlToken::ReservedChar(c, punct) => {
-                        match punct.as_char() {
+                    RustHtmlToken::ReservedChar(c, _punct) => {
+                        match c {
                             '<' => {
                                 output.push(it.next().unwrap().clone());
                                 let inner = self.parse_type_identifier(it.clone(), ct)?;
@@ -142,13 +141,13 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
         Ok(Rc::new(VecPeekableRustHtmlToken::new(output)))
     }
 
-    fn parse_rust_identifier_expression(self: &Self, add_first_ident: bool, identifier_token: &RustHtmlToken, last_token_was_ident: bool, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
+    fn parse_rust_identifier_expression(self: &Self, add_first_ident: bool, identifier_token: &RustHtmlToken, last_token_was_ident: bool, it: Rc<dyn IPeekableRustHtmlToken>, _ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
         let mut output = vec![];
         if add_first_ident {
             output.push(identifier_token.clone());
         }
         // this needs to be an argument
-        let mut last_token_was_ident = last_token_was_ident;
+        let mut _last_token_was_ident = last_token_was_ident;
         loop {
             if ct.is_cancelled() {
                 return Err(RustHtmlError::from_str("parse_rust_identifier_expression cancelled"));
@@ -158,21 +157,20 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
             if let Some(token) = token_option {
                 match token {
                     RustHtmlToken::Identifier(_ident) => {
-                        if last_token_was_ident {
+                        if _last_token_was_ident {
                             break;
                         } else {
                             output.push(it.next().unwrap().clone());
-                            last_token_was_ident = true;
+                            _last_token_was_ident = true;
                             continue;
                         }
                     },
-                    RustHtmlToken::ReservedChar(c, punct) => {
-                        let c = punct.as_char();
+                    RustHtmlToken::ReservedChar(c, _punct) => {
                         match c {
                             '.' | '?' | '!' | '_' | ':' | '&' => {
-                                if last_token_was_ident {
+                                if _last_token_was_ident {
                                     output.push(it.next().unwrap().clone());
-                                    last_token_was_ident = false;
+                                    _last_token_was_ident = false;
                                 } else {
                                     break;
                                 }
@@ -190,20 +188,20 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                 break;
             }
 
-            last_token_was_ident = false;
+            _last_token_was_ident = false;
         }
         Ok(Rc::new(VecPeekableRustHtmlToken::new(output)))
     }
 
-    fn parse_rust_string_or_ident(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn parse_rust_string_or_ident(self: &Self, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         todo!("parse_rust_string_or_ident")
     }
 
-    fn parse_rust_string_or_ident_or_punct_or_group(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn parse_rust_string_or_ident_or_punct_or_group(self: &Self, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         todo!("parse_rust_string_or_ident_or_punct_or_group")
     }
 
-    fn parse_rust_string_or_ident_or_punct_or_group_or_literal(self: &Self, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+    fn parse_rust_string_or_ident_or_punct_or_group_or_literal(self: &Self, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
         todo!("parse_rust_string_or_ident_or_punct_or_group_or_literal")
     }
 
@@ -229,7 +227,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
         let r = if peek_or_next { it.peek() } else { it.next() };
         if let Some(expect_string_token) = r {
             match expect_string_token {
-                RustHtmlToken::Literal(literal, s) => Ok(snailquote::unescape(&literal.clone().unwrap().to_string()).unwrap()),
+                RustHtmlToken::Literal(literal, _s) => Ok(snailquote::unescape(&literal.clone().unwrap().to_string()).unwrap()),
                 _ => Err(RustHtmlError::from_string(format!("unexpected token after {} directive: {:?}", identifier, expect_string_token))),
             }
         } else {

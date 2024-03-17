@@ -22,7 +22,7 @@ pub struct GenericAuthRolesDbSetProvider {
 impl GenericAuthRolesDbSetProvider {
     pub fn new() -> Self {
         Self {
-            authroles_dbset: Box::new(AuthRoleJsonFileDbSet::open("data/authrole_dbset.json".to_string()).unwrap())
+            authroles_dbset: Box::new(AuthRoleJsonFileDbSet::open("data/authrole_dbset.json".to_string()).expect("could not open authrole_dbset.json"))
         }
     }
 

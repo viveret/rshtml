@@ -173,15 +173,15 @@ impl IModelProperty for ReflectedProperty {
         todo!("set_value_as_u64")
     }
 
-    fn set_value_as_usize(&mut self, value: usize) {
+    fn set_value_as_usize(&mut self, _value: usize) {
         todo!("set_value_as_usize")
     }
 
-    fn set_value_as_i8(&mut self, value: i8) {
+    fn set_value_as_i8(&mut self, _value: i8) {
         todo!("set_value_as_i8")
     }
 
-    fn set_value_as_i16(&mut self, value: i16) {
+    fn set_value_as_i16(&mut self, _value: i16) {
         todo!("set_value_as_i16")
     }
 }

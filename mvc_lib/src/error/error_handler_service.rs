@@ -22,7 +22,7 @@ pub trait IErrorHandlerService {
 }
 
 pub struct ErrorHandlerService {
-    logging_service: Rc<dyn ILoggingService>,
+    _logging_service: Rc<dyn ILoggingService>,
     error_handlers: Vec<Rc<dyn IErrorHandler>>,
 }
 
@@ -32,7 +32,7 @@ impl ErrorHandlerService {
         error_handlers: Vec<Rc<dyn IErrorHandler>>,
     ) -> Self {
         Self {
-            logging_service: logging_service,
+            _logging_service: logging_service,
             error_handlers: error_handlers,
         }
     }

@@ -1,12 +1,15 @@
 use std::rc::Rc;
 use std::borrow::Cow;
 
+use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
-use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
@@ -28,10 +31,22 @@ impl IRustHtmlDirective for ViewStartDirective {
         name == "viewstart"
     }
 
-    fn execute(self: &Self, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
-        match parser.parse_string_with_quotes(false, identifier.clone(), it.clone()) {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        match parser.get_old_parser().next_path_str(context.clone(), identifier, ident_token, it.clone(), false, ct) {
             Ok(param_value) => {
-                parser.get_context().mut_params().insert("viewstart".to_string(), param_value);
+                context.mut_params().insert("viewstart".to_string(), param_value);
+                Ok(RustHtmlDirectiveResult::OkBreak)
+            },
+            Err(RustHtmlError(e)) => {
+                return Err(RustHtmlError(Cow::Owned(format!("The \"viewstart\" directive failed: ({})", e))));
+            }
+        }
+    }
+    
+    fn execute_new(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        match parser.get_rust_parser().parse_string_with_quotes(false, identifier, it.clone()) {
+            Ok(param_value) => {
+                context.mut_params().insert("viewstart".to_string(), param_value);
                 Ok(RustHtmlDirectiveResult::OkBreak)
             },
             Err(RustHtmlError(e)) => {

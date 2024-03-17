@@ -118,7 +118,7 @@ impl IPeekableTokenTree for StreamPeekableTokenTree {
     }
 
     fn to_splice(self: &Self) -> &[TokenTree] {
-        unimplemented!("to_splice not implemented for PeekableTokenTree")
+        unimplemented!("to_splice not implemented for StreamPeekableTokenTree")
     }
 
     fn to_stream(self: &Self) -> TokenStream {

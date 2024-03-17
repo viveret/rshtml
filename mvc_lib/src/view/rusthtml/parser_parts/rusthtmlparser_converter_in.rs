@@ -120,7 +120,7 @@ impl IRustHtmlParserConverterIn for RustHtmlParserConverterIn {
         Ok(output)
     }
 
-    fn convert_literal(self: &Self, literal: &Literal, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlToken, RustHtmlError> {
+    fn convert_literal(self: &Self, literal: &Literal, _ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlToken, RustHtmlError> {
         Ok(RustHtmlToken::Literal(Some(literal.clone()), None))
     }
 

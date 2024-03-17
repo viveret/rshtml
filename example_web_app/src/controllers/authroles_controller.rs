@@ -92,7 +92,7 @@ impl AuthRolesController {
         self.authroles_dbset.get_authroles_dbset()
             .as_any(TypeInfo::of::<JsonFileDbSet<JsonAuthRole>>())
             .downcast_ref::<AuthRoleJsonFileDbSet>()
-            .unwrap()
+            .expect("AuthRolesController.get_roles: authroles_dbset is not a AuthRoleJsonFileDbSet")
             .get_all()
             .iter().cloned().collect()
     }

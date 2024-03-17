@@ -47,8 +47,8 @@ impl <'a> IPeekableRustHtmlToken for VecPeekableRustHtmlToken {
         token
     }
 
-    fn peek_nth(self: &Self, n: usize) -> Option<&RustHtmlToken> {
-        todo!()
+    fn peek_nth(self: &Self, _n: usize) -> Option<&RustHtmlToken> {
+        self.data.get(*self.peek_index.borrow() + _n)
     }
 
     fn to_string(self: &Self) -> String {
@@ -60,7 +60,7 @@ impl <'a> IPeekableRustHtmlToken for VecPeekableRustHtmlToken {
     }
 
     fn to_splice(self: &Self) -> &[RustHtmlToken] {
-        unimplemented!("to_splice not implemented for PeekableTokenTree")
+        &self.data
     }
 
     fn to_stream(self: &Self) -> Rc<dyn IPeekableRustHtmlToken> {

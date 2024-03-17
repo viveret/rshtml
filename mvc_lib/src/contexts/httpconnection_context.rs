@@ -125,7 +125,7 @@ impl IHttpConnectionContext for HttpConnectionContext {
 
     fn get_pending_status_message(&self) -> String {
         match *self.pending_http_version.borrow() {
-            http::Version::HTTP_10 | http::Version::HTTP_11 => self.pending_status_code.borrow().unwrap().canonical_reason().unwrap_or("").to_string(),
+            http::Version::HTTP_10 | http::Version::HTTP_11 => self.pending_status_code.borrow().expect("could not get pending_status_code").canonical_reason().unwrap_or("").to_string(),
             _ => "".into()
         }
     }
@@ -161,11 +161,11 @@ impl IHttpConnectionContext for HttpConnectionContext {
     }
 
     fn add_header_string(&self, name: String, value: String) {
-        self.pending_headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).unwrap(), HeaderValue::from_bytes(value.as_bytes()).unwrap());
+        self.pending_headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).expect("could not get HeaderName::from_bytes"), HeaderValue::from_bytes(value.as_bytes()).expect("could not get HeaderValue::from_bytes"));
     }
 
     fn add_header_str(&self, name: &str, value: &str) {
-        self.pending_headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).unwrap(), HeaderValue::from_bytes(value.as_bytes()).unwrap());
+        self.pending_headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).expect("could not get HeaderName::from_bytes"), HeaderValue::from_bytes(value.as_bytes()).expect("could not get HeaderValue::from_bytes"));
     }
 
     fn get_connection_id(&self) -> u32 {
@@ -177,14 +177,14 @@ impl IHttpConnectionContext for HttpConnectionContext {
     }
 
     fn set_header_string(&self, name: String, value: String) {
-        self.pending_headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).unwrap(), HeaderValue::from_bytes(value.as_bytes()).unwrap());
+        self.pending_headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).expect("could not get HeaderName::from_bytes"), HeaderValue::from_bytes(value.as_bytes()).expect("could not get HeaderValue::from_bytes"));
     }
 
     fn set_header_str(&self, name: &str, value: &str) {
-        self.pending_headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).unwrap(), HeaderValue::from_bytes(value.as_bytes()).unwrap());
+        self.pending_headers.borrow_mut().insert(HeaderName::from_bytes(name.as_bytes()).expect("could not get HeaderName::from_bytes"), HeaderValue::from_bytes(value.as_bytes()).expect("could not get HeaderValue::from_bytes"));
     }
 
     fn get_pending_header(&self, name: &str) -> Option<String> {
-        self.pending_headers.borrow().get(name).map(|v| v.to_str().unwrap().to_string())
+        self.pending_headers.borrow().get(name).map(|v| v.to_str().expect("could not convert HeaderValue to string").to_string())
     }
 }

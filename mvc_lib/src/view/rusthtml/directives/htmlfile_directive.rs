@@ -1,13 +1,14 @@
 use std::rc::Rc;
 
+use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
-use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
-use crate::view::rusthtml::parser_parts::peekable_tokentree::StreamPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
-use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 
 use super::irusthtml_directive::IRustHtmlDirective;
@@ -26,9 +27,8 @@ impl HtmlFileDirective {
     // output: the destination for the RustHtml tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    pub fn convert_externalhtml_directive(identifier: &Ident, identifier_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<(), RustHtmlError<'static>> {
-        // match parser.parse_string_with_quotes(false, identifier.clone(), it.clone()) {
-        match parser.parse_string_with_quotes(false, identifier.clone(), it.clone()) {
+    pub fn convert_externalhtml_directive(context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, identifier_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError<'static>> {
+        match parser.get_old_parser().next_path_str(context.clone(), identifier, identifier_token, it.clone(), false, ct.clone()) {
             Ok(path) => {
                 let code = quote::quote! {
                     match view_context.open_view_file(#path) {
@@ -38,25 +38,24 @@ impl HtmlFileDirective {
                             buffer
                         },
                         Err(e) => {
-                            let cwd = std::env::current_dir().unwrap();
-                            return Err(RustHtmlError::from_string(format!("cannot read external HTML file '{}' in '{:?}', could not open: {:?}", #path, cwd, e)));
+                            return Err(RustHtmlError::from_string(format!("cannot read external HTML file '{}', could not open: {:?}", #path, e)));
                         }
                     }
                 };
-                match parser.parse_tokenstream_to_rusthtmltokens(true, Rc::new(StreamPeekableTokenTree::new(code)), true) {
-                    Ok(tokens) => {
-                        let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
-                        output.push(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Group(proc_macro2::Delimiter::Brace, Rc::new(VecPeekableRustHtmlToken::new(tokens)), Some(g))]));
+                let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
+                match parser.get_converter().convert_group(&g, false, context.clone(), ct) {
+                    Ok(converted) => {
+                        output.push(RustHtmlToken::AppendToHtml(vec![converted]));
+                
+                        Ok(())
                     },
-                    Err(RustHtmlError(e)) => {
-                        return Err(RustHtmlError::from_string(format!("(@{}) cannot read external HTML file, could not parse: {}", identifier, e)));
+                    Err(e) => {
+                        return Err(RustHtmlError::from_string(format!("cannot read external HTML file '{}', could not convert to RustHtml tokens: {:?}", path, e)));
                     }
                 }
-        
-                Ok(())
             },
             Err(RustHtmlError(e)) => {
-                Err(RustHtmlError::from_string(format!("(@{}) cannot read external HTML file, could not parse path: {}", identifier, e)))
+                return Err(RustHtmlError::from_string(format!("(@{}) cannot read external HTML file, could not parse path: {}", identifier, e)));
             }
         }
     }
@@ -67,8 +66,12 @@ impl IRustHtmlDirective for HtmlFileDirective {
         name == "htmlfile" || name == "html_file"
     }
 
-    fn execute(self: &Self, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
-        Self::convert_externalhtml_directive(identifier, ident_token, parser, output, it)?;
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        Self::convert_externalhtml_directive(context, identifier, ident_token, parser, output, it, ct)?;
         Ok(RustHtmlDirectiveResult::OkContinue)
+    }
+    
+    fn execute_new(self: &Self, _context: Rc<dyn IRustHtmlParserContext>, _identifier: &Ident, _ident_token: &RustHtmlToken, _parser: Rc<dyn IRustHtmlParserAll>, _output: &mut Vec<RustHtmlToken>, _it: Rc<dyn IPeekableRustHtmlToken>, _ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        todo!("execute_new htmlfile directive")
     }
 }

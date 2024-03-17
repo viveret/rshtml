@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use mvc_lib::view::rusthtml::peekable_tokentree::PeekableTokenTree;
-use mvc_lib::view::rusthtml::parsers::rusthtmlparser_rust::{RustHtmlParserRust, IRustHtmlParserRust};
+use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_rust::{RustHtmlParserRust, IRustHtmlParserRust};
 use proc_macro2::{TokenTree, Delimiter, TokenStream};
 use quote::quote;
 

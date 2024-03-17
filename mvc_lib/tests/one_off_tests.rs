@@ -1,10 +1,7 @@
 use std::rc::Rc;
 
+use core_lib::asyncly::cancellation_token::CancellationToken;
 use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
-use mvc_lib::view::rusthtml::parsers::rusthtmlparser_rust::{RustHtmlParserRust, IRustHtmlParserRust};
-use mvc_lib::view::rusthtml::peekable_tokentree::PeekableTokenTree;
-use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
-use mvc_lib::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 
 
 #[test]
@@ -238,8 +235,9 @@ test one_off_tests::test_html_tag_attributes_bug ... FAILED
 </html>
     };
 
+    let ct = Rc::new(CancellationToken::new());
     let parser = RustHtmlParser::new(true, "test".to_string());
-    let result = parser.expand_tokenstream(view_tokenstream).unwrap();
+    let result = parser.expand_tokenstream(view_tokenstream, ct).unwrap();
 
     let expected_result = quote::quote! {};
 
@@ -272,8 +270,9 @@ pub fn test_html_tag_attributes_bug2() {
         <li><a class=@dev_class href=@dev_href>@"Dev Tools"</a></li>
     };
 
+    let ct = Rc::new(CancellationToken::new());
     let parser = RustHtmlParser::new(true, "test".to_string());
-    let result = parser.expand_tokenstream(input).unwrap();
+    let result = parser.expand_tokenstream(input, ct).unwrap();
 
     let expected_result = quote::quote! {
         html.write_str("<li><a class=");

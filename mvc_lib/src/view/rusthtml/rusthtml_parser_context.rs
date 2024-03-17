@@ -276,6 +276,10 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         s
     }
 
+    fn get_model_type_stream(self: &Self) -> TokenStream {
+        TokenStream::from_iter(self.get_model_type())
+    }
+
     fn get_model_type(self: &Self) -> Vec<TokenTree> {
         self.model_type.borrow().clone().unwrap_or(vec![])
     }
@@ -518,7 +522,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         vec![]
     }
 
-    fn push_inject_statements_rshtml(self: &Self, rshtml: Vec<RustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) {
+    fn push_inject_statements_rshtml(self: &Self, _rshtml: Vec<RustHtmlToken>, _ctx: Rc<dyn IRustHtmlParserContext>, _ct: Rc<dyn ICancellationToken>) {
         // let rust = parser.get_converter_out().convert_vec(rshtml, ctx, ct).unwrap();
         // self.push_inject_statements(TokenStream::from_iter(rust));
         panic!("push_inject_statements_rshtml not implemented");

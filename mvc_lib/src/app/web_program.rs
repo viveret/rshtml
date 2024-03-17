@@ -72,11 +72,11 @@ impl <'a> WebProgram<'a> {
         *self.next_client_connection_id.borrow_mut() += 1;
         match client {
             Ok(stream) => {
-                // stream.set_ttl(100).unwrap();
-                // stream.set_nodelay(true).unwrap();
-                // stream.set_nonblocking(true).unwrap();
-                // stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
-                // stream.set_write_timeout(Some(Duration::from_secs(2))).unwrap();
+                // stream.set_ttl(100).expect("Could not set ttl");
+                // stream.set_nodelay(true).expect("Could not set nodelay");
+                // stream.set_nonblocking(true).expect("Could not set nonblocking");
+                // stream.set_read_timeout(Some(Duration::from_secs(2))).expect("Could not set read timeout");
+                // stream.set_write_timeout(Some(Duration::from_secs(2))).expect("Could not set write timeout");
                 self.client_ready(stream, next_client_connection_id);
             },
             Err(e) => {
@@ -126,23 +126,23 @@ impl <'a> WebProgram<'a> {
 
 impl <'a> IWebProgram for WebProgram<'a> {
     fn configure(self: &mut Self, args: Rc<Vec<String>>) {
-        (self.on_configure_fn.unwrap())(&mut self.services_builder.borrow_mut(), args);
+        (self.on_configure_fn.expect("on_configure_fn not set"))(&mut self.services_builder.borrow_mut(), args);
     }
     
     fn configure_services(self: &mut Self) {
-        (self.on_configure_services_fn.unwrap())(&mut self.services_builder.borrow_mut());
+        (self.on_configure_services_fn.expect("on_configure_services_fn not set"))(&mut self.services_builder.borrow_mut());
 
         DefaultServices::add_http_request_pipeline(&mut self.services_builder.borrow_mut());
     }
 
     fn start(self: &Self, _args: Rc<Vec<String>>) {
         let services = &self.services_builder.clone().into_inner();
-        (self.onstart_fn.unwrap())(services);
+        (self.onstart_fn.expect("on_start_fn not set"))(services);
 
         let options = ServiceCollectionExtensions::get_required_single::<dyn IHttpOptions>(services);
 
         println!("Hosting at {}", options.get_ip_and_port());
-        let listener = TcpListener::bind(options.get_ip_and_port()).unwrap();
+        let listener = TcpListener::bind(options.get_ip_and_port()).expect("Could not bind to ip and port");
 
         for stream in listener.incoming() {
             self.client_connected(stream);

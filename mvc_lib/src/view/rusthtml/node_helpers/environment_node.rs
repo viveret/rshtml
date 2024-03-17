@@ -24,9 +24,9 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
         return tag_name == "environment";
     }
 
-    fn on_node_parsed(&self, tag_context: Rc<dyn IHtmlTagParseContext>, html_context: Rc<dyn IRustHtmlParserContext>, output: &mut Vec<RustHtmlToken>) -> Result<bool, RustHtmlError> {
+    fn on_node_parsed(&self, tag_context: Rc<dyn IHtmlTagParseContext>, html_context: Rc<dyn IRustHtmlParserContext>) -> Result<bool, RustHtmlError> {
         // look for include or exclude attributes
-        let mut keep_or_remove: Option<bool> = None;
+        let mut _keep_or_remove: Option<bool> = None;
 
         match tag_context.get_html_attr("include") {
             Some(ref token) => {
@@ -37,7 +37,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                                 match v {
                                     RustHtmlToken::Literal(literal, string) => {
                                         let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.clone().unwrap_or_default() }).unwrap();
-                                        keep_or_remove = Some(html_context.get_environment_name() == literal_as_str);
+                                        _keep_or_remove = Some(html_context.get_environment_name() == literal_as_str);
                                     },
                                     _ => panic!("Unexpected token for environment tag value (rust value): {:?}", token),
                                 }
@@ -47,10 +47,10 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                                 match v {
                                     RustHtmlIdentOrPunct::Ident(ident) => {
                                         if html_context.get_environment_name() == ident.to_string() {
-                                            keep_or_remove = Some(true);
+                                            _keep_or_remove = Some(true);
                                         } else {
                                             // println!("self.environment_name ({}) DOES NOT match literal_as_str ({})", self.environment_name, literal_as_str);
-                                            keep_or_remove = Some(false);
+                                            _keep_or_remove = Some(false);
                                         }
                                     },
                                     _ => panic!("Unexpected token for environment tag value (v_parts): {:?}", token),
@@ -61,9 +61,9 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                                 let v_as_str = snailquote::unescape(&v).unwrap();
                                 // println!("v_as_str: {}", v_as_str);
     
-                                keep_or_remove = Some(html_context.get_environment_name() == v_as_str);
+                                _keep_or_remove = Some(html_context.get_environment_name() == v_as_str);
                             } else if let Some(value_literal) = value_literal {
-                                keep_or_remove = Some(html_context.get_environment_name() == value_literal.to_string());
+                                _keep_or_remove = Some(html_context.get_environment_name() == value_literal.to_string());
                             } else {
                                 panic!("Unexpected token for environment tag (value_string): {:?}", token);
                             }
@@ -72,7 +72,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                     RustHtmlToken::Literal(literal, string) => {
                         let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.clone().unwrap_or_default() }).unwrap();
                         // println!("literal_as_str: {}", literal_as_str);
-                        keep_or_remove = Some(html_context.get_environment_name() == literal_as_str);
+                        _keep_or_remove = Some(html_context.get_environment_name() == literal_as_str);
                     },
                     _ => panic!("Unexpected token for environment tag (token): {:?}", token),
                 }
@@ -91,10 +91,10 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                                 match v {
                                     RustHtmlIdentOrPunct::Ident(ident) => {
                                         if html_context.get_environment_name() != ident.to_string() {
-                                            keep_or_remove = Some(true);
+                                            _keep_or_remove = Some(true);
                                         } else {
                                             // println!("self.environment_name ({}) DOES match literal_as_str ({})", self.environment_name, literal_as_str);
-                                            keep_or_remove = Some(false);
+                                            _keep_or_remove = Some(false);
                                         }
                                     },
                                     _ => panic!("Unexpected token for environment tag value (v_parts): {:?}", token),
@@ -107,10 +107,10 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                                         let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.clone().unwrap_or_default() }).unwrap();
                                         // println!("literal_as_str: {}", literal_as_str);
                                         if html_context.get_environment_name() != literal_as_str {
-                                            keep_or_remove = Some(true);
+                                            _keep_or_remove = Some(true);
                                         } else {
                                             // println!("self.environment_name ({}) DOES match literal_as_str ({})", self.environment_name, literal_as_str);
-                                            keep_or_remove = Some(false);
+                                            _keep_or_remove = Some(false);
                                         }
                                     },
                                     _ => panic!("Unexpected token for environment tag value (rust_value): {:?}", token),
@@ -122,17 +122,17 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                             // println!("value_as_str: {}", value_as_str);
 
                             if html_context.get_environment_name() != value_as_str {
-                                keep_or_remove = Some(true);
+                                _keep_or_remove = Some(true);
                             } else {
                                 // println!("self.environment_name ({}) DOES match value_as_str ({})", self.environment_name, value_as_str);
-                                keep_or_remove = Some(false);
+                                _keep_or_remove = Some(false);
                             }
                         } else if let Some(value_literal) = value_literal {
                             if html_context.get_environment_name() != value_literal.to_string() {
-                                keep_or_remove = Some(true);
+                                _keep_or_remove = Some(true);
                             } else {
                                 // println!("self.environment_name ({}) DOES match value_as_str ({})", self.environment_name, value_as_str);
-                                keep_or_remove = Some(false);
+                                _keep_or_remove = Some(false);
                             }
                         } else {
                             panic!("Unexpected token for environment tag (invalid or unsupported): {:?}", token);
@@ -142,10 +142,10 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                         let literal_as_str = snailquote::unescape(& if let Some(literal) = literal { literal.to_string() } else { string.clone().unwrap_or_default() }).unwrap();
                         // println!("literal_as_str: {}", literal_as_str);
                         if html_context.get_environment_name() != literal_as_str {
-                            keep_or_remove = Some(true);
+                            _keep_or_remove = Some(true);
                         } else {
                             // println!("self.environment_name ({}) DOES match literal_as_str ({})", self.environment_name, literal_as_str);
-                            keep_or_remove = Some(false);
+                            _keep_or_remove = Some(false);
                         }
                     },
                     _ => panic!("Unexpected token for environment tag (token): {:?}", token),
@@ -155,10 +155,13 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                 // println!("environment tag does not have exclude field");
             }
         }
+
+        let binding = tag_context.get_main_context().get_output_buffer().unwrap();
+        let mut output = binding.borrow_mut();
         
-        return match keep_or_remove {
-            Some(keep_or_remove) => {
-                if keep_or_remove {
+        return match _keep_or_remove {
+            Some(_keep_or_remove) => {
+                if _keep_or_remove {
                     // keep - don't add outer environment tags but do add inner elements
                     loop {
                         match output.first().unwrap() {

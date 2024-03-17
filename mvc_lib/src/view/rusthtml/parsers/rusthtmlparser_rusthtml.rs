@@ -22,11 +22,15 @@ impl RustHtmlParserRustOrHtml {
             shared_parser: RefCell::new(None),
         }
     }
+
+    pub fn get_parser(self: &Self) -> Rc<dyn IRustHtmlParserRustOrHtml> {
+        self.shared_parser.borrow().as_ref().unwrap().clone()
+    }
 }
 
 impl IRustHtmlParserRustOrHtml for RustHtmlParserRustOrHtml {
     fn parse_rust_or_html(self: &Self, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
-        if let Some(shared_parser) = self.shared_parser.borrow().as_ref() {
+        if let Some(shared_parser) = self.get_parser() {
             match shared_parser.get_rust_or_html_parser().parse_rust_or_html(it, is_raw_tokenstream) {
                 Ok(tokens) => Ok(tokens),
                 Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.into_owned())),

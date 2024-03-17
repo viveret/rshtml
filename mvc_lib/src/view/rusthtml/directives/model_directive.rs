@@ -1,12 +1,15 @@
 use std::rc::Rc;
 
+use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
+use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
-use crate::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 
 use super::irusthtml_directive::IRustHtmlDirective;
 
@@ -25,13 +28,28 @@ impl IRustHtmlDirective for ModelDirective {
         name == "model"
     }
 
-    fn execute(self: &Self, identifier: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustToRustHtmlConverter>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, _ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // expecting type identifier
-        if let Ok(type_ident) = parser.parse_type_identifier(it) {
-            parser.get_context().set_model_type(Some(type_ident));
+        if let Ok(type_ident) = parser.get_old_parser().parse_type_identifier(it) {
+            context.set_model_type(Some(type_ident)); // .to_splice().to_vec()
             Ok(RustHtmlDirectiveResult::OkContinue)
         } else {
             Err(RustHtmlError::from_string(format!("Expected type identifier after \"{}\" directive.", identifier.to_string())))
+        }
+    }
+    
+    fn execute_new(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        match parser.get_rust_parser().parse_type_identifier(it, ct.clone()) {
+            Ok(type_ident_tokens) => {
+                match parser.get_converter_out().convert_rusthtmltokens_to_plain_rust(type_ident_tokens, context.clone(), ct) {
+                    Ok(type_ident_rust_out) => {
+                        context.set_model_type(Some(type_ident_rust_out));
+                        Ok(RustHtmlDirectiveResult::OkContinue)
+                    },
+                    Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.to_string()))
+                }
+            },
+            Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.to_string()))
         }
     }
 }

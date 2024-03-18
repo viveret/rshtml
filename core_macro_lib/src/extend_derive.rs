@@ -176,7 +176,7 @@ impl<'a> ExtendDerive<'a> {
                                     TokenTree::Punct(punct) => {
                                         let c = punct.as_char();
                                         if c == '<' {
-                                            struct_generics.push(it.next().unwrap());
+                                            struct_generics.push(it.next().expect("should have been able to get next"));
                                             let mut punct_stack = vec![];
                                             loop {
                                                 if let Some(token) = it.next() {
@@ -192,7 +192,7 @@ impl<'a> ExtendDerive<'a> {
                                                                     if punct_stack.len() == 0 {
                                                                         break;
                                                                     } else {
-                                                                        if punct_stack.pop().unwrap() != '<' {
+                                                                        if punct_stack.pop().expect("could not callpunct_stack.pop") != '<' {
                                                                             panic!("Expected <, not {:?}.", token);
                                                                         }
                                                                     }
@@ -220,7 +220,7 @@ impl<'a> ExtendDerive<'a> {
                                     TokenTree::Ident(ident) => {
                                         let ident_str = ident.to_string();
                                         if ident_str == "where" {
-                                            struct_where_clause.push(it.next().unwrap());
+                                            struct_where_clause.push(it.next().expect("could not call it.next"));
                                             loop {
                                                 if let Some(token) = it.peek() {
                                                     struct_where_clause.push(token.clone());
@@ -233,7 +233,7 @@ impl<'a> ExtendDerive<'a> {
                                                             }
                                                         },
                                                         _ => {
-                                                            struct_where_clause.push(it.next().unwrap());
+                                                            struct_where_clause.push(it.next().expect("it.next"));
                                                         }
                                                     }
                                                 } else {
@@ -247,7 +247,7 @@ impl<'a> ExtendDerive<'a> {
                             }
 
                             // get inner
-                            let token = it.next().unwrap();
+                            let token = it.next().expect("could not call it.next");
                             match token {
                                 TokenTree::Group(group) => {
                                     // println!("struct_inner: {}", group.to_string());
@@ -283,7 +283,7 @@ impl<'a> ExtendDerive<'a> {
                             // get generics
 
                             // get name
-                            let token = it.next().unwrap();
+                            let token = it.next().expect("could not call it.next");
                             match token {
                                 TokenTree::Ident(ident) => {
                                     struct_name = Some(ident.clone());
@@ -294,7 +294,7 @@ impl<'a> ExtendDerive<'a> {
                             }
 
                             // get inner
-                            let token = it.next().unwrap();
+                            let token = it.next().expect("could not call it.next");
                             match token {
                                 TokenTree::Group(group) => {
                                     // println!("struct_inner: {}", group.to_string());

@@ -33,7 +33,7 @@ impl UrlEncodedModel {
     // body_content: the body content to parse.
     // returns: the parsed body content.
     pub fn parse_body(_: ContentType, body_bytes: &Vec<u8>) -> Self {
-        let body_content = std::str::from_utf8(body_bytes).unwrap();
+        let body_content = std::str::from_utf8(body_bytes).expect("UrlEncodedModel::parse_body");
         Self::new(body_content)
     }
 

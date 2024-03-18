@@ -328,11 +328,11 @@ impl<'a> ExtendDerive<'a> {
         TokenStream::from_iter(
             self.generate_prepend_code().into_iter()
                 .chain(self.struct_attrs_tokens.clone().into_iter())
-                .chain(vec![struct_vis.clone(), struct_type.clone(), struct_name.clone()].into_iter().filter(|x| x.is_some()).map(|x|TokenTree::Ident(x.unwrap())))
+                .chain(vec![struct_vis.clone(), struct_type.clone(), struct_name.clone()].into_iter().filter(|x| x.is_some()).map(|x|TokenTree::Ident(x.expect("adadawda"))))
                 .chain(self.struct_generics.clone().into_iter())
                 .chain(self.struct_where_clause.clone().into_iter())
                 .chain(vec![self.generate_struct_inner()].into_iter().map(|x|TokenTree::Group(x))
-                .chain(vec![struct_semi.clone()].into_iter().filter(|x| x.is_some()).map(|x|TokenTree::Punct(x.unwrap()))))
+                .chain(vec![struct_semi.clone()].into_iter().filter(|x| x.is_some()).map(|x|TokenTree::Punct(x.expect("adadawda")))))
                 .chain(self.generate_append_code().into_iter())
                 .chain(self.tokens_to_append.borrow().clone().into_iter())
         )
@@ -347,7 +347,7 @@ impl<'a> ExtendDerive<'a> {
     }
 
     fn generate_struct_inner(&self) -> Group {
-        let original = self.struct_inner.as_ref().unwrap().clone();
+        let original = self.struct_inner.as_ref().expect("generate_struct_inner").clone();
 
         if self.inner_processors.borrow().len() > 0 {
             let mut inner_tokens = vec![];
@@ -427,7 +427,7 @@ impl<'a> ExtendDerive<'a> {
         let mut property_name: Option<Ident> = None;
         let mut property_colon: Option<Punct> = None;
         let mut property_type: Vec<TokenTree> = vec![];
-        let mut it = self.struct_inner.as_ref().unwrap().stream().into_iter().peekable();
+        let mut it = self.struct_inner.as_ref().expect("get_struct_properties").stream().into_iter().peekable();
         let mut punct_stack = vec![];
 
         let mut property_visibility = Self::get_property_visibility(&mut it);
@@ -444,7 +444,7 @@ impl<'a> ExtendDerive<'a> {
                                 if punct_stack.len() > 0 {
                                     property_type.push(token.clone());
                                 } else {
-                                    properties.push(AstProperty::new(property_attributes, property_visibility, property_name_amp, property_name.unwrap().clone(), property_colon, property_type.clone()));
+                                    properties.push(AstProperty::new(property_attributes, property_visibility, property_name_amp, property_name.expect("awdaaaaaaaa").clone(), property_colon, property_type.clone()));
                                     property_name_amp = None;
                                     property_name = None;
                                     property_colon = None;
@@ -466,7 +466,7 @@ impl<'a> ExtendDerive<'a> {
                             },
                             '>' => {
                                 if property_name.is_some() {
-                                    if punct_stack.pop().unwrap() == '<' {
+                                    if punct_stack.pop().expect("punct_stack.pop") == '<' {
                                         property_type.push(token.clone());
                                     } else {
                                         panic!("Expected punct or ident for property type, not {:?}.", token)
@@ -485,7 +485,7 @@ impl<'a> ExtendDerive<'a> {
                             '#' => {
                                 if property_name.is_none() && property_visibility.is_none() {
                                     // get attribute
-                                    let attrib_token = match it.next().unwrap() {
+                                    let attrib_token = match it.next().expect("it.next") {
                                         TokenTree::Group(group) => {
                                             group
                                         },

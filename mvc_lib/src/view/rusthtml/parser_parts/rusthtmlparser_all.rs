@@ -134,7 +134,7 @@ impl IRustHtmlParserAll for RustHtmlParserAll {
             Ok(input_rshtml) => {
                 match self.get_expander().expand_rshtml(context.clone(), Rc::new(VecPeekableRustHtmlToken::new(input_rshtml.clone())), cancellation_token.clone()) {
                     Ok(()) => {
-                        let output_rshtml = context.pop_output_buffer().unwrap().borrow().clone();
+                        let output_rshtml = context.pop_output_buffer().expect("pop_output_buffer expected").borrow().clone();
                         match self.get_converter_out().convert_vec(output_rshtml, context.clone(), cancellation_token) {
                             Ok(output) => {
                                 Ok(TokenStream::from_iter(output.into_iter()))

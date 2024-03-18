@@ -337,7 +337,7 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
     fn create_key_for_kvp(&self) -> Result<(RustHtmlToken, String), RustHtmlError> {
         let mut attr_name = String::new();
         let token = if let Some(is_literal) = &self.get_html_attr_key_literal() {
-            let s = snailquote::unescape(&is_literal.to_string()).unwrap();
+            let s = snailquote::unescape(&is_literal.to_string()).expect("on_kvp_defined: failed to unescape literal");
             attr_name.push_str(&s);
             RustHtmlToken::HtmlTagAttributeName(is_literal.to_string(), Some(RustHtmlIdentAndPunctOrLiteral::Literal(is_literal.clone())))
         } else if self.has_html_attr_key_ident() {

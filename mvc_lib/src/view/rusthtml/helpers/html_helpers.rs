@@ -169,7 +169,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
             if let Some(html_attrs_second) = html_attrs_second {
                 for (key, value) in html_attrs_second {
                     if html_attrs_first.contains_key(key.as_str()) {
-                        let new_value = html_attrs_first.get(key).unwrap().to_string() + " " + &value;
+                        let new_value = html_attrs_first.get(key).expect("append_html_attrs_into_first error").to_string() + " " + &value;
                         new_first.insert(key.clone(), new_value);
                     } else {
                         new_first.insert(key.clone(), value.clone());
@@ -232,7 +232,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         if let Some(viewmodel) = self.view_context.get_viewmodel() {
             // first check if it is anyimodel
             let r = if let Some(viewmodel) = viewmodel.downcast_ref::<AnyIModel>() {
-                (expr.0)(viewmodel.get_underlying_value().downcast_ref::<TModel>().unwrap())
+                (expr.0)(viewmodel.get_underlying_value().downcast_ref::<TModel>().expect("input_for error").clone())
             } else if let Some(viewmodel) = viewmodel.as_any().downcast_ref::<TModel>() {
                 (expr.0)(viewmodel)
             } else {

@@ -34,7 +34,7 @@ impl RustHtmlFileDirective {
                 v.render()
             };
             let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
-            let gconverted = parser.get_converter().convert_group(&g, true, ctx.clone(), ct.clone()).unwrap();
+            let gconverted = parser.get_converter().convert_group(&g, true, ctx.clone(), ct.clone()).expect("could not convert group");
             output.push(RustHtmlToken::AppendToHtml(vec![gconverted]));
 
             Ok(())

@@ -102,7 +102,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
         let mut inner_tokens = vec![];
         if let Some(inner) = inner {
             if inner.len() == 1 {
-                match inner.first().unwrap() {
+                match inner.first().expect("inner is empty") {
                     RustHtmlToken::Literal(literal, literal_string) => {
                         if let Some(literal_string) = literal_string {
                             output.push(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote! { html_output.write_html_str(#literal_string); }))));
@@ -165,7 +165,7 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 }
             },
             RustHtmlToken::ReservedChar(_, punct) => output.push(TokenTree::Punct(punct.clone())),
-            RustHtmlToken::Group(_delimiter, _stream, group) => output.push(TokenTree::Group(group.clone().unwrap())),
+            RustHtmlToken::Group(_delimiter, _stream, group) => output.push(TokenTree::Group(group.clone().expect("group is None"))),
             RustHtmlToken::GroupParsed(delimiter, inner_tokens) => 
                 self.convert_rusthtmlgroupparsed_to_tokentree(delimiter, inner_tokens, output, it)?,
             RustHtmlToken::HtmlTagStart(tag, tag_tokens) =>

@@ -130,13 +130,13 @@ impl HtmlFormDirective {
             RustHtmlToken::HtmlTagAttributeValue(action_string, action, None, None),
         ]);
 
-        for attr_kvp in attributes.unwrap() {
+        for attr_kvp in attributes.expect("attributes was None in parse_form_function_call") {
             let attr_name = attr_kvp.0;
             let attr_values = attr_kvp.1;
             output.push(RustHtmlToken::HtmlTagAttributeName(attr_name, None));
             output.push(RustHtmlToken::HtmlTagAttributeEquals('=', None));
 
-            match attr_values.first().unwrap() {
+            match attr_values.first().expect("attr_values was empty in parse_form_function_call") {
                 RustHtmlIdentAndPunctOrLiteral::Literal(literal) => {
                     // let s = snailquote::unescape(&literal.to_string()).unwrap();
                     let s = literal.to_string();

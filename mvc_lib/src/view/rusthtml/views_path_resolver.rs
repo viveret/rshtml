@@ -30,7 +30,7 @@ impl IViewsPathResolver for RegularViewsPathResolver {
                 path_buf.push(&self.views_path_dir);
                 path_buf.push(prefix);
                 path_buf.push(view_name);
-                path_buf.to_str().unwrap().to_string()
+                path_buf.to_str().expect("could not call to_str on path_buf in get_view_paths").to_string()
             }
         ).collect()
     }

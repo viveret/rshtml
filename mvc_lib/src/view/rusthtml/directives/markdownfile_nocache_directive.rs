@@ -37,7 +37,7 @@ impl MarkdownFileNoCacheDirective {
     ) -> Result<(), RustHtmlError<'static>> {
         // peek for prefix token
         let mut _prefix_token = it.peek();
-        let prefix_punct = if let TokenTree::Punct(p) = _prefix_token.unwrap() {
+        let prefix_punct = if let TokenTree::Punct(p) = _prefix_token.expect("could not peek prefix token") {
             _prefix_token = it.next();
             Some(p)
         } else {

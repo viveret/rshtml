@@ -390,6 +390,11 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                     }
                 }
             },
+            RustHtmlToken::GroupParsed(d, tokens) => {
+                let stream = Rc::new(VecPeekableRustHtmlToken::new(tokens.clone()));
+                self.expand_group_to_rusthtmltoken(d, &None, stream, false, ctx.clone(), ct.clone())?;
+                Ok(())
+            },
             _ => {
                 Err(RustHtmlError::from_string(format!("expand_rshtmltoken Unexpected token: {:?}", token)))
             }
@@ -586,8 +591,7 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
 
 
     fn expand_rust_directive_identifier_to_rusthtmltoken(self: &Self, identifier: &Ident, ident_token: &RustHtmlToken, prefix_token_option: Option<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
-        let output_binding = ctx.get_output_buffer().unwrap();
-        let mut output = output_binding.borrow_mut();
+        let mut output = vec![];
         if let Some(directive) = ctx.try_get_directive(identifier.to_string()) {
             let r = directive.execute_new(ctx.clone(), &identifier, ident_token, self.parser.borrow().as_ref().unwrap().clone(), &mut output, it, ct);
             match r {
@@ -595,7 +599,7 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                     match r {
                         RustHtmlDirectiveResult::OkContinue => Ok(()),
                         RustHtmlDirectiveResult::OkBreak => Ok(()),
-                        RustHtmlDirectiveResult::OkBreakAppendHtml => ctx.push_output_token(RustHtmlToken::AppendToHtml(vec![])),
+                        RustHtmlDirectiveResult::OkBreakAppendHtml => ctx.push_output_token(RustHtmlToken::AppendToHtml(output)),
                     }
                 },
                 Err(RustHtmlError(e)) => {
@@ -1259,6 +1263,10 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                         return Err(RustHtmlError::from_string(e.into_owned()));
                     }
                 }
+            },
+            RustHtmlToken::GroupParsed(d, tokens) => {
+                let stream = Rc::new(VecPeekableRustHtmlToken::new(tokens.clone()));
+                self.expand_group_to_rusthtmltoken(d, &None, stream, false, parse_ctx.get_main_context(), ct)?;
             },
             _ => {
                 return Err(RustHtmlError::from_string(format!("RustHtmlParserExpander::next_and_parse_html_tag Unexpected token {:?}", token)));

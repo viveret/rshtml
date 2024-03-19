@@ -82,7 +82,7 @@ pub struct ViewRenderer {
 
 impl ViewRenderer  {
     pub fn new() -> Self {
-        let project_path = std::env::current_dir().unwrap().to_str().unwrap().to_string() + "/example_web_app";
+        let project_path = std::env::current_dir().expect("std::env::current_dir()").to_str().expect("to_str").to_string() + "/example_web_app";
         Self {
             cached_views: RefCell::new(None),
             views_path_resolvers: vec![

@@ -311,7 +311,7 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
     }
 
     fn add_operation_to_ooo_log(&self, operation: String) {
-        self.main_context.as_ref().unwrap().add_operation_to_ooo_log(operation);
+        self.main_context.as_ref().expect("main_context").add_operation_to_ooo_log(operation);
     }
 
     fn set_parse_attrs(&self, parse_attrs: bool) {

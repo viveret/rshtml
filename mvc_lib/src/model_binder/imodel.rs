@@ -162,7 +162,7 @@ impl IHazAttributes for MockIModelObject {
     }
 
     fn get_attribute(&self,typeinfo: &TypeInfo) -> Option<Rc<dyn IAttribute>> {
-        self.attributes.iter().find(|a| a.get_type_info().unwrap().is_compatible_with(typeinfo)).map(|a| a.clone())
+        self.attributes.iter().find(|a| a.get_type_info().expect("get_type_info").is_compatible_with(typeinfo)).map(|a| a.clone())
     }
 }
 

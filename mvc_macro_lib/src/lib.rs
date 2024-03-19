@@ -5,9 +5,12 @@ extern crate mvc_lib;
 use std::rc::Rc;
 
 use core_lib::asyncly::timer_cancellation_token::TimerCancellationToken;
+use mvc_lib::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 use mvc_lib::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_all::RustHtmlParserAll;
+use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
+use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use proc_macro2::TokenStream;
 use proc_macro2::Ident;
@@ -35,10 +38,17 @@ pub fn rusthtml_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 // puts render function into a structure with additional functionality and information
 #[proc_macro]
 pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let use_new_parser = false;
+
     let parse_context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
-    let parser = RustHtmlParserAll::new_default();
     let ct = Rc::new(TimerCancellationToken::new(std::time::Duration::from_secs(5)));
-    let result = parser.expand_rust_with_context(parse_context.clone(), input.into(), ct.clone());
+    let result = if use_new_parser {
+        let parser1 = RustHtmlParserAll::new_default();
+        parser1.expand_rust_with_context(parse_context.clone(), input.into(), ct.clone())
+    } else {
+        let parser2 = RustHtmlParser::new(false, "test".to_string());
+        parser2.expand_tokenstream(input.into(), ct)
+    };
     ct.stop().expect("could not stop timer");
     match result {
         Ok(html_render_fn2) => {

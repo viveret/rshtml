@@ -186,8 +186,8 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
                 self.convert_rusthtmltagattributename_to_tokentree(tag, tag_tokens, output, it)?,
             RustHtmlToken::HtmlTagAttributeValue(value_string, value_literal, value_tokens, value_rust_tokens) =>
                 self.convert_rusthtmltagattributevalue_to_tokentree(value_string.as_ref(), value_literal.as_ref(), value_tokens.as_ref(), value_rust_tokens.as_ref(), output, it)?,
-            RustHtmlToken::HtmlTextNode(text, span) => 
-                self.convert_rusthtmltextnode_to_tokentree(text, span, output, it)?,
+            RustHtmlToken::HtmlTextNode(text) => 
+                self.convert_rusthtmltextnode_to_tokentree(text, output, it)?,
             RustHtmlToken::AppendToHtml(inner) =>
                 self.convert_rusthtmlappendhtml_to_tokentree(None, None, None, Some(inner), output)?,
             _ => { return Err(RustHtmlError::from_string(format!("Could not handle token {:?}", token))); }
@@ -330,14 +330,14 @@ impl IRustHtmlToRustConverter for RustHtmlToRustConverter {
     // output: the destination for the Rust tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    fn convert_rusthtmltextnode_to_tokentree(self: &Self, first_text: &String, _first_span: &Span, output: &mut Vec<TokenTree>, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError> {
+    fn convert_rusthtmltextnode_to_tokentree(self: &Self, first_text: &String, output: &mut Vec<TokenTree>, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError> {
         let mut text_node_content = Vec::new();
         text_node_content.push(first_text.clone());
 
         loop {
             let peek_token_option = it.peek();
             if let Some(peek_token) = peek_token_option {
-                if let RustHtmlToken::HtmlTextNode(text, _span) = peek_token {
+                if let RustHtmlToken::HtmlTextNode(text) = peek_token {
                     text_node_content.push(text.clone());
                     it.next();
                 } else {

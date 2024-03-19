@@ -67,7 +67,7 @@ impl IModelMethod for ReflectedMethod {
     }
 
     fn get_attribute(&self, typeinfo: &TypeInfo) -> Option<Rc<dyn IAttribute>> {
-        self.get_attributes().iter().find(|x| x.get_type_info().is_some() && x.get_type_info().as_ref().unwrap().is_compatible_with(typeinfo)).map(|x| x.clone())
+        self.get_attributes().iter().find(|x| x.get_type_info().is_some() && x.get_type_info().as_ref().expect("get_type_info").is_compatible_with(typeinfo)).map(|x| x.clone())
     }
 
     fn get_visibility(&self) -> String {

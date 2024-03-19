@@ -209,7 +209,7 @@ impl PostProcessCombineStaticStr {
             match token {
                 TokenTree::Literal(literal) => {
                     let s = literal.to_string();
-                    Some(snailquote::unescape(&s).unwrap())
+                    Some(snailquote::unescape(&s).expect("could not unescape string literal"))
                 },
                 TokenTree::Group(group) if group.delimiter() == Delimiter::Parenthesis => {
                     // check if contents are string literal or group with string literal

@@ -61,7 +61,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
             if let Some(token) = next_token {
                 match token {
                     RustHtmlToken::Identifier(_ident) => {
-                        output.push(it.next().unwrap().clone());
+                        output.push(it.next().expect("it.next()").clone());
 
                         // peek for next 3 punct tokens
                         // if it is a colon, then push it
@@ -104,7 +104,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                     RustHtmlToken::ReservedChar(c, _punct) => {
                         match c {
                             '<' => {
-                                output.push(it.next().unwrap().clone());
+                                output.push(it.next().expect("it.next()").clone());
                                 let inner = self.parse_type_identifier(it.clone(), ct)?;
                                 output.extend_from_slice(inner.to_splice());
                                 
@@ -123,7 +123,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                                 break;
                             },
                             ':' => {
-                                output.push(it.next().unwrap().clone());
+                                output.push(it.next().expect("it.next()").clone());
                             },
                             _ => {
                                 return Err(RustHtmlError::from_string(format!("unexpected punct: {:?}", token)));
@@ -131,7 +131,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                         }
                     },
                     _ => {
-                        output.push(it.next().unwrap().clone());
+                        output.push(it.next().expect("it.next()").clone());
                     }
                 }
             } else {
@@ -160,7 +160,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                         if _last_token_was_ident {
                             break;
                         } else {
-                            output.push(it.next().unwrap().clone());
+                            output.push(it.next().expect("it.next()").clone());
                             _last_token_was_ident = true;
                             continue;
                         }
@@ -169,7 +169,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                         match c {
                             '.' | '?' | '!' | '_' | ':' | '&' => {
                                 if _last_token_was_ident {
-                                    output.push(it.next().unwrap().clone());
+                                    output.push(it.next().expect("it.next()").clone());
                                     _last_token_was_ident = false;
                                 } else {
                                     break;
@@ -227,7 +227,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
         let r = if peek_or_next { it.peek() } else { it.next() };
         if let Some(expect_string_token) = r {
             match expect_string_token {
-                RustHtmlToken::Literal(literal, _s) => Ok(snailquote::unescape(&literal.clone().unwrap().to_string()).unwrap()),
+                RustHtmlToken::Literal(literal, _s) => Ok(snailquote::unescape(&literal.clone().expect("literal").to_string()).expect("to_string")),
                 _ => Err(RustHtmlError::from_string(format!("unexpected token after {} directive: {:?}", identifier, expect_string_token))),
             }
         } else {

@@ -52,7 +52,7 @@ impl RouteDataControllerActionMatcher {
                 // panic!("No routes found for {}", request_context.as_ref().path);
             },
             1 => {
-                Ok(Some(actions.first().unwrap().clone()))
+                Ok(Some(actions.first().expect("actions.first()").clone()))
             },
             _ => {
                 panic!("Ambiguous routes: {:?}", actions.iter().map(|x| x.to_string()).collect::<Vec<String>>());

@@ -194,11 +194,11 @@ impl <'a> RequestContext<'a> {
 
         let http_header: String = request_headers.remove(0);
 
-        let method_str = &http_header[..http_header.find(' ').unwrap()];
-        let version_str = &http_header[http_header.rfind(' ').unwrap() + 1..];
+        let method_str = &http_header[..http_header.find(' ').expect("Invalid HTTP header format for method")];
+        let version_str = &http_header[http_header.rfind(' ').expect("Invalid HTTP header format for version") + 1..];
 
-        let re_method_valid: Regex = Regex::new(r"^GET|HEAD|POST|PUT$").unwrap();
-        let re_header: Regex = Regex::new(r"^([a-zA-Z0-9 _-]+): ").unwrap();
+        let re_method_valid: Regex = Regex::new(r"^GET|HEAD|POST|PUT$").expect("Invalid regex");
+        let re_header: Regex = Regex::new(r"^([a-zA-Z0-9 _-]+): ").expect("Invalid regex");
 
         // println!("Received request: {}", http_header);
 
@@ -224,25 +224,25 @@ impl <'a> RequestContext<'a> {
 
             match HeaderValue::from_str(value_str) {
                 Ok(header_val) => {
-                    Some((HeaderName::from_bytes(name.as_bytes()).unwrap(), header_val))
+                    Some((HeaderName::from_bytes(name.as_bytes()).expect("HeaderName::from_bytes(name.as_bytes())"), header_val))
                 },
                 Err(err) => {
                     errors.push(err);
                     None
                 },
             }
-        }).filter(Option::is_some).map(|x| x.unwrap()));
+        }).filter(Option::is_some).map(|x| x.expect("x in map in from_iter in parse in RequestContext::new")));
 
         if errors.len() > 0 {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Could not parse headers: {:?}", errors)));
         }
 
         let host_header_value = headers.get("Host").expect("Host header not found.");
-        let host_header_string = format!("http://{}", host_header_value.to_str().unwrap());
-        let host_header_url = url::Url::parse(host_header_string.as_str()).unwrap();
+        let host_header_string = format!("http://{}", host_header_value.to_str().expect("Host header value not found."));
+        let host_header_url = url::Url::parse(host_header_string.as_str()).expect("Invalid host header value.");
 
         let request_url = host_header_url;
-        let path_and_query = request_url.join(&http_header[method_str.len() + 1 .. http_header.len() - version_str.len() - 1].trim()).unwrap();
+        let path_and_query = request_url.join(&http_header[method_str.len() + 1 .. http_header.len() - version_str.len() - 1].trim()).expect("Invalid request url");
 
         let path = path_and_query.path();
         let query = path_and_query.query().unwrap_or("");
@@ -253,7 +253,7 @@ impl <'a> RequestContext<'a> {
             Some(Box::new(path_and_query.scheme().to_string())),
             Some(Box::new(method_str.to_string())),
             None,
-            Box::new(request_url.host().unwrap().to_string()),
+            Box::new(request_url.host().expect("request_url.host()").to_string()),
             request_url.port().unwrap_or_default(),
             Box::new(path.to_string()),
             Box::new(query.to_string()),
@@ -287,7 +287,7 @@ impl<'a> IRequestContext for RequestContext<'a> {
             self.get_path(),
             query_str
         );
-        url::Url::parse(url_str).unwrap()
+        url::Url::parse(url_str).expect("Invalid url")
     }
 
     fn get_scheme(self: &Self) -> &String {
@@ -315,7 +315,7 @@ impl<'a> IRequestContext for RequestContext<'a> {
     }
 
     fn get_controller_action(self: &Self) -> Rc<dyn IControllerAction> {
-        self.controller_action.borrow().as_ref().unwrap().clone()
+        self.controller_action.borrow().as_ref().expect("self.controller_action.borrow().as_ref()").clone()
     }
 
     fn set_controller_action(self: &Self, controller: Option<Rc<dyn IControllerAction>>) {
@@ -360,15 +360,15 @@ impl<'a> IRequestContext for RequestContext<'a> {
         let cookie_header = self.headers.get("cookie");
         match cookie_header {
             Some(header) => {
-                Some(header.to_str().unwrap().split(';')
+                Some(header.to_str().expect("header.to_str()").split(';')
                     .map(|x| x.trim())
                     .map(|cookie| {
                         // println!("{}", cookie);
                         let split_kvp = cookie.split('=').map(|x| x.to_string()).collect::<Vec<String>>();
                         if split_kvp.len() == 2 {
-                            (split_kvp.get(0).unwrap().clone(), split_kvp.get(1).unwrap().clone())
+                            (split_kvp.get(0).expect("split_kvp.get(0)").clone(), split_kvp.get(1).expect("split_kvp.get(1)").clone())
                         } else {
-                            (split_kvp.get(0).unwrap().clone(), String::new())
+                            (split_kvp.get(0).expect("split_kvp.get(0)").clone(), String::new())
                         }
                     })
                     .collect()

@@ -95,8 +95,8 @@ impl IFileProviderControllerOptions for FileProviderControllerOptions {
         let all_paths = self.serving_directories
             .iter()
             .map(|path| {
-                let cwd = std::env::current_dir().unwrap();
-                let parent_dir = format!("{}/{}", cwd.to_str().unwrap(), path);
+                let cwd = std::env::current_dir().expect("Failed to get current directory");
+                let parent_dir = format!("{}/{}", cwd.to_str().expect("cwd.to_str()"), path);
                 let mut glob_path = String::new();
                 glob_path.push_str(&parent_dir);
                 glob_path.push_str(if recursive { "**/*" } else { "*" });
@@ -105,8 +105,8 @@ impl IFileProviderControllerOptions for FileProviderControllerOptions {
 
                 glob(&glob_path)
                     .expect("Failed to read glob pattern")
-                    .map(|x| x.unwrap())
-                    .map(|x| x.to_str().unwrap().to_string())
+                    .map(|x| x.expect("Failed to read glob pattern entry"))
+                    .map(|x| x.to_str().expect("x.to_str()").to_string())
                     .map(|x| (Cow::Owned(x[parent_dir.len() - 1..].to_string()), Cow::Owned(x)))
                     .collect::<Vec<(Cow<'static, str>, Cow<'static, str>)>>()
             })

@@ -184,7 +184,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
 
     fn append_html_attrs_into_new(self: &Self, html_attrs_first: Option<&HashMap<String, String>>, html_attrs_second: Option<&HashMap<String, String>>) -> HashMap<String, String> {
         let copy_first = html_attrs_first.clone();
-        <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::append_html_attrs_into_first(self, copy_first, html_attrs_second).unwrap().clone()
+        <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::append_html_attrs_into_first(self, copy_first, html_attrs_second).expect("append_html_attrs_into_first").clone()
     }
 
     fn html_attrs_str_to_string(self: &Self, html_attrs: Option<&HashMap<&str, &str>>) -> Option<HashMap<String, String>> {
@@ -250,7 +250,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         if let Some(viewmodel) = self.view_context.get_viewmodel() {
             // first check if it is anyimodel
             let r = if let Some(viewmodel) = viewmodel.downcast_ref::<AnyIModel>() {
-                (expr.0)(viewmodel.get_underlying_value().downcast_ref::<TModel>().unwrap())
+                (expr.0)(viewmodel.get_underlying_value().downcast_ref::<TModel>().expect("hidden_for error"))
             } else if let Some(viewmodel) = viewmodel.as_any().downcast_ref::<TModel>() {
                 (expr.0)(viewmodel)
             } else {
@@ -268,7 +268,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         if let Some(viewmodel) = self.view_context.get_viewmodel() {
             // first check if it is anyimodel
             let value = if let Some(viewmodel) = viewmodel.downcast_ref::<AnyIModel>() {
-                (expr.0)(viewmodel.get_underlying_value().downcast_ref::<TModel>().unwrap())
+                (expr.0)(viewmodel.get_underlying_value().downcast_ref::<TModel>().expect("checkbox_for error"))
             } else if let Some(viewmodel) = viewmodel.as_any().downcast_ref::<TModel>() {
                 (expr.0)(viewmodel)
             } else {
@@ -285,7 +285,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         if let Some(viewmodel) = self.view_context.get_viewmodel() {
             // first check if it is anyimodel
             let value = if let Some(viewmodel) = viewmodel.downcast_ref::<AnyIModel>() {
-                (expr.0)(viewmodel.get_underlying_value().downcast_ref::<TModel>().unwrap())
+                (expr.0)(viewmodel.get_underlying_value().downcast_ref::<TModel>().expect("textarea_for error"))
             } else if let Some(viewmodel) = viewmodel.as_any().downcast_ref::<TModel>() {
                 (expr.0)(viewmodel)
             } else {
@@ -368,5 +368,5 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
 }
 
 fn extract_property_name(expr: proc_macro2::TokenStream) -> String {
-    expr.into_iter().last().unwrap().to_string()
+    expr.into_iter().last().expect("expr.into_iter().last()").to_string()
 }

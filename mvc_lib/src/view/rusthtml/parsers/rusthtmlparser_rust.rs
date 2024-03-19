@@ -86,7 +86,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
             if let Some(ref token) = next_token {
                 match token {
                     TokenTree::Ident(ident) => {
-                        output.push(it.next().unwrap());
+                        output.push(it.next().expect("could not get next token"));
 
                         // peek for next 3 punct tokens
                         // if it is a colon, then push it
@@ -129,7 +129,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                     TokenTree::Punct(punct) => {
                         match punct.as_char() {
                             '<' => {
-                                output.push(it.next().unwrap());
+                                output.push(it.next().expect("could not get next token"));
                                 let inner = self.parse_type_identifier(it.clone())?;
                                 output.extend_from_slice(inner.as_slice());
                                 
@@ -148,7 +148,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                                 break;
                             },
                             ':' => {
-                                output.push(it.next().unwrap());
+                                output.push(it.next().expect("could not get next token"));
                             },
                             _ => {
                                 return Err(RustHtmlError::from_string(format!("unexpected punct: {:?}", token)));
@@ -156,7 +156,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                         }
                     },
                     _ => {
-                        output.push(it.next().unwrap());
+                        output.push(it.next().expect("could not get next token"));
                     }
                 }
             } else {
@@ -205,19 +205,19 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
             if let Some(token) = token_option {
                 match token {
                     TokenTree::Literal(_literal) => {
-                        output.push(it.next().unwrap());
+                        output.push(it.next().expect("could not get next token"));
                     },
                     TokenTree::Ident(_ident) => {
                         if last_token_was_ident {
                             break;
                         } else {
-                            output.push(it.next().unwrap());
+                            output.push(it.next().expect("could not get next token"));
                             last_token_was_ident = true;
                             continue;
                         }
                     },
                     TokenTree::Group(group) => {
-                        output.push(it.next().unwrap());
+                        output.push(it.next().expect("could not get next token"));
                         // not a function call or index
                         match group.delimiter() {
                             Delimiter::Brace |
@@ -230,7 +230,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                         match c {
                             '.' | '?' | '!' | '_' | ':' | '&' => {
                                 if last_token_was_ident {
-                                    output.push(it.next().unwrap());
+                                    output.push(it.next().expect("could not get next token"));
                                     last_token_was_ident = false;
                                 } else {
                                     break;

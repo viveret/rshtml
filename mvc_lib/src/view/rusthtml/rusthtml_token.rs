@@ -52,7 +52,7 @@ pub enum RustHtmlToken {
     Space(char),
 
     // html
-    HtmlTextNode(String, Span),
+    HtmlTextNode(String),
     HtmlTagVoid(String, Option<Vec<RustHtmlIdentOrPunct>>),
     HtmlTagStart(String, Option<Vec<RustHtmlIdentOrPunct>>),
     HtmlTagEnd(String, Option<Vec<RustHtmlIdentOrPunct>>),
@@ -90,7 +90,7 @@ impl RustHtmlToken {
         // panic!("fix m e fix me fix me");
         match self {
             RustHtmlToken::Space(c) => c.to_string(),
-            RustHtmlToken::HtmlTextNode(s, _) => s.to_string(),
+            RustHtmlToken::HtmlTextNode(s) => s.to_string(),
             RustHtmlToken::HtmlTagVoid(s, _) => format!("<{} />", s.to_string()),
             RustHtmlToken::HtmlTagStart(s, _) => format!("<{}", s.to_string()),
             RustHtmlToken::HtmlTagEnd(s, _) => format!("</{}>", s.to_string()),

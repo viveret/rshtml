@@ -26,7 +26,7 @@ pub trait IRustHtmlToRustConverter {
     fn convert_rusthtmltokens_to_plain_rust(self: &Self, output: &mut Vec<TokenTree>, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<bool, RustHtmlError>;
     fn convert_rusthtmlgroupparsed_to_tokentree(self: &Self, delimiter: &Delimiter, inner_tokens: &Vec<RustHtmlToken>, output: &mut Vec<TokenTree>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError>;
     fn convert_rusthtmlappendhtml_to_tokentree(self: &Self, inner_as_string: Option<&String>, inner_as_string: Option<&Literal>, inner_as_ident: Option<&Vec<RustHtmlIdentOrPunct>>, inner: Option<&Vec<RustHtmlToken>>, output: &mut Vec<TokenTree>) -> Result<(), RustHtmlError>;
-    fn convert_rusthtmltextnode_to_tokentree(self: &Self, first_text: &String, _first_span: &Span, output: &mut Vec<TokenTree>, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError>;
+    fn convert_rusthtmltextnode_to_tokentree(self: &Self, first_text: &String, output: &mut Vec<TokenTree>, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError>;
     fn convert_rusthtmltagstart_to_tokentree(self: &Self, tag: &String, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, output: &mut Vec<TokenTree>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError>;
     fn convert_rusthtmltagvoid_to_tokentree(self: &Self, tag: &String, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, output: &mut Vec<TokenTree>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError>;
     fn convert_rusthtmltagend_to_tokentree(self: &Self, tag: &String, tag_tokens: Option<&Vec<RustHtmlIdentOrPunct>>, output: &mut Vec<TokenTree>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError>;

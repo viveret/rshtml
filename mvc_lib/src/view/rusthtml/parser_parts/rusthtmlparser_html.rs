@@ -262,7 +262,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                 }
             } else {
                 parse_ctx.set_html_attr_key_literal(literal);
-                let s = snailquote::unescape(&literal.to_string()).unwrap();
+                let s = snailquote::unescape(&literal.to_string()).expect("failed to unescape literal");
                 parse_ctx.html_attr_key_push_str(&s);
                 parse_ctx.set_parse_attr_val(true);
                 RustHtmlExpandLoopResult::Ok((vec![], false))
@@ -310,12 +310,12 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                         parse_ctx.set_equals_punct(punct);
                     } else {
                         // need some context here
-                        let next_token = it.peek().unwrap();
+                        let next_token = it.peek().expect("next_token is None");
                         return Err(RustHtmlError::from_string(format!("convert_html_punct_to_rusthtmltoken Unexpected '=' before {:?} (key was None)", next_token)));
                     }
                 },
                 '/' => {
-                    let expect_closing_punct = it.next().unwrap();
+                    let expect_closing_punct = it.next().expect("expect_closing_punct is None");
                     match expect_closing_punct {
                         RustHtmlToken::ReservedChar(c, closing_punct) => {
                             if *c == '>' {
@@ -348,14 +348,14 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                 },
                 '@' => {
                     // escaping the html to insert value
-                    let directive_token = it.next().unwrap();
+                    let directive_token = it.next().expect("directive_token is None");
                     // output to console for debugging
                     print!("directive_token: {:?}", directive_token);
 
                     // fixme: this needs to be fixed, it is not checking directive logic
                     match directive_token {
                         RustHtmlToken::Identifier(ref _ident) => {
-                            let parser = self.parser.borrow().as_ref().unwrap().get_rust_parser();
+                            let parser = self.parser.borrow().as_ref().expect("self.parser.borrow()").get_rust_parser();
                             match parser
                                 .parse_rust_identifier_expression(
                                     true, 
@@ -363,7 +363,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                                     false,
                                     it.clone(), parse_ctx.get_main_context(), ct.clone()) {
                                 Ok(rust_ident_exp) => {
-                                    let _parser = self.parser.borrow().as_ref().unwrap().get_rust_or_html_parser();
+                                    let _parser = self.parser.borrow().as_ref().expect("self.parser.borrow()").get_rust_or_html_parser();
                                     let rushtml_ident_expr = rust_ident_exp.to_splice().to_vec();
 
                                     parse_ctx.set_html_attr_val_rust(rushtml_ident_expr);
@@ -397,7 +397,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                     let current_val = if parse_ctx.has_html_attr_val_ident() {
                         format!("ignoring {:?}", parse_ctx.get_html_attr_val_ident())
                     } else {
-                        parse_ctx.get_html_attr_val_literal().as_ref().unwrap().to_string()
+                        parse_ctx.get_html_attr_val_literal().as_ref().expect("parse_ctx.get_html_attr_val_literal()").to_string()
                     };
                     return Err(RustHtmlError::from_string(format!(
                         "Unexpected punct '{}' while parsing HTML tag '{}' attributes \
@@ -412,7 +412,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                 },
                 '/' => {
                     if parse_ctx.has_tag_name() {
-                        let expect_closing_punct = it.next().unwrap();
+                        let expect_closing_punct = it.next().expect("it.next()");
                         return match expect_closing_punct {
                             RustHtmlToken::ReservedChar(c, closing_punct) => {
                                 if closing_punct.as_char() == '>' {
@@ -436,8 +436,8 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                 },
                 '@' => {
                     // key name is a directive, must be a string
-                    let directive_token_before = it.next().unwrap();
-                    let directive_token = it.next().unwrap();
+                    let directive_token_before = it.next().expect("it.next()");
+                    let directive_token = it.next().expect("it.next()");
                     let callstack = parse_ctx.get_main_context().get_call_stack().to_string();
                     todo!("convert_html_punct_to_rusthtmltoken directive_token: {:?} {:?} {:?}", directive_token_before, directive_token, callstack);
                 },

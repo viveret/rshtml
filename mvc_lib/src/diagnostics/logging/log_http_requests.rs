@@ -51,7 +51,7 @@ impl LogHttpRequestsMiddleware {
             if header.0 == "Cookie" || header.0 == "cookie" {
                 if log_cookies {
                     println!("\t{}:", header.0);
-                    let cookies: Vec<&str> = header.1.to_str().unwrap().split(';').map(|x| x.trim()).collect();
+                    let cookies: Vec<&str> = header.1.to_str().expect("header.1.to_str()").split(';').map(|x| x.trim()).collect();
                     for cookie in cookies {
                         let split_kvp: Vec<&str> = cookie.split('=').collect();
                         if split_kvp.len() == 2 {
@@ -64,7 +64,7 @@ impl LogHttpRequestsMiddleware {
 
                 continue;
             }
-            println!("\t{}: {}", header.0, header.1.to_str().unwrap());
+            println!("\t{}: {}", header.0, header.1.to_str().expect("header.1.to_str()"));
         }
     }
 }

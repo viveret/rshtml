@@ -29,7 +29,7 @@ impl ILoggerSink for FileLoggerSink {
         match file {
             Ok(file) => std::io::BufReader::new(file)
                 .lines()
-                .map(|line| line.unwrap())
+                .map(|line| line.expect("Could not read line"))
                 .collect(),
             Err(_) => vec![],
         }
@@ -42,7 +42,7 @@ impl ILoggerSink for FileLoggerSink {
     fn clear_logs(&self) {
         let file = std::path::Path::new(&self.file_path);
         if file.exists() {
-            std::fs::remove_file(&self.file_path).unwrap();
+            std::fs::remove_file(&self.file_path).expect("Could not remove file");
         }
     }
 }

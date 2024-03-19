@@ -22,7 +22,7 @@ impl ILoggerSink for MultiLoggerSink {
     fn read_logs(&self) -> Vec<String> {
         self.loggers.iter().filter(|logger| {
             logger.supports_read()
-        }).nth(0).unwrap().read_logs()
+        }).nth(0).expect("no loggers").read_logs()
     }
 
     fn supports_clear(&self) -> bool {

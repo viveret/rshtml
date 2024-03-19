@@ -107,20 +107,20 @@ impl ControllerActionBuilder {
                                 self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
                                 None,
                                 self.route_pattern.clone(),
-                                self.action_name.borrow().as_ref().unwrap().clone(),
-                                self.controller_name.borrow().as_ref().unwrap().clone(),
+                                self.action_name.borrow().as_ref().expect("self.action_name.borrow()").clone(),
+                                self.controller_name.borrow().as_ref().expect("self.controller_name.borrow().as_ref()").clone(),
                                 self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
-                                member_fn_validated.unwrap(),
+                                member_fn_validated.expect("member_fn_validated"),
                             )
                         } else {
                             ControllerActionMemberFn::new_not_validated(
                                 self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
                                 None,
                                 self.route_pattern.clone(),
-                                self.action_name.borrow().as_ref().unwrap().clone(),
-                                self.controller_name.borrow().as_ref().unwrap().clone(),
+                                self.action_name.borrow().as_ref().expect("self.action_name.borrow().as_ref()").clone(),
+                                self.controller_name.borrow().as_ref().expect("self.controller_name.borrow().as_ref()").clone(),
                                 self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
-                                member_fn_not_validated.unwrap(),
+                                member_fn_not_validated.expect("member_fn_not_validated"),
                             )
                         }
                     } else if let Some(member_fn_validated) = member_fn_validated {
@@ -128,8 +128,8 @@ impl ControllerActionBuilder {
                             self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
                             None,
                             self.route_pattern.clone(),
-                            self.action_name.borrow().as_ref().unwrap().clone(),
-                            self.controller_name.borrow().as_ref().unwrap().clone(),
+                            self.action_name.borrow().as_ref().expect("self.action_name.borrow().as_ref()").clone(),
+                            self.controller_name.borrow().as_ref().expect("self.controller_name.borrow().as_ref()").clone(),
                             self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
                             member_fn_validated,
                         )
@@ -138,10 +138,10 @@ impl ControllerActionBuilder {
                             self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
                             None,
                             self.route_pattern.clone(),
-                            self.action_name.borrow().as_ref().unwrap().clone(),
-                            self.controller_name.borrow().as_ref().unwrap().clone(),
+                            self.action_name.borrow().as_ref().expect("self.action_name.borrow().as_ref()").clone(),
+                            self.controller_name.borrow().as_ref().expect("self.controller_name.borrow().as_ref()").clone(),
                             self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
-                            member_fn_not_validated.unwrap(),
+                            member_fn_not_validated.expect("member_fn_not_validated"),
                         )
                     }
                 )
@@ -173,8 +173,8 @@ impl ControllerActionBuilder {
             self.http_methods.borrow().as_ref().unwrap_or(&vec![]).clone(),
             None,
             self.route_pattern.clone(),
-            self.action_name.borrow().as_ref().unwrap().clone(),
-            self.controller_name.borrow().as_ref().unwrap().clone(),
+            self.action_name.borrow().as_ref().expect("self.action_name.borrow().as_ref()").clone(),
+            self.controller_name.borrow().as_ref().expect("self.controller_name.borrow().as_ref()").clone(),
             self.area_name.borrow().as_ref().unwrap_or(&String::new()).clone(),
             member_fn_validated_typed,
         );
@@ -190,7 +190,7 @@ impl ControllerActionBuilder {
 
     // build the controller action and return the appropriate type for the function type.
     pub fn build(self: &Self) -> Rc<dyn IControllerAction> {
-        match self.route_type.borrow().as_ref().unwrap() {
+        match self.route_type.borrow().as_ref().expect("self.route_type.borrow().as_ref()") {
             RouteType::Closure => self.build_closure(),
             RouteType::MemberFn => self.build_member_fn(),
             RouteType::File => todo!("build file"),
@@ -199,7 +199,7 @@ impl ControllerActionBuilder {
 
     // build the controller action as a member function.
     fn build_member_fn(self: &Self) -> Rc<dyn IControllerAction> {
-        self.member_fn_action.borrow().as_ref().unwrap().clone()
+        self.member_fn_action.borrow().as_ref().expect("self.member_fn_action.borrow().as_ref()").clone()
     }
 
     // build the controller action as a closure function.
@@ -207,23 +207,23 @@ impl ControllerActionBuilder {
         Rc::new(
             if self.should_validate_model.borrow().unwrap_or(false) {
                 ControllerActionClosure::new_validated(
-                    self.http_methods.borrow().as_ref().unwrap().clone(),
+                    self.http_methods.borrow().as_ref().expect("self.http_methods.borrow().as_ref()").clone(),
                 None,
                 self.route_pattern.clone(),
-                self.action_name.borrow().as_ref().unwrap().clone(),
-                self.controller_name.borrow().as_ref().unwrap().clone(),
-                self.area_name.borrow().as_ref().unwrap().clone(),
-                self.closure_fn_validated.borrow().as_ref().unwrap().clone(),
+                self.action_name.borrow().as_ref().expect("self.action_name.borrow().as_ref()").clone(),
+                self.controller_name.borrow().as_ref().expect("self.controller_name.borrow().as_ref()").clone(),
+                self.area_name.borrow().as_ref().expect("self.area_name.borrow().as_ref()").clone(),
+                self.closure_fn_validated.borrow().as_ref().expect("self.closure_fn_validated.borrow().as_ref()").clone(),
                 )
             } else {
                 ControllerActionClosure::new_not_validated(
-                    self.http_methods.borrow().as_ref().unwrap().clone(),
+                    self.http_methods.borrow().as_ref().expect("self.http_methods.borrow().as_ref()").clone(),
                 None,
                 self.route_pattern.clone(),
-                self.action_name.borrow().as_ref().unwrap().clone(),
-                self.controller_name.borrow().as_ref().unwrap().clone(),
-                self.area_name.borrow().as_ref().unwrap().clone(),
-                self.closure_fn_novalidation.borrow().as_ref().cloned().unwrap(),
+                self.action_name.borrow().as_ref().expect("self.action_name.borrow().as_ref()").clone(),
+                self.controller_name.borrow().as_ref().expect("self.controller_name.borrow().as_ref()").clone(),
+                self.area_name.borrow().as_ref().expect("self.area_name.borrow().as_ref()").clone(),
+                self.closure_fn_novalidation.borrow().as_ref().cloned().expect("self.closure_fn_novalidation.borrow().as_ref().cloned()"),
                 )
             }
         )

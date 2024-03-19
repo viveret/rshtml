@@ -24,7 +24,7 @@ impl RustHtmlParserRustOrHtml {
     }
 
     pub fn get_parser(self: &Self) -> Rc<dyn IRustHtmlParserRustOrHtml> {
-        self.shared_parser.borrow().as_ref().unwrap().clone()
+        self.shared_parser.borrow().as_ref().expect("self.shared_parser").clone()
     }
 }
 

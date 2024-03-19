@@ -23,7 +23,7 @@ impl BufferedTcpStream {
     }
 
     pub fn clone(&self) -> BufferedTcpStream {
-        Self::new(self.stream.borrow().try_clone().unwrap())
+        Self::new(self.stream.borrow().try_clone().expect("self.stream.borrow()"))
     }
 }
 
@@ -152,6 +152,6 @@ impl ITcpStreamWrapper for BufferedTcpStream {
     }
 
     fn remote_addr(&self) -> std::net::SocketAddr {
-        self.stream.borrow().peer_addr().unwrap()
+        self.stream.borrow().peer_addr().expect("self.stream.borrow().peer_addr()")
     }
 }

@@ -145,7 +145,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             TokenTree::Ident(ident) => {
                 if is_in_html_mode {
                     self.get_context().add_operation_to_ooo_log(format!("convert_tokentree_to_rusthtmltoken: {:?}", ident));
-                    output.push(RustHtmlToken::HtmlTextNode(ident.to_string(), token.span().clone()));
+                    output.push(RustHtmlToken::HtmlTextNode(ident.to_string()));
                 } else {
                     output.push(RustHtmlToken::Identifier(ident));
                 }
@@ -153,7 +153,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             TokenTree::Literal(literal) => {
                 self.get_context().add_operation_to_ooo_log(format!("convert_tokentree_to_rusthtmltoken({:?})", literal));
                 if is_in_html_mode {
-                    output.push(RustHtmlToken::HtmlTextNode(literal.to_string(), token.span().clone()));
+                    output.push(RustHtmlToken::HtmlTextNode(literal.to_string()));
                 } else {
                     output.push(RustHtmlToken::Literal(Some(literal), None));
                 }
@@ -230,7 +230,7 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             },
             _ => {
                 if is_in_html_mode {
-                    output.push(RustHtmlToken::HtmlTextNode(punct.as_char().to_string(), punct.span().clone()));
+                    output.push(RustHtmlToken::HtmlTextNode(punct.as_char().to_string()));
                 } else {
                     output.push(RustHtmlToken::ReservedChar(c, punct.clone()));
                 }
@@ -335,9 +335,9 @@ impl IRustToRustHtmlConverter for RustToRustHtmlConverter {
             let c_start = self.get_opening_delim(delimiter);
             let c_end = self.get_closing_delim(delimiter);
 
-            output.push(RustHtmlToken::HtmlTextNode(c_start.to_string(), group.span()));
+            output.push(RustHtmlToken::HtmlTextNode(c_start.to_string()));
             self.loop_next_and_convert(true, output, it, is_raw_tokenstream, ct.clone())?;
-            output.push(RustHtmlToken::HtmlTextNode(c_end.to_string(), group.span()));
+            output.push(RustHtmlToken::HtmlTextNode(c_end.to_string()));
         } else {
             if delimiter == Delimiter::Brace {
                 let mut inner_tokens = vec![];

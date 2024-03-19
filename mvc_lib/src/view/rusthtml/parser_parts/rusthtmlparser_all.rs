@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
@@ -132,6 +133,8 @@ impl IRustHtmlParserAll for RustHtmlParserAll {
         let _scope = CallstackTrackerScope::enter(context.get_call_stack(), nameof::name_of_type!(RustHtmlParserAll), nameof_member_fn!(RustHtmlParserAll::expand_rust_with_context));
         match self.get_converter().convert_stream(input, context.clone(), cancellation_token.clone()) {
             Ok(input_rshtml) => {
+                // push root buffer
+                context.push_output_buffer(Rc::new(RefCell::new(vec![])));
                 match self.get_expander().expand_rshtml(context.clone(), Rc::new(VecPeekableRustHtmlToken::new(input_rshtml.clone())), cancellation_token.clone()) {
                     Ok(()) => {
                         let output_rshtml = context.pop_output_buffer().expect("pop_output_buffer expected").borrow().clone();

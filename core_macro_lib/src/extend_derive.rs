@@ -496,7 +496,7 @@ impl<'a> ExtendDerive<'a> {
                                     
                                     let mut it = attrib_token.stream().into_iter().peekable();
                                     
-                                    let attrib_name = match it.next().unwrap() {
+                                    let attrib_name = match it.next().expect("could not get next") {
                                         TokenTree::Ident(ident) => {
                                             ident
                                         },
@@ -553,7 +553,7 @@ impl<'a> ExtendDerive<'a> {
         }
 
         if property_name.is_some() {
-            properties.push(AstProperty::new(property_attributes, property_visibility, property_name_amp, property_name.unwrap().clone(), property_colon, property_type.clone()));
+            properties.push(AstProperty::new(property_attributes, property_visibility, property_name_amp, property_name.expect("property name").clone(), property_colon, property_type.clone()));
         }
 
         properties
@@ -594,7 +594,7 @@ impl<'a> ExtendDerive<'a> {
             it.next();
 
             // get attribute
-            let attrib_token = it.next().unwrap();
+            let attrib_token = it.next().expect("it.next for attrib_token");
             let attrib_group = match attrib_token {
                 TokenTree::Group(group) => {
                     group
@@ -606,7 +606,7 @@ impl<'a> ExtendDerive<'a> {
             
             let mut it = attrib_group.stream().into_iter().peekable();
             
-            let name_token = it.next().unwrap();
+            let name_token = it.next().expect("it.next for name_token");
             let attrib_name = match name_token {
                 TokenTree::Ident(ident) => {
                     ident
@@ -669,7 +669,7 @@ impl<'a> ExtendDerive<'a> {
                 TokenTree::Punct(punct) => {
                     let c = punct.as_char();
                     if c == '<' {
-                        method_generics.push(it.next().unwrap().clone());
+                        method_generics.push(it.next().expect("it.next for method_generics").clone());
                         loop {
                             if let Some(token) = it.next() {
                                 method_generics.push(token.clone());
@@ -712,7 +712,7 @@ impl<'a> ExtendDerive<'a> {
                                             if punct_stack.len() > 0 {
                                                 method_arg_type.push(token.clone());
                                             } else {
-                                                method_args.push(AstProperty::new(vec![], None, method_arg_name_amp, method_arg_name.unwrap(), method_arg_colon, method_arg_type.clone()));
+                                                method_args.push(AstProperty::new(vec![], None, method_arg_name_amp, method_arg_name.expect("expect for method_arg_name"), method_arg_colon, method_arg_type.clone()));
                                                 method_arg_name_amp = None;
                                                 method_arg_name = None;
                                                 method_arg_colon = None;
@@ -729,7 +729,7 @@ impl<'a> ExtendDerive<'a> {
                                         },
                                         '>' => {
                                             if method_arg_name.is_some() {
-                                                if punct_stack.pop().unwrap() == '<' {
+                                                if punct_stack.pop().expect("expected punct_stack.pop") == '<' {
                                                     method_arg_type.push(token.clone());
                                                 } else {
                                                     panic!("Expected punct or ident for method argument type, not {:?}.", token)
@@ -817,7 +817,7 @@ impl<'a> ExtendDerive<'a> {
         }
 
         if method_arg_name.is_some() {
-            method_args.push(AstProperty::new(vec![], None, method_arg_name_amp, method_arg_name.unwrap().clone(), method_arg_colon, method_arg_type.clone()));
+            method_args.push(AstProperty::new(vec![], None, method_arg_name_amp, method_arg_name.expect("expected method_arg_name").clone(), method_arg_colon, method_arg_type.clone()));
         }
 
         // check for return type
@@ -828,7 +828,7 @@ impl<'a> ExtendDerive<'a> {
                     if c == '-' {
                         it.next();
                         // next char should be '>'
-                        let token = it.next().unwrap();
+                        let token = it.next().expect("it.next for return type");
                         match &token {
                             TokenTree::Punct(punct) => {
                                 let c = punct.as_char();
@@ -881,7 +881,7 @@ impl<'a> ExtendDerive<'a> {
 
     pub(crate) fn get_struct_methods(&self) -> Vec<AstMethod> {
         let mut methods = vec![];
-        let mut it = self.struct_inner.as_ref().unwrap().stream().into_iter().peekable();
+        let mut it = self.struct_inner.as_ref().expect("expected self.struct_inner.as_ref()").stream().into_iter().peekable();
         loop {
             if let Some(_) = it.peek() {
                 methods.push(self.get_struct_method(&mut it));

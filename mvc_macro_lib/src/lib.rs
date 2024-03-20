@@ -42,13 +42,16 @@ pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenS
 
     let parse_context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let ct = Rc::new(TimerCancellationToken::new(std::time::Duration::from_secs(5)));
-    let result = if use_new_parser {
-        let parser1 = RustHtmlParserAll::new_default();
-        parser1.expand_rust_with_context(parse_context.clone(), input.into(), ct.clone())
+    let parser = if use_new_parser {
+        //let parser1 =
+	RustHtmlParserAll::new_default()
+        //parser1.expand_rust_with_context(parse_context.clone(), input.into(), ct.clone())
     } else {
-        let parser2 = RustHtmlParser::new(false, "test".to_string());
-        parser2.expand_tokenstream(input.into(), ct)
+        //let parser2 =
+	RustHtmlParser::new(false, "test".to_string())
+        //parser2.expand_tokenstream(input.into(), ct)
     };
+    let result = parser.abstract_parser_versions_expand(parse_context.clone(), input.into(), ct.clone());
     ct.stop().expect("could not stop timer");
     match result {
         Ok(html_render_fn2) => {

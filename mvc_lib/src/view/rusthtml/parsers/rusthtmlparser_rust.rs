@@ -151,7 +151,7 @@ impl IRustHtmlParserRust for RustHtmlParserRust {
                                 output.push(it.next().expect("could not get next token"));
                             },
                             _ => {
-                                return Err(RustHtmlError::from_string(format!("unexpected punct: {:?}", token)));
+                                return Err(RustHtmlError::from_string(format!("parse_type_identifier unexpected punct: {:?}", token)));
                             }
                         }
                     },

@@ -1,3 +1,4 @@
+pub mod irusthtmlparser_version_agnostic;
 pub mod rusthtmlparser_all;
 pub mod rusthtmlparser_converter_in;
 pub mod rusthtmlparser_converter_out;

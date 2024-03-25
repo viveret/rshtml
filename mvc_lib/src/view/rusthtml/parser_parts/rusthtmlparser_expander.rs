@@ -266,8 +266,8 @@ impl RustHtmlParserExpander {
         if tokens.len() > 0 {
             match ctx.push_output_token(RustHtmlToken::Group(delimiter.clone(), Rc::new(VecPeekableRustHtmlToken::new(tokens)), None)) {
                 Ok(_) => {},
-                Err(RustHtmlError(err)) => {
-                    return Err(RustHtmlError::from_string(err.into_owned()));
+                Err(e) => {
+                    return Err(e);
                 }
             
             }
@@ -385,8 +385,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                     Ok(_b) => {
                         return Ok(());
                     },
-                    Err(RustHtmlError(err)) => {
-                        return Err(RustHtmlError::from_string(err.into_owned()));
+                    Err(e) => {
+                        return Err(e);
                     }
                 }
             },
@@ -418,16 +418,16 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             '>' if !is_in_html_mode => {
                 match ctx.push_output_token(RustHtmlToken::ReservedChar(c, punct.clone())) {
                     Ok(_) => {},
-                    Err(RustHtmlError(err)) => {
-                        return Err(RustHtmlError::from_string(err.into_owned()));
+                    Err(e) => {
+                        return Err(e);
                     }
                 }
             },
             '|' if !is_in_html_mode => {
                 match ctx.push_output_token(RustHtmlToken::ReservedChar(c, punct.clone())) {
                     Ok(_) => {},
-                    Err(RustHtmlError(err)) => {
-                        return Err(RustHtmlError::from_string(err.into_owned()));
+                    Err(e) => {
+                        return Err(e);
                     }
                 }
 
@@ -442,8 +442,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                                     it.next();
                                     match ctx.push_output_token(RustHtmlToken::Identifier(next_ident.clone())) {
                                         Ok(_) => {},
-                                        Err(RustHtmlError(err)) => {
-                                            return Err(RustHtmlError::from_string(err.into_owned()));
+                                        Err(e) => {
+                                            return Err(e);
                                         }
                                     }
 
@@ -472,15 +472,15 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                 if is_in_html_mode {
                     match ctx.push_output_token(RustHtmlToken::HtmlTextNode(punct.as_char().to_string())) {
                         Ok(_) => {},
-                        Err(RustHtmlError(err)) => {
-                            return Err(RustHtmlError::from_string(err.into_owned()));
+                        Err(e) => {
+                            return Err(e);
                         }
                     }
                 } else {
                     match ctx.push_output_token(RustHtmlToken::ReservedChar(c, punct.clone())) {
                         Ok(_) => {},
-                        Err(RustHtmlError(err)) => {
-                            return Err(RustHtmlError::from_string(err.into_owned()));
+                        Err(e) => {
+                            return Err(e);
                         }
                     }
                 }
@@ -515,8 +515,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             RustHtmlToken::Literal(literal, s) => {
                 match ctx.push_output_token(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::Literal(literal.clone(), s.clone())])) {
                     Ok(_) => {},
-                    Err(RustHtmlError(err)) => {
-                        return Err(RustHtmlError::from_string(err.into_owned()));
+                    Err(e) => {
+                        return Err(e);
                     }
                 }
                 // self.expand_rusthtml_literal_to_rusthtmltoken(group, it);
@@ -527,8 +527,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                         // escape '@'
                         match ctx.push_output_token(RustHtmlToken::AppendToHtml(vec![RustHtmlToken::ReservedChar(c.clone(), punct.clone())])) {
                             Ok(_) => {},
-                            Err(RustHtmlError(err)) => {
-                                return Err(RustHtmlError::from_string(err.into_owned()));
+                            Err(e) => {
+                                return Err(e);
                             }
                         }
                     },
@@ -568,16 +568,16 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                 Delimiter::Brace => {
                     match ctx.push_output_tokens(&inner_tokens) {
                         Ok(_) => {},
-                        Err(RustHtmlError(err)) => {
-                            return Err(RustHtmlError::from_string(err.into_owned()));
+                        Err(e) => {
+                            return Err(e);
                         }
                     }
                 },
                 Delimiter::Parenthesis => {
                     match ctx.push_output_token(RustHtmlToken::AppendToHtml(inner_tokens.clone())) {
                         Ok(_) => {},
-                        Err(RustHtmlError(err)) => {
-                            return Err(RustHtmlError::from_string(err.into_owned()));
+                        Err(e) => {
+                            return Err(e);
                         }
                     }
                 },
@@ -616,8 +616,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             ctx.pop_output_buffer();
             match ctx.push_output_token(RustHtmlToken::AppendToHtml(inner_tokens.borrow_mut().clone())) {
                 Ok(_) => {},
-                Err(RustHtmlError(err)) => {
-                    return Err(RustHtmlError::from_string(err.into_owned()));
+                Err(e) => {
+                    return Err(e);
                 }
             }
             Ok(())
@@ -778,8 +778,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             Ok(relative_path) => {
                 path.push(relative_path.clone());
             },
-            Err(RustHtmlError(err)) => {
-                return Err(RustHtmlError::from_string(err.into_owned()));
+            Err(e) => {
+                return Err(e);
             }
         }
 
@@ -798,8 +798,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             Ok(relative_path) => {
                 path.push(relative_path.clone());
             },
-            Err(RustHtmlError(err)) => {
-                return Err(RustHtmlError::from_string(err.into_owned()));
+            Err(e) => {
+                return Err(e);
             }
         }
 
@@ -922,8 +922,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                 ctx.pop_output_buffer();
                 match ctx.push_output_tokens(&output_inner_tokens) {
                     Ok(_) => {},
-                    Err(RustHtmlError(err)) => {
-                        return Err(RustHtmlError::from_string(err.into_owned()));
+                    Err(e) => {
+                        return Err(e);
                     }
                 
                 }
@@ -931,8 +931,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
         } else {
             match ctx.push_output_token(RustHtmlToken::ReservedChar(c, punct.clone())) {
                 Ok(_) => {},
-                Err(RustHtmlError(err)) => {
-                    return Err(RustHtmlError::from_string(err.into_owned()));
+                Err(e) => {
+                    return Err(e);
                 }
             }
         }
@@ -956,8 +956,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
 
             match ctx.push_output_token(RustHtmlToken::HtmlTextNode(c_start.to_string())) {
                 Ok(_) => {},
-                Err(RustHtmlError(err)) => {
-                    return Err(RustHtmlError::from_string(err.into_owned()));
+                Err(e) => {
+                    return Err(e);
                 }
             }
             // might need to pass true to ctx.push_is_in_html_mode
@@ -965,8 +965,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             
             match ctx.push_output_token(RustHtmlToken::HtmlTextNode(c_end.to_string())) {
                 Ok(_) => {},
-                Err(RustHtmlError(err)) => {
-                    return Err(RustHtmlError::from_string(err.into_owned()));
+                Err(e) => {
+                    return Err(e);
                 }
             }
 
@@ -1140,8 +1140,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                     Ok(tokens_parsed) => {
                         match ctx.push_output_tokens(tokens_parsed.to_splice()) {
                             Ok(_) => {},
-                            Err(RustHtmlError(err)) => {
-                                return Err(RustHtmlError::from_string(err.into_owned()));
+                            Err(e) => {
+                                return Err(e);
                             }
                         }
                         Ok(())
@@ -1252,8 +1252,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                 // self.expand_html_literal_to_rusthtmltoken(literal.as_ref().unwrap(), parse_ctx, ct)?;
                 match parse_ctx.get_main_context().push_output_token(token.clone()) {
                     Ok(_) => {},
-                    Err(RustHtmlError(e)) => {
-                        return Err(RustHtmlError::from_string(e.into_owned()));
+                    Err(e) => {
+                        return Err(e);
                     }
                 }
             },
@@ -1261,8 +1261,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                 // return self.expand_html_punct_to_rusthtmltoken(&punct, parse_ctx, it, ct);
                 match parse_ctx.get_main_context().push_output_token(token.clone()) {
                     Ok(_) => {},
-                    Err(RustHtmlError(e)) => {
-                        return Err(RustHtmlError::from_string(e.into_owned()));
+                    Err(e) => {
+                        return Err(e);
                     }
                 }
             },
@@ -1321,8 +1321,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                         _ => {
                             match parse_ctx.on_html_tag_name_parsed() {
                                 Ok(_r) => { },
-                                Err(RustHtmlError(e)) => {
-                                    return Err(RustHtmlError::from_string(e.into_owned()));
+                                Err(e) => {
+                                    return Err(e);
                                 }
                             }
                             break;
@@ -1401,8 +1401,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             Ok(x) => {
                 match parse_ctx.get_main_context().push_output_tokens(&x) {
                     Ok(_) => {},
-                    Err(RustHtmlError(e)) => {
-                        return Err(RustHtmlError::from_string(e.into_owned()));
+                    Err(e) => {
+                        return Err(e);
                     }
                 }
                 Ok(())
@@ -1439,14 +1439,14 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
             Ok((tokens, r)) => {
                 match ctx.push_output_tokens(&tokens) {
                     Ok(_) => {},
-                    Err(RustHtmlError(e)) => {
-                        return Err(RustHtmlError::from_string(e.into_owned()));
+                    Err(e) => {
+                        return Err(e);
                     }
                 }
                 Ok(r)
             },
-            Err(RustHtmlError(e)) => {
-                Err(RustHtmlError::from_string(e.into_owned()))
+            Err(e) => {
+                Err(e)
             }
         }
     }
@@ -1532,8 +1532,8 @@ impl IRustHtmlParserExpander for RustHtmlParserExpander {
                             Ok(_) => {
                                 Ok(true)
                             },
-                            Err(RustHtmlError(e)) => {
-                                Err(RustHtmlError::from_string(e.into_owned()))
+                            Err(e) => {
+                                Err(e)
                             }
                         
                         }

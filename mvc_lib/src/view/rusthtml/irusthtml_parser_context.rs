@@ -42,9 +42,9 @@ pub trait IRustHtmlParserContext {
     fn get_output_buffer(&self) -> Option<Rc<RefCell<Vec<RustHtmlToken>>>>;
 
     // push to output buffer / stream
-    fn push_output_token(&self, token: RustHtmlToken) -> Result<(), RustHtmlError<'static>>;
+    fn push_output_token(&self, token: RustHtmlToken) -> Result<(), RustHtmlError>;
     // push vec to output buffer / stream
-    fn push_output_tokens(&self, token: &[RustHtmlToken]) -> Result<(), RustHtmlError<'static>>;
+    fn push_output_tokens(&self, token: &[RustHtmlToken]) -> Result<(), RustHtmlError>;
     
     // whether or not the RustHtml code is raw tokenstream.
     fn get_is_raw_tokenstream(self: &Self) -> bool;

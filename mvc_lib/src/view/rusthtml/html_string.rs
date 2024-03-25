@@ -106,7 +106,7 @@ impl From<Option<&&str>> for HtmlString {
     }
 }
 
-impl <'a> From<Result<HtmlString, RustHtmlError<'a>>> for HtmlString {
+impl <'a> From<Result<HtmlString, RustHtmlError>> for HtmlString {
     fn from(item: Result<HtmlString, RustHtmlError>) -> Self {
         match item {
             Ok(HtmlString { content }) => HtmlString::new_from_html(content),

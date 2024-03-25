@@ -6,6 +6,7 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{Ident, TokenTree, Group, Delimiter, Literal};
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parser_parts::irusthtmlparser_version_agnostic::IRustHtmlParserVersionAgnostic;
 use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree};
@@ -27,7 +28,7 @@ impl HtmlFormDirective {
 
     // parse the form function call and add the form tokens to the output.
     // the form function call is called between the form opening and closing tags.
-    fn parse_form_function_call(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: &dyn IPeekableTokenTree, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError<'static>> {
+    fn parse_form_function_call(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: &dyn IPeekableTokenTree, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // println!("parsing form function call");
 
         // parse method
@@ -171,7 +172,7 @@ impl HtmlFormDirective {
         _output: &mut Vec<RustHtmlToken>,
         it: &dyn IPeekableTokenTree,
         _ct: Rc<dyn ICancellationToken>
-    ) -> Result<(), RustHtmlError<'static>> {
+    ) -> Result<(), RustHtmlError> {
         // expecting closure to render contents of form
         // must start with () to indicate it is a function
         match it.next() {
@@ -212,7 +213,7 @@ impl HtmlFormDirective {
         }
     }
     
-    fn try_parse_object_route_values(self: &Self, it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
+    fn try_parse_object_route_values(self: &Self, it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError> {
         if let Some(group_object) = Self::peek_group_with_braces(it) {
             // skip group after peeking
             it.next();
@@ -224,7 +225,7 @@ impl HtmlFormDirective {
         }
     }
     
-    fn parse_object_route_values(group_object: Group) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError<'static>> {
+    fn parse_object_route_values(group_object: Group) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError> {
         let mut object_route_values = HashMap::new();
         let mut object_route_value_name: Option<String> = None;
         let mut object_route_value_values: Vec<RustHtmlToken> = vec![];
@@ -273,7 +274,7 @@ impl HtmlFormDirective {
         Ok(Some(object_route_values))
     }
     
-    fn try_parse_object_html_attributes(it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>>, RustHtmlError<'static>> {
+    fn try_parse_object_html_attributes(it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>>, RustHtmlError> {
         if let Some(group_object) = Self::peek_group_with_braces(it) {
             // skip group after peeking
             it.next();
@@ -297,7 +298,7 @@ impl HtmlFormDirective {
         None
     }
 
-    fn parse_object_html_attributes(group_object: Group) -> Result<Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>>, RustHtmlError<'static>> {
+    fn parse_object_html_attributes(group_object: Group) -> Result<Option<HashMap<String, Vec<RustHtmlIdentAndPunctOrLiteral>>>, RustHtmlError> {
         let mut object_attributes = HashMap::new();
         let mut object_attribute_name: Option<String> = None;
         let mut object_attribute_values: Vec<RustHtmlIdentAndPunctOrLiteral> = vec![];
@@ -380,5 +381,9 @@ impl IRustHtmlDirective for HtmlFormDirective {
 
     fn execute_new(self: &Self, _context: Rc<dyn IRustHtmlParserContext>, _identifier: &Ident, _ident_token: &RustHtmlToken, _parser: Rc<dyn IRustHtmlParserAll>, _output: &mut Vec<RustHtmlToken>, _it: Rc<dyn IPeekableRustHtmlToken>, _ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         todo!("execute_new for directive")
+    }
+    
+    fn execute_old(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<crate::view::rusthtml::rusthtml_parser::RustHtmlParser>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        todo!("execute_old for html_form directive")
     }
 }

@@ -6,6 +6,7 @@ use proc_macro2::Ident;
 use proc_macro2::TokenTree;
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parser_parts::irusthtmlparser_version_agnostic::IRustHtmlParserVersionAgnostic;
 use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
@@ -36,7 +37,7 @@ impl IRustHtmlDirective for NameDirective {
             context.mut_params().insert(identifier.to_string().clone(), param_value);
             Ok(RustHtmlDirectiveResult::OkBreak)
         } else {
-            Err(RustHtmlError(Cow::Owned(format!("The \"name\" directive must be followed by a valid Rust identifier."))))
+            Err(RustHtmlError::from_string(format!("The \"name\" directive must be followed by a valid Rust identifier.")))
         }
     }
     
@@ -45,7 +46,16 @@ impl IRustHtmlDirective for NameDirective {
             context.mut_params().insert(identifier.to_string().clone(), param_value);
             Ok(RustHtmlDirectiveResult::OkBreak)
         } else {
-            Err(RustHtmlError(Cow::Owned(format!("The \"name\" directive must be followed by a valid Rust identifier."))))
+            Err(RustHtmlError::from_string(format!("The \"name\" directive must be followed by a valid Rust identifier.")))
+        }
+    }
+    
+    fn execute_old(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<crate::view::rusthtml::rusthtml_parser::RustHtmlParser>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        if let Ok(param_value) = parser.parser.parse_string_with_quotes(false, identifier.clone(), it) {
+            context.mut_params().insert(identifier.to_string().clone(), param_value);
+            Ok(RustHtmlDirectiveResult::OkBreak)
+        } else {
+            Err(RustHtmlError::from_string(format!("The \"name\" directive must be followed by a valid Rust identifier.")))
         }
     }
 }

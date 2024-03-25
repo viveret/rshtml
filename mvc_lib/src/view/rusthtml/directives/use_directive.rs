@@ -4,6 +4,7 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{Ident, TokenTree, TokenStream};
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parser_parts::irusthtmlparser_version_agnostic::IRustHtmlParserVersionAgnostic;
 use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
@@ -50,6 +51,17 @@ impl IRustHtmlDirective for UseDirective {
             }
         } else {
             Err(RustHtmlError::from_str("Error parsing use directive"))
+        }
+    }
+    
+    fn execute_old(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<crate::view::rusthtml::rusthtml_parser::RustHtmlParser>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        match parser.parser.parse_type_identifier(it.clone()) {
+            Ok(type_ident_tokens) => {
+                let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_tokens));
+                context.push_use_statements(TokenStream::from(quote::quote! { use #inner_tokenstream; }));
+                Ok(RustHtmlDirectiveResult::OkContinue)
+            },
+            Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.to_string()))
         }
     }
 }

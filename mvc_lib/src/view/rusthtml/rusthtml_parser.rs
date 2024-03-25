@@ -33,13 +33,21 @@ impl RustHtmlParser {
     // should_panic_or_return_error: whether or not to panic or return an error when an error occurs.
     // environment_name: the name of the environment to use.
     // returns: a new RustHtmlParser.
-    pub fn new(should_panic_or_return_error: bool, environment_name: String) -> Self {
-        let parse_context = Rc::new(RustHtmlParserContext::new(true, should_panic_or_return_error, environment_name));
+    pub fn new(parse_context: Rc<dyn IRustHtmlParserContext>) -> Self {
         Self {
             parse_context: parse_context.clone(),
             parser: Rc::new(RustToRustHtmlConverter::new(Some(parse_context.clone()))),
-            converter: Rc::new(RustHtmlToRustConverter::new(parse_context)),
+            converter: Rc::new(RustHtmlToRustConverter::new(parse_context.clone())),
         }
+    }
+
+    // creates a new RustHtmlParser.
+    // should_panic_or_return_error: whether or not to panic or return an error when an error occurs.
+    // environment_name: the name of the environment to use.
+    // returns: a new RustHtmlParser.
+    pub fn new_easy(should_panic_or_return_error: bool, environment_name: String) -> Self {
+        let parse_context = Rc::new(RustHtmlParserContext::new(true, should_panic_or_return_error, environment_name));
+        Self::new(parse_context)
     }
 
     // expand a token stream from a token stream. this is used for compiling the RustHtml code into Rust code.

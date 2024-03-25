@@ -273,12 +273,12 @@ impl IRustHtmlParserContext for RustHtmlParserContextLog {
         self.real_context.get_output_buffer()
     }
 
-    fn push_output_token(&self, token: RustHtmlToken) -> Result<(), RustHtmlError<'static>> {
+    fn push_output_token(&self, token: RustHtmlToken) -> Result<(), RustHtmlError> {
         self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::push_output_token));
         self.real_context.push_output_token(token)
     }
 
-    fn push_output_tokens(&self, token: &[RustHtmlToken]) -> Result<(), RustHtmlError<'static>> {
+    fn push_output_tokens(&self, token: &[RustHtmlToken]) -> Result<(), RustHtmlError> {
         self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::push_output_tokens));
         self.real_context.push_output_tokens(token)
     }

@@ -13,11 +13,14 @@ use super::ihtml_tag_parse_context::IHtmlTagParseContext;
 use super::parser_parts::peekable_tokentree::IPeekableTokenTree;
 use super::irusthtml_parser_context::IRustHtmlParserContext;
 use super::parser_parts::rusthtmlparser_all::IRustHtmlParserAssignSharedParts;
+use super::rusthtml_parser::RustHtmlParser;
 
 
 // this is used to parse the RustHtml language that is in Rust TokenTree tokens into a RustHtmlToken stream of RustHtml tokens.
 // this is called before converting the RustHtml tokens back to Rust tokens.
-pub trait IRustToRustHtmlConverter: IRustHtmlParserAssignSharedParts {
+pub trait IRustToRustHtmlConverter {
+    fn assign_shared_parser(self: &Self, parser: Rc<RustHtmlParser>);
+
     fn expand_external_tokenstream(self: &Self, path_str: &String, output: &mut Vec<RustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError>;
     fn expand_external_rshtml_string(self: &Self, rshtml_str: &String, output: &mut Vec<RustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError>;
     fn parse_tokenstream_to_rusthtmltokens(self: &Self, is_in_html_mode: bool, it: Rc<dyn IPeekableTokenTree>, is_raw_tokenstream: bool, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError>;

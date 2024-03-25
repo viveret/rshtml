@@ -12,6 +12,7 @@ use crate::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 
+use super::irusthtmlparser_version_agnostic::IRustHtmlParserVersionAgnostic;
 use super::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use super::rusthtmlparser_converter_in::{IRustHtmlParserConverterIn, RustHtmlParserConverterIn};
 use super::rusthtmlparser_converter_out::{IRustHtmlParserConverterOut, RustHtmlParserConverterOut};
@@ -23,7 +24,7 @@ use super::rusthtmlparser_html::IRustHtmlParserHtml;
 pub trait IRustHtmlParserAll {
     // top level functions
     fn expand_rust(self: &Self, input: TokenStream, cancellation_token: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError>;
-    fn expand_rust_with_context(self: &Self, context: Rc<RustHtmlParserContext>, input: TokenStream, cancellation_token: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError>;
+    fn expand_rust_with_context(self: &Self, context: Rc<dyn IRustHtmlParserContext>, input: TokenStream, cancellation_token: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError>;
 
     // individual parts
     fn get_html_parser(&self) -> Rc<dyn IRustHtmlParserHtml>;
@@ -37,6 +38,7 @@ pub trait IRustHtmlParserAll {
     fn get_old_parser(&self) -> Rc<dyn IRustToRustHtmlConverter>;
 }
 
+// this only works for this new parser
 pub trait IRustHtmlParserAssignSharedParts {
     fn assign_shared_parser(self: &Self, parser: Rc<dyn IRustHtmlParserAll>);
 }
@@ -78,7 +80,6 @@ impl RustHtmlParserAll {
         s.rust_converter_in.assign_shared_parser(s.clone());
         s.rust_converter_out.assign_shared_parser(s.clone());
         s.rust_expander.assign_shared_parser(s.clone());
-        s.old_parser.assign_shared_parser(s.clone());
         s
     }
 
@@ -94,6 +95,12 @@ impl RustHtmlParserAll {
         )
     }
 }
+
+// impl IRustHtmlParserVersionAgnostic for RustHtmlParserAll {
+//     fn abstract_parser_versions_expand(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, input: TokenStream, ct: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
+//         self.expand_rust_with_context(ctx, input, ct)
+//     }
+// }
 
 impl IRustHtmlParserAll for RustHtmlParserAll {
     fn get_html_parser(&self) -> Rc<dyn IRustHtmlParserHtml> {
@@ -129,7 +136,7 @@ impl IRustHtmlParserAll for RustHtmlParserAll {
         self.expand_rust_with_context(context, input, cancellation_token)
     }
 
-    fn expand_rust_with_context(self: &Self, context: Rc<RustHtmlParserContext>, input: TokenStream, cancellation_token: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
+    fn expand_rust_with_context(self: &Self, context: Rc<dyn IRustHtmlParserContext>, input: TokenStream, cancellation_token: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
         let _scope = CallstackTrackerScope::enter(context.get_call_stack(), nameof::name_of_type!(RustHtmlParserAll), nameof_member_fn!(RustHtmlParserAll::expand_rust_with_context));
         match self.get_converter().convert_stream(input, context.clone(), cancellation_token.clone()) {
             Ok(input_rshtml) => {
@@ -142,18 +149,18 @@ impl IRustHtmlParserAll for RustHtmlParserAll {
                             Ok(output) => {
                                 Ok(TokenStream::from_iter(output.into_iter()))
                             },
-                            Err(RustHtmlError(err)) => {
-                                Err(RustHtmlError::from_string(err.into_owned()))
+                            Err(e) => {
+                                Err(e)
                             }
                         }
                     },
-                    Err(RustHtmlError(err)) => {
-                        Err(RustHtmlError::from_string(err.into_owned()))
+                    Err(e) => {
+                        Err(e)
                     }
                 }
             },
-            Err(RustHtmlError(err)) => {
-                Err(RustHtmlError::from_string(err.into_owned()))
+            Err(e) => {
+                Err(e)
             }
         }
     }

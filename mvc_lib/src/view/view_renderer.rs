@@ -128,7 +128,7 @@ impl IViewRenderer for ViewRenderer {
 
                         match layout_view_ctx.get_view_as_ref().render(&layout_view_ctx, services) {
                             Ok(layout_html) => Ok(layout_html),
-                            Err(e) => Err(RustHtmlError(Cow::Owned(format!("Could not render layout for view: {}", e)))),
+                            Err(e) => Err(RustHtmlError::from_string(format!("Could not render layout for view: {}", e))),
                         }
                     },
                     None => {
@@ -137,7 +137,7 @@ impl IViewRenderer for ViewRenderer {
                     },
                 }
             },
-            Err(e) => Err(RustHtmlError(Cow::Owned(format!("Could not render view: {}", e)))),
+            Err(e) => Err(RustHtmlError::from_string(format!("Could not render view: {}", e))),
         }
     }
 

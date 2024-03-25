@@ -48,7 +48,7 @@ impl IHtmlTagParseContext for HtmlTagParseContextLog {
         self.real_context.fmt_tag_name_as_str(tag_name)
     }
 
-    fn on_html_tag_name_parsed(&self) -> Result<(), RustHtmlError<'static>> {
+    fn on_html_tag_name_parsed(&self) -> Result<(), RustHtmlError> {
         self.real_context.on_html_tag_name_parsed()
     }
 

@@ -268,7 +268,7 @@ impl IRustHtmlParserHtml for RustHtmlParserHtml {
                 RustHtmlExpandLoopResult::Ok((vec![], false))
             }
         } else {
-            Err(RustHtmlError(Cow::Owned(format!("Cannot use literal for tag name"))))
+            Err(RustHtmlError::from_string(format!("Cannot use literal for tag name")))
         }
     }
 

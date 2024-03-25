@@ -198,8 +198,8 @@ pub fn callstack_assert(input: proc_macro::TokenStream) -> proc_macro::TokenStre
     quote! {
         match #context_var_name.check_call_stack_count() {
             Ok(_) => {},
-            Err(RustHtmlError(err)) => {
-                return Err(RustHtmlError::from_string(err.into_owned()));
+            Err(e) => {
+                return Err(e);
             }
         }
     }.into()

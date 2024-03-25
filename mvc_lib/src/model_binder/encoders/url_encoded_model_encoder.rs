@@ -43,6 +43,6 @@ impl IViewModelEncoder for FormUrlEncodedEncoder {
     }
 
     fn encode_model(self: &Self, _: Box<dyn Any>, _: &dyn IResponseContext) -> ModelValidationResult<AnyIModel> {
-        panic!("not implemented");
+        panic!("encode_model not implemented for FormUrlEncodedEncoder");
     }
 }

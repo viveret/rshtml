@@ -576,7 +576,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         self.output_buffer_stack.borrow().last().cloned()
     }
 
-    fn push_output_token(&self, token: RustHtmlToken) -> Result<(), RustHtmlError<'static>> {
+    fn push_output_token(&self, token: RustHtmlToken) -> Result<(), RustHtmlError> {
         if let Some(buffer) = self.get_output_buffer() {
             buffer.borrow_mut().push(token);
             Ok(())
@@ -585,7 +585,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
 
-    fn push_output_tokens(&self, token: &[RustHtmlToken]) -> Result<(), RustHtmlError<'static>> {
+    fn push_output_tokens(&self, token: &[RustHtmlToken]) -> Result<(), RustHtmlError> {
         if let Some(buffer) = self.get_output_buffer() {
             buffer.borrow_mut().extend(token.iter().cloned());
             Ok(())

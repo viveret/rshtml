@@ -19,13 +19,13 @@ use super::rusthtml_parser_context::RustHtmlParserContext;
 // this is used to convert a RustHtmlToken stream into a Rust token stream.
 // this is called after parsing the RustHtml language.
 pub struct RustHtmlToRustConverter {
-    pub context: Rc<RustHtmlParserContext>,
+    pub context: Rc<dyn IRustHtmlParserContext>,
 }
 
 impl RustHtmlToRustConverter {
     // create a new instance of RustHtmlToRust parser.
     // context: the context to use.
-    pub fn new(context: Rc<RustHtmlParserContext>) -> Self {
+    pub fn new(context: Rc<dyn IRustHtmlParserContext>) -> Self {
         Self {
             context: context,
         }

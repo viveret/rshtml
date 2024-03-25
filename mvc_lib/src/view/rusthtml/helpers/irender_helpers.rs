@@ -6,14 +6,14 @@ pub trait IRenderHelpers<'a> {
     // render a section of the view or return an error if it does not exist.
     // section_name: the name of the section to render.
     // returns: the rendered section or an error if it does not exist.
-    fn section<'b, 'c, 'd>(self: &Self, section_name: &'b str) -> Result<HtmlString, RustHtmlError<'d>>;
+    fn section<'b, 'c, 'd>(self: &Self, section_name: &'b str) -> Result<HtmlString, RustHtmlError>;
 
     // render a section of the view (if it exists).
     // section_name: the name of the section to render.
     // returns: the rendered section or an empty string if it does not exist.
-    fn section_optional<'b, 'c, 'd>(self: &Self, section_name: &'b str) -> Result<HtmlString, RustHtmlError<'d>>;
+    fn section_optional<'b, 'c, 'd>(self: &Self, section_name: &'b str) -> Result<HtmlString, RustHtmlError>;
 
     // render the body of the layout view.
     // returns: the rendered body of the layout view or an error.
-    fn body<'b>(self: &Self) -> Result<HtmlString, RustHtmlError<'b>>;
+    fn body<'b>(self: &Self) -> Result<HtmlString, RustHtmlError>;
 }

@@ -4,6 +4,7 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::{Ident, TokenTree, Delimiter};
 
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::rusthtml::parser_parts::irusthtmlparser_version_agnostic::IRustHtmlParserVersionAgnostic;
 use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
@@ -143,5 +144,65 @@ impl IRustHtmlDirective for IfDirective {
     
     fn execute_new(self: &Self, _context: Rc<dyn IRustHtmlParserContext>, _identifier: &Ident, _ident_token: &RustHtmlToken, _parser: Rc<dyn IRustHtmlParserAll>, _output: &mut Vec<RustHtmlToken>, _it: Rc<dyn IPeekableRustHtmlToken>, _ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         todo!("execute_new if directive")
+    }
+    
+    fn execute_old(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<crate::view::rusthtml::rusthtml_parser::RustHtmlParser>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        output.push(RustHtmlToken::Identifier(identifier.clone()));
+        // parse for expression, then parse for group
+        loop {
+            if let Some(token) = &it.peek() {
+                match token {
+                    TokenTree::Ident(ident) => {
+                        println!("if_directive: ident: {:?}", ident);
+                        output.push(RustHtmlToken::Identifier(ident.clone()));
+                        it.next();
+                    },
+                    TokenTree::Literal(literal) => {
+                        output.push(RustHtmlToken::Literal(Some(literal.clone()), None));
+                        it.next();
+                    },
+                    TokenTree::Punct(punct) => {
+                        output.push(RustHtmlToken::ReservedChar(punct.as_char(), punct.clone()));
+                        it.next();
+                        if punct.as_char() == ';' {
+                            break;
+                        }
+                    },
+                    TokenTree::Group(group) => {
+                        let delimiter = group.delimiter();
+                        let mut inner_output = vec![];
+                        match delimiter {
+                            Delimiter::Brace => {
+                                match parser.parser.convert_group_to_rusthtmltoken(group.clone(), false, true, &mut inner_output, false, ct.clone()) {
+                                    Ok(_) => {
+                                        output.push(RustHtmlToken::GroupParsed(Delimiter::Brace, inner_output));
+                                        it.next();
+                                    },
+                                    Err(e) => {
+                                        return Err(e);
+                                    }
+                                }
+                            },
+                            _ => {
+                                let mut group_output = vec![];
+                                match parser.parser.convert_copy(token.clone(), &mut group_output, ct) {
+                                    Ok(_) => {
+                                        output.push(RustHtmlToken::GroupParsed(delimiter, group_output));
+                                        it.next();
+                                    },
+                                    Err(e) => {
+                                        return Err(e);
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+        Ok(RustHtmlDirectiveResult::OkContinue)
     }
 }

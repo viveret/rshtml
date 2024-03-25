@@ -38,7 +38,7 @@ impl IRustHtmlDirective for ViewStartDirective {
                 Ok(RustHtmlDirectiveResult::OkBreak)
             },
             Err(RustHtmlError(e)) => {
-                return Err(RustHtmlError(Cow::Owned(format!("The \"viewstart\" directive failed: ({})", e))));
+                return Err(RustHtmlError::from_string(format!("The \"viewstart\" directive failed: ({})", e)));
             }
         }
     }
@@ -50,7 +50,19 @@ impl IRustHtmlDirective for ViewStartDirective {
                 Ok(RustHtmlDirectiveResult::OkBreak)
             },
             Err(RustHtmlError(e)) => {
-                return Err(RustHtmlError(Cow::Owned(format!("The \"viewstart\" directive failed: ({})", e))));
+                return Err(RustHtmlError::from_string(format!("The \"viewstart\" directive failed: ({})", e)));
+            }
+        }
+    }
+    
+    fn execute_old(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, _ident_token: &TokenTree, parser: Rc<crate::view::rusthtml::rusthtml_parser::RustHtmlParser>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+        match parser.parser.parse_string_with_quotes(false, identifier.clone(), it.clone()) {
+            Ok(param_value) => {
+                context.mut_params().insert("viewstart".to_string(), param_value);
+                Ok(RustHtmlDirectiveResult::OkBreak)
+            },
+            Err(RustHtmlError(e)) => {
+                return Err(RustHtmlError::from_string(format!("The \"viewstart\" directive failed: ({})", e)));
             }
         }
     }

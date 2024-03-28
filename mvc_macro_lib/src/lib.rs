@@ -5,6 +5,8 @@ extern crate mvc_lib;
 use std::rc::Rc;
 
 use core_lib::asyncly::timer_cancellation_token::TimerCancellationToken;
+use mvc_lib::view::parserv3::parserv3::IParserV3;
+use mvc_lib::view::parserv3::parserv3::ParserV3;
 use mvc_lib::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
 use mvc_lib::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use mvc_lib::view::rusthtml::parser_parts::irusthtmlparser_version_agnostic::IRustHtmlParserVersionAgnostic;
@@ -40,30 +42,37 @@ pub fn rusthtml_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 fn call_parser_expand(
     input: proc_macro::TokenStream,
     context: Rc<dyn IRustHtmlParserContext>,
-    use_new_parser: bool
+    use_new_parser: bool,
+    use_v3_parser: bool,
 ) -> (Result<TokenStream, RustHtmlError>, Option<Rc<RustHtmlParserAll>>, Option<Rc<RustHtmlParser>>) {
     let ct = Rc::new(TimerCancellationToken::new(std::time::Duration::from_secs(5)));
-    let result = if use_new_parser {
+    let mut result: Option<(Result<TokenStream, RustHtmlError>, Option<Rc<RustHtmlParserAll>>, Option<Rc<RustHtmlParser>>)> = None;
+    if use_v3_parser {
+        let parser3 = Rc::new(ParserV3::new_default());
+        let res = parser3.expand_with_context(input.into(), context.clone(), ct.clone());
+        result = Some((res, None, None));
+    } else if use_new_parser {
         let parser1 = RustHtmlParserAll::new_default();
         let res = parser1.expand_rust_with_context(context.clone(), input.into(), ct.clone());
-        (res, Some(parser1.clone()), None)
+        result = Some((res, Some(parser1.clone()), None));
     } else {
         let parser2 = Rc::new(RustHtmlParser::new(context.clone()));
         parser2.parser.assign_shared_parser(parser2.clone());
         let res = parser2.expand_tokenstream(input.into(), ct.clone());
-        (res, None, Some(parser2.clone()))
+        result = Some((res, None, Some(parser2.clone())));
     };
     ct.stop().expect("could not stop timer");
-    result
+    result.unwrap()
 }
 
 // puts render function into a structure with additional functionality and information
 #[proc_macro]
 pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let use_new_parser = false;
+    let use_v3_parser = true;
 
     let parse_context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
-    let (result, _, _) = call_parser_expand(input, parse_context.clone(), use_new_parser);
+    let (result, _, _) = call_parser_expand(input, parse_context.clone(), use_new_parser, use_v3_parser);
 
     match result {
         Ok(html_render_fn2) => {

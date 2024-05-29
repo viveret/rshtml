@@ -8,6 +8,7 @@ use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
+use super::converters::converter_directives::ConverterDirectives;
 use super::converters::iconverter_output::{ConverterOutput, IConverterOutput};
 use super::converters::iconverter_middle::{ConverterMiddle, IConverterMiddle};
 use super::converters::iconverter_input::{ConverterInput, IConverterInput};
@@ -17,8 +18,16 @@ pub trait IParserV3 {
     fn get_converter_middle(&self) -> Rc<dyn IConverterMiddle>;
     fn get_converter_out(&self) -> Rc<dyn IConverterOutput>;
 
-    fn expand(&self, input: Rc<dyn IPeekableTokenTree>) -> Rc<dyn IPeekableTokenTree>;
-    fn expand_with_context(&self,
+    // other parts
+    fn get_converter_directives(&self) -> Rc<dyn IConverterMiddle>;
+
+    fn expand(&self,
+        input: Rc<dyn IPeekableTokenTree>,
+        context: Rc<dyn IRustHtmlParserContext>,
+        ct: Rc<dyn ICancellationToken>
+    ) -> Result<Rc<dyn IPeekableTokenTree>, RustHtmlError>;
+
+    fn expand_tokentree(&self,
         input: TokenStream,
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
@@ -29,18 +38,21 @@ pub struct ParserV3 {
     pub converter_in: Rc<dyn IConverterInput>,
     pub converter_middle: Rc<dyn IConverterMiddle>,
     pub converter_out: Rc<dyn IConverterOutput>,
+    pub converter_directives: Rc<dyn IConverterMiddle>,
 }
 
 impl ParserV3 {
     pub fn new(
         converter_in: Rc<dyn IConverterInput>,
         converter_middle: Rc<dyn IConverterMiddle>,
-        converter_out: Rc<dyn IConverterOutput>
+        converter_out: Rc<dyn IConverterOutput>,
+        converter_directives: Rc<dyn IConverterMiddle>
     ) -> Self {
         Self {
             converter_in,
             converter_middle,
             converter_out,
+            converter_directives
         }
     }
 
@@ -49,6 +61,9 @@ impl ParserV3 {
             converter_in: Rc::new(ConverterInput::new()),
             converter_middle: Rc::new(ConverterMiddle::new()),
             converter_out: Rc::new(ConverterOutput::new()),
+            converter_directives: Rc::new(ConverterDirectives::new(vec![
+                // add directives here
+            ]))
         }
     }
 }
@@ -66,21 +81,29 @@ impl IParserV3 for ParserV3 {
         self.converter_out.clone()
     }
     
-    fn expand(&self, input: Rc<dyn IPeekableTokenTree>) -> Rc<dyn IPeekableTokenTree> {
+    fn get_converter_directives(&self) -> Rc<dyn IConverterMiddle> {
+        self.converter_directives.clone()
+    }
+    
+    fn expand(&self,
+        input: Rc<dyn IPeekableTokenTree>,
+        context: Rc<dyn IRustHtmlParserContext>,
+        ct: Rc<dyn ICancellationToken>
+    ) -> Result<Rc<dyn IPeekableTokenTree>, RustHtmlError> {
         let mut input = self.converter_in.convert(input);
-        input = self.converter_middle.convert(input);
+        input = self.converter_middle.convert(input, context, ct);
         self.converter_out.convert(input)
     }
     
-    fn expand_with_context(&self,
+    fn expand_tokentree(&self,
         input: TokenStream,
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
     ) -> Result<TokenStream, RustHtmlError> {
         let input = Rc::new(StreamPeekableTokenTree::new(input));
         let mut input = self.converter_in.convert(input);
-        input = self.converter_middle.convert(input);
-        let output = self.converter_out.convert(input);
+        input = self.converter_middle.convert(input, context, ct);
+        let output = self.converter_out.convert(input)?;
         Ok(output.to_stream())
     }
 }

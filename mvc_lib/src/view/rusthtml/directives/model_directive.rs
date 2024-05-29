@@ -10,6 +10,7 @@ use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHt
 use crate::view::rusthtml::parser_parts::peekable_tokentree::VecPeekableTokenTree;
 use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
+use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResultV3;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
 
@@ -63,5 +64,9 @@ impl IRustHtmlDirective for ModelDirective {
             },
             Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.to_string()))
         }
+    }
+    
+    fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
+        todo!("execute_new_v3 model directive")
     }
 }

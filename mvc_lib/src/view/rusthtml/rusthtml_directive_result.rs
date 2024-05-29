@@ -1,3 +1,7 @@
+use std::rc::Rc;
+
+use super::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
+
 // This enum is used to return from a directive function to indicate if
 // - the directive should continue,
 // - if it should break, and
@@ -11,3 +15,6 @@ pub enum RustHtmlDirectiveResult {
     // the directive was parsed successfully and should break
     OkBreak,
 }
+
+#[derive(Debug)]
+pub struct RustHtmlDirectiveResultV3(pub RustHtmlDirectiveResult, pub Option<Rc<dyn IPeekableRustHtmlToken>>);

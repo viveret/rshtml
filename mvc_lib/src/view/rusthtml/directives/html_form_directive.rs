@@ -10,7 +10,7 @@ use crate::view::rusthtml::parser_parts::irusthtmlparser_version_agnostic::IRust
 use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree};
-use crate::view::rusthtml::rusthtml_directive_result::RustHtmlDirectiveResult;
+use crate::view::rusthtml::rusthtml_directive_result::{RustHtmlDirectiveResult, RustHtmlDirectiveResultV3};
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
@@ -385,5 +385,9 @@ impl IRustHtmlDirective for HtmlFormDirective {
     
     fn execute_old(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<crate::view::rusthtml::rusthtml_parser::RustHtmlParser>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         todo!("execute_old for html_form directive")
+    }
+    
+    fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
+        todo!("execute_new_v3 for html_form directive")
     }
 }

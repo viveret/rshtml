@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::borrow::Cow;
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -183,14 +182,14 @@ impl IViewRenderer for ViewRenderer {
             },
             None => {
                 let available_view_paths = self.get_all_views(services).iter().map(|x| x.get_path()).collect::<Vec<String>>();
-                panic!("No views found at '{}' in {:?}. Available views: {:?}", path.as_str(), std::env::current_dir().unwrap(), available_view_paths)
+                panic!("No views found at '{}' in {:?}. Available views: {:?}", path.as_str(), std::env::current_dir().expect("could not get current_dir"), available_view_paths)
             },
         }
     }
 
     // this needs to be fixed to be more flexible and like .net core using config and options
     fn resolve_views_path_string(self: &Self, path: &str) -> Option<String> {
-        let mut cwd = std::env::current_dir().unwrap();
+        let mut cwd = std::env::current_dir().expect("could not get current_dir");
         let mut path = path.to_string();
         // handle '../' and './' in path
         if path.starts_with("../") {

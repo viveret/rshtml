@@ -28,7 +28,7 @@ impl ConverterDirectives {
     }
 
     pub fn get_parser(&self) -> Rc<dyn IParserV3> {
-        self.parser.borrow().as_ref().unwrap().clone()
+        self.parser.borrow().as_ref().expect("could not get parser from ConverterDirectives").clone()
     }
 }
 
@@ -50,7 +50,12 @@ impl IConverterMiddle for ConverterDirectives {
                         match directive {
                             Some(d) => {
                                 // execute the directive
-                                d.execute_new_v3(context, ident, token, self.get_parser(), input.clone(), ct)
+                                let v3result = d.execute_new_v3(context, ident, token, self.get_parser(), input.clone(), ct)?;
+                                if let Some(v3result) = v3result.1 {
+                                    return Ok(v3result);
+                                } else {
+                                    return Ok(input);
+                                }
                             }
                             None => {
                                 // panic
@@ -69,5 +74,9 @@ impl IConverterMiddle for ConverterDirectives {
                 panic!("No token found after @")
             }
         }
+    }
+
+    fn set_parser(&self, parser: Rc<dyn IParserV3>) {
+        self.parser.replace(Some(parser));
     }
 }

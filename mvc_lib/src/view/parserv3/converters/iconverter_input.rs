@@ -30,7 +30,7 @@ impl IConverterInput for ConverterInput {
             if token.is_none() {
                 break;
             }
-            match token.unwrap() {
+            match token.expect("peeked token") {
                 TokenTree::Group(group) => {
                     let group_stream_in = Rc::new(StreamPeekableTokenTree::new(group.stream()));
                     let group_stream_out = self.convert(group_stream_in);

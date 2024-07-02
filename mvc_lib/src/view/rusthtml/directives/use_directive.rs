@@ -21,6 +21,10 @@ impl UseDirective {
     pub fn new() -> Self {
         Self {}
     }
+
+    pub fn new_service() -> Rc<dyn IRustHtmlDirective> {
+        Rc::new(UseDirective::new())
+    }
 }
 
 impl IRustHtmlDirective for UseDirective {
@@ -66,6 +70,19 @@ impl IRustHtmlDirective for UseDirective {
     }
     
     fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
-        todo!("execute_new_v3 use directive")
+        match parser.get_rust_parser().parse_type_identifier(it.clone(), ct.clone()) {
+            Ok(type_ident_tokens) => {
+                match parser.get_converter_out().convert(it) {
+                    Ok(type_ident_rust_out) => {
+                        let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_rust_out.to_stream()));
+                        context.push_use_statements(TokenStream::from(quote::quote! { use #inner_tokenstream; }));
+                        Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, None))
+                    },
+                    Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.to_string()))
+                }
+            },
+            Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.to_string()))
+        }
+
     }
 }

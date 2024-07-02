@@ -42,7 +42,7 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
             items_json: RefCell::new(vec![]),
         };
 
-        let metadata = f.metadata().unwrap();
+        let metadata = f.metadata().expect("could not get metadata");
         if metadata.len() < 4096 {
             // cache since it is not that much text
             my_self.cache_file_to_memory(Some(f));
@@ -64,7 +64,7 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
                 std::io::Result::Ok(Self::new(file_path, f, factory_method, parse_item_method, jsonify_item_method))
             },
             Ok(false) => {
-                let parent_dir = path.parent().unwrap();
+                let parent_dir = path.parent().expect("could not get parent dir");
                 std::fs::create_dir_all(parent_dir)?;
                 let f = File::create(file_path.clone())?;
                 std::io::Result::Ok(Self::new(file_path, f, factory_method, parse_item_method, jsonify_item_method))
@@ -148,13 +148,13 @@ impl <TEntity: 'static + Clone> JsonFileDbSet<TEntity> {
     }
 
     fn write_to_file(self: &Self) {
-        let mut file = File::create(self.file_path.clone()).unwrap();
+        let mut file = File::create(self.file_path.clone()).expect("could not create file");
         let json = serde_json::json!({
             "rows": self.items_json.borrow().clone()
         });
-        let json_str = serde_json::to_string_pretty(&json).unwrap();
-        file.write_all(json_str.as_bytes()).unwrap();
-        file.flush().unwrap();
+        let json_str = serde_json::to_string_pretty(&json).expect("could not serialize json");
+        file.write_all(json_str.as_bytes()).expect("could not write to file");
+        file.flush().expect("could not flush file");
     }
 }
 
@@ -164,7 +164,7 @@ impl<TEntity: 'static + Clone + PartialEq> JsonFileDbSet<TEntity> {
 
 impl<TEntity: 'static + Clone + PartialEq> IDbSetAny for JsonFileDbSet<TEntity> {
     fn add_any(self: &Self, item: Box<dyn Any>) {
-        self.add(item.downcast_ref::<TEntity>().unwrap())
+        self.add(item.downcast_ref::<TEntity>().expect("could not downcast"))
     }
 
     fn add_range_any(self: &Self, items: Vec<Box<dyn Any>>) {
@@ -172,7 +172,7 @@ impl<TEntity: 'static + Clone + PartialEq> IDbSetAny for JsonFileDbSet<TEntity> 
     }
 
     fn attach_any(self: &Self, item: Box<dyn Any>) {
-        let item: &TEntity = item.downcast_ref().unwrap();
+        let item: &TEntity = item.downcast_ref().expect("could not downcast");
         self.attach(item);
     }
 
@@ -189,7 +189,7 @@ impl<TEntity: 'static + Clone + PartialEq> IDbSetAny for JsonFileDbSet<TEntity> 
     }
 
     fn remove_any(self: &Self, item: Box<dyn Any>) {
-        let item: &TEntity = item.downcast_ref().unwrap();
+        let item: &TEntity = item.downcast_ref().expect("could not downcast");
         self.remove(item);
     }
 
@@ -250,7 +250,7 @@ impl<TEntity: 'static + Clone + PartialEq> IDbSet<TEntity> for JsonFileDbSet<TEn
         let mut items = self.items.borrow_mut();
         let mut items_json = self.items_json.borrow_mut();
 
-        let index = items.iter().position(|x| x == item).unwrap();
+        let index = items.iter().position(|x| x == item).expect("could not find item");
         items.remove(index);
         items_json.remove(index);
     }
@@ -260,7 +260,7 @@ impl<TEntity: 'static + Clone + PartialEq> IDbSet<TEntity> for JsonFileDbSet<TEn
         let mut items_json = self.items_json.borrow_mut();
 
         for it in item {
-            let index = items.iter().position(|x| x == &it).unwrap();
+            let index = items.iter().position(|x| x == &it).expect("could not find item");
             items.remove(index);
             items_json.remove(index);
         }

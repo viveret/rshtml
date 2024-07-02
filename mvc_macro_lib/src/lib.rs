@@ -46,7 +46,7 @@ fn call_parser_expand(
     let ct = Rc::new(TimerCancellationToken::new(std::time::Duration::from_secs(5)));
     let mut result: Option<(Result<TokenStream, RustHtmlError>, Option<Rc<RustHtmlParserAll>>, Option<Rc<RustHtmlParser>>)> = None;
     if use_v3_parser {
-        let parser3 = Rc::new(ParserV3::new_default());
+        let parser3 = ParserV3::new_default();
         let res = parser3.expand_tokentree(input.into(), context.clone(), ct.clone());
         result = Some((res, None, None));
     } else if use_new_parser {

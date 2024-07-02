@@ -10,6 +10,8 @@ pub trait IConverterMiddle {
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
     ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError>;
+
+    fn set_parser(&self, parser: Rc<dyn IParserV3>);
 }
 
 pub struct ConverterMiddle {
@@ -32,6 +34,10 @@ impl IConverterMiddle for ConverterMiddle {
     ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
         self.middle.convert(input, context, ct)
     }
+
+    fn set_parser(&self, parser: Rc<dyn IParserV3>) {
+        self.middle.set_parser(parser);
+    }
 }
 
 pub struct ConverterMiddleChain {
@@ -51,6 +57,12 @@ impl ConverterMiddleChain {
             // Rc::new(ConverterMiddle2::new()),
             // Rc::new(ConverterMiddle3::new())
         ])
+    }
+
+    pub fn set_parser(&self, parser: Rc<dyn IParserV3>) {
+        for converter in &self.chain {
+            converter.set_parser(parser.clone());
+        }
     }
 }
 
@@ -72,7 +84,13 @@ impl IConverterMiddle for ConverterMiddleChain {
                 }
             }
         }
-        result
+        Ok(input)
+    }
+
+    fn set_parser(&self, parser: Rc<dyn IParserV3>) {
+        for converter in &self.chain {
+            converter.set_parser(parser.clone());
+        }
     }
 }
 
@@ -88,7 +106,7 @@ impl ConverterNormal {
     }
 
     fn get_parser(&self) -> Rc<dyn IParserV3> {
-        self.parser.borrow().as_ref().unwrap().clone()
+        self.parser.borrow().as_ref().expect("could not get parser from ConverterNormal").clone()
     }
 
     fn convert_html(&self,
@@ -148,14 +166,14 @@ impl IConverterMiddle for ConverterNormal {
         input: Rc<dyn IPeekableRustHtmlToken>,
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
-    ) -> Rc<dyn IPeekableRustHtmlToken> {
+    ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
         let mut output = vec![];
         loop {
             let token = input.next();
             if token.is_none() {
                 break;
             }
-            let token = token.unwrap();
+            let token = token.expect("peeked token");
             let result = if context.get_is_in_html_mode() {
                 self.convert_html(token, input.clone(), context.clone(), ct.clone())
             } else {
@@ -165,11 +183,15 @@ impl IConverterMiddle for ConverterNormal {
                 Ok(new_input) => {
                     output.extend_from_slice(new_input.to_splice());
                 },
-                Err(token) => {
-                    output.push(token);
+                Err(e) => {
+                    return Err(e);
                 }
             }
         }
-        Rc::new(VecPeekableRustHtmlToken::new(output))
+        Ok(Rc::new(VecPeekableRustHtmlToken::new(output)))
+    }
+
+    fn set_parser(&self, parser: Rc<dyn IParserV3>) {
+        self.parser.replace(Some(parser));
     }
 }

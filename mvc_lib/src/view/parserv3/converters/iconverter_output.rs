@@ -1,8 +1,12 @@
 use std::rc::Rc;
 
+use proc_macro2::Delimiter;
+use proc_macro2::Group;
 use proc_macro2::Literal;
+use proc_macro2::TokenStream;
 use proc_macro2::TokenTree;
 
+use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::VecPeekableTokenTree;
@@ -22,7 +26,7 @@ impl ConverterOutput {
         }
     }
     
-    fn convert_token(&self, token: &crate::view::rusthtml::rusthtml_token::RustHtmlToken) -> Result<TokenTree, RustHtmlError> {
+    fn convert_token(&self, token: &RustHtmlToken) -> Result<TokenTree, RustHtmlError> {
         match token {
             // help: message: unsupported character `' '`
             // RustHtmlToken::Space(space) => {
@@ -41,13 +45,13 @@ impl ConverterOutput {
             RustHtmlToken::ReservedChar(_, punct) => Ok(TokenTree::Punct(punct.clone())),
             RustHtmlToken::Group(_delimiter, _stream, group) => Ok(TokenTree::Group(group.clone().expect("group is None"))),
             RustHtmlToken::GroupParsed(delimiter, inner_tokens) => 
-                self.convert_rusthtmlgroupparsed_to_tokentree(delimiter, inner_tokens, output, it)?,
+                self.convert_rusthtmlgroupparsed_to_tokentree(delimiter, inner_tokens, it)?,
             RustHtmlToken::HtmlTagStart(tag, tag_tokens) =>
-                self.convert_rusthtmltagstart_to_tokentree(tag, tag_tokens.as_ref(), output, it)?,
+                self.convert_rusthtmltagstart_to_tokentree(tag, tag_tokens.as_ref(), it)?,
             RustHtmlToken::HtmlTagVoid(tag, tag_tokens) =>
-                self.convert_rusthtmltagvoid_to_tokentree(tag, tag_tokens.as_ref(), output, it)?,
+                self.convert_rusthtmltagvoid_to_tokentree(tag, tag_tokens.as_ref(), it)?,
             RustHtmlToken::HtmlTagEnd(tag, tag_tokens) =>
-                self.convert_rusthtmltagend_to_tokentree(tag, tag_tokens.as_ref(), output, it)?,
+                self.convert_rusthtmltagend_to_tokentree(tag, tag_tokens.as_ref(), it)?,
             RustHtmlToken::HtmlTagCloseStartChildrenPunct =>
                 self.convert_rusthtmltagclosestartchildren_to_tokentree(output, it)?,
             RustHtmlToken::HtmlTagCloseSelfContainedPunct =>
@@ -92,7 +96,7 @@ impl IConverterOutput for ConverterOutput {
                 break;
             }
             let token = token.unwrap();
-            output.push(self.convert_token(token)?);
+            output.extend(self.convert_token(token)?);
             input.next();
         }
         Ok(Rc::new(VecPeekableTokenTree::new(output)))

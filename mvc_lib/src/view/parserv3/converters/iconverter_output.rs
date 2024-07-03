@@ -26,7 +26,7 @@ impl ConverterOutput {
         }
     }
     
-    fn convert_token(&self, token: &RustHtmlToken) -> Result<TokenTree, RustHtmlError> {
+    fn convert_token(&self, token: &RustHtmlToken, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<TokenTree, RustHtmlError> {
         match token {
             // help: message: unsupported character `' '`
             // RustHtmlToken::Space(space) => {
@@ -78,12 +78,11 @@ impl ConverterOutput {
     // output: the destination for the Rust tokens.
     // it: the iterator to use.
     // returns: nothing or an error.
-    fn convert_rusthtmlgroupparsed_to_tokentree(self: &Self, delimiter: &Delimiter, inner_tokens: &Vec<RustHtmlToken>, output: &mut Vec<TokenTree>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError> {
+    fn convert_rusthtmlgroupparsed_to_tokentree(self: &Self, delimiter: &Delimiter, inner_tokens: &Vec<RustHtmlToken>, _it: Rc<dyn IPeekableRustHtmlToken>) -> Result<(), RustHtmlError> {
         let mut group = vec![];
         let inner_it = Rc::new(VecPeekableRustHtmlToken::new(inner_tokens.clone()));
         self.convert_rusthtmltokens_to_plain_rust(&mut group, inner_it)?;
-        output.push(TokenTree::Group(Group::new(delimiter.clone(), TokenStream::from_iter(group.iter().cloned()))));
-        Ok(())
+        Ok(TokenTree::Group(Group::new(delimiter.clone(), TokenStream::from_iter(group.iter().cloned()))))
     }
 }
 
@@ -96,8 +95,8 @@ impl IConverterOutput for ConverterOutput {
                 break;
             }
             let token = token.unwrap();
-            output.extend(self.convert_token(token)?);
             input.next();
+            output.extend(self.convert_token(token, input.clone())?.slice());
         }
         Ok(Rc::new(VecPeekableTokenTree::new(output)))
     }

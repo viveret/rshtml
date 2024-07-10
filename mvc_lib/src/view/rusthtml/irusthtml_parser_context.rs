@@ -127,4 +127,7 @@ pub trait IRustHtmlParserContext {
 
     fn add_operation_to_ooo_log(self: &Self, operation: String);
     fn get_ooo(self: &Self) -> Vec<String>;
+
+    fn log_error(self: &Self, error: RustHtmlError);
+    fn log_info(self: &Self, info: String);
 }

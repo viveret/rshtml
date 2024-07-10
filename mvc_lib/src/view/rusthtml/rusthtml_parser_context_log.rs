@@ -282,4 +282,14 @@ impl IRustHtmlParserContext for RustHtmlParserContextLog {
         self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::push_output_tokens));
         self.real_context.push_output_tokens(token)
     }
+    
+    fn log_error(self: &Self, error: RustHtmlError) {
+        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::log_error));
+        self.real_context.log_error(error);
+    }
+    
+    fn log_info(self: &Self, info: String) {
+        self.add_operation_to_ooo_log_str(nameof_member_fn!(Self::log_info));
+        self.real_context.log_info(info);
+    }
 }

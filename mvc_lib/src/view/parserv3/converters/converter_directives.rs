@@ -1,8 +1,8 @@
+use core::panic;
 use std::{cell::RefCell, rc::Rc};
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
 
-use crate::view::rusthtml::rusthtml_directive_result::{RustHtmlDirectiveResult, RustHtmlDirectiveResultV3};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
@@ -38,6 +38,7 @@ impl IConverterMiddle for ConverterDirectives {
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
     ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
+        context.log_info("ConverterDirectives::convert".to_string());
         // need to peek for name which is an ident
         match input.peek() {
             Some(token) => {
@@ -49,6 +50,7 @@ impl IConverterMiddle for ConverterDirectives {
                         let directive = self.directives.iter().find(|d| d.matches(&name));
                         match directive {
                             Some(d) => {
+                                panic!("ConverterDirectives::convert: directive found for name: {}", name);
                                 // execute the directive
                                 let v3result = d.execute_new_v3(context, ident, token, self.get_parser(), input.clone(), ct)?;
                                 if let Some(v3result) = v3result.1 {

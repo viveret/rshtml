@@ -593,4 +593,12 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
             Err(RustHtmlError::from_string(format!("no output buffer to push tokens ({:?}) to", token)))
         }
     }
+    
+    fn log_error(self: &Self, error: RustHtmlError) {
+        // self.log.push(error.to_string());
+    }
+    
+    fn log_info(self: &Self, info: String) {
+        // todo!()
+    }
 }

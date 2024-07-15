@@ -4,6 +4,9 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::TokenStream;
 use proc_macro2::TokenTree;
 
+use crate::view::rusthtml::directives::model_directive::ModelDirective;
+use crate::view::rusthtml::directives::name_directive::NameDirective;
+use crate::view::rusthtml::directives::viewstart_directive::ViewStartDirective;
 use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::rusthtml::parser_parts::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -68,10 +71,7 @@ impl ParserV3 {
             converter_in: Rc::new(ConverterInput::new()),
             converter_middle: Rc::new(ConverterMiddle::new()),
             converter_out: Rc::new(ConverterOutput::new()),
-            converter_directives: Rc::new(ConverterDirectives::new(vec![
-                // add directives here
-                UseDirective::new_service(),
-            ])),
+            converter_directives: Rc::new(ConverterDirectives::new()),
             rust_parser: Rc::new(ParserV3RustParser::new())
         });
         x.get_converter_middle().set_parser(x.clone());

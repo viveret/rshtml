@@ -13,16 +13,13 @@ use crate::view::parserv3::parserv3::IParserV3;
 use super::iconverter_middle::IConverterMiddle;
 
 pub struct ConverterDirectives {
-    directives: Vec<Rc<dyn IRustHtmlDirective>>,
     parser: RefCell<Option<Rc<dyn IParserV3>>>
 }
 
 impl ConverterDirectives {
     pub fn new(
-        directives: Vec<Rc<dyn IRustHtmlDirective>>,
     ) -> Self {
         Self {
-            directives,
             parser: RefCell::new(None)
         }
     }
@@ -47,10 +44,9 @@ impl IConverterMiddle for ConverterDirectives {
                         // move forward one token
                         input.next();
                         let name = ident.to_string();
-                        let directive = self.directives.iter().find(|d| d.matches(&name));
+                        let directive = context.try_get_directive(name.clone());
                         match directive {
                             Some(d) => {
-                                panic!("ConverterDirectives::convert: directive found for name: {}", name);
                                 // execute the directive
                                 let v3result = d.execute_new_v3(context, ident, token, self.get_parser(), input.clone(), ct)?;
                                 if let Some(v3result) = v3result.1 {

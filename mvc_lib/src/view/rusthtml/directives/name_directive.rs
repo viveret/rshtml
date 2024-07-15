@@ -26,6 +26,10 @@ impl NameDirective {
     pub fn new() -> Self {
         Self {}
     }
+
+    pub fn new_service() -> Rc<dyn IRustHtmlDirective> {
+        Rc::new(NameDirective::new())
+    }
 }
 
 impl IRustHtmlDirective for NameDirective {
@@ -61,6 +65,11 @@ impl IRustHtmlDirective for NameDirective {
     }
     
     fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
-        todo!("execute_new_v3 name directive")
+        if let Ok(param_value) = parser.get_rust_parser().parse_string_with_quotes(false, identifier, it) {
+            context.mut_params().insert(identifier.to_string().clone(), param_value);
+            Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkBreak, None))
+        } else {
+            Err(RustHtmlError::from_string(format!("The \"name\" directive must be followed by a valid Rust identifier.")))
+        }
     }
 }

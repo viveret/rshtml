@@ -1,8 +1,10 @@
 use std::rc::Rc;
 
+use core_lib::asyncly::cancellation_token::CancellationToken;
+use mvc_lib::view::rusthtml::{parser_parts::peekable_tokentree::StreamPeekableTokenTree};
 use mvc_lib::view::rusthtml::irust_to_rusthtml_converter::IRustToRustHtmlConverter;
-use mvc_lib::view::rusthtml::{directives::markdownfile_const_directive::MarkdownFileConstDirective, rusthtml_token::RustHtmlToken};
-use mvc_lib::view::rusthtml::peekable_tokentree::PeekableTokenTree;
+use mvc_lib::view::rusthtml::rusthtml_token::RustHtmlToken;
+use mvc_lib::view::rusthtml::directives::markdownfile_const_directive::MarkdownFileConstDirective;
 use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
 use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use proc_macro2::{Ident, TokenTree, Span};
@@ -16,13 +18,14 @@ pub fn convert_mdfile_const_directive_test() {
     let parser_context = Rc::new(RustHtmlParserContext::new(false, false, "Test".to_string()));
     let parser = RustToRustHtmlConverter::new(parser_context);
     let mut output = vec![];
-    let it = PeekableTokenTree::new(quote::quote! { "test.md" });
+    let it = StreamPeekableTokenTree::new(quote::quote! { "test.md" });
+    let ct = Rc::new(CancellationToken::new());
 
     let identifier = Ident::new("test", Span::call_site());
     let ident_token = TokenTree::Ident(identifier.clone());
 
     let _result = MarkdownFileConstDirective::convert_mdfile_const_directive(
-        &identifier, &ident_token, Rc::new(parser), &mut output, Rc::new(it)
+        parser_context, &identifier, &ident_token, Rc::new(parser), &mut output, Rc::new(it), ct
     ).unwrap();
 
     assert_eq!(output.len(), 1);

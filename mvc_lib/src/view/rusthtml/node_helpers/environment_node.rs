@@ -1,11 +1,10 @@
 use std::rc::Rc;
 
-use crate::view::rusthtml::ihtml_tag_parse_context::IHtmlTagParseContext;
+use crate::view::parserv3::contexts::ihtml_tag_parse_context::IHtmlTagParseContext;
+use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::parserv3::converters::inode_parsed::IHtmlNodeParsed;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentOrPunct};
-use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-
-use super::inode_parsed::IHtmlNodeParsed;
 
 // The EnvironmentHtmlNodeParsed struct is used to parse the environment tag.
 // The environment tag is used to conditionally render a section of the view based on the environment name.
@@ -156,8 +155,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
             }
         }
 
-        let binding = tag_context.get_main_context().get_output_buffer().expect("tag_context.get_main_context().get_output_buffer()");
-        let mut output = binding.borrow_mut();
+        let output = tag_context.get_main_context().get_output_buffer().expect("tag_context.get_main_context().get_output_buffer()");
         
         return match _keep_or_remove {
             Some(_keep_or_remove) => {
@@ -179,7 +177,7 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
                     
                     match output.last() {
                         Some(RustHtmlToken::HtmlTagEnd(tag_end, _tag_end_tokens)) => {
-                            if tag_end == &tag_context.tag_name_as_str() {
+                            if tag_end == tag_context.tag_name_as_str() {
                                 let _pop_result = output.pop();
                             } else {
                                 panic!("mismatch while processing environment HTML tag (found {})", tag_end);

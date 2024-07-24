@@ -2,11 +2,11 @@ use std::rc::Rc;
 
 use proc_macro2::TokenTree;
 
+use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::parserv3::core::peekable::ipeekable_tokentree::IPeekableTokenTree;
+use crate::view::parserv3::core::peekable::stream_peekable_tokentree::StreamPeekableTokenTree;
+use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
-use crate::view::rusthtml::parser_parts::peekable_tokentree::StreamPeekableTokenTree;
-use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
-use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
-use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
 
 pub trait IConverterInput {
     fn convert(&self, input: Rc<dyn IPeekableTokenTree>) -> Rc<dyn IPeekableRustHtmlToken>;

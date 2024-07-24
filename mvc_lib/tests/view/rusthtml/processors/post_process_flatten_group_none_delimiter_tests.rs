@@ -1,7 +1,7 @@
-use mvc_lib::view::rusthtml::irust_processor::IRustProcessor;
-use mvc_lib::view::rusthtml::processors::post_process_flatten_group_none_delimiter::PostProcessFlattenGroupNoneDelimiter;
 use proc_macro2::{TokenTree, Group, Delimiter, TokenStream, Literal};
 
+use mvc_lib::view::parserv3::processors::post_process_flatten_group_none_delimiter::PostProcessFlattenGroupNoneDelimiter;
+use mvc_lib::view::parserv3::converters::irust_processor::IRustProcessor;
 
 
 #[test]

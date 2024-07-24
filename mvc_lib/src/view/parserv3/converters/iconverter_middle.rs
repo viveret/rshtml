@@ -2,7 +2,12 @@ use std::{cell::RefCell, rc::Rc};
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
 
-use crate::view::{parserv3::parserv3::IParserV3, rusthtml::{irusthtml_parser_context::IRustHtmlParserContext, parser_parts::peekable_rusthtmltoken::{IPeekableRustHtmlToken, VecPeekableRustHtmlToken}, rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken}};
+use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
+use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
+use crate::view::parserv3::parserv3::IParserV3;
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 pub trait IConverterMiddle {
     fn convert(&self,
@@ -117,13 +122,31 @@ impl ConverterNormal {
     ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
         match token {
             RustHtmlToken::Group(d, s, g) => {
-                todo!("convert_html group")
+                // recurse
+                match self.convert(s.clone(), context.clone(), ct.clone()) {
+                    Ok(new_input) => {
+                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::Group(d.clone(), new_input, g.clone())])))
+                    },
+                    Err(e) => {
+                        Err(e)
+                    }
+                }
             },
-            RustHtmlToken::Identifier(_i) => {
-                todo!("convert_html identifier")
+            RustHtmlToken::Identifier(_) | RustHtmlToken::Literal(_, _) => {
+                Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
             },
             RustHtmlToken::ReservedChar(c, p) => {
-                todo!("convert_html punctuation")
+                match c {
+                    '@' => {
+                        self.get_parser().get_converter_directives().convert(input, context, ct)
+                    },
+                    '.' | ',' | ';' | '!' | '=' | '<' | '>' | '/' | '&' => {
+                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
+                    },
+                    _ => {
+                        panic!("convert_html unknown punctuation: {}", c);
+                    }
+                }
             },
             _ => {
                 panic!("convert_html unknown token");
@@ -139,15 +162,23 @@ impl ConverterNormal {
     ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
         match token {
             RustHtmlToken::Group(d, s, g) => {
-                todo!("convert_rust group")
+                // recurse
+                match self.convert(s.clone(), context, ct) {
+                    Ok(new_input) => {
+                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::Group(d.clone(), new_input, g.clone())])))
+                    },
+                    Err(e) => {
+                        Err(e)
+                    }
+                }
             },
-            RustHtmlToken::Identifier(i) => {
-                todo!("convert_rust identifier")
+            RustHtmlToken::Identifier(_) | RustHtmlToken::Literal(_, _) => {
+                Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
             },
             RustHtmlToken::ReservedChar(c, p) => {
                 match c {
-                    '@' => {
-                        self.get_parser().get_converter_directives().convert(input, context, ct)
+                    '.' | ',' | ';' | '!' | '=' | '<' | '>' | '/' | '&' => {
+                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
                     },
                     _ => {
                         panic!("convert_rust unknown punctuation: {}", c);
@@ -155,7 +186,7 @@ impl ConverterNormal {
                 }
             },
             _ => {
-                panic!("convert_rust unknown token");
+                panic!("convert_rust unknown token: {:?}", token);
             }
         }
     }
@@ -175,13 +206,13 @@ impl IConverterMiddle for ConverterNormal {
             }
             let token = token.expect("peeked token");
             let result = if context.get_is_in_html_mode() {
-                self.convert_html(token, input.clone(), context.clone(), ct.clone())
+                self.convert_html(&token, input.clone(), context.clone(), ct.clone())
             } else {
-                self.convert_rust(token, input.clone(), context.clone(), ct.clone())
+                self.convert_rust(&token, input.clone(), context.clone(), ct.clone())
             };
             match result {
                 Ok(new_input) => {
-                    output.extend_from_slice(new_input.to_splice());
+                    output.extend(new_input.to_vec());
                 },
                 Err(e) => {
                     return Err(e);

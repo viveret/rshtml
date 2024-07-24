@@ -5,15 +5,11 @@ extern crate mvc_lib;
 use std::rc::Rc;
 
 use core_lib::asyncly::timer_cancellation_token::TimerCancellationToken;
-use mvc_lib::view::parserv3::parserv3::IParserV3;
+use mvc_lib::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
+use mvc_lib::view::parserv3::contexts::rusthtml_parser_context::RustHtmlParserContext;
+use mvc_lib::view::parserv3::core::peekable::stream_peekable_tokentree::StreamPeekableTokenTree;
 use mvc_lib::view::parserv3::parserv3::ParserV3;
-use mvc_lib::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_all::IRustHtmlParserAll;
-use mvc_lib::view::rusthtml::parser_parts::rusthtmlparser_all::RustHtmlParserAll;
-use mvc_lib::view::rusthtml::rust_to_rusthtml_converter::RustToRustHtmlConverter;
 use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
-use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
-use mvc_lib::view::rusthtml::rusthtml_parser_context::RustHtmlParserContext;
 use proc_macro2::TokenStream;
 use proc_macro2::Ident;
 use proc_macro2::TokenTree;
@@ -22,13 +18,15 @@ use quote::quote;
 
 #[proc_macro]
 pub fn rusthtml_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let parser = RustHtmlParserAll::new_default();
+    let parser = ParserV3::new_default();
     let ct = Rc::new(TimerCancellationToken::new(std::time::Duration::from_secs(5)));
-    let result = parser.expand_rust(input.into(), ct.clone());
+    let context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
+    let it = Rc::new(StreamPeekableTokenTree::new(input.into()));
+    let result = parser.expand(it, context, ct.clone());
     ct.stop().expect("could not stop timer");
     match result {
         Ok(tokens) => {
-            tokens.into()
+            tokens.to_stream().into()
         },
         Err(err) => {
             let err_str = format!("could not compile rust html: {:?}", err);
@@ -40,25 +38,12 @@ pub fn rusthtml_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 fn call_parser_expand(
     input: proc_macro::TokenStream,
     context: Rc<dyn IRustHtmlParserContext>,
-    use_new_parser: bool,
-    use_v3_parser: bool,
-) -> (Result<TokenStream, RustHtmlError>, Option<Rc<RustHtmlParserAll>>, Option<Rc<RustHtmlParser>>) {
+) -> (Result<TokenStream, RustHtmlError>, Option<Rc<ParserV3>>) {
     let ct = Rc::new(TimerCancellationToken::new(std::time::Duration::from_secs(5)));
-    let mut result: Option<(Result<TokenStream, RustHtmlError>, Option<Rc<RustHtmlParserAll>>, Option<Rc<RustHtmlParser>>)> = None;
-    if use_v3_parser {
-        let parser3 = ParserV3::new_default();
-        let res = parser3.expand_tokentree(input.into(), context.clone(), ct.clone());
-        result = Some((res, None, None));
-    } else if use_new_parser {
-        let parser1 = RustHtmlParserAll::new_default();
-        let res = parser1.expand_rust_with_context(context.clone(), input.into(), ct.clone());
-        result = Some((res, Some(parser1.clone()), None));
-    } else {
-        let parser2 = Rc::new(RustHtmlParser::new(context.clone()));
-        parser2.parser.assign_shared_parser(parser2.clone());
-        let res = parser2.expand_tokenstream(input.into(), ct.clone());
-        result = Some((res, None, Some(parser2.clone())));
-    };
+    let mut result: Option<(Result<TokenStream, RustHtmlError>, Option<Rc<ParserV3>>)> = None;
+    let parser3 = ParserV3::new_default();
+    let res = parser3.expand_tokentree(input.into(), context.clone(), ct.clone());
+    result = Some((res, None));
     ct.stop().expect("could not stop timer");
     result.unwrap()
 }
@@ -66,11 +51,8 @@ fn call_parser_expand(
 // puts render function into a structure with additional functionality and information
 #[proc_macro]
 pub fn rusthtml_view_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let use_new_parser = false;
-    let use_v3_parser = true;
-
     let parse_context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
-    let (result, _, _) = call_parser_expand(input, parse_context.clone(), use_new_parser, use_v3_parser);
+    let (result, _) = call_parser_expand(input, parse_context.clone());
 
     match result {
         Ok(html_render_fn2) => {

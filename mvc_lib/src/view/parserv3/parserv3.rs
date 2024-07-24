@@ -2,22 +2,17 @@ use std::rc::Rc;
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::TokenStream;
-use proc_macro2::TokenTree;
 
-use crate::view::rusthtml::directives::model_directive::ModelDirective;
-use crate::view::rusthtml::directives::name_directive::NameDirective;
-use crate::view::rusthtml::directives::viewstart_directive::ViewStartDirective;
-use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::parser_parts::peekable_tokentree::{IPeekableTokenTree, StreamPeekableTokenTree};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
+use super::contexts::irusthtml_parser_context::IRustHtmlParserContext;
 use super::converters::converter_directives::ConverterDirectives;
 use super::converters::iconverter_output::{ConverterOutput, IConverterOutput};
 use super::converters::iconverter_middle::{ConverterMiddle, IConverterMiddle};
 use super::converters::iconverter_input::{ConverterInput, IConverterInput};
 use super::converters::iparserv3_rust_parser::{ParserV3RustParser, IParserV3RustParser};
-
-use crate::view::rusthtml::directives::use_directive::UseDirective;
+use super::core::peekable::ipeekable_tokentree::IPeekableTokenTree;
+use super::core::peekable::stream_peekable_tokentree::StreamPeekableTokenTree;
 
 pub trait IParserV3 {
     fn get_converter_in(&self) -> Rc<dyn IConverterInput>;

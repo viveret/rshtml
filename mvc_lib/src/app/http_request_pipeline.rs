@@ -52,10 +52,10 @@ impl HttpRequestPipeline {
     // creates HTTP request pipeline as a service.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
-            ServiceCollectionExtensions::get_required_single::<dyn IHttpOptions>(services.clone()),
+            ServiceCollectionExtensions::get_required_single::<dyn IHttpOptions>(services),
             LoggingService::get_service(services),
             // ServiceCollectionExtensions::get_required_multiple::<dyn IHttpErrorHandler>(services),
-            ServiceCollectionExtensions::get_required_single::<dyn IErrorHandlerService>(services.clone()),
+            ServiceCollectionExtensions::get_required_single::<dyn IErrorHandlerService>(services),
         )) as Rc<dyn IHttpRequestPipeline>)]
     }
 

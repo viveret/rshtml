@@ -1,8 +1,6 @@
 use std::rc::Rc;
 
 use core_lib::asyncly::cancellation_token::CancellationToken;
-use mvc_lib::view::rusthtml::rusthtml_parser::RustHtmlParser;
-
 
 #[test]
 pub fn test_html_tag_attributes_bug() {

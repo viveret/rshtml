@@ -3,3 +3,8 @@ pub mod iconverter_input;
 pub mod iconverter_middle;
 pub mod iconverter_output;
 pub mod iparserv3_rust_parser;
+pub mod irust_processor;
+pub mod irusthtml_processor;
+pub mod itag_parsed;
+pub mod inode_parsed;
+pub mod rusthtml_parser_sub_processors;

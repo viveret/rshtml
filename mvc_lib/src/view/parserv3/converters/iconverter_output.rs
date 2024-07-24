@@ -7,14 +7,14 @@ use proc_macro2::Punct;
 use proc_macro2::TokenStream;
 use proc_macro2::TokenTree;
 
-use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::VecPeekableRustHtmlToken;
+use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::parserv3::core::peekable::ipeekable_tokentree::IPeekableTokenTree;
+use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
+use crate::view::parserv3::core::peekable::vec_peekable_tokentree::VecPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_token::RustHtmlIdentAndPunctOrLiteral;
 use crate::view::rusthtml::rusthtml_token::RustHtmlIdentOrPunct;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
-use crate::view::rusthtml::parser_parts::peekable_tokentree::VecPeekableTokenTree;
-use crate::view::rusthtml::parser_parts::peekable_tokentree::IPeekableTokenTree;
-use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
 
 pub trait IConverterOutput {
     fn convert(&self, input: Rc<dyn IPeekableRustHtmlToken>) -> Result<Rc<dyn IPeekableTokenTree>, RustHtmlError>;
@@ -127,7 +127,7 @@ impl IConverterOutput for ConverterOutput {
             let token = token.unwrap();
             input.next();
             // todo: check for empty group
-            output.push(self.convert_token(token, input.clone())?);
+            output.push(self.convert_token(&token, input.clone())?);
         }
         Ok(Rc::new(VecPeekableTokenTree::new(output)))
     }
@@ -135,7 +135,7 @@ impl IConverterOutput for ConverterOutput {
     fn parse_rusthtmltokens_to_plain_rust(self: &Self, rusthtml_tokens: &Vec<RustHtmlToken>) -> Result<Vec<TokenTree>, RustHtmlError> {
         let it = Rc::new(VecPeekableRustHtmlToken::new(rusthtml_tokens.clone()));
         let result = self.convert(it)?;
-        Ok(result.to_splice().to_vec())
+        Ok(result.to_vec())
     }
     
     fn convert_rusthtmltoken_to_tokentree(self: &Self, token: &RustHtmlToken, it: Rc<dyn IPeekableRustHtmlToken>) -> Result<TokenTree, RustHtmlError> {

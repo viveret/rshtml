@@ -2,12 +2,13 @@ use core::panic;
 use std::{cell::RefCell, rc::Rc};
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
+use proc_macro2::Delimiter;
 
+use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
-use crate::view::rusthtml::parser_parts::peekable_rusthtmltoken::IPeekableRustHtmlToken;
-use crate::view::rusthtml::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::rusthtml::directives::irusthtml_directive::IRustHtmlDirective;
 use crate::view::parserv3::parserv3::IParserV3;
 
 use super::iconverter_middle::IConverterMiddle;
@@ -35,20 +36,18 @@ impl IConverterMiddle for ConverterDirectives {
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
     ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
-        context.log_info("ConverterDirectives::convert".to_string());
+        // context.log_info("ConverterDirectives::convert".to_string());
         // need to peek for name which is an ident
-        match input.peek() {
-            Some(token) => {
+        match input.next() {
+            Some(ref token) => {
                 match token {
                     RustHtmlToken::Identifier(ident) => {
-                        // move forward one token
-                        input.next();
                         let name = ident.to_string();
                         let directive = context.try_get_directive(name.clone());
                         match directive {
                             Some(d) => {
                                 // execute the directive
-                                let v3result = d.execute_new_v3(context, ident, token, self.get_parser(), input.clone(), ct)?;
+                                let v3result = d.execute_new_v3(context, &ident, token, self.get_parser(), input.clone(), ct)?;
                                 if let Some(v3result) = v3result.1 {
                                     return Ok(v3result);
                                 } else {
@@ -56,14 +55,46 @@ impl IConverterMiddle for ConverterDirectives {
                                 }
                             }
                             None => {
-                                // panic
-                                panic!("No directive found for name: {}", name)
+                                return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![])));
                             }
                         }
-                    }
+                    },
+                    RustHtmlToken::ReservedChar(c, p) => {
+                        match c {
+                            '@' => {
+                                return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])));
+                            },
+                            '&' => {
+                                let mut tokens = vec![token.clone()];
+                                // recurse to get the next token
+                                let next = self.convert(input.clone(), context.clone(), ct.clone())?;
+                                while let Some(t) = next.next() {
+                                    tokens.push(t.clone());
+                                }
+                                return Ok(Rc::new(VecPeekableRustHtmlToken::new(tokens)));
+                            }
+                            _ => {
+                                panic!("Cannot handle reserved char {:?} after @", c)
+                            }
+                        }
+                    },
+                    RustHtmlToken::Literal(l, p) => {
+                        return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])));
+                    },
+                    RustHtmlToken::Group(delimiter, stream, group) => {
+                        match delimiter {
+                            Delimiter::Brace => {
+                                self.get_parser().get_converter_middle().convert(stream.clone(), context, ct)
+                            },
+                            _ => {
+                                // panic
+                                panic!("Cannot handle group type {:?} after @", delimiter)
+                            }
+                        }
+                    },
                     _ => {
                         // panic
-                        panic!("No identifier found after @")
+                        panic!("No identifier found after @ (found {:?})", token)
                     }
                 }
             }

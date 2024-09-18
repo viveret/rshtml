@@ -1,5 +1,10 @@
+use std::backtrace::Backtrace;
 use std::error::Error;
 use std::fmt;
+use std::rc::Rc;
+
+use core_lib::asyncly::cancellation_token::CancellationToken;
+use core_lib::asyncly::icancellation_token::ICancellationToken;
 
 
 // this struct is used to represent an error that occurs while parsing RustHTML.
@@ -19,5 +24,10 @@ impl RustHtmlError {
     
     pub fn from_string(s: String) -> RustHtmlError {
         return Self(s);
+    }
+
+    pub fn from_cancellationtoken(ct: Rc<dyn ICancellationToken>) -> RustHtmlError {
+        let bt = Backtrace::capture();
+        return Self::from_string(format!("CancellationToken was cancelled at {}: {:?}", bt, ct.get_cancelled_reason()))
     }
 }

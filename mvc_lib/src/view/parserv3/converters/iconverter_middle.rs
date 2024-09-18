@@ -78,6 +78,9 @@ impl IConverterMiddle for ConverterMiddleChain {
         ct: Rc<dyn ICancellationToken>
     ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
         let mut input = input;
+        if self.chain.is_empty() {
+            panic!("no converters in ConverterMiddleChain");
+        }
         for converter in &self.chain {
             let result = converter.convert(input, context.clone(), ct.clone());
             match result {
@@ -120,6 +123,12 @@ impl ConverterNormal {
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
     ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
+        if ct.is_cancelled() {
+            return Err(RustHtmlError::from_cancellationtoken(ct));
+        }
+
+        // println!("convert_html: {}", token.to_string());
+
         match token {
             RustHtmlToken::Group(d, s, g) => {
                 // recurse
@@ -138,13 +147,30 @@ impl ConverterNormal {
             RustHtmlToken::ReservedChar(c, p) => {
                 match c {
                     '@' => {
-                        self.get_parser().get_converter_directives().convert(input, context, ct)
+                        context.push_is_in_html_mode(false);
+                        let x = self.get_parser().get_converter_directives().convert(input, context.clone(), ct);
+                        context.pop_is_in_html_mode();
+                        x
                     },
-                    '.' | ',' | ';' | '!' | '=' | '<' | '>' | '/' | '&' => {
+                    '.' | ',' | ':' | ';' | '!' | '=' | '+' | '-' | '/' | '\\' | '|' | '&' => {
                         Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
                     },
+                    '<' => {
+                        // start of tag
+                        // what happened to the tag parser?
+                        // peek after start of tag
+                        // println!("peek tag start: {:?}", input.peek().unwrap());
+                        let result = self.get_parser().get_html_parser().parse_tag(input, context, ct)?;
+                        if let Some(x) = result.1 {
+                            return Ok(x);
+                        } else {
+                            panic!("oops");
+                        }
+                    }
                     _ => {
-                        panic!("convert_html unknown punctuation: {}", c);
+                        let next_token = input.next();
+                        let bt = std::backtrace::Backtrace::capture();
+                        panic!("convert_html unknown punctuation: {}, next token: {:?}\n{}", c, next_token, ToString::to_string(&bt).as_str());
                     }
                 }
             },
@@ -160,6 +186,12 @@ impl ConverterNormal {
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
     ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
+        if ct.is_cancelled() {
+            return Err(RustHtmlError::from_cancellationtoken(ct));
+        }
+
+        // println!("convert_rust: {}", token.to_string());
+
         match token {
             RustHtmlToken::Group(d, s, g) => {
                 // recurse
@@ -177,11 +209,40 @@ impl ConverterNormal {
             },
             RustHtmlToken::ReservedChar(c, p) => {
                 match c {
-                    '.' | ',' | ';' | '!' | '=' | '<' | '>' | '/' | '&' => {
+                    '.' | ',' | ';' | ':' | '!' | '=' | '>' | '/' | '&' | '|' | '-' => {
                         Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
                     },
+                    '<' => {
+                        // check if tag name
+                        // let possible_tag_name = input.peek();
+                        // if let Some(RustHtmlToken::Identifier(i)) = possible_tag_name {
+                        //     match i.to_string().as_str() {
+                        //         "h1" | "h2" | "h3" | "p" | "body" | "html" | "div" => {
+                        //             panic!("are you sure? {}", Backtrace::capture());
+                        //         },
+                        //         _ => {
+                        //         }
+                        //     }
+                        // }
+
+                        // is ok
+                        // Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
+
+                        // assume start of HTML?
+                        context.push_is_in_html_mode(true);
+                        let r = self.convert_html(token, input, context.clone(), ct);
+                        context.pop_is_in_html_mode();
+                        r
+                    },
+                    '@' => {
+                        let append_token = RustHtmlToken::AppendToHtml(
+                            self.get_parser().get_rust_parser().parse_expression(input, context, ct)?
+                        );
+                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![append_token])))
+                    },
                     _ => {
-                        panic!("convert_rust unknown punctuation: {}", c);
+                        let next_token = input.next();
+                        panic!("convert_rust unknown punctuation: {}, next token: {:?}", c, next_token);
                     }
                 }
             },
@@ -200,25 +261,41 @@ impl IConverterMiddle for ConverterNormal {
     ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
         let mut output = vec![];
         loop {
+            if ct.is_cancelled() {
+                return Err(RustHtmlError::from_cancellationtoken(ct.clone()));
+            }
+
             let token = input.next();
             if token.is_none() {
                 break;
             }
             let token = token.expect("peeked token");
-            let result = if context.get_is_in_html_mode() {
+            let is_in_html_mode = context.get_is_in_html_mode();
+            let result = if is_in_html_mode {
                 self.convert_html(&token, input.clone(), context.clone(), ct.clone())
             } else {
                 self.convert_rust(&token, input.clone(), context.clone(), ct.clone())
             };
             match result {
-                Ok(new_input) => {
-                    output.extend(new_input.to_vec());
+                Ok(result_output) => {
+
+                    // check output does not start with @
+                    if let Some(token) = result_output.peek() {
+                        if let RustHtmlToken::ReservedChar(c, p) = token {
+                            if c == '@' {
+                                panic!("wtf (is_in_html_mode = {})", is_in_html_mode);
+                            }
+                        }
+                    }
+
+                    output.extend(result_output.to_vec());
                 },
                 Err(e) => {
                     return Err(e);
                 }
             }
         }
+
         Ok(Rc::new(VecPeekableRustHtmlToken::new(output)))
     }
 

@@ -73,7 +73,7 @@ pub fn parserv3_inject() {
     let parser = ParserV3::new_default();
     let input = quote::quote! {
         @name "HelloWorld"
-        @inject StacksHtmlHelpers::<AddViewModel>: custom_html
+        @inject custom_html: StacksHtmlHelpers::<AddViewModel>
     };
     let context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let ct = Rc::new(CancellationToken::new());
@@ -144,7 +144,7 @@ pub fn parserv3_model_with_inject() {
     let input = quote::quote! {
         @name "HelloWorld"
         @model AddViewModel
-        @inject StacksHtmlHelpers::<AddViewModel>: custom_html
+        @inject custom_html as StacksHtmlHelpers::<AddViewModel>
     };
     let context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
     let ct = Rc::new(CancellationToken::new());

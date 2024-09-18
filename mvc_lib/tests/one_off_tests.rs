@@ -1,6 +1,121 @@
-use std::rc::Rc;
+use std::{collections::HashMap, rc::Rc};
 
-use core_lib::asyncly::cancellation_token::CancellationToken;
+use core_lib::{assert::assert_tokentree::assert_tokentree_stream, asyncly::cancellation_token::CancellationToken};
+use quote::quote;
+
+use mvc_lib::{contexts::view_context, view::{macro_impl::{rusthtml_view_macro_impl, rusthtml_view_macro_with_context}, parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext, rusthtml::html_string::HtmlString}};
+
+
+
+#[test]
+pub fn test_parse_bug() {
+    let html = quote! {
+        @viewstart "dev/_view_start.rs"
+        @name "dev_controller_details"
+        @model crate::view_models::dev::controllers::ControllerDetailsViewModel
+        @{
+            let route_path = model.name;
+            let title = format!("Controller details of {}", route_path);
+            view_context.insert_str("Title", title.clone());
+
+            let actions = model.actions;
+            let controller_features = model.features;
+            let controller_attributes = model.attributes;
+            let controller_properties = model.properties;
+            let controller_methods = model.methods;
+        }
+        
+        @html.link(url.url_action(false, Some(false), None, Some("controllers"), Some("Dev"), None, None).as_str(), "< Back to controllers list", None)
+        <ol>
+        @{
+            for f in controller_features {
+            <li>
+                @f.to_string()
+            </li>
+            }
+        }
+        </ol>
+    };
+
+
+    let result = rusthtml_view_macro_impl(html);
+    let result_len = result.into_iter().count();
+
+    assert_ne!(0, result_len)
+}
+
+
+#[test]
+pub fn test_parse_empty() {
+    let html = quote! {
+        @viewstart "dev/_view_start.rs"
+        @name "dev_controller_details"
+        @model crate::view_models::dev::controllers::ControllerDetailsViewModel
+    };
+
+
+    let result = rusthtml_view_macro_impl(html);
+    let result_len = result.into_iter().count();
+
+    assert_ne!(0, result_len)
+}
+
+
+// #[test]
+// pub fn test_rendered_code() {
+//     let view_context = 0;
+//     let html_output = 0;
+//     let custom_html = 0;
+//     let url = 0;
+//     let model = 0;
+//     view_context.insert_str("Title", "Add Auth Role - Dev".to_string());
+//     html_output.write_html(HtmlString :: from(custom_html.link(url.url_action(false, Some(false), None, Some("index"), Some("AuthRoles"), None, None).as_str(), "< Back to auth roles list", None)));
+//     html_output.write_html_str("<h1");
+//     html_output.write_html_str(">");
+//     html_output.write_html(HtmlString :: from(view_context.get_str("Title")));
+//     html_output.write_html_str("</h1>");
+//     if let Some(validation_result) = &model.validation_result
+//     {
+//         let html_class = if validation_result.has_errors { "fc-error" } else
+//         { "fc-success" }; html_output.write_html_str("<p");
+//         html_output.write_html_str(">");
+//         html_output.write_html(HtmlString ::
+//         from(validation_result.message.clone()));
+//         html_output.write_html_str("</p>");
+//     }
+//     html_output.write_html(HtmlString ::
+//     from(custom_html.form(http::method::Method::POST,
+//     url.url_action(false, Some(false), None, Some("add"), Some("AuthRoles"), None,
+//     None).into(), Some(&HashMap::new()), || -> HtmlString
+//     {
+//         let role_name_label = "Role Name";
+//         // @custom_html.label("role", role_name_label, None)
+//         // @custom_html.input("role", "text", model.role.as_str(), None)
+//         // @custom_html.submit("Submit", None)
+//         HtmlString::from("")
+//     })));
+// }
+
+
+#[test]
+pub fn test_parse_single_use() {
+    let html = quote! {
+        @viewstart "dev/_view_start.rs"
+        @name "dev_controller_details"
+        @model crate::view_models::dev::controllers::ControllerDetailsViewModel
+        @use quote::quote
+    };
+
+    let rust_expected = quote! {
+        use quote::quote;
+    };
+
+    let result = rusthtml_view_macro_with_context(html.clone());
+    assert_tokentree_stream(rust_expected, result.0.get_use_statements_stream());
+}
+
+
+
 
 #[test]
 pub fn test_html_tag_attributes_bug() {

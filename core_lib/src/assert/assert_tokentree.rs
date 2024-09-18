@@ -43,28 +43,43 @@ pub fn assert_tokentree_literal(literal: &TokenTree, expected: &str) -> Literal 
 }
 
 // assert that the token is a stream with the given value
-pub fn assert_tokentree_stream(stream: &proc_macro2::TokenStream, expected: &str) {
-    for token in stream.clone() {
-        match &token {
-            proc_macro2::TokenTree::Ident(_) => {
-                assert_tokentree_ident(&token, expected);
-            },
-            proc_macro2::TokenTree::Punct(_) => {
-                match expected.chars().next() {
-                    Some(next) => {
-                        assert_tokentree_punct(&token, next);
-                    },
-                    None => {
-                        panic!("expected punct, received {:?}", token);
-                    }
-                }
-            },
-            proc_macro2::TokenTree::Literal(_) => {
-                assert_tokentree_literal(&token, expected);
-            },
-            proc_macro2::TokenTree::Group(_) => {
-                assert_tokentree_group(&token, proc_macro2::Delimiter::Brace);
-            },
-        }
+pub fn assert_tokentree_stream(left: proc_macro2::TokenStream, right: proc_macro2::TokenStream) {
+    let mut it_left = left.into_iter();
+    let mut it_right = right.into_iter();
+    while let Some((token_left, token_right)) = iterate_left_and_right(&mut it_left, &mut it_right) {
+        assert_tokentree(token_left, token_right);
     }
+
+    // Ensure no extra tokens are left in either stream
+    assert!(it_left.next().is_none(), "Left token stream has extra tokens.");
+    assert!(it_right.next().is_none(), "Right token stream has extra tokens.");
+}
+
+// Helper function to iterate over both token streams and return pairs of tokens
+fn iterate_left_and_right<'a>(
+    it_left: &mut impl Iterator<Item = TokenTree>,
+    it_right: &mut impl Iterator<Item = TokenTree>
+) -> Option<(TokenTree, TokenTree)> {
+    let token_left = it_left.next();
+    let token_right = it_right.next();
+    
+    match (token_left, token_right) {
+        (Some(tl), Some(tr)) => Some((tl, tr)),
+        (None, None) => None, // Both iterators exhausted
+        (Some(tl), None) => panic!(
+            "Mismatch: Left token stream has more tokens than the right.\n\
+             Extra token in left: `{}`",
+            tl
+        ),
+        (None, Some(tr)) => panic!(
+            "Mismatch: Right token stream has more tokens than the left.\n\
+             Extra token in right: `{}`",
+            tr
+        ),
+    }
+}
+
+// Function to assert equality of individual tokens
+fn assert_tokentree(token_left: TokenTree, token_right: TokenTree) {
+    assert_eq!(token_left.to_string(), token_right.to_string(), "Token mismatch: left = {}, right = {}", token_left, token_right);
 }

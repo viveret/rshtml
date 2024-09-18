@@ -78,16 +78,18 @@ pub trait IRustHtmlParserContext {
     fn mut_punct_scope_stack(self: &Self) -> RefMut<Vec<char>>;
     // get the use statements as mutable.
     fn push_use_statements(self: &Self, rust: TokenStream);
+    
+    fn get_implicit_use_statements(self: &Self) -> proc_macro2::TokenStream;
     // get the use statements as a single token stream.
     fn get_use_statements_stream(self: &Self) -> proc_macro2::TokenStream;
     // push the inject statements to a list of statements to be injected into the view.
     fn push_inject_statements(self: &Self, rust: TokenStream);
-    // push the inject statements to a list of statements to be injected into the view, using RustHtmlToken.
-    fn push_inject_statements_rshtml(self: &Self, rust: Vec<RustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>);
     // get the inject statements as a token stream.
     fn get_inject_statements_stream(self: &Self) -> proc_macro2::TokenStream;
     // get the params as mutable.
     fn mut_params(self: &Self) -> RefMut<HashMap<String, String>>;
+    // insert into the params
+    fn insert_params(self: &Self, key: String, value: String);
     // get the environment name.
     fn get_environment_name(self: &Self) -> String;
     // get the raw RustHtml code.

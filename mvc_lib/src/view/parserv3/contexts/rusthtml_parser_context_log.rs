@@ -45,6 +45,7 @@ impl_with_logging!(
     fn push_inject_statements(&self, rust: TokenStream);
     fn get_inject_statements_stream(&self) -> proc_macro2::TokenStream;
     fn mut_params(&self) -> std::cell::RefMut<std::collections::HashMap<String, String>>;
+    fn insert_params(&self, key: String, value: String);
     fn get_environment_name(&self) -> String;
     fn get_raw(&self) -> String;
     fn set_raw(&self, value: String);
@@ -62,7 +63,7 @@ impl_with_logging!(
     fn get_rust_preprocessors(&self) -> Vec<Rc<dyn IRustProcessor>>;
     fn get_rust_postprocessors(&self) -> Vec<Rc<dyn IRustProcessor>>;
     fn htmltag_scope_stack_pop(&self) -> Option<String>;
-    fn push_inject_statements_rshtml(&self, rust: Vec<RustHtmlToken>, ctx: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>);
+    fn get_implicit_use_statements(&self) -> proc_macro2::TokenStream;
     fn get_use_statements_stream(&self) -> proc_macro2::TokenStream;
     fn get_max_call_stack_count(&self) -> usize;
     fn check_call_stack_count(&self) -> Result<(), RustHtmlError>;

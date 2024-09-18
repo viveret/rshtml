@@ -9,5 +9,5 @@ use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 // this trait is used to allow the HtmlTagParseContext to call back to the HtmlNodeParsed
 pub trait IHtmlNodeParsed {
     fn matches(&self, tag_name: &str) -> bool;
-    fn on_node_parsed(&self, tag_context: Rc<dyn IHtmlTagParseContext>, html_context: Rc<dyn IRustHtmlParserContext>) -> Result<bool, RustHtmlError>;
+    fn on_node_parsed(&self, tag_context: Rc<dyn IHtmlTagParseContext>) -> Result<bool, RustHtmlError>;
 }

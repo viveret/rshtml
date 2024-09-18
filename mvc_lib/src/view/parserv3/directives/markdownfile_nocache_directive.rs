@@ -5,7 +5,7 @@ use proc_macro2::{Ident, TokenTree};
 
 use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
-use crate::view::parserv3::core::rusthtml_directive_result::RustHtmlDirectiveResultV3;
+use crate::view::parserv3::core::rusthtml_directive_result::{RustHtmlDirectiveResult, RustHtmlDirectiveResultV3};
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 
 use super::irusthtml_directive::IRustHtmlDirective;
@@ -170,6 +170,8 @@ impl IRustHtmlDirective for MarkdownFileNoCacheDirective {
     }
     
     fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
-        todo!("execute_new_v3 mdfile_nocache directive")
+        let ident_tokens = parser.get_rust_parser().parse_var(it, ct);
+        context.insert_params("mdfile_nocache".to_string(), ident_tokens.unwrap()[0].to_string());
+        Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, None))
     }
 }

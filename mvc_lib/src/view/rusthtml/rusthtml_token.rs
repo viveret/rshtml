@@ -22,6 +22,11 @@ impl RustHtmlIdentOrPunct {
             RustHtmlIdentOrPunct::Punct(punct) => punct.to_string(),
         }
     }
+
+    pub fn to_string_join(items: &Vec<RustHtmlIdentOrPunct>) -> String {
+        items.iter().map(|x| x.to_string())
+                    .collect::<Vec<String>>().concat()
+    }
 }
 
 // a RustHtml token for a Rust identifier or punctuation or literal.

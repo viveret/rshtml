@@ -4,7 +4,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     @viewstart "dev/_view_start.rs"
     @name "dev_log_add"
     @model LogAddViewModel
-    @inject StacksHtmlHelpers::<LogAddViewModel>: custom_html
+    @inject custom_html: StacksHtmlHelpers::<LogAddViewModel>
     @{
         view_context.insert_str("Title", "Add to Log - Dev".to_string());
     }

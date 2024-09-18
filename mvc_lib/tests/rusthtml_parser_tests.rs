@@ -2,6 +2,7 @@ pub mod action_results;
 pub mod contexts;
 pub mod entity;
 pub mod view;
+pub mod view_tests;
 pub mod one_off_tests;
 
 #[test]

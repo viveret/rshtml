@@ -5,6 +5,7 @@ use proc_macro2::{Ident, TokenTree, TokenStream};
 
 use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use crate::view::parserv3::core::rusthtml_directive_result::{RustHtmlDirectiveResult, RustHtmlDirectiveResultV3};
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
 
@@ -28,51 +29,15 @@ impl IRustHtmlDirective for UseDirective {
     fn matches(self: &Self, name: &String) -> bool {
         name == "use"
     }
-
-    // fn execute(self: &Self, context: Rc<dyn IRustHtmlParserContext>, _identifier: &Ident, _ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, _ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
-    //     // expecting type identifier
-    //     if let Ok(type_ident_tokens) = parser.get_old_parser().parse_type_identifier(it) {
-    //         let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_tokens)); // .to_splice().to_vec()
-    //         context.push_use_statements(TokenStream::from(quote::quote! { use #inner_tokenstream; }));
-    //         Ok(RustHtmlDirectiveResult::OkContinue)
-    //     } else {
-    //         Err(RustHtmlError::from_str("Error parsing use directive"))
-    //     }
-    // }
     
-    // fn execute_new(self: &Self, context: Rc<dyn IRustHtmlParserContext>, _identifier: &Ident, _ident_token: &RustHtmlToken, parser: Rc<dyn IRustHtmlParserAll>, _output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
-    //     if let Ok(type_ident_tokens) = parser.get_rust_parser().parse_type_identifier(it, ct.clone()) {
-    //         match parser.get_converter_out().convert_rusthtmltokens_to_plain_rust(type_ident_tokens, context.clone(), ct) {
-    //             Ok(type_ident_rust_out) => {
-    //                 let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_rust_out));
-    //                 context.push_use_statements(TokenStream::from(quote::quote! { use #inner_tokenstream; }));
-    //                 Ok(RustHtmlDirectiveResult::OkContinue)
-    //             },
-    //             Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.to_string()))
-    //         }
-    //     } else {
-    //         Err(RustHtmlError::from_str("Error parsing use directive"))
-    //     }
-    // }
-    
-    // fn execute_old(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<crate::view::rusthtml::rusthtml_parser::RustHtmlParser>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
-    //     match parser.parser.parse_type_identifier(it.clone()) {
-    //         Ok(type_ident_tokens) => {
-    //             let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_tokens));
-    //             context.push_use_statements(TokenStream::from(quote::quote! { use #inner_tokenstream; }));
-    //             Ok(RustHtmlDirectiveResult::OkContinue)
-    //         },
-    //         Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.to_string()))
-    //     }
-    // }
-    
-    fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
+    fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, _: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         match parser.get_rust_parser().parse_type_identifier(it.clone(), ct.clone()) {
             Ok(type_ident_tokens) => {
-                match parser.get_converter_out().convert(it) {
+                let type_ident_tokens_stream = Rc::new(VecPeekableRustHtmlToken::new(type_ident_tokens));
+                match parser.get_converter_out().convert(type_ident_tokens_stream, ct) {
                     Ok(type_ident_rust_out) => {
                         let inner_tokenstream = proc_macro2::TokenStream::from(TokenStream::from_iter(type_ident_rust_out.to_stream()));
-                        context.push_use_statements(TokenStream::from(quote::quote! { use #inner_tokenstream; }));
+                        context.push_use_statements(TokenStream::from(quote::quote! { #identifier #inner_tokenstream; }));
                         Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, None))
                     },
                     Err(RustHtmlError(err)) => Err(RustHtmlError::from_string(err.to_string()))

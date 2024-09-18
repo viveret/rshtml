@@ -5,6 +5,7 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::Delimiter;
 
 use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
+use crate::view::parserv3::core::peekable::empty_peekable_rusthtmltoken::EmptyPeekableRustHtmlToken;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -38,33 +39,51 @@ impl IConverterMiddle for ConverterDirectives {
     ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
         // context.log_info("ConverterDirectives::convert".to_string());
         // need to peek for name which is an ident
-        match input.next() {
+        match input.peek() {
             Some(ref token) => {
+                // println!("directive convert token: {}", token.to_string());
                 match token {
                     RustHtmlToken::Identifier(ident) => {
                         let name = ident.to_string();
+                        // println!("{} is an actual directive, checking if exists", name.as_str());
                         let directive = context.try_get_directive(name.clone());
                         match directive {
                             Some(d) => {
+                                // println!("directive {} exists", name.as_str());
                                 // execute the directive
+                                input.next();
                                 let v3result = d.execute_new_v3(context, &ident, token, self.get_parser(), input.clone(), ct)?;
                                 if let Some(v3result) = v3result.1 {
+                                    // println!("output of {} directive:", name);
+                                    // for t in v3result.to_vec().into_iter() {
+                                    //     print!("{} ", t.to_string());
+                                    // }
+                                    // println!();
                                     return Ok(v3result);
                                 } else {
-                                    return Ok(input);
+                                    return Ok(Rc::new(EmptyPeekableRustHtmlToken::new()));
                                 }
                             }
                             None => {
-                                return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![])));
+                                let exp = self.get_parser().get_rust_parser().parse_expression(input, context.clone(), ct)?;
+                                // print!("output of parse expression: ");
+                                // for t in exp.clone().into_iter() {
+                                //     print!("{} ", t.to_string());
+                                // }
+                                // println!();
+                                return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::AppendToHtml(exp)])));
                             }
                         }
                     },
                     RustHtmlToken::ReservedChar(c, p) => {
                         match c {
                             '@' => {
+                                println!("escaped @");
+                                input.next();
                                 return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])));
                             },
                             '&' => {
+                                input.next();
                                 let mut tokens = vec![token.clone()];
                                 // recurse to get the next token
                                 let next = self.convert(input.clone(), context.clone(), ct.clone())?;
@@ -79,11 +98,13 @@ impl IConverterMiddle for ConverterDirectives {
                         }
                     },
                     RustHtmlToken::Literal(l, p) => {
-                        return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])));
+                        input.next();
+                        return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::AppendToHtml(vec![token.clone()])])));
                     },
                     RustHtmlToken::Group(delimiter, stream, group) => {
                         match delimiter {
                             Delimiter::Brace => {
+                                input.next();
                                 self.get_parser().get_converter_middle().convert(stream.clone(), context, ct)
                             },
                             _ => {

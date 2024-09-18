@@ -4,7 +4,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     @viewstart "authroles/_view_start.rs"
     @name "authroles_add"
     @model AddViewModel
-    @inject StacksHtmlHelpers::<AddViewModel>: custom_html
+    @inject custom_html: StacksHtmlHelpers::<AddViewModel>
     @{
         view_context.insert_str("Title", "Add Auth Role - Dev".to_string());
     }

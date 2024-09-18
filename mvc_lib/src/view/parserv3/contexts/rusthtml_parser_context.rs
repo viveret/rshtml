@@ -6,6 +6,7 @@ use std::rc::Rc;
 use core_lib::asyncly::icancellation_token::ICancellationToken;
 use core_lib::sys::call_tracker::CallstackTracker;
 use proc_macro2::{TokenStream, TokenTree};
+use quote::quote;
 
 use crate::view::parserv3::converters::inode_parsed::IHtmlNodeParsed;
 use crate::view::parserv3::converters::irust_processor::IRustProcessor;
@@ -71,6 +72,8 @@ pub struct RustHtmlParserContext {
     pub impl_section: RefCell<Option<TokenStream>>,
     // the model type of the RustHtml code.
     pub model_type: RefCell<Option<Vec<TokenTree>>>,
+    // the use statements automatically included in the output code.
+    pub implicit_use_statements: TokenStream,
     // the use statements of the RustHtml code.
     pub use_statements: RefCell<Vec<TokenStream>>,
     // the inject statements of the RustHtml code.
@@ -128,44 +131,43 @@ impl RustHtmlParserContext {
             struct_section: RefCell::new(None),
             impl_section: RefCell::new(None),
             model_type: RefCell::new(None),
-            use_statements: RefCell::new(vec![
-                quote::quote!{
-                    use as_any::Downcast;
-                    use std::any::Any;
-                    use std::borrow::Cow;
-                    use std::cell::RefCell;
-                    use std::collections::HashMap;
-                    use std::error::Error;
-                    use std::rc::Rc;
-                    use std::io::Read;
-                    use std::ops::Deref;
-                    use std::sync::{Arc, RwLock};
+            implicit_use_statements: quote! {
+                use as_any::Downcast;
+                use std::any::Any;
+                use std::borrow::Cow;
+                use std::cell::RefCell;
+                use std::collections::HashMap;
+                use std::error::Error;
+                use std::rc::Rc;
+                use std::io::Read;
+                use std::ops::Deref;
+                use std::sync::{Arc, RwLock};
 
-                    use chrono::{DateTime, TimeZone, Utc};
-                    use proc_macro2::TokenStream;
+                use chrono::{DateTime, TimeZone, Utc};
+                use proc_macro2::TokenStream;
 
-                    use core_macro_lib::{ * };
-                    
-                    use mvc_lib::core::type_info::TypeInfo;
-                    use mvc_lib::core::html_buffer::IHtmlBuffer;
-                    use mvc_lib::core::html_buffer::HtmlBuffer;
-                    use mvc_lib::contexts::controller_context::IControllerContext;
-                    use mvc_lib::contexts::view_context::IViewContext;
-                    use mvc_lib::model_binder::imodel::IModel;
-                    use mvc_lib::model_binder::imodel::AnyIModel;
-                    use mvc_lib::services::service_collection::IServiceCollection;
-                    use mvc_lib::view::rusthtml::helpers::ihtml_helpers::IHtmlHelpers;
-                    use mvc_lib::view::rusthtml::helpers::html_helpers::HtmlHelpers;
-                    use mvc_lib::view::rusthtml::helpers::irender_helpers::IRenderHelpers;
-                    use mvc_lib::view::rusthtml::helpers::render_helpers::RenderHelpers;
-                    use mvc_lib::view::rusthtml::html_string::HtmlString;
-                    use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
-                    use mvc_lib::view::iview::IView;
-                    use mvc_lib::routing::iurl_helpers::IUrlHelpers;
-                    use mvc_lib::routing::url_helpers::UrlHelpers;
-                    use mvc_lib::routing::route_values_builder::RouteValuesBuilder;
-                }.into(),
-            ]),
+                use core_macro_lib::{ * };
+                
+                use mvc_lib::core::type_info::TypeInfo;
+                use mvc_lib::core::html_buffer::IHtmlBuffer;
+                use mvc_lib::core::html_buffer::HtmlBuffer;
+                use mvc_lib::contexts::controller_context::IControllerContext;
+                use mvc_lib::contexts::view_context::IViewContext;
+                use mvc_lib::model_binder::imodel::IModel;
+                use mvc_lib::model_binder::imodel::AnyIModel;
+                use mvc_lib::services::service_collection::IServiceCollection;
+                use mvc_lib::view::rusthtml::helpers::ihtml_helpers::IHtmlHelpers;
+                use mvc_lib::view::rusthtml::helpers::html_helpers::HtmlHelpers;
+                use mvc_lib::view::rusthtml::helpers::irender_helpers::IRenderHelpers;
+                use mvc_lib::view::rusthtml::helpers::render_helpers::RenderHelpers;
+                use mvc_lib::view::rusthtml::html_string::HtmlString;
+                use mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError;
+                use mvc_lib::view::iview::IView;
+                use mvc_lib::routing::iurl_helpers::IUrlHelpers;
+                use mvc_lib::routing::url_helpers::UrlHelpers;
+                use mvc_lib::routing::route_values_builder::RouteValuesBuilder;
+            },
+            use_statements: RefCell::new(vec![]),
             inject_statements: RefCell::new(vec![
                 quote::quote!{
                     let render = RenderHelpers::new(view_context, services);
@@ -329,6 +331,10 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         self.use_statements.borrow_mut().push(rshtml)
     }
 
+    fn get_implicit_use_statements(self: &Self) -> proc_macro2::TokenStream {
+        self.implicit_use_statements.clone()
+    }
+
     fn get_use_statements_stream(self: &Self) -> proc_macro2::TokenStream {
         let tokens = 
             self.use_statements.borrow()
@@ -479,12 +485,6 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         self.sub_processors.rust_postprocessors.clone()
     }
 
-    fn push_inject_statements_rshtml(self: &Self, _rshtml: Vec<RustHtmlToken>, _ctx: Rc<dyn IRustHtmlParserContext>, _ct: Rc<dyn ICancellationToken>) {
-        // let rust = parser.get_converter_out().convert_vec(rshtml, ctx, ct).unwrap();
-        // self.push_inject_statements(TokenStream::from_iter(rust));
-        panic!("push_inject_statements_rshtml not implemented");
-    }
-
     fn get_call_stack(&self) -> &CallstackTracker {
         &self.call_stack
     }
@@ -563,5 +563,9 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
     
     fn log_info(self: &Self, info: String) {
         // todo!()
+    }
+    
+    fn insert_params(self: &Self, key: String, value: String) {
+        self.params.borrow_mut().insert(key, value);
     }
 }

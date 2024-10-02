@@ -53,7 +53,7 @@ mvc_macro_lib::rusthtml_view_macro! {
             <a class="s-topbar--logo" href="/">
                 <span class="v-visible-sr">@"Site home"</span>
                 @htmlfile "shared/_icon_svg.html"
-                <environment include="Development"><i>Beta</i></environment>
+                <environment include="Development"><i>@"Beta"</i></environment>
             </a>
 
             <ul class="s-navigation ml8 fw-nowrap sm:d-none">
@@ -63,7 +63,7 @@ mvc_macro_lib::rusthtml_view_macro! {
                 
                 // <li><a class=@home_class href="/">Home</a></li>
                 // <li><a class=@learn_class href=@learn_href>Learn</a></li>
-                <li><a class="s-navigation--item" href="https://github.com/viveret/rshtml">GitHub</a></li>
+                <li><a class="s-navigation--item" href="https://github.com/viveret/rshtml">@"GitHub"</a></li>
                 <environment include="Development">
                     @let is_dev_controller = is_same_action("*", "Dev", "", &page_action, &page_controller, &page_area) || is_same_action("*", "AuthRoles", "", &page_action, &page_controller, &page_area);
                     @let dev_class = format!("s-navigation--item {}", if is_dev_controller { "is-selected" } else { "" });
@@ -93,7 +93,7 @@ mvc_macro_lib::rusthtml_view_macro! {
             <hr />
 
             @let current_year = chrono::prelude::Utc::now().format("%Y");
-            <p>&copy; @format!("{} - Example Rust Html Web Application", current_year)</p>
+            <p>@"&copy; "@format!("{} - Example Rust Html Web Application", current_year)</p>
 
             @let compile_timestamp = format!("Page compiled at {}", self.when_compiled.format("%Y-%m-%d   %H:%M:%S"));
             @let view_timestamp = format!("Page viewed at {}", chrono::prelude::Utc::now().format("%Y-%m-%d   %H:%M:%S"));

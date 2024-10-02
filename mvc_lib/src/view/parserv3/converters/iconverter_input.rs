@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use proc_macro2::TokenTree;
+use proc_macro2::{Group, TokenTree};
 
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::parserv3::core::peekable::ipeekable_tokentree::IPeekableTokenTree;
@@ -10,6 +10,7 @@ use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
 pub trait IConverterInput {
     fn convert(&self, input: Rc<dyn IPeekableTokenTree>) -> Rc<dyn IPeekableRustHtmlToken>;
+    fn convert_group(&self, group: Group) -> RustHtmlToken;
 }
 
 pub struct ConverterInput {
@@ -32,9 +33,8 @@ impl IConverterInput for ConverterInput {
             }
             match token.expect("peeked token") {
                 TokenTree::Group(group) => {
-                    let group_stream_in = Rc::new(StreamPeekableTokenTree::new(group.stream()));
-                    let group_stream_out = self.convert(group_stream_in);
-                    output.push(RustHtmlToken::Group(group.delimiter(), group_stream_out, Some(group.clone())));
+                    let token = self.convert_group(group);
+                    output.push(token);
                     input.next();
                 },
                 TokenTree::Ident(ident) => {
@@ -52,5 +52,11 @@ impl IConverterInput for ConverterInput {
             }
         }
         Rc::new(VecPeekableRustHtmlToken::new(output))
+    }
+    
+    fn convert_group(&self, group: Group) -> RustHtmlToken {
+        let group_stream_in = Rc::new(StreamPeekableTokenTree::new(group.stream()));
+        let group_stream_out = self.convert(group_stream_in);
+        RustHtmlToken::Group(group.delimiter(), group_stream_out, None)
     }
 }

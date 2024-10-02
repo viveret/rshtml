@@ -35,7 +35,7 @@ impl <'a, TModel: 'static + IModel> HtmlHelpers<'a, TModel> {
 }
 
 impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a, TModel> {
-    fn form<'b, F>(self: &Self, method: http::method::Method, action: Cow<'b, str>, html_attrs: Option<&HashMap<String, String>>, inner_render_fn: F) -> HtmlString where F: Fn() -> HtmlString {
+    fn form<'b, F>(self: &Self, method: http::method::Method, action: Cow<'b, str>, html_attrs: Option<&HashMap<String, String>>, inner_render_fn: F) -> HtmlString where F: Fn() -> () {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         let html_output = HtmlBuffer::new();
         html_output.write_html_str(
@@ -45,7 +45,8 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
                 html_attrs_str
             ).as_str()
         );
-        html_output.write_html(inner_render_fn());
+        // self.view_context.ou
+        inner_render_fn();
         html_output.write_html_str("</form>");
         html_output.collect_html()
     }

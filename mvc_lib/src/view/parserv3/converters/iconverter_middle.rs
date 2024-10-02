@@ -134,7 +134,7 @@ impl ConverterNormal {
                 // recurse
                 match self.convert(s.clone(), context.clone(), ct.clone()) {
                     Ok(new_input) => {
-                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::Group(d.clone(), new_input, g.clone())])))
+                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::Group(d.clone(), new_input, None)])))
                     },
                     Err(e) => {
                         Err(e)
@@ -197,7 +197,7 @@ impl ConverterNormal {
                 // recurse
                 match self.convert(s.clone(), context, ct) {
                     Ok(new_input) => {
-                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::Group(d.clone(), new_input, g.clone())])))
+                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::Group(d.clone(), new_input, None)])))
                     },
                     Err(e) => {
                         Err(e)

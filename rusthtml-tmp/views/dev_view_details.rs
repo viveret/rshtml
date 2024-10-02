@@ -17,7 +17,8 @@ rusthtml :: helpers :: irender_helpers :: IRenderHelpers; use mvc_lib :: view
 rusthtml_error :: RustHtmlError; use mvc_lib :: view :: iview :: IView; use
 mvc_lib :: routing :: iurl_helpers :: IUrlHelpers; use mvc_lib :: routing ::
 url_helpers :: UrlHelpers; use mvc_lib :: routing :: route_values_builder ::
-RouteValuesBuilder; pub struct view_dev_view_details
+RouteValuesBuilder; use mvc_lib :: services :: service_collection ::
+ServiceCollectionExtensions; pub struct view_dev_view_details
 {
     model_type_name : & 'static str, ViewPath : & 'static str, raw : & 'static
     str, when_compiled : DateTime < Utc > ,
@@ -30,7 +31,7 @@ RouteValuesBuilder; pub struct view_dev_view_details
             model_type_name :
             "crate::view_models::dev::view_details::ViewDetailsViewModel",
             ViewPath : file! (), raw : "", when_compiled : DateTime ::
-            parse_from_rfc2822("Mon, 16 Sep 2024 02:52:29 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Tue, 01 Oct 2024 23:59:08 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {
@@ -77,7 +78,7 @@ RouteValuesBuilder; pub struct view_dev_view_details
         let statements = raw.split([';', '{', '}',]); let model_type_name =
         match model.model_type_name
         {
-            Some(s) => format!("Requires model type {}", s), None =>
+            Some(s) => format! ("Requires model type {}", s), None =>
             "No model type required".to_string(),
         };
         html_output.write_html(HtmlString ::
@@ -90,7 +91,12 @@ RouteValuesBuilder; pub struct view_dev_view_details
         html_output.write_html(HtmlString :: from(model_type_name));
         html_output.write_html_str("</h3>");
         html_output.write_html_str("<ol"); html_output.write_html_str(">");
-        for s in statements { <li> @s </li> }
-        html_output.write_html_str("</ol>"); Ok(html_output.collect_html())
+        for s in statements
+        {
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(s));
+            html_output.write_html_str("</li>");
+        } html_output.write_html_str("</ol>"); Ok(html_output.collect_html())
     }
 }

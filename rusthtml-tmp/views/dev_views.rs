@@ -17,7 +17,8 @@ rusthtml :: helpers :: irender_helpers :: IRenderHelpers; use mvc_lib :: view
 rusthtml_error :: RustHtmlError; use mvc_lib :: view :: iview :: IView; use
 mvc_lib :: routing :: iurl_helpers :: IUrlHelpers; use mvc_lib :: routing ::
 url_helpers :: UrlHelpers; use mvc_lib :: routing :: route_values_builder ::
-RouteValuesBuilder; pub struct view_dev_views
+RouteValuesBuilder; use mvc_lib :: services :: service_collection ::
+ServiceCollectionExtensions; pub struct view_dev_views
 {
     model_type_name : & 'static str, ViewPath : & 'static str, raw : & 'static
     str, when_compiled : DateTime < Utc > ,
@@ -30,7 +31,7 @@ RouteValuesBuilder; pub struct view_dev_views
             model_type_name :
             "crate::view_models::dev::views::ViewsViewModel", ViewPath : file!
             (), raw : "", when_compiled : DateTime ::
-            parse_from_rfc2822("Mon, 16 Sep 2024 02:52:24 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Tue, 01 Oct 2024 23:59:03 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {
@@ -91,13 +92,24 @@ RouteValuesBuilder; pub struct view_dev_views
             let href =
             url.url_action(false, Some(false), None, Some("view_details"),
             Some("Dev"), None,
-            Some(&RouteValuesBuilder::build_area(compiled_view.path.as_str())));
-            let model_type_name = match &compiled_view.model_type_name
+            Some(& RouteValuesBuilder ::
+            build_area(compiled_view.path.as_str()))); let model_type_name =
+            match & compiled_view.model_type_name
             {
-                Some(s) => format!("Requires model type {}", s), None =>
+                Some(s) => format! ("Requires model type {}", s), None =>
                 "No model type required".to_string(),
-            }; <li> <a href=@href>@compiled_view.path.as_str()
-            <span>@" "</span> @model_type_name</a> </li>
+            }; html_output.write_html_str("<li");
+            html_output.write_html_str(">"); html_output.write_html_str("<a");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString ::
+            from(compiled_view.path.as_str()));
+            html_output.write_html_str("<span");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(" "));
+            html_output.write_html_str("</span>");
+            html_output.write_html(HtmlString :: from(model_type_name));
+            html_output.write_html_str("</a>");
+            html_output.write_html_str("</li>");
         } html_output.write_html_str("</ul>"); Ok(html_output.collect_html())
     }
 }

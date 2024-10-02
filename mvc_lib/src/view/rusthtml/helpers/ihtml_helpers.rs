@@ -15,7 +15,7 @@ pub trait IHtmlHelpers<'a, TModel: 'static + IModel> {
     fn link<'b>(self: &Self, href: &'b str, text: &'b str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString;
 
     // create a form group.
-    fn form<'b, F>(self: &Self, method: http::method::Method, action: Cow<'b, str>, html_attrs: Option<&HashMap<String, String>>, inner_render_fn: F) -> HtmlString where F: Fn() -> HtmlString;
+    fn form<'b, F>(self: &Self, method: http::method::Method, action: Cow<'b, str>, html_attrs: Option<&HashMap<String, String>>, inner_render_fn: F) -> HtmlString where F: Fn() -> ();
 
     // create a submit button with the given text for a form.
     // text: the text to display on the button.

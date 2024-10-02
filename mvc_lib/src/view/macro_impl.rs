@@ -51,7 +51,7 @@ pub fn rusthtml_view_macro_with_context(input: TokenStream) -> (Rc<RustHtmlParse
 
     let output_stream = match result {
         Ok(html_render_fn2) => {
-            println!("html_render_fn2: {}", html_render_fn2.to_string());
+            // println!("html_render_fn2: {}", html_render_fn2.to_string());
             let html_render_fn = TokenStream::from_iter(html_render_fn2.into_iter());
             let view_name = parse_context.get_param_string("name");
             let view_name = view_name.expect("could not get name");

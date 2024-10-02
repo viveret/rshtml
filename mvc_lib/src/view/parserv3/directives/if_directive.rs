@@ -1,7 +1,8 @@
 use std::rc::Rc;
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
-use proc_macro2::{Ident, TokenTree, Delimiter};
+use proc_macro2::Delimiter;
+use proc_macro2::Ident;
 
 use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
@@ -19,6 +20,76 @@ pub struct IfDirective {}
 impl IfDirective {
     pub fn new() -> Self {
         Self {}
+    }
+
+    pub fn check_for_else_or_else_if(&self, context: Rc<dyn IRustHtmlParserContext>, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+        let mut tokens = vec![];
+
+        while let Some(else_token) = it.peek() {
+            if ct.is_cancelled() {
+                return Err(RustHtmlError::from_cancellationtoken(ct));
+            }
+
+            if let RustHtmlToken::Identifier(i) = &else_token {
+                if i.to_string() == "else" {
+                    it.next(); // else
+                    tokens.push(else_token.clone());
+                    // check if is block, "if" ident, or expression
+                    if let Some(else_type_token) = it.peek() {
+                        match &else_type_token {
+                            RustHtmlToken::Group(d, s, g) if *d == Delimiter::Brace => {
+                                it.next(); // block
+                                context.push_is_in_html_mode(false);
+                                let group_converted = parser.get_converter_middle().convert(s.clone(), context.clone(), ct.clone())?;
+                                context.pop_is_in_html_mode();
+                                tokens.push(RustHtmlToken::Group(d.clone(), group_converted, None));
+                                break;
+                            },
+                            RustHtmlToken::Identifier(i) => {
+                                if i.to_string() == "if" {
+                                    it.next(); // if
+                                    tokens.push(else_type_token.clone());
+
+                                    // block or expression
+                                    if let Some(block_or_expression_token) = it.peek() {
+                                        match &block_or_expression_token {
+                                            RustHtmlToken::Group(d, s, g) if *d == Delimiter::Brace => {
+                                                // tokens.push(block_or_expression_token.clone());
+                                                context.push_is_in_html_mode(false);
+                                                let group_converted = parser.get_converter_middle().convert(s.clone(), context.clone(), ct.clone())?;
+                                                context.pop_is_in_html_mode();
+                                                tokens.push(RustHtmlToken::Group(d.clone(), group_converted, None));
+                                                it.next();
+                                                break;
+                                            },
+                                            RustHtmlToken::Identifier(i) => {
+                                                panic!("todo else if expression");
+                                            },
+                                            _ => {
+                                                panic!("todo else if unexpected token {:?}", block_or_expression_token);
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    panic!("todo else expression")
+                                }
+                            },
+                            _ => {
+                                panic!("don't know what to do after if block with token: {:?}", else_type_token);
+                            }
+                        }
+                    } else {
+                        panic!("expected token after else");
+                    }
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(tokens)
     }
 }
 
@@ -41,17 +112,15 @@ impl IRustHtmlDirective for IfDirective {
                     if *d == Delimiter::Brace {
                         // new context within if block
                         context.push_is_in_html_mode(false);
-                        return match parser.get_converter_middle().convert(s.clone(), context.clone(), ct) {
-                            Ok(group_converted) => {
-                                context.pop_is_in_html_mode();
-                                tokens.push(RustHtmlToken::Group(*d, group_converted, None));
-                                let tokens_stream = Rc::new(VecPeekableRustHtmlToken::new(tokens));
-                                Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(tokens_stream)))
-                            },
-                            Err(e) => {
-                                Err(e)
-                            }
-                        }
+                        let group_converted = parser.get_converter_middle().convert(s.clone(), context.clone(), ct.clone())?;
+                        context.pop_is_in_html_mode();
+                        tokens.push(RustHtmlToken::Group(*d, group_converted, None));
+
+                        let other_branches = self.check_for_else_or_else_if(context, parser, it, ct)?;
+                        tokens.extend_from_slice(&other_branches);
+
+                        let tokens_stream = Rc::new(VecPeekableRustHtmlToken::new(tokens));
+                        return Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(tokens_stream)));
                     } else {
                         tokens.push(token);
                     }

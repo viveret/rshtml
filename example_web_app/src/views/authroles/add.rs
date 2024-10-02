@@ -18,7 +18,7 @@ mvc_macro_lib::rusthtml_view_macro! {
         <p class=@html_class>@validation_result.message.clone()</p>
     }
 
-    @custom_html.form(http::method::Method::POST, url.url_action(false, Some(false), None, Some("add"), Some("AuthRoles"), None, None).into(), Some(&HashMap::new()) /* optional attributes, takes precedent over route values */, || -> HtmlString {
+    @custom_html.form(http::method::Method::POST, url.url_action(false, Some(false), None, Some("add"), Some("AuthRoles"), None, None).into(), Some(&HashMap::new()) /* optional attributes, takes precedent over route values */, || {
         let role_name_label = "Role Name";
         @custom_html.label("role", role_name_label, None)
         @custom_html.input("role", "text", model.role.as_str(), None)

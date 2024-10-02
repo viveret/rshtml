@@ -6,6 +6,7 @@ use proc_macro2::TokenTree;
 
 use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use crate::view::parserv3::core::rusthtml_directive_result::RustHtmlDirectiveResult;
 use crate::view::parserv3::core::rusthtml_directive_result::RustHtmlDirectiveResultV3;
 use crate::view::rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken};
@@ -21,15 +22,6 @@ impl MarkdownFileConstDirective {
     pub fn new() -> Self {
         Self {}
     }
-
-    // read and convert a Markdown file directly to RustHtml tokens.
-    // identifier: the identifier to convert.
-    // output: the destination for the RustHtml tokens.
-    // it: the iterator to use.
-    // returns: nothing or an error.
-    // pub fn convert_mdfile_const_directive(ctx: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &TokenTree, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: Rc<dyn IPeekableTokenTree>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
-    //     MarkdownFileNoCacheDirective::convert_mdfile_nocache_directive(ctx, identifier, ident_token, parser, output, it, ct)
-    // }
 }
 
 impl IRustHtmlDirective for MarkdownFileConstDirective {
@@ -38,8 +30,19 @@ impl IRustHtmlDirective for MarkdownFileConstDirective {
     }
 
     fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
-        // todo!("execute_new_v3 mdfile_const directive")
-        context.insert_params("mdfile_const".to_string(), it.next().unwrap().to_string());
-        Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, None))
+        let ident_tokens_rshtml = parser.get_rust_parser().parse_expression(it, context, ct.clone())?;
+        let ident_tokens_rshtml_stream = Rc::new(VecPeekableRustHtmlToken::new(ident_tokens_rshtml));
+        let ident_tokens_peekable_stream = parser.get_converter_out().convert(ident_tokens_rshtml_stream, ct.clone())?;
+        let ident_tokens_stream = ident_tokens_peekable_stream.to_stream();
+
+        // let path = parser.get_rust_parser().parse_string_with_quotes(false, identifier, it.clone())?;
+        let code = quote::quote! {
+            view_context.get_markdown_file_nocache(#ident_tokens_stream)
+        };
+
+        let g = proc_macro2::Group::new(proc_macro2::Delimiter::Brace, code);
+        let grushtml = parser.get_converter_in().convert_group(g);
+        let out_stream = Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::AppendToHtml(vec![grushtml])]));
+        Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(out_stream)))
     }
 }

@@ -17,7 +17,8 @@ rusthtml :: helpers :: irender_helpers :: IRenderHelpers; use mvc_lib :: view
 rusthtml_error :: RustHtmlError; use mvc_lib :: view :: iview :: IView; use
 mvc_lib :: routing :: iurl_helpers :: IUrlHelpers; use mvc_lib :: routing ::
 url_helpers :: UrlHelpers; use mvc_lib :: routing :: route_values_builder ::
-RouteValuesBuilder; pub struct view_dev_controller_details
+RouteValuesBuilder; use mvc_lib :: services :: service_collection ::
+ServiceCollectionExtensions; pub struct view_dev_controller_details
 {
     model_type_name : & 'static str, ViewPath : & 'static str, raw : & 'static
     str, when_compiled : DateTime < Utc > ,
@@ -30,7 +31,7 @@ RouteValuesBuilder; pub struct view_dev_controller_details
             model_type_name :
             "crate::view_models::dev::controllers::ControllerDetailsViewModel",
             ViewPath : file! (), raw : "", when_compiled : DateTime ::
-            parse_from_rfc2822("Mon, 16 Sep 2024 02:51:59 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Tue, 01 Oct 2024 23:58:38 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {
@@ -92,16 +93,26 @@ RouteValuesBuilder; pub struct view_dev_controller_details
         ("Controller Features ({}):", controller_features.len())));
         html_output.write_html_str("</h3>");
         html_output.write_html_str("<ol"); html_output.write_html_str(">");
-        for f in controller_features { <li> @f.to_string() </li> }
-        html_output.write_html_str("</ol>");
+        for f in controller_features
+        {
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(f.to_string()));
+            html_output.write_html_str("</li>");
+        } html_output.write_html_str("</ol>");
         html_output.write_html_str("<h3"); html_output.write_html_str(">");
         html_output.write_html(HtmlString ::
         from(format!
         ("Controller Attributes ({}):", controller_attributes.len())));
         html_output.write_html_str("</h3>");
         html_output.write_html_str("<ol"); html_output.write_html_str(">");
-        for f in controller_attributes { <li> @f.to_string() </li> }
-        html_output.write_html_str("</ol>");
+        for f in controller_attributes
+        {
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(f.to_string()));
+            html_output.write_html_str("</li>");
+        } html_output.write_html_str("</ol>");
         html_output.write_html_str("<h3"); html_output.write_html_str(">");
         html_output.write_html(HtmlString ::
         from(format!
@@ -109,8 +120,19 @@ RouteValuesBuilder; pub struct view_dev_controller_details
         html_output.write_html_str("</h3>");
         html_output.write_html_str("<ol"); html_output.write_html_str(">");
         for f in controller_properties
-        { <li> <b>@f.0</b>@":"<span>@f.1</span> </li> }
-        html_output.write_html_str("</ol>");
+        {
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">"); html_output.write_html_str("<b");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(f.0));
+            html_output.write_html_str("</b>");
+            html_output.write_html(HtmlString :: from(":"));
+            html_output.write_html_str("<span");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(f.1));
+            html_output.write_html_str("</span>");
+            html_output.write_html_str("</li>");
+        } html_output.write_html_str("</ol>");
         html_output.write_html_str("<h3"); html_output.write_html_str(">");
         html_output.write_html(HtmlString ::
         from(format! ("Controller Methods ({}):", controller_methods.len())));
@@ -118,8 +140,26 @@ RouteValuesBuilder; pub struct view_dev_controller_details
         html_output.write_html_str("<ol"); html_output.write_html_str(">");
         for f in controller_methods
         {
-            <li> <small>@f.0</small>
-            <b>@f.1</b>@"("<span>@f.2</span>@") -> "<span>@f.3</span> </li>
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html_str("<small");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(f.0));
+            html_output.write_html_str("</small>");
+            html_output.write_html_str("<b"); html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(f.1));
+            html_output.write_html_str("</b>");
+            html_output.write_html(HtmlString :: from("("));
+            html_output.write_html_str("<span");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(f.2));
+            html_output.write_html_str("</span>");
+            html_output.write_html(HtmlString :: from(") -> "));
+            html_output.write_html_str("<span");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(f.3));
+            html_output.write_html_str("</span>");
+            html_output.write_html_str("</li>");
         } html_output.write_html_str("</ol>");
         html_output.write_html_str("<h3"); html_output.write_html_str(">");
         html_output.write_html(HtmlString ::
@@ -131,8 +171,12 @@ RouteValuesBuilder; pub struct view_dev_controller_details
             let link_text = route.0; let link_href =
             url.url_action(false, Some(false), None, Some("route_details"),
             Some("Dev"), None,
-            Some(&RouteValuesBuilder::build_area(&route.1))); <li>
-            @html.link(&link_href, &link_text, None) </li>
+            Some(& RouteValuesBuilder :: build_area(& route.1)));
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString ::
+            from(html.link(& link_href, & link_text, None)));
+            html_output.write_html_str("</li>");
         } html_output.write_html_str("</ol>"); Ok(html_output.collect_html())
     }
 }

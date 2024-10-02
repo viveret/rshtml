@@ -8,6 +8,7 @@ use proc_macro2::{Delimiter, Ident};
 
 use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
+use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use crate::view::parserv3::parserv3::IParserV3;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -198,11 +199,50 @@ impl IParserV3RustParser for ParserV3RustParser {
     }
     
     fn parse_expression(&self, it: Rc<dyn IPeekableRustHtmlToken>, context: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
+        // get prefixed operators
+        let mut prefix_tokens = vec![];
+        while let Some(prefix_token) = it.peek() {
+            if ct.is_cancelled() {
+                return Err(RustHtmlError::from_cancellationtoken(ct))
+            }
+            
+            match &prefix_token {
+                RustHtmlToken::ReservedChar(c, p) => {
+                    if *c == '!' || *c == '&' {
+                        prefix_tokens.push(prefix_token);
+                        it.next();
+                    } else {
+                        panic!("cannot start expression with {}", c);
+                    }
+                },
+                _ => {
+                    break;
+                }
+            }
+        }
+
         // must be literal, identifier, or () group, and end on literal, ident, or () group
         if let Some(token) = it.next() {
             match &token {
                 RustHtmlToken::Group(d, s, g) => {
-                    Ok(vec![token.clone()])
+                    match d {
+                        Delimiter::Brace | Delimiter::Parenthesis | Delimiter::None => {
+                            // more than an expression, is a code block
+                            // and could have more so need to recurse
+                            panic!("meow meow meow");
+                            let inner_expressions = self.get_parser().get_converter_middle().convert(s.clone(), context, ct)?;
+                            prefix_tokens.push(RustHtmlToken::Group(d.clone(), inner_expressions, None));
+                            // Ok(vec![RustHtmlToken::Group(d.clone(), inner_expressions, None)])
+                        },
+                        Delimiter::Bracket => {
+                            // shouldn't have any @ or funny business
+                            Ok(vec![token.clone()])
+                        },
+                        _ => {
+                            panic!("parse_expression unhandled group delimiter {:?}", d);
+                        }
+                    }
+                    // Ok(vec![token.clone()])
                 },
                 RustHtmlToken::Identifier(i) => {
                     // println!("parse_expression token: {}", token.to_string());
@@ -246,8 +286,10 @@ impl IParserV3RustParser for ParserV3RustParser {
                                 if *d == Delimiter::Bracket {
                                 } else if *d == Delimiter::Parenthesis || *d == Delimiter::Brace {
                                     // need to ensure inner parts are converted
+                                    // for some reason this isn't working and '@' is being left in
                                     let inner_result = self.get_parser().get_converter_middle().convert(s.clone(), context.clone(), ct.clone())?;
                                     overwrite_token_to_add = Some(RustHtmlToken::Group(*d, inner_result, None));
+                                    break_after_add = true;
                                 } else {
                                     return Err(RustHtmlError::from_string(format!("parse_expression invalid group delimiter {:?}", d)))
                                 }
@@ -278,10 +320,12 @@ impl IParserV3RustParser for ParserV3RustParser {
                             break;
                         }
                     }
-                    Ok(tokens)
+                    prefix_tokens.extend_from_slice(&tokens);
+                    Ok(prefix_tokens)
                 },
                 RustHtmlToken::Literal(l, s) => {
-                    Ok(vec![token.clone()])
+                    prefix_tokens.push(token);
+                    Ok(prefix_tokens)   
                 },
                 _ => Err(RustHtmlError::from_string(format!("invalid expression: {:?}", token)))
             }

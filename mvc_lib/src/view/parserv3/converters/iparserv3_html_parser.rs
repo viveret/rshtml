@@ -93,9 +93,9 @@ impl IParserV3HtmlParser for ParserV3HtmlParser {
 
             // println!("tag_attributes ({}):", ctx.get_html_attrs().len());
             // print tag attributes
-            for x in ctx.get_html_attrs() {
-                println!("{} = {:?}", x.0, x.1)
-            }
+            // for x in ctx.get_html_attrs() {
+            //     println!("{} = {:?}", x.0, x.1)
+            // }
     
             let is_self_contained_tag = self.check_next_char('/', true, input.clone(), context.clone())?;
             ctx.set_is_self_contained_tag(is_self_contained_tag);    
@@ -216,6 +216,7 @@ impl IParserV3HtmlParser for ParserV3HtmlParser {
         if let Some(RustHtmlToken::ReservedChar(c, punct)) = input.peek() {
             if c == '!' {
                 output.push(RustHtmlIdentOrPunct::Punct(punct));
+                input.next();
             } else {
                 return Err(RustHtmlError::from_string(format!("parse_tag_name unexpected char {}", c)));
             }
@@ -240,6 +241,8 @@ impl IParserV3HtmlParser for ParserV3HtmlParser {
                     // this moves the stream forward
                     let attrib_key = self.parse_xml_ident(input.clone(), ctx.clone(), ct.clone())?;
                     let attrib_key_string = ctx.fmt_tag_name_as_str(&attrib_key.1);
+
+                    // println!("key = {}", attrib_key_string);
     
                     // check for =
                     if let Some(equals_token) = input.peek() {
@@ -247,6 +250,8 @@ impl IParserV3HtmlParser for ParserV3HtmlParser {
                             if c == '=' {
                                 // proceed
                                 input.next();
+
+                                // println!("found equals");
 
                                 let attrib_value = self.parse_attrib_value(input.clone(), ctx.clone(), ct.clone())?;
                                 // let attrib_value = self.get_parser().get_rust_parser().parse_string_with_quotes(false, &identifier, input.clone())?;
@@ -258,7 +263,11 @@ impl IParserV3HtmlParser for ParserV3HtmlParser {
                                     let attrib_value_stream = Rc::new(VecPeekableRustHtmlToken::new(attrib_value.0));
                                     RustHtmlToken::Group(proc_macro2::Delimiter::Parenthesis, attrib_value_stream, None)
                                 };
+                                // println!("value: {:?}", attrib_value_group);
                                 ctx.html_attrs_insert(attrib_key_string, Some(attrib_value_group));
+                            } else if c == '>' {
+                                ctx.html_attrs_insert(attrib_key_string, None);
+                                break;
                             } else {
                                 return Err(RustHtmlError::from_string(format!("parse_tag_attribs unexpected char {}", c)));
                             }
@@ -274,10 +283,12 @@ impl IParserV3HtmlParser for ParserV3HtmlParser {
                     if c == '/' || c == '>' {
                         // end of tag
                         break;
+                    } else if c == '!' {
+                        panic!("idk")
                     } else {
                         return Err(RustHtmlError::from_string(format!("unexpected char in parse_tag_attribs: {}", c)));
                     }
-                }
+                },
                 _ => return Err(RustHtmlError::from_string(format!("unexpected token in parse_tag_attribs: {}", token.to_string()))),
             }
         }
@@ -323,13 +334,20 @@ impl IParserV3HtmlParser for ParserV3HtmlParser {
             }
         }
 
+        if output_tokens.is_empty() {
+            panic!("could not parse xml ident (next token is {:?})", input.peek())
+        }
+        
         Ok((output_tokens, output_typed))
     }
     
     fn parse_literal_or_xml_name(self: &Self, input: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IHtmlTagParseContext>, ct: Rc<dyn ICancellationToken>) -> Result<(Vec<RustHtmlToken>, Vec<RustHtmlIdentOrPunct>), RustHtmlError> {
         if let Some(token) = input.peek() {
             match &token {
-                RustHtmlToken::Literal(s, l) => Ok((vec![token.clone()], vec![])),
+                RustHtmlToken::Literal(s, l) => {
+                    input.next();
+                    Ok((vec![token.clone()], vec![]))
+                },
                 RustHtmlToken::Identifier(i) => self.parse_xml_ident(input, ctx, ct),
                 _ => Err(RustHtmlError::from_string(format!("Expected literal or ident, not {}", token.to_string())))
             }

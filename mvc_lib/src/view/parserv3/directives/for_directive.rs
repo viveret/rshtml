@@ -34,14 +34,14 @@ impl IRustHtmlDirective for ForDirective {
                 return Err(RustHtmlError::from_cancellationtoken(ct));
             }
             if let Some(token) = it.next() {
-                match token {
+                match &token {
                     RustHtmlToken::Group(delimiter, stream, group) => {
                         match delimiter {
                             proc_macro2::Delimiter::Brace => {
                                 // recurse
                                 match parser.get_converter_middle().convert(stream.clone(), context.clone(), ct.clone()) {
                                     Ok(new_input) => {
-                                        output.push(RustHtmlToken::Group(delimiter, new_input, group.clone()));
+                                        output.push(RustHtmlToken::Group(*delimiter, new_input, None));
                                         break;
                                     },
                                     Err(e) => {
@@ -50,7 +50,7 @@ impl IRustHtmlDirective for ForDirective {
                                 }
                             },
                             _ => {
-                                output.push(RustHtmlToken::Group(delimiter, stream.clone(), group.clone()));
+                                output.push(token.clone());
                             },
                         }
                     },

@@ -17,7 +17,8 @@ rusthtml :: helpers :: irender_helpers :: IRenderHelpers; use mvc_lib :: view
 rusthtml_error :: RustHtmlError; use mvc_lib :: view :: iview :: IView; use
 mvc_lib :: routing :: iurl_helpers :: IUrlHelpers; use mvc_lib :: routing ::
 url_helpers :: UrlHelpers; use mvc_lib :: routing :: route_values_builder ::
-RouteValuesBuilder; pub struct view_dev_log
+RouteValuesBuilder; use mvc_lib :: services :: service_collection ::
+ServiceCollectionExtensions; pub struct view_dev_log
 {
     model_type_name : & 'static str, ViewPath : & 'static str, raw : & 'static
     str, when_compiled : DateTime < Utc > ,
@@ -29,7 +30,7 @@ RouteValuesBuilder; pub struct view_dev_log
         {
             model_type_name : "crate::view_models::dev::log::LogViewModel",
             ViewPath : file! (), raw : "", when_compiled : DateTime ::
-            parse_from_rfc2822("Mon, 16 Sep 2024 02:52:04 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Tue, 01 Oct 2024 23:58:43 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {
@@ -88,7 +89,12 @@ RouteValuesBuilder; pub struct view_dev_log
             from(html.link(url.url_action(false, Some(false), None,
             Some("log_add"), Some("Dev"), None, None).as_str(),
             "Add log message", None)));
-        } else { <p>@"Reading from log is not supported."</p> }
-        Ok(html_output.collect_html())
+        } else
+        {
+            html_output.write_html_str("<p"); html_output.write_html_str(">");
+            html_output.write_html(HtmlString ::
+            from("Reading from log is not supported."));
+            html_output.write_html_str("</p>");
+        } Ok(html_output.collect_html())
     }
 }

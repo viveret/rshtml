@@ -14,7 +14,7 @@ mvc_macro_lib::rusthtml_view_macro! {
     <p>@format!("There are {} roles:", model.roles.len())</p>
     <ol>
         @for role in model.roles.iter() {
-            <li>@&role.name</li>
+            <li>@&role.name.clone()</li>
         }
     </ol>
     @html.link(url.url_action(false, Some(false), None, Some("add"), Some("AuthRoles"), None, None).as_str(), "+ Add New", None)

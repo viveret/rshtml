@@ -157,39 +157,39 @@ impl IHtmlNodeParsed for EnvironmentHtmlNodeParsed {
             }
         }
 
-        let output = tag_context.get_main_context().get_output_buffer().expect("tag_context.get_main_context().get_output_buffer()");
+        // let output = tag_context.get_main_context().get_output_buffer().expect("tag_context.get_main_context().get_output_buffer()");
         
         return match _keep_or_remove {
             Some(_keep_or_remove) => {
                 if _keep_or_remove {
                     // keep - don't add outer environment tags but do add inner elements
-                    loop {
-                        match output.first().expect("output.first()") {
-                            RustHtmlToken::HtmlTagCloseVoidPunct(_) |
-                            RustHtmlToken::HtmlTagCloseSelfContainedPunct |
-                            RustHtmlToken::HtmlTagCloseStartChildrenPunct => {
-                                output.remove(0);
-                                break;
-                            },
-                            _ => {
-                                output.remove(0);
-                            }
-                        }
-                    }
+                    // loop {
+                    //     match output.first().expect("output.first()") {
+                    //         RustHtmlToken::HtmlTagCloseVoidPunct(_) |
+                    //         RustHtmlToken::HtmlTagCloseSelfContainedPunct |
+                    //         RustHtmlToken::HtmlTagCloseStartChildrenPunct => {
+                    //             output.remove(0);
+                    //             break;
+                    //         },
+                    //         _ => {
+                    //             output.remove(0);
+                    //         }
+                    //     }
+                    // }
                     
-                    match output.last() {
-                        Some(RustHtmlToken::HtmlTagEnd(tag_end, _tag_end_tokens)) => {
-                            if tag_end == tag_context.tag_name_as_str() {
-                                let _pop_result = output.pop();
-                            } else {
-                                panic!("mismatch while processing environment HTML tag (found {})", tag_end);
-                            }
-                        },
-                        Some(_) => {
-                            panic!("unexpected token while processing environment HTML tag (found {:?})", output.last().expect("output.last()"));
-                        },
-                        _ => {}
-                    }
+                    // match output.last() {
+                    //     Some(RustHtmlToken::HtmlTagEnd(tag_end, _tag_end_tokens)) => {
+                    //         if tag_end == tag_context.tag_name_as_str() {
+                    //             let _pop_result = output.pop();
+                    //         } else {
+                    //             panic!("mismatch while processing environment HTML tag (found {})", tag_end);
+                    //         }
+                    //     },
+                    //     Some(_) => {
+                    //         panic!("unexpected token while processing environment HTML tag (found {:?})", output.last().expect("output.last()"));
+                    //     },
+                    //     _ => {}
+                    // }
 
                     // do not add environment tag start but do add child nodes
                     Ok(true)

@@ -119,6 +119,7 @@ impl IViewRenderer for ViewRenderer {
                 for (key, value) in body_view_ctx.get_view_data().borrow().iter() {
                     println!("{}: {:?}", key, value);
                 }
+                println!("peeking at layout view path option for {}", view_path);
                 let layout_view_option = self.get_layout_view_from_context(&mut body_view_ctx, services);
                 match layout_view_option {
                     Some(ref layout_view) => {

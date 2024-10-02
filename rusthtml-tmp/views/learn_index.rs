@@ -17,7 +17,8 @@ rusthtml :: helpers :: irender_helpers :: IRenderHelpers; use mvc_lib :: view
 rusthtml_error :: RustHtmlError; use mvc_lib :: view :: iview :: IView; use
 mvc_lib :: routing :: iurl_helpers :: IUrlHelpers; use mvc_lib :: routing ::
 url_helpers :: UrlHelpers; use mvc_lib :: routing :: route_values_builder ::
-RouteValuesBuilder; pub struct view_learn_index
+RouteValuesBuilder; use mvc_lib :: services :: service_collection ::
+ServiceCollectionExtensions; pub struct view_learn_index
 {
     model_type_name : & 'static str, ViewPath : & 'static str, raw : & 'static
     str, when_compiled : DateTime < Utc > ,
@@ -29,7 +30,7 @@ RouteValuesBuilder; pub struct view_learn_index
         {
             model_type_name : "crate::view_models::learn::IndexViewModel",
             ViewPath : file! (), raw : "", when_compiled : DateTime ::
-            parse_from_rfc2822("Mon, 16 Sep 2024 02:52:59 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Tue, 01 Oct 2024 23:59:38 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {
@@ -83,8 +84,16 @@ RouteValuesBuilder; pub struct view_learn_index
             let href =
             url.url_action(false, Some(false), None, Some("details"),
             Some("Learn"), None,
-            Some(&RouteValuesBuilder::build_area(doc_name))); <li>
-            @html.link(href.as_str(), doc_name, None) </li>
-        } html_output.write_html_str("</ul>"); Ok(html_output.collect_html())
+            Some(& RouteValuesBuilder :: build_area(doc_name)));
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString ::
+            from(html.link(href.as_str(), doc_name, None)));
+            html_output.write_html_str("</li>");
+        } html_output.write_html_str("</ul>");
+        html_output.write_html(HtmlString ::
+        from({
+            view_context.get_markdown_file_nocache("docs/learn/README.md")
+        })); Ok(html_output.collect_html())
     }
 }

@@ -17,7 +17,8 @@ rusthtml :: helpers :: irender_helpers :: IRenderHelpers; use mvc_lib :: view
 rusthtml_error :: RustHtmlError; use mvc_lib :: view :: iview :: IView; use
 mvc_lib :: routing :: iurl_helpers :: IUrlHelpers; use mvc_lib :: routing ::
 url_helpers :: UrlHelpers; use mvc_lib :: routing :: route_values_builder ::
-RouteValuesBuilder; use mvc_lib :: view :: rusthtml :: helpers ::
+RouteValuesBuilder; use mvc_lib :: services :: service_collection ::
+ServiceCollectionExtensions; use mvc_lib :: view :: rusthtml :: helpers ::
 stacks_html_helpers :: StacksHtmlHelpers; use crate :: view_models :: dev ::
 log_add :: LogAddViewModel; pub struct view_dev_log_add
 {
@@ -31,7 +32,7 @@ log_add :: LogAddViewModel; pub struct view_dev_log_add
         {
             model_type_name : "LogAddViewModel", ViewPath : file! (), raw :
             "", when_compiled : DateTime ::
-            parse_from_rfc2822("Mon, 16 Sep 2024 01:36:58 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Tue, 01 Oct 2024 23:58:48 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {
@@ -60,8 +61,10 @@ log_add :: LogAddViewModel; pub struct view_dev_log_add
         }; let html = HtmlHelpers :: < LogAddViewModel > ::
         new(view_context, services); let render = RenderHelpers ::
         new(view_context, services); let url = UrlHelpers ::
-        new(view_context, services); let custom_html : StacksHtmlHelpers ::<
-        LogAddViewModel > ; let html_output = HtmlBuffer :: new(); match
+        new(view_context, services); let custom_html : Rc < StacksHtmlHelpers
+        ::< LogAddViewModel > > = ServiceCollectionExtensions ::
+        get_required_single :: < StacksHtmlHelpers ::< LogAddViewModel > >
+        (services); let html_output = HtmlBuffer :: new(); match
         view_context.get_view_renderer().render_with_layout_if_specified(&
         "dev/_view_start.rs".to_string(), view_context.get_viewmodel(),
         view_context.get_request_context(), services)
@@ -80,17 +83,28 @@ log_add :: LogAddViewModel; pub struct view_dev_log_add
         from(view_context.get_str("Title")));
         html_output.write_html_str("</h1>");
         html_output.write_html(HtmlString ::
-        from(html.form(http::method::Method::POST,
+        from(html.form(http :: method :: Method :: POST,
         url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"),
-        None, None).into(), Some(&HashMap::new()), || -> HtmlString
+        None, None).into(), Some(& HashMap :: new()), ||
         {
-            <p class="fc-error">@html.validation_summary()</p>
-            @custom_html.label_for(expr_quote! { |m| m.input.message }, None)
-            @custom_html.input_for(expr_quote! { |m| m.input.message },
-            "text", None)
-            @custom_html.label_for(expr_quote! { |m| m.input.level }, None)
-            @custom_html.input_for(expr_quote! { |m| m.input.level }, "text",
-            None) @custom_html.submit("Submit", None)
+            html_output.write_html_str("<p"); html_output.write_html_str(">");
+            html_output.write_html(HtmlString ::
+            from(html.validation_summary()));
+            html_output.write_html_str("</p>");
+            html_output.write_html(HtmlString ::
+            from(custom_html.label_for(expr_quote! { | m | m.input.message },
+            None)));
+            html_output.write_html(HtmlString ::
+            from(custom_html.input_for(expr_quote! { | m | m.input.message },
+            "text", None)));
+            html_output.write_html(HtmlString ::
+            from(custom_html.label_for(expr_quote! { | m | m.input.level },
+            None)));
+            html_output.write_html(HtmlString ::
+            from(custom_html.input_for(expr_quote! { | m | m.input.level },
+            "text", None)));
+            html_output.write_html(HtmlString ::
+            from(custom_html.submit("Submit", None)));
         }))); Ok(html_output.collect_html())
     }
 }

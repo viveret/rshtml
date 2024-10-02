@@ -29,7 +29,7 @@ impl <'a, TModel: 'static + IModel> StacksHtmlHelpers<'a, TModel> {
 }
 
 impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for StacksHtmlHelpers<'a, TModel> {
-    fn form<'b, F>(self: &Self, method: http::method::Method, action: std::borrow::Cow<'b, str>, html_attrs: Option<&HashMap<String, String>>, inner_render_fn: F) -> HtmlString where F: Fn() -> HtmlString {
+    fn form<'b, F>(self: &Self, method: http::method::Method, action: std::borrow::Cow<'b, str>, html_attrs: Option<&HashMap<String, String>>, inner_render_fn: F) -> HtmlString where F: Fn() -> () {
         let default_html_attrs = self.html_attrs_array_tuple_str_to_string(&[("class", "s-form")]);
         let combined_html_attrs = self.append_html_attrs_into_first(Some(&default_html_attrs), html_attrs);
         <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::form::<F>(&self.html_helpers, method, action, combined_html_attrs.as_ref(), inner_render_fn)

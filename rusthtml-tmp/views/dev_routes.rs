@@ -17,7 +17,8 @@ rusthtml :: helpers :: irender_helpers :: IRenderHelpers; use mvc_lib :: view
 rusthtml_error :: RustHtmlError; use mvc_lib :: view :: iview :: IView; use
 mvc_lib :: routing :: iurl_helpers :: IUrlHelpers; use mvc_lib :: routing ::
 url_helpers :: UrlHelpers; use mvc_lib :: routing :: route_values_builder ::
-RouteValuesBuilder; pub struct view_dev_routes
+RouteValuesBuilder; use mvc_lib :: services :: service_collection ::
+ServiceCollectionExtensions; pub struct view_dev_routes
 {
     model_type_name : & 'static str, ViewPath : & 'static str, raw : & 'static
     str, when_compiled : DateTime < Utc > ,
@@ -30,7 +31,7 @@ RouteValuesBuilder; pub struct view_dev_routes
             model_type_name :
             "crate::view_models::dev::routes::RoutesViewModel", ViewPath :
             file! (), raw : "", when_compiled : DateTime ::
-            parse_from_rfc2822("Mon, 16 Sep 2024 02:52:34 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Tue, 01 Oct 2024 23:59:13 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {
@@ -86,11 +87,15 @@ RouteValuesBuilder; pub struct view_dev_routes
         html_output.write_html_str("</p>"); html_output.write_html_str("<ul");
         html_output.write_html_str(">"); for route in model.routes.iter()
         {
-            let link_text = &route.as_string; let link_href =
+            let link_text = & route.as_string; let link_href =
             url.url_action(false, Some(false), None, Some("route_details"),
             Some("Dev"), None,
-            Some(&RouteValuesBuilder::build_area(route.path.as_str()))); <li>
-            @html.link(&link_href, link_text.as_str(), None) </li>
+            Some(& RouteValuesBuilder :: build_area(route.path.as_str())));
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString ::
+            from(html.link(& link_href, link_text.as_str(), None)));
+            html_output.write_html_str("</li>");
         } html_output.write_html_str("</ul>"); Ok(html_output.collect_html())
     }
 }

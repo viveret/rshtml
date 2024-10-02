@@ -66,11 +66,6 @@ impl IConverterMiddle for ConverterDirectives {
                             }
                             None => {
                                 let exp = self.get_parser().get_rust_parser().parse_expression(input, context.clone(), ct)?;
-                                // print!("output of parse expression: ");
-                                // for t in exp.clone().into_iter() {
-                                //     print!("{} ", t.to_string());
-                                // }
-                                // println!();
                                 return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::AppendToHtml(exp)])));
                             }
                         }

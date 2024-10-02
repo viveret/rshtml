@@ -360,11 +360,11 @@ impl IConverterOutput for ConverterOutput {
     }
     
     fn convert_rusthtmltagclosevoid_to_tokentree(self: &Self, c: Option<(char, Punct)>, _it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<TokenTree, RustHtmlError> {
-        todo!("convert_rusthtmltagclosevoid_to_tokentree")
+        Ok(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str("/>"); }))))
     }
     
     fn convert_rusthtmltagattributeequals_to_tokentree(self: &Self, _it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<TokenTree, RustHtmlError> {
-        todo!("convert_rusthtmltagattributeequals_to_tokentree")
+        Ok(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str("="); }))))
     }
     
     fn convert_ident_and_punct_or_literal_to_tokenstream(self: &Self, _tag: &RustHtmlIdentAndPunctOrLiteral, ct: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {

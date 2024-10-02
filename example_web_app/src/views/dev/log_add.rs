@@ -13,7 +13,7 @@ mvc_macro_lib::rusthtml_view_macro! {
 
     <h1>@view_context.get_str("Title")</h1>
 
-    @html.form(http::method::Method::POST, url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).into(), Some(&HashMap::new()) /* optional attributes, takes precedent over route values */, || -> HtmlString {
+    @html.form(http::method::Method::POST, url.url_action(false, Some(false), None, Some("log_add"), Some("Dev"), None, None).into(), Some(&HashMap::new()) /* optional attributes, takes precedent over route values */, || {
         <p class="fc-error">@html.validation_summary()</p>
 
         @custom_html.label_for(expr_quote! { |m| m.input.message }, None)

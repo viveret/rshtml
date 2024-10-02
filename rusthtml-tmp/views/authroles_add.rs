@@ -17,7 +17,8 @@ rusthtml :: helpers :: irender_helpers :: IRenderHelpers; use mvc_lib :: view
 rusthtml_error :: RustHtmlError; use mvc_lib :: view :: iview :: IView; use
 mvc_lib :: routing :: iurl_helpers :: IUrlHelpers; use mvc_lib :: routing ::
 url_helpers :: UrlHelpers; use mvc_lib :: routing :: route_values_builder ::
-RouteValuesBuilder; use mvc_lib :: view :: rusthtml :: helpers ::
+RouteValuesBuilder; use mvc_lib :: services :: service_collection ::
+ServiceCollectionExtensions; use mvc_lib :: view :: rusthtml :: helpers ::
 stacks_html_helpers :: StacksHtmlHelpers; use crate :: view_models ::
 authroles :: add :: AddViewModel; pub struct view_authroles_add
 {
@@ -31,7 +32,7 @@ authroles :: add :: AddViewModel; pub struct view_authroles_add
         {
             model_type_name : "AddViewModel", ViewPath : file! (), raw : "",
             when_compiled : DateTime ::
-            parse_from_rfc2822("Mon, 16 Sep 2024 02:51:39 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Tue, 01 Oct 2024 23:58:18 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {
@@ -60,8 +61,10 @@ authroles :: add :: AddViewModel; pub struct view_authroles_add
         }; let html = HtmlHelpers :: < AddViewModel > ::
         new(view_context, services); let render = RenderHelpers ::
         new(view_context, services); let url = UrlHelpers ::
-        new(view_context, services); let custom_html : StacksHtmlHelpers ::<
-        AddViewModel > ; let html_output = HtmlBuffer :: new(); match
+        new(view_context, services); let custom_html : Rc < StacksHtmlHelpers
+        ::< AddViewModel > > = ServiceCollectionExtensions ::
+        get_required_single :: < StacksHtmlHelpers ::< AddViewModel > >
+        (services); let html_output = HtmlBuffer :: new(); match
         view_context.get_view_renderer().render_with_layout_if_specified(&
         "authroles/_view_start.rs".to_string(), view_context.get_viewmodel(),
         view_context.get_request_context(), services)
@@ -92,13 +95,16 @@ authroles :: add :: AddViewModel; pub struct view_authroles_add
         html_output.write_html(HtmlString ::
         from(custom_html.form(http :: method :: Method :: POST,
         url.url_action(false, Some(false), None, Some("add"),
-        Some("AuthRoles"), None, None).into(), Some(&HashMap::new()), || ->
-        HtmlString
+        Some("AuthRoles"), None, None).into(), Some(& HashMap :: new()), ||
         {
             let role_name_label = "Role Name";
-            @custom_html.label("role", role_name_label, None)
-            @custom_html.input("role", "text", model.role.as_str(), None)
-            @custom_html.submit("Submit", None)
+            html_output.write_html(HtmlString ::
+            from(custom_html.label("role", role_name_label, None)));
+            html_output.write_html(HtmlString ::
+            from(custom_html.input("role", "text", model.role.as_str(),
+            None)));
+            html_output.write_html(HtmlString ::
+            from(custom_html.submit("Submit", None)));
         }))); Ok(html_output.collect_html())
     }
 }

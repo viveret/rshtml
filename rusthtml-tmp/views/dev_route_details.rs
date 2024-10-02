@@ -17,7 +17,8 @@ rusthtml :: helpers :: irender_helpers :: IRenderHelpers; use mvc_lib :: view
 rusthtml_error :: RustHtmlError; use mvc_lib :: view :: iview :: IView; use
 mvc_lib :: routing :: iurl_helpers :: IUrlHelpers; use mvc_lib :: routing ::
 url_helpers :: UrlHelpers; use mvc_lib :: routing :: route_values_builder ::
-RouteValuesBuilder; pub struct view_dev_route_details
+RouteValuesBuilder; use mvc_lib :: services :: service_collection ::
+ServiceCollectionExtensions; pub struct view_dev_route_details
 {
     model_type_name : & 'static str, ViewPath : & 'static str, raw : & 'static
     str, when_compiled : DateTime < Utc > ,
@@ -30,7 +31,7 @@ RouteValuesBuilder; pub struct view_dev_route_details
             model_type_name :
             "crate::view_models::dev::route_details::RouteDetailsViewModel",
             ViewPath : file! (), raw : "", when_compiled : DateTime ::
-            parse_from_rfc2822("Mon, 16 Sep 2024 02:52:39 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Tue, 01 Oct 2024 23:59:18 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {
@@ -89,15 +90,25 @@ RouteValuesBuilder; pub struct view_dev_route_details
         from(format! ("Action Features ({}):", action_features.len())));
         html_output.write_html_str("</h3>");
         html_output.write_html_str("<ol"); html_output.write_html_str(">");
-        for f in action_features { <li> @f </li> }
-        html_output.write_html_str("</ol>");
+        for f in action_features
+        {
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(f));
+            html_output.write_html_str("</li>");
+        } html_output.write_html_str("</ol>");
         html_output.write_html_str("<h3"); html_output.write_html_str(">");
         html_output.write_html(HtmlString ::
         from(format!
         ("Controller Features ({}):", controller_features.len())));
         html_output.write_html_str("</h3>");
         html_output.write_html_str("<ol"); html_output.write_html_str(">");
-        for f in controller_features { <li> @f </li> }
-        html_output.write_html_str("</ol>"); Ok(html_output.collect_html())
+        for f in controller_features
+        {
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString :: from(f));
+            html_output.write_html_str("</li>");
+        } html_output.write_html_str("</ol>"); Ok(html_output.collect_html())
     }
 }

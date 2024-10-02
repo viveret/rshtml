@@ -17,8 +17,9 @@ rusthtml :: helpers :: irender_helpers :: IRenderHelpers; use mvc_lib :: view
 rusthtml_error :: RustHtmlError; use mvc_lib :: view :: iview :: IView; use
 mvc_lib :: routing :: iurl_helpers :: IUrlHelpers; use mvc_lib :: routing ::
 url_helpers :: UrlHelpers; use mvc_lib :: routing :: route_values_builder ::
-RouteValuesBuilder; use sysinfo :: SystemExt; use sysinfo :: NetworkExt; use
-sysinfo :: ProcessExt; pub struct view_dev_sysinfo
+RouteValuesBuilder; use mvc_lib :: services :: service_collection ::
+ServiceCollectionExtensions; use sysinfo :: SystemExt; use sysinfo ::
+NetworkExt; use sysinfo :: ProcessExt; pub struct view_dev_sysinfo
 {
     model_type_name : & 'static str, ViewPath : & 'static str, raw : & 'static
     str, when_compiled : DateTime < Utc > ,
@@ -31,7 +32,7 @@ sysinfo :: ProcessExt; pub struct view_dev_sysinfo
             model_type_name :
             "crate::view_models::dev::sys_info::SysInfoViewModel", ViewPath :
             file! (), raw : "", when_compiled : DateTime ::
-            parse_from_rfc2822("Mon, 16 Sep 2024 02:52:44 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Tue, 01 Oct 2024 23:59:23 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {
@@ -83,26 +84,45 @@ sysinfo :: ProcessExt; pub struct view_dev_sysinfo
         from(view_context.get_str("Title")));
         html_output.write_html_str("</h1>");
         html_output.write_html_str("<h3"); html_output.write_html_str(">");
-        disks :html_output.write_html_str("</h3>");
+        html_output.write_html(HtmlString :: from("disks:"));
+        html_output.write_html_str("</h3>");
         html_output.write_html_str("<ul"); html_output.write_html_str(">");
-        for disk in sys.disks() { <li>@format!("{:?}", disk)</li> }
-        html_output.write_html_str("</ul>");
+        for disk in sys.disks()
+        {
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString ::
+            from(format! ("{:?}", disk)));
+            html_output.write_html_str("</li>");
+        } html_output.write_html_str("</ul>");
         html_output.write_html_str("<h3"); html_output.write_html_str(">");
-        networks :html_output.write_html_str("</h3>");
+        html_output.write_html(HtmlString :: from("networks:"));
+        html_output.write_html_str("</h3>");
         html_output.write_html_str("<ul"); html_output.write_html_str(">");
         for (interface_name, data) in sys.networks()
         {
-            <li>@format!("{}: {}/{} B", interface_name, data.received(),
-            data.transmitted())</li>
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString ::
+            from(format!
+            ("{}: {}/{} B", interface_name, data.received(),
+            data.transmitted()))); html_output.write_html_str("</li>");
         } html_output.write_html_str("</ul>");
         html_output.write_html_str("<h3"); html_output.write_html_str(">");
-        components :html_output.write_html_str("</h3>");
+        html_output.write_html(HtmlString :: from("components:"));
+        html_output.write_html_str("</h3>");
         html_output.write_html_str("<ul"); html_output.write_html_str(">");
         for component in sys.components()
-        { <li>@format!("{:?}", component)</li> }
-        html_output.write_html_str("</ul>");
+        {
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString ::
+            from(format! ("{:?}", component)));
+            html_output.write_html_str("</li>");
+        } html_output.write_html_str("</ul>");
         html_output.write_html_str("<h3"); html_output.write_html_str(">");
-        system :html_output.write_html_str("</h3>");
+        html_output.write_html(HtmlString :: from("system:"));
+        html_output.write_html_str("</h3>");
         html_output.write_html_str("<ul"); html_output.write_html_str(">");
         html_output.write_html_str("<li"); html_output.write_html_str(">");
         html_output.write_html(HtmlString ::
@@ -143,12 +163,17 @@ sysinfo :: ProcessExt; pub struct view_dev_sysinfo
         html_output.write_html_str("</li>");
         html_output.write_html_str("</ul>");
         html_output.write_html_str("<h3"); html_output.write_html_str(">");
-        processes :html_output.write_html_str("</h3>");
+        html_output.write_html(HtmlString :: from("processes:"));
+        html_output.write_html_str("</h3>");
         html_output.write_html_str("<ul"); html_output.write_html_str(">");
         for (pid, process) in sys.processes()
         {
-            <li>@format!("[{}] {} {:?}", pid, process.name(),
-            process.disk_usage())</li>
+            html_output.write_html_str("<li");
+            html_output.write_html_str(">");
+            html_output.write_html(HtmlString ::
+            from(format!
+            ("[{}] {} {:?}", pid, process.name(), process.disk_usage())));
+            html_output.write_html_str("</li>");
         } html_output.write_html_str("</ul>"); Ok(html_output.collect_html())
     }
 }

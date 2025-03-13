@@ -31,7 +31,7 @@ ServiceCollectionExtensions; pub struct view_dev_log_clear
             model_type_name :
             "crate::view_models::dev::log_clear::LogClearViewModel", ViewPath
             : file! (), raw : "", when_compiled : DateTime ::
-            parse_from_rfc2822("Tue, 01 Oct 2024 23:58:53 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Wed, 26 Feb 2025 01:33:12 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {

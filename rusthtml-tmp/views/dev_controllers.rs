@@ -31,7 +31,7 @@ ServiceCollectionExtensions; pub struct view_dev_controllers
             model_type_name :
             "crate::view_models::dev::controllers::ControllersViewModel",
             ViewPath : file! (), raw : "", when_compiled : DateTime ::
-            parse_from_rfc2822("Wed, 26 Feb 2025 01:32:52 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Thu, 13 Mar 2025 16:48:31 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {

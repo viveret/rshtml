@@ -31,7 +31,7 @@ ServiceCollectionExtensions; pub struct view_error
             model_type_name :
             "mvc_lib::error::error_viewmodel_service::BasicErrorViewModel",
             ViewPath : file! (), raw : "", when_compiled : DateTime ::
-            parse_from_rfc2822("Wed, 26 Feb 2025 01:34:12 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Thu, 13 Mar 2025 16:49:51 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {

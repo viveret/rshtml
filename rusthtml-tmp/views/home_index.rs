@@ -30,7 +30,7 @@ ServiceCollectionExtensions; pub struct view_home_index
         {
             model_type_name : "", ViewPath : file! (), raw : "", when_compiled
             : DateTime ::
-            parse_from_rfc2822("Wed, 26 Feb 2025 01:33:47 +0000").expect("could not parse when compiled").into(),
+            parse_from_rfc2822("Thu, 13 Mar 2025 16:49:26 +0000").expect("could not parse when compiled").into(),
         }
     } pub fn new_service() -> Box < dyn Any >
     {

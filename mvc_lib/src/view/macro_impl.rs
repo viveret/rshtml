@@ -195,7 +195,7 @@ pub fn rusthtml_view_macro_with_context(input: TokenStream) -> (Rc<RustHtmlParse
             if log_final_view_to_external_file {
                 std::fs::create_dir_all("rusthtml-tmp/views/").expect("could not create tmp folder");
                 let path = format!("rusthtml-tmp/views/{}.rs", view_name);
-                std::fs::remove_file(path.as_str())?;
+                std::fs::remove_file(path.as_str()).expect("could not remove file");
                 std::fs::write(path.as_str(), s.to_string()).expect("could not write contents");
             }
             s

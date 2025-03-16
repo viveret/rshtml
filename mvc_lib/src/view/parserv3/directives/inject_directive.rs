@@ -21,7 +21,7 @@ impl InjectDirective {
         Self {}
     }
 
-    pub fn insert_assignment_code(self: &Self, context: Rc<dyn IRustHtmlParserContext>, inject_type: TokenStream, parser: Rc<dyn IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
+    pub fn insert_assignment_code(&self, context: Rc<dyn IRustHtmlParserContext>, inject_type: TokenStream, parser: Rc<dyn IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError> {
         context.push_inject_statements(quote::quote! {
             ServiceCollectionExtensions::get_required_single::<#inject_type>(services)
         });
@@ -30,11 +30,11 @@ impl InjectDirective {
 }
 
 impl IRustHtmlDirective for InjectDirective {
-    fn matches(self: &Self, name: &String) -> bool {
+    fn matches(&self, name: &String) -> bool {
         name == "inject"
     }
 
-    fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
+    fn execute_new_v3(&self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         // expect name of injected service
         let injected_ident_token = it.next();
         let ident_tokentree = match &injected_ident_token {

@@ -15,6 +15,6 @@ use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 // this trait is used to define a directive that can be used in a RustHtml view.
 // the directive is defined by a keyword and a function that is executed when the keyword is encountered in the view.
 pub trait IRustHtmlDirective {
-    fn matches(self: &Self, name: &String) -> bool;
-    fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError>;
+    fn matches(&self, name: &String) -> bool;
+    fn execute_new_v3(&self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError>;
 }

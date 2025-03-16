@@ -10,30 +10,30 @@ use crate::controller_actions::controller_action::IControllerAction;
 // it is used to get controllers and actions by name.
 pub trait IControllerActionsMap {
     // get a string representation of the controller actions map.
-    fn to_string(self: &Self) -> String;
+    fn to_string(&self) -> String;
 
     // get all the actions in the controller actions map.
-    fn get_all_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>>;
+    fn get_all_actions(&self) -> Vec<Rc<dyn IControllerAction>>;
 
     // get all the controllers in the controller actions map.
-    fn get_controllers(self: &Self) -> Vec<Rc<dyn IController>>;
+    fn get_controllers(&self) -> Vec<Rc<dyn IController>>;
     
     // get the controller with the given name.
     // name: the name of the controller.
     // returns: the controller with the given name.
-    fn get_controller(self: &Self, name: String) -> Rc<dyn IController>;
+    fn get_controller(&self, name: String) -> Rc<dyn IController>;
 
     // get the action with the given path.
     // path: the path of the action.
     // returns: the action with the given path.
-    fn get_action_at_area_controller_action_path(self: &Self, path: String) -> Rc<dyn IControllerAction>;
+    fn get_action_at_area_controller_action_path(&self, path: String) -> Rc<dyn IControllerAction>;
 
     // get the action with the given name values.
     // action_name: the name of the action.
     // controller_name: the name of the controller.
     // area_name: the name of the area.
     // returns: the action with the given name values.
-    fn get_action(self: &Self, action_name: &str, controller_name: &str, area_name: &str) -> Rc<dyn IControllerAction>;
+    fn get_action(&self, action_name: &str, controller_name: &str, area_name: &str) -> Rc<dyn IControllerAction>;
 }
 
 // this struct is used to map controllers and actions and implement the IControllerActionsMap trait.
@@ -73,15 +73,15 @@ impl ControllerActionsMap {
 }
 
 impl IControllerActionsMap for ControllerActionsMap  {
-    fn get_all_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
+    fn get_all_actions(&self) -> Vec<Rc<dyn IControllerAction>> {
         self.actions.clone()
     }
     
-    fn get_controllers(self: &Self) -> Vec<Rc<dyn IController>> {
+    fn get_controllers(&self) -> Vec<Rc<dyn IController>> {
         self.controllers.clone()
     }
     
-    fn get_controller(self: &Self, name: String) -> Rc<dyn IController> {
+    fn get_controller(&self, name: String) -> Rc<dyn IController> {
         if name.len() == 0 {
             panic!("name.len() == 0");
         }
@@ -97,7 +97,7 @@ impl IControllerActionsMap for ControllerActionsMap  {
             .clone()
     }
     
-    fn get_action_at_area_controller_action_path(self: &Self, path: String) -> Rc<dyn IControllerAction> {
+    fn get_action_at_area_controller_action_path(&self, path: String) -> Rc<dyn IControllerAction> {
         self.actions
             .iter()
             .filter(|x| x.get_path().is_equivalent_to(&path))
@@ -109,7 +109,7 @@ impl IControllerActionsMap for ControllerActionsMap  {
             .clone()
     }
 
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         let mut s = String::new();
         s.push_str(&format!("count: {}\n", self.actions.len()));
         for (i, x) in self.actions.iter().enumerate() {
@@ -118,7 +118,7 @@ impl IControllerActionsMap for ControllerActionsMap  {
         s
     }
 
-    fn get_action(self: &Self, action_name: &str, controller_name: &str, area_name: &str) -> Rc<dyn IControllerAction> {
+    fn get_action(&self, action_name: &str, controller_name: &str, area_name: &str) -> Rc<dyn IControllerAction> {
         self.actions
             .iter()
             .filter(|x| x.get_name() == action_name && x.get_controller_name() == controller_name && x.get_area_name() == area_name)

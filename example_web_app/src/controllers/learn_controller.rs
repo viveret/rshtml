@@ -56,15 +56,15 @@ impl LearnController {
 }
 
 impl IController for LearnController {
-    fn get_route_area(self: &Self) -> String {
+    fn get_route_area(&self) -> String {
         String::new()
     }
 
-    fn get_type_name(self: &Self) -> &'static str {
+    fn get_type_name(&self) -> &'static str {
         nameof::name_of_type!(LearnController)
     }
 
-    fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
+    fn get_actions(&self) -> Vec<Rc<dyn IControllerAction>> {
         let controller_name = IControllerExtensions::get_name(self);
         vec![
             Rc::new(ControllerActionClosure::new_default_area_not_validated(vec![], None, "/learn".into(), "index".into(), controller_name.clone().into(), &|_controller_ctx, _services| {
@@ -96,7 +96,7 @@ impl IController for LearnController {
         ]
     }
 
-    fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
+    fn get_features(&self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![]
     }
 }

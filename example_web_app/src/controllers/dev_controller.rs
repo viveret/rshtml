@@ -255,15 +255,15 @@ impl DevController {
 }
 
 impl IController for DevController {
-    fn get_route_area(self: &Self) -> String {
+    fn get_route_area(&self) -> String {
         String::new()
     }
 
-    fn get_type_name(self: &Self) -> &'static str {
+    fn get_type_name(&self) -> &'static str {
         nameof::name_of_type!(DevController)
     }
 
-    fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
+    fn get_actions(&self) -> Vec<Rc<dyn IControllerAction>> {
         let controller_name = IControllerExtensions::get_name(self);
 
         vec![
@@ -284,7 +284,7 @@ impl IController for DevController {
         ]
     }
 
-    fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
+    fn get_features(&self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![
             AuthorizeControllerActionFeature::new_service_parse("admin,dev,owner".to_string(), None, Some(vec![
                 Box::new(BypassOnLocalActionFilter::new())

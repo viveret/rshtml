@@ -21,11 +21,11 @@ impl LangDirective {
 }
 
 impl IRustHtmlDirective for LangDirective {
-    fn matches(self: &Self, name: &String) -> bool {
+    fn matches(&self, name: &String) -> bool {
         name == "lang" || name == "lang_ver" || name == "lang_version"
     }
 
-    fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
+    fn execute_new_v3(&self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         todo!("execute_new_v3 lang directive")
     }
 }

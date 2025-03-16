@@ -22,21 +22,21 @@ pub struct PrecompiledRustHtmlView {
 }
 
 impl IView for precompiled_rusthtml_view {
-    fn get_path(self: &Self) -> String {
+    fn get_path(&self) -> String {
         panic!("Path not available for precompiled views");
     }
 
-    fn get_raw(self: &Self) -> String {
+    fn get_raw(&self) -> String {
         panic!("Raw not available for precompiled views");
     }
 
     // if the view defines a model type, this returns the type id
-    fn get_model_type_name(self: &Self) -> Option<String> {
+    fn get_model_type_name(&self) -> Option<String> {
         return self.model_type_name;
     }
 
     // using template, render the view given the current data
-    fn render(self: &Self, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
+    fn render(&self, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
         self.render_fn()
     }
 }

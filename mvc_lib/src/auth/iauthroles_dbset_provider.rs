@@ -11,7 +11,7 @@ use crate::auth::auth_role_json_file_dbset::AuthRoleJsonFileDbSet;
 // this trait is used to get the authroles dbset
 pub trait IAuthRolesDbSetProvider {
     // get the authroles dbset
-    fn get_authroles_dbset(self: &Self) -> &dyn IDbSetAny;
+    fn get_authroles_dbset(&self) -> &dyn IDbSetAny;
 }
 
 // this struct implements IAuthRolesDbSetProvider
@@ -36,7 +36,7 @@ impl GenericAuthRolesDbSetProvider {
 }
 
 impl IAuthRolesDbSetProvider for GenericAuthRolesDbSetProvider {
-    fn get_authroles_dbset(self: &Self) -> &dyn IDbSetAny {
+    fn get_authroles_dbset(&self) -> &dyn IDbSetAny {
         self.authroles_dbset.as_ref()
     }
 }

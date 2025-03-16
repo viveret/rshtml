@@ -56,11 +56,11 @@ impl FileResult {
 }
 
 impl IActionResult for FileResult {
-    fn get_statuscode(self: &Self) -> StatusCode {
+    fn get_statuscode(&self) -> StatusCode {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
+    fn configure_response(&self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
         match File::open(self.path.as_ref()) {
             Ok(f) => {
                 response_context.set_status_code(StatusCode::OK);

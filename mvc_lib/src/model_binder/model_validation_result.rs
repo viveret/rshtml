@@ -36,7 +36,7 @@ impl <T: 'static + IModel> std::fmt::Display for ModelValidationResult<T> {
 
 impl <T: 'static + IModel + Clone> ModelValidationResult<T> {
     // get whether or not the model was successfully validated.
-    pub fn is_ok(self: &Self) -> bool {
+    pub fn is_ok(&self) -> bool {
         match self {
             ModelValidationResult::OkNone => true,
             ModelValidationResult::Ok(_) => true,
@@ -48,7 +48,7 @@ impl <T: 'static + IModel + Clone> ModelValidationResult<T> {
     }
 
     // get whether or not the model was not successfully validated.
-    pub fn is_err(self: &Self) -> bool {
+    pub fn is_err(&self) -> bool {
         !self.is_ok()
     }
 

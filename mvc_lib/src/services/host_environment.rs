@@ -3,11 +3,11 @@
 // this trait represents the host environment.
 pub trait IHostEnvironment {
     // get the application name.
-    fn get_app_name(self: &Self) -> String;
+    fn get_app_name(&self) -> String;
     // get the application content root path.
-    fn get_content_root_path(self: &Self) -> String;
+    fn get_content_root_path(&self) -> String;
     // get the application environment name.
-    fn get_environment_name(self: &Self) -> String;
+    fn get_environment_name(&self) -> String;
 }
 
 // extension methods for IHostEnvironment.

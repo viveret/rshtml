@@ -81,7 +81,7 @@ impl ControllerActionFileResult {
 }
 
 impl IControllerAction for ControllerActionFileResult {
-    fn invoke(self: &Self, controller_context: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
+    fn invoke(&self, controller_context: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
         let result_option = Some(Rc::new(FileResult::new(self.file_path.clone(), None)));
         if let Some(result) = result_option {
             controller_context.get_response_context().set_action_result(Some(result));
@@ -90,7 +90,7 @@ impl IControllerAction for ControllerActionFileResult {
         Ok(())
     }
 
-    fn is_route_match(self: &Self, request_context: &dyn IRequestContext) -> Result<bool, Rc<dyn Error>> {
+    fn is_route_match(&self, request_context: &dyn IRequestContext) -> Result<bool, Rc<dyn Error>> {
         if !IControllerActionExtensions::is_method_match(self, request_context) {
             return Ok(false);
         }
@@ -109,27 +109,27 @@ impl IControllerAction for ControllerActionFileResult {
         }
     }
 
-    fn get_name(self: &Self) -> Cow<'static, str> {
+    fn get_name(&self) -> Cow<'static, str> {
         self.name.clone()
     }
 
-    fn get_controller_name(self: &Self) -> Cow<'static, str> {
+    fn get_controller_name(&self) -> Cow<'static, str> {
         self.controller_name.clone()
     }
 
-    fn get_area_name(self: &Self) -> String {
+    fn get_area_name(&self) -> String {
         self.area_name.clone()
     }
 
-    fn get_route_pattern(self: &Self) -> Rc<ControllerActionRoutePattern> {
+    fn get_route_pattern(&self) -> Rc<ControllerActionRoutePattern> {
         self.route_pattern.clone()
     }
 
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         format!("[{:?}] {} mapped to {} (which is mapped to file {})", self.get_http_methods_allowed(), self.get_path(), self.route_pattern.raw, self.file_path)
     }
 
-    fn get_path(self: &Self) -> ActionPath {
+    fn get_path(&self) -> ActionPath {
         let mut path_builder = ActionPathBuilder::new();
         path_builder
             .add(&self.area_name, false)
@@ -138,19 +138,19 @@ impl IControllerAction for ControllerActionFileResult {
             .as_action_path()
     }
 
-    fn get_http_methods_allowed(self: &Self) -> Vec<Method> {
+    fn get_http_methods_allowed(&self) -> Vec<Method> {
         vec![Method::GET, Method::HEAD]
     }
 
-    fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
+    fn get_features(&self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![]
     }
 
-    fn get_should_validate_model(self: &Self) -> bool {
+    fn get_should_validate_model(&self) -> bool {
         false
     }
 
-    fn get_model_type(self: &Self) -> Option<Box<crate::core::type_info::TypeInfo>> {
+    fn get_model_type(&self) -> Option<Box<crate::core::type_info::TypeInfo>> {
         None
     }
 }

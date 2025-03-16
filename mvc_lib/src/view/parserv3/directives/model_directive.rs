@@ -28,11 +28,11 @@ impl ModelDirective {
 }
 
 impl IRustHtmlDirective for ModelDirective {
-    fn matches(self: &Self, name: &String) -> bool {
+    fn matches(&self, name: &String) -> bool {
         name == "model"
     }
 
-    fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
+    fn execute_new_v3(&self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         match parser.get_rust_parser().parse_type_identifier(it, ct.clone()) {
             Ok(type_ident_tokens) => {
                 let type_it = Rc::new(VecPeekableRustHtmlToken::new(type_ident_tokens));

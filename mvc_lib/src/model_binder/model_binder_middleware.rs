@@ -60,11 +60,11 @@ impl ModelBinderMiddleware {
 }
 
 impl IRequestMiddlewareService for ModelBinderMiddleware {
-    fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
+    fn set_next(&self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
         *self.next.borrow_mut() = next;
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         // println!("ModelBinderMiddleware.handle_request");
 
         // request_context.set_model_validation_result(Some(self.model_binder_service.bind_model(request_context, &request_context.get_type_info()));

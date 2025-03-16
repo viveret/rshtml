@@ -62,15 +62,15 @@ impl FileProviderController {
 }
 
 impl IController for FileProviderController {
-    fn get_route_area(self: &Self) -> String {
+    fn get_route_area(&self) -> String {
         String::new()
     }
 
-    fn get_type_name(self: &Self) -> &'static str {
+    fn get_type_name(&self) -> &'static str {
         nameof::name_of_type!(FileProviderController)
     }
 
-    fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
+    fn get_actions(&self) -> Vec<Rc<dyn IControllerAction>> {
         let mapped_paths = self.options.as_ref().get_mapped_paths(true);
 
         mapped_paths
@@ -83,7 +83,7 @@ impl IController for FileProviderController {
             .collect()
     }
 
-    fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
+    fn get_features(&self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![]
     }
 }

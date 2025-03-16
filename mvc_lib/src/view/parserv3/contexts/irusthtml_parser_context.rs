@@ -48,89 +48,89 @@ pub trait IRustHtmlParserContext {
     fn push_output_tokens(&self, token: &[RustHtmlToken]) -> Result<(), RustHtmlError>;
     
     // whether or not the RustHtml code is raw tokenstream.
-    fn get_is_raw_tokenstream(self: &Self) -> bool;
+    fn get_is_raw_tokenstream(&self) -> bool;
     // get the model type name as a string.
-    fn get_model_type_name(self: &Self) -> String;
+    fn get_model_type_name(&self) -> String;
     // get the model type as a token tree stream.
-    fn get_model_type_stream(self: &Self) -> TokenStream;
+    fn get_model_type_stream(&self) -> TokenStream;
     // get the model type as a token tree.
-    fn get_model_type(self: &Self) -> Vec<TokenTree>;
+    fn get_model_type(&self) -> Vec<TokenTree>;
     // set the model type as a token tree.
-    fn set_model_type(self: &Self, value: Option<Vec<TokenTree>>);
+    fn set_model_type(&self, value: Option<Vec<TokenTree>>);
     // try to get a parameter value as a string.
-    fn try_get_param_string(self: &Self, key: &str) -> Option<String>;
+    fn try_get_param_string(&self, key: &str) -> Option<String>;
     // get a parameter value as a string.
     // key: the key of the parameter.
-    fn get_param_string(self: &Self, key: &str) -> Result<String, RustHtmlError>;
+    fn get_param_string(&self, key: &str) -> Result<String, RustHtmlError>;
     // get the functions section as a token stream.
-    fn get_functions_section(self: &Self) -> Option<TokenStream>;
+    fn get_functions_section(&self) -> Option<TokenStream>;
     // get the struct section as a token stream.
-    fn get_struct_section(self: &Self) -> Option<TokenStream>;
+    fn get_struct_section(&self) -> Option<TokenStream>;
     // get the impl section as a token stream.
-    fn get_impl_section(self: &Self) -> Option<TokenStream>;
+    fn get_impl_section(&self) -> Option<TokenStream>;
     // get the model ident as a token stream.
-    fn get_model_ident(self: &Self) -> Option<TokenStream>;
+    fn get_model_ident(&self) -> Option<TokenStream>;
     // push a scope to the HTML tag scope stack.
-    fn htmltag_scope_stack_push(self: &Self, s: String);
+    fn htmltag_scope_stack_push(&self, s: String);
     // pop a scope from the HTML tag scope stack.
-    fn htmltag_scope_stack_pop(self: &Self) -> Option<String>;
+    fn htmltag_scope_stack_pop(&self) -> Option<String>;
     // get the current punctuation scope stack.
-    fn mut_punct_scope_stack(self: &Self) -> RefMut<Vec<char>>;
+    fn mut_punct_scope_stack(&self) -> RefMut<Vec<char>>;
     // get the use statements as mutable.
-    fn push_use_statements(self: &Self, rust: TokenStream);
+    fn push_use_statements(&self, rust: TokenStream);
     
-    fn get_implicit_use_statements(self: &Self) -> proc_macro2::TokenStream;
+    fn get_implicit_use_statements(&self) -> proc_macro2::TokenStream;
     // get the use statements as a single token stream.
-    fn get_use_statements_stream(self: &Self) -> proc_macro2::TokenStream;
+    fn get_use_statements_stream(&self) -> proc_macro2::TokenStream;
     // push the inject statements to a list of statements to be injected into the view.
-    fn push_inject_statements(self: &Self, rust: TokenStream);
+    fn push_inject_statements(&self, rust: TokenStream);
     // get the inject statements as a token stream.
-    fn get_inject_statements_stream(self: &Self) -> proc_macro2::TokenStream;
+    fn get_inject_statements_stream(&self) -> proc_macro2::TokenStream;
     // get the params as mutable.
-    fn mut_params(self: &Self) -> RefMut<HashMap<String, String>>;
+    fn mut_params(&self) -> RefMut<HashMap<String, String>>;
     // insert into the params
-    fn insert_params(self: &Self, key: String, value: String);
+    fn insert_params(&self, key: String, value: String);
     // get the environment name.
-    fn get_environment_name(self: &Self) -> String;
+    fn get_environment_name(&self) -> String;
     // get the raw RustHtml code.
     fn get_raw(&self) -> String;
     // set the raw RustHtml code.
-    fn set_raw(self: &Self, value: String);
+    fn set_raw(&self, value: String);
     // get a labeled section
-    fn get_section(self: &Self, name: &String) -> Option<TokenStream>;
+    fn get_section(&self, name: &String) -> Option<TokenStream>;
     // set a labeled section
-    fn set_section(self: &Self, name: String, value: Option<TokenStream>);
+    fn set_section(&self, name: String, value: Option<TokenStream>);
     // set the functions section as a token stream.
-    fn set_functions_section(self: &Self, value: Option<TokenStream>);
+    fn set_functions_section(&self, value: Option<TokenStream>);
     // set the impl section as a token stream.
-    fn set_impl_section(self: &Self, value: Option<TokenStream>);
+    fn set_impl_section(&self, value: Option<TokenStream>);
     // set the struct section as a token stream.
-    fn set_struct_section(self: &Self, value: Option<TokenStream>);
+    fn set_struct_section(&self, value: Option<TokenStream>);
     // get the directives available to the parser.
-    fn get_directives(self: &Self) -> Vec<Rc<dyn IRustHtmlDirective>>;
+    fn get_directives(&self) -> Vec<Rc<dyn IRustHtmlDirective>>;
     // get the directive with the specified name.
-    fn try_get_directive(self: &Self, name: String) -> Option<Rc<dyn IRustHtmlDirective>>;
+    fn try_get_directive(&self, name: String) -> Option<Rc<dyn IRustHtmlDirective>>;
     // get tag parsed handlers.
-    fn get_tag_parsed_handler(self: &Self) -> Vec<Rc<dyn IHtmlTagParsed>>;
+    fn get_tag_parsed_handler(&self) -> Vec<Rc<dyn IHtmlTagParsed>>;
     // get node parsed handlers.
-    fn get_node_parsed_handler(self: &Self) -> Vec<Rc<dyn IHtmlNodeParsed>>;
+    fn get_node_parsed_handler(&self) -> Vec<Rc<dyn IHtmlNodeParsed>>;
     // get the preprocessors available to the parser.
-    fn get_preprocessors(self: &Self) -> Vec<Rc<dyn IRustHtmlProcessor>>;
+    fn get_preprocessors(&self) -> Vec<Rc<dyn IRustHtmlProcessor>>;
     // get the postprocessors available to the parser.
-    fn get_postprocessors(self: &Self) -> Vec<Rc<dyn IRustHtmlProcessor>>;
+    fn get_postprocessors(&self) -> Vec<Rc<dyn IRustHtmlProcessor>>;
     // get the rust tokentree preprocessors available to the parser.
-    fn get_rust_preprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>>;
+    fn get_rust_preprocessors(&self) -> Vec<Rc<dyn IRustProcessor>>;
     // get the rust tokentree postprocessors available to the parser.
-    fn get_rust_postprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>>;
+    fn get_rust_postprocessors(&self) -> Vec<Rc<dyn IRustProcessor>>;
 
     // resolve a full path to a view using different directories.
-    // fn resolve_views_path_string(self: &Self, path: &str) -> Option<String>;
+    // fn resolve_views_path_string(&self, path: &str) -> Option<String>;
 
-    fn push_html_tag_parse_context(self: &Self, tag_parse_ctx: Rc<dyn IHtmlTagParseContext>);
+    fn push_html_tag_parse_context(&self, tag_parse_ctx: Rc<dyn IHtmlTagParseContext>);
 
-    // fn add_operation_to_ooo_log(self: &Self, operation: String);
-    // fn get_ooo(self: &Self) -> Vec<String>;
+    // fn add_operation_to_ooo_log(&self, operation: String);
+    // fn get_ooo(&self) -> Vec<String>;
 
-    fn log_error(self: &Self, error: RustHtmlError);
-    fn log_info(self: &Self, info: String);
+    fn log_error(&self, error: RustHtmlError);
+    fn log_info(&self, info: String);
 }

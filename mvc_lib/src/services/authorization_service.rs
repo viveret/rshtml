@@ -44,22 +44,22 @@ pub struct AuthenticationToken {
 // this trait is used to provide claims for authorization
 pub trait IAuthClaim {
     // gets the name of the claim
-    fn get_name(self: &Self) -> String;
+    fn get_name(&self) -> String;
     // gets the tokens for the claim
-    fn get_tokens(self: &Self) -> HashMap<String, String>;
+    fn get_tokens(&self) -> HashMap<String, String>;
 
     // gets whether the claim is an identifier
-    fn is_identifier(self: &Self) -> bool;
+    fn is_identifier(&self) -> bool;
     // gets whether the claim is a secret
-    fn is_secret(self: &Self) -> bool;
+    fn is_secret(&self) -> bool;
 
     // gets the type info for the claim
-    fn get_type_info(self: &Self) -> TypeInfo;
+    fn get_type_info(&self) -> TypeInfo;
     // gets the type name for the claim
-    fn get_type_name(self: &Self) -> String;
+    fn get_type_name(&self) -> String;
 
     // gets the string representation of the claim
-    fn to_string(self: &Self) -> String;
+    fn to_string(&self) -> String;
 }
 
 // Convert input claims and tokens to usable claims and tokens
@@ -68,21 +68,21 @@ pub trait IAuthClaimTransformer {
     // claims: the claims from the request.
     // request_context: the request context.
     // returns: the usable claims for authorization.
-    fn transform_claims(self: &Self, claims: Vec<Rc<dyn IAuthClaim>>, request_context: &dyn IRequestContext) -> Vec<Rc<dyn IAuthClaim>>;
+    fn transform_claims(&self, claims: Vec<Rc<dyn IAuthClaim>>, request_context: &dyn IRequestContext) -> Vec<Rc<dyn IAuthClaim>>;
     
     // transform the tokens from the request into usable tokens for authorization.
     // tokens: the tokens from the request.
     // request_context: the request context.
     // returns: the usable tokens for authorization.
-    fn transform_tokens(self: &Self, tokens: Vec<Rc<AuthenticationToken>>, request_context: &dyn IRequestContext) -> Vec<Rc<AuthenticationToken>>;
+    fn transform_tokens(&self, tokens: Vec<Rc<AuthenticationToken>>, request_context: &dyn IRequestContext) -> Vec<Rc<AuthenticationToken>>;
 
     // gets the type info for the claim transformer
-    fn get_type_info(self: &Self) -> TypeInfo;
+    fn get_type_info(&self) -> TypeInfo;
     // gets the type name for the claim transformer
-    fn get_type_name(self: &Self) -> String;
+    fn get_type_name(&self) -> String;
 
     // gets the string representation of the claim transformer
-    fn to_string(self: &Self) -> String;
+    fn to_string(&self) -> String;
 }
 
 // for testing, allow changing role from cookie
@@ -103,33 +103,33 @@ impl CookieRoleClaim {
 }
 
 impl IAuthClaim for CookieRoleClaim {
-    fn get_name(self: &Self) -> String {
+    fn get_name(&self) -> String {
         "Role".to_string()
     }
 
-    fn get_tokens(self: &Self) -> HashMap<String, String> {
+    fn get_tokens(&self) -> HashMap<String, String> {
         let mut tokens = HashMap::new();
         tokens.insert("Role".to_string(), self.role.clone());
         tokens
     }
 
-    fn is_identifier(self: &Self) -> bool {
+    fn is_identifier(&self) -> bool {
         false
     }
 
-    fn is_secret(self: &Self) -> bool {
+    fn is_secret(&self) -> bool {
         false
     }
 
-    fn get_type_info(self: &Self) -> TypeInfo {
+    fn get_type_info(&self) -> TypeInfo {
         TypeInfo::of::<CookieRoleClaim>()
     }
 
-    fn get_type_name(self: &Self) -> String {
+    fn get_type_name(&self) -> String {
         nameof::name_of_type!(CookieRoleClaim).to_string()
     }
 
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         format!("{} (role: {})", self.get_type_name(), self.role)
     }
 }
@@ -153,7 +153,7 @@ impl CookieRoleClaimTransformer {
 }
 
 impl IAuthClaimTransformer for CookieRoleClaimTransformer {
-    fn transform_claims(self: &Self, claims: Vec<Rc<dyn IAuthClaim>>, request_context: &dyn IRequestContext) -> Vec<Rc<dyn IAuthClaim>> {
+    fn transform_claims(&self, claims: Vec<Rc<dyn IAuthClaim>>, request_context: &dyn IRequestContext) -> Vec<Rc<dyn IAuthClaim>> {
         if let Some(cookies) = request_context.get_cookies_parsed() {
             if let Some(role) = cookies.get("role") {
                 return claims.iter().cloned().chain(vec![CookieRoleClaim::new_service(role.clone())]).collect();
@@ -162,19 +162,19 @@ impl IAuthClaimTransformer for CookieRoleClaimTransformer {
         claims
     }
 
-    fn transform_tokens(self: &Self, tokens: Vec<Rc<AuthenticationToken>>, _request_context: &dyn IRequestContext) -> Vec<Rc<AuthenticationToken>> {
+    fn transform_tokens(&self, tokens: Vec<Rc<AuthenticationToken>>, _request_context: &dyn IRequestContext) -> Vec<Rc<AuthenticationToken>> {
         tokens
     }
 
-    fn get_type_info(self: &Self) -> TypeInfo {
+    fn get_type_info(&self) -> TypeInfo {
         TypeInfo::of::<CookieRoleClaimTransformer>()
     }
 
-    fn get_type_name(self: &Self) -> String {
+    fn get_type_name(&self) -> String {
         nameof::name_of_type!(CookieRoleClaimTransformer).to_string()
     }
 
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         self.get_type_name()
     }
 }
@@ -186,18 +186,18 @@ pub trait IAuthRequirement {
     // roles: the roles to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn invoke(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
+    fn invoke(&self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
 
     // gets the name of the authorization requirement.
-    fn get_name(self: &Self) -> String;
+    fn get_name(&self) -> String;
 
     // gets the type info for the authorization requirement.
-    fn get_type_info(self: &Self) -> TypeInfo;
+    fn get_type_info(&self) -> TypeInfo;
     // gets the type name for the authorization requirement.
-    fn get_type_name(self: &Self) -> String;
+    fn get_type_name(&self) -> String;
 
     // gets the string representation of the authorization requirement.
-    fn to_string(self: &Self) -> String;
+    fn to_string(&self) -> String;
 }
 
 // this struct is used to check if the user has a role.
@@ -217,7 +217,7 @@ impl RoleAuthRequirement {
 }
 
 impl IAuthRequirement for RoleAuthRequirement {
-    fn invoke(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, _request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
+    fn invoke(&self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, _request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
         if roles.len() == 0 {
             return Ok(AuthResult::Ok);
         }
@@ -239,19 +239,19 @@ impl IAuthRequirement for RoleAuthRequirement {
         Ok(AuthResult::Rejection(AuthRejectionReason::Other(format!("Role(s) required {:?} not found in authed role(s) {:?}", roles, found_roles))))
     }
 
-    fn get_name(self: &Self) -> String {
+    fn get_name(&self) -> String {
         "Role".to_string()
     }
 
-    fn get_type_info(self: &Self) -> TypeInfo {
+    fn get_type_info(&self) -> TypeInfo {
         TypeInfo::of::<RoleAuthRequirement>()
     }
 
-    fn get_type_name(self: &Self) -> String {
+    fn get_type_name(&self) -> String {
         nameof::name_of_type!(RoleAuthRequirement).to_string()
     }
 
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         self.get_type_name()
     }
 }
@@ -265,70 +265,70 @@ pub trait IAuthorizationService {
     // role: the role to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_role(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, role: String, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
+    fn authenticate_role(&self, auth_claims: Vec<Rc<dyn IAuthClaim>>, role: String, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
 
     // authenticate the user for a set of roles.
     // auth_claims: the claims to check.
     // roles: the roles to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_roles(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
+    fn authenticate_roles(&self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
 
     // authenticate the user for a set of requirements.
     // auth_claims: the claims to check.
     // requirements: the requirements to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_requirements(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<Rc<dyn IAuthRequirement>>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
+    fn authenticate_requirements(&self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<Rc<dyn IAuthRequirement>>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
 
     // authenticate the user for a set of requirements by name.
     // auth_claims: the claims to check.
     // requirements: the requirements to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_requirements_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
+    fn authenticate_requirements_by_name(&self, auth_claims: Vec<Rc<dyn IAuthClaim>>, requirements: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
 
     // authenticate the user for a policy.
     // auth_claims: the claims to check.
     // policy: the policy to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_policy(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: Rc<dyn IAuthRequirement>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
+    fn authenticate_policy(&self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: Rc<dyn IAuthRequirement>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
 
     // authenticate the user for a policy by name.
     // auth_claims: the claims to check.
     // policy: the policy to check.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_policy_by_name(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: String, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
+    fn authenticate_policy_by_name(&self, auth_claims: Vec<Rc<dyn IAuthClaim>>, policy: String, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
 
     // authenticate the user for an HTTP request.
     // controller: the controller.
     // request_context: the request context.
     // returns: the result of the authorization check.
-    fn authenticate_http_request(self: &Self, controller: Rc<dyn IController>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
+    fn authenticate_http_request(&self, controller: Rc<dyn IController>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>>;
     
     // sign in the user.
-    fn sign_in(self: &Self);
+    fn sign_in(&self);
     // sign out the user.
-    fn sign_out(self: &Self);
+    fn sign_out(&self);
 
     // get the policies.
-    fn get_policies(self: &Self) -> Vec<Rc<dyn IAuthRequirement>>;
+    fn get_policies(&self) -> Vec<Rc<dyn IAuthRequirement>>;
     // get the roles.
-    fn get_roles(self: &Self) -> Vec<String>;
+    fn get_roles(&self) -> Vec<String>;
     // get the claim providers.
-    fn get_auth_claim_providers(self: &Self) -> Vec<String>;
+    fn get_auth_claim_providers(&self) -> Vec<String>;
     // get the claim transformers.
-    fn get_claim_transformers(self: &Self) -> Vec<Rc<dyn IAuthClaimTransformer>>;
+    fn get_claim_transformers(&self) -> Vec<Rc<dyn IAuthClaimTransformer>>;
     
     // get the type info for the authorization service.
-    fn get_type_info(self: &Self) -> TypeInfo;
+    fn get_type_info(&self) -> TypeInfo;
     // get the type name for the authorization service.
-    fn get_type_name(self: &Self) -> String;
+    fn get_type_name(&self) -> String;
 
     // get the string representation of the authorization service.
-    fn to_string(self: &Self) -> String;
+    fn to_string(&self) -> String;
 }
 
 // this struct is used to provide authorization services.
@@ -376,47 +376,47 @@ impl AuthorizationService {
 }
 
 impl IAuthorizationService for AuthorizationService {
-    fn authenticate_role(self: &Self, _: Vec<Rc<dyn IAuthClaim>>, _: String, _: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
+    fn authenticate_role(&self, _: Vec<Rc<dyn IAuthClaim>>, _: String, _: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
         Ok(AuthResult::Ok)
     }
 
-    fn authenticate_roles(self: &Self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
+    fn authenticate_roles(&self, auth_claims: Vec<Rc<dyn IAuthClaim>>, roles: Vec<String>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
         self.policies.get("Role").unwrap().invoke(auth_claims, roles, request_context)
     }
 
-    fn authenticate_requirements(self: &Self, _: Vec<Rc<dyn IAuthClaim>>, _: Vec<Rc<dyn IAuthRequirement>>, _: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
+    fn authenticate_requirements(&self, _: Vec<Rc<dyn IAuthClaim>>, _: Vec<Rc<dyn IAuthRequirement>>, _: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
         Ok(AuthResult::Ok)
     }
 
-    fn authenticate_requirements_by_name(self: &Self, _: Vec<Rc<dyn IAuthClaim>>, _: Vec<String>, _: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
+    fn authenticate_requirements_by_name(&self, _: Vec<Rc<dyn IAuthClaim>>, _: Vec<String>, _: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
         Ok(AuthResult::Ok)
     }
 
-    fn authenticate_policy(self: &Self, _: Vec<Rc<dyn IAuthClaim>>, _: Rc<dyn IAuthRequirement>, _: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
+    fn authenticate_policy(&self, _: Vec<Rc<dyn IAuthClaim>>, _: Rc<dyn IAuthRequirement>, _: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
         Ok(AuthResult::Ok)
     }
 
-    fn authenticate_policy_by_name(self: &Self, _: Vec<Rc<dyn IAuthClaim>>, _: String, _: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
+    fn authenticate_policy_by_name(&self, _: Vec<Rc<dyn IAuthClaim>>, _: String, _: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
         Ok(AuthResult::Ok)
     }
 
-    fn get_policies(self: &Self) -> Vec<Rc<dyn IAuthRequirement>> {
+    fn get_policies(&self) -> Vec<Rc<dyn IAuthRequirement>> {
         vec![]
     }
 
-    fn get_roles(self: &Self) -> Vec<String> {
+    fn get_roles(&self) -> Vec<String> {
         self.authrole_dbset_provider.get_authroles_dbset().get_all_any().iter().map(|x| x.downcast_ref::<JsonAuthRole>().unwrap().name.clone()).collect()
     }
 
-    fn get_auth_claim_providers(self: &Self) -> Vec<String> {
+    fn get_auth_claim_providers(&self) -> Vec<String> {
         vec![]
     }
 
-    fn get_claim_transformers(self: &Self) -> Vec<Rc<dyn IAuthClaimTransformer>> {
+    fn get_claim_transformers(&self) -> Vec<Rc<dyn IAuthClaimTransformer>> {
         self.claim_transformers.clone()
     }
 
-    fn authenticate_http_request(self: &Self, controller: Rc<dyn IController>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
+    fn authenticate_http_request(&self, controller: Rc<dyn IController>, request_context: &dyn IRequestContext) -> Result<AuthResult, Rc<dyn Error>> {
         let mut required_roles = vec![];
         let mut required_policies = vec![];
 
@@ -492,23 +492,23 @@ impl IAuthorizationService for AuthorizationService {
         Ok(AuthResult::Ok)
     }
     
-    fn sign_in(self: &Self) {
+    fn sign_in(&self) {
         
     }
 
-    fn sign_out(self: &Self) {
+    fn sign_out(&self) {
         
     }
 
-    fn get_type_info(self: &Self) -> TypeInfo {
+    fn get_type_info(&self) -> TypeInfo {
         TypeInfo::of::<AuthorizationService>()
     }
 
-    fn get_type_name(self: &Self) -> String {
+    fn get_type_name(&self) -> String {
         nameof::name_of_type!(AuthorizationService).to_string()
     }
 
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         self.get_type_name()
     }
 }

@@ -18,6 +18,10 @@ macro_rules! impl_with_logging {
             fn add_operation_to_ooo_log(&self, operation: String) {
                 self.order_of_operations.borrow_mut().push(operation);
             }
+
+            pub fn get_order_of_operations(&self) -> Vec<String> {
+                self.order_of_operations.borrow().clone()
+            }
         }
 
         impl $trait_name for $struct_name {

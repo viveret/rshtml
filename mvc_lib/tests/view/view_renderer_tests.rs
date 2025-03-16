@@ -28,19 +28,19 @@ impl MockView {
 }
 
 impl IView for MockView {
-    fn get_path(self: &Self) -> String {
+    fn get_path(&self) -> String {
         "tests/view/view_renderer_tests.rs".to_string()
     }
 
-    fn get_raw(self: &Self) -> String {
+    fn get_raw(&self) -> String {
         self.content.clone()
     }
 
-    fn get_model_type_name(self: &Self) -> Option<String> {
+    fn get_model_type_name(&self) -> Option<String> {
         None
     }
 
-    fn render(self: &Self, _ctx: &dyn mvc_lib::contexts::view_context::IViewContext, _services: &dyn IServiceCollection) -> Result<mvc_lib::view::rusthtml::html_string::HtmlString, mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError> {
+    fn render(&self, _ctx: &dyn mvc_lib::contexts::view_context::IViewContext, _services: &dyn IServiceCollection) -> Result<mvc_lib::view::rusthtml::html_string::HtmlString, mvc_lib::view::rusthtml::rusthtml_error::RustHtmlError> {
         Ok(mvc_lib::view::rusthtml::html_string::HtmlString::new_from_html(self.content.clone()))
     }
 }

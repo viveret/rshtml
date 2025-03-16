@@ -15,7 +15,7 @@ use crate::services::service_collection::IServiceCollection;
 
 
 pub trait IAuthRequirementFilter {
-    fn use_requirement(self: &Self) -> bool;
+    fn use_requirement(&self) -> bool;
 }
 
 pub struct BypassOnLocalActionFilter {}
@@ -27,7 +27,7 @@ impl BypassOnLocalActionFilter {
 }
 
 impl IAuthRequirementFilter for BypassOnLocalActionFilter {
-    fn use_requirement(self: &Self) -> bool {
+    fn use_requirement(&self) -> bool {
         false
     }
 }
@@ -56,19 +56,19 @@ impl AllowAnonymous {
 }
 
 impl IControllerActionFeature for AllowAnonymous {
-    fn get_type_info(self: &Self) -> TypeInfo {
+    fn get_type_info(&self) -> TypeInfo {
         TypeInfo::of::<AllowAnonymous>()
     }
 
-    fn get_name(self: &Self) -> String {
+    fn get_name(&self) -> String {
         nameof::name_of_type!(AllowAnonymous).to_string()
     }
 
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         format!("{}", self.get_name())
     }
 
-    fn invoke(self: &Self, request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn invoke(&self, request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         println!("Allow Anonymous {:?}", request_context.get_connection_context().get_tcp_context().get_remote_addr());
         Ok(MiddlewareResult::OkContinue)
     }
@@ -141,19 +141,19 @@ impl AuthorizeControllerActionFeature {
 }
 
 impl IControllerActionFeature for AuthorizeControllerActionFeature {
-    fn get_type_info(self: &Self) -> TypeInfo {
+    fn get_type_info(&self) -> TypeInfo {
         TypeInfo::of::<AuthorizeControllerActionFeature>()
     }
 
-    fn get_name(self: &Self) -> String {
+    fn get_name(&self) -> String {
         nameof::name_of_type!(AuthorizeControllerActionFeature).to_string()
     }
 
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         format!("{} (roles: {:?}, policy: {:?})", self.get_name(), self.roles, self.policy)
     }
 
-    fn invoke(self: &Self, _request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn invoke(&self, _request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         Ok(MiddlewareResult::OkContinue)
     }
 

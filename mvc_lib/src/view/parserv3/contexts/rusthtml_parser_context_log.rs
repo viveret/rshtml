@@ -1,12 +1,22 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use core_lib::{asyncly::icancellation_token::ICancellationToken, impl_with_logging, sys::call_tracker::CallstackTracker};
-use proc_macro2::{TokenStream, TokenTree};
+use core_lib::sys::call_tracker::CallstackTracker;
+use core_lib::impl_with_logging;
+use proc_macro2::TokenTree;
+use proc_macro2::TokenStream;
 
-use crate::view::{parserv3::{converters::{inode_parsed::IHtmlNodeParsed, irust_processor::IRustProcessor, irusthtml_processor::IRustHtmlProcessor, itag_parsed::IHtmlTagParsed}, directives::irusthtml_directive::IRustHtmlDirective}, rusthtml::{rusthtml_error::RustHtmlError, rusthtml_token::RustHtmlToken}};
+use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
+use crate::view::parserv3::directives::irusthtml_directive::IRustHtmlDirective;
+use crate::view::parserv3::converters::itag_parsed::IHtmlTagParsed;
+use crate::view::parserv3::converters::irusthtml_processor::IRustHtmlProcessor;
+use crate::view::parserv3::converters::irust_processor::IRustProcessor;
+use crate::view::parserv3::converters::inode_parsed::IHtmlNodeParsed;
 
-use super::{ihtml_tag_parse_context::IHtmlTagParseContext, irusthtml_parser_context::IRustHtmlParserContext, rusthtml_output_buffer::RustHtmlTokenBuffer};
+use super::rusthtml_output_buffer::RustHtmlTokenBuffer;
+use super::irusthtml_parser_context::IRustHtmlParserContext;
+use super::ihtml_tag_parse_context::IHtmlTagParseContext;
 
 
 // Usage of the macro to define the struct and implement the trait with logging

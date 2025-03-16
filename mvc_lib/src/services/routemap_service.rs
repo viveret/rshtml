@@ -16,7 +16,7 @@ use super::service_scope::ServiceScope;
 // this is the service that handles route mapping.
 pub trait IRouteMapService {
     // gets the mapper.
-    fn get_mapper(self: &Self) -> Rc<dyn IControllerActionsMap>;
+    fn get_mapper(&self) -> Rc<dyn IControllerActionsMap>;
 }
 
 // implementation of the route map service.
@@ -56,7 +56,7 @@ impl RouteMapService {
     // gets the controllers in the area of the request.
     // request: the request context.
     // returns a vector containing the controllers in the area of the request.
-    pub fn get_controllers_in_area(self: &Self, request: Rc<dyn IRequestContext>) -> Vec<Rc<dyn IController>> {
+    pub fn get_controllers_in_area(&self, request: Rc<dyn IRequestContext>) -> Vec<Rc<dyn IController>> {
         self.controllers
             .iter()
             .filter(|x| request.get_path().starts_with(&x.get_route_area()))
@@ -67,13 +67,13 @@ impl RouteMapService {
     // gets the controllers.
     // request: the request context.
     // returns a vector containing the controllers.
-    pub fn get_controllers(self: &Self, _request: Rc<dyn IRequestContext>) -> Vec<Rc<dyn IController>> {
+    pub fn get_controllers(&self, _request: Rc<dyn IRequestContext>) -> Vec<Rc<dyn IController>> {
         self.controllers.iter().map(|x| x.clone()).collect()
     }
 }
 
 impl IRouteMapService for RouteMapService {
-    fn get_mapper(self: &Self) -> Rc<dyn IControllerActionsMap> {
+    fn get_mapper(&self) -> Rc<dyn IControllerActionsMap> {
         self.mapper.clone()
     }
 }

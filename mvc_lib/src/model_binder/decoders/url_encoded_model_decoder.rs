@@ -76,33 +76,33 @@ impl UrlEncodedFormatResolver {
 }
 
 impl IHttpBodyStreamFormat for UrlEncodedFormatResolver {
-    fn matches_content_type(self: &Self, content_type: &ContentType) -> bool {
+    fn matches_content_type(&self, content_type: &ContentType) -> bool {
         content_type.mime_type.starts_with("application/x-www-form-urlencoded")
     }
 
-    fn decode(self: &Self, body: Rc<RefCell<dyn ITcpStreamWrapper>>, _content_type: &ContentType) -> Rc<RefCell<dyn ITcpStreamWrapper>> {
+    fn decode(&self, body: Rc<RefCell<dyn ITcpStreamWrapper>>, _content_type: &ContentType) -> Rc<RefCell<dyn ITcpStreamWrapper>> {
         Rc::new(RefCell::new(UrlEncodedStream::new(body)))
     }
 
-    fn type_info(self: &Self) -> Box<TypeInfo> {
+    fn type_info(&self) -> Box<TypeInfo> {
         TypeInfo::rc_of::<UrlEncodedStream>()
     }
 
-    fn encode(self: &Self, stream: Rc<RefCell<dyn ITcpStreamWrapper>>, _content_type: &ContentType) -> Rc<RefCell<dyn ITcpStreamWrapper>> {
+    fn encode(&self, stream: Rc<RefCell<dyn ITcpStreamWrapper>>, _content_type: &ContentType) -> Rc<RefCell<dyn ITcpStreamWrapper>> {
         Rc::new(RefCell::new(UrlEncodedStream::new(stream)))
     }
 }
 
 // impl IModelBinder for UrlEncodedDecoder {
-//     fn matches_content_type(self: &Self, content_type: &str) -> bool {
+//     fn matches_content_type(&self, content_type: &str) -> bool {
 //         content_type.starts_with("application/x-www-form-urlencoded")
 //     }
 
-//     fn bind_model(self: &Self, request_context: Rc<dyn IRequestContext>) -> ModelValidationResult<Rc<dyn Any>> {
+//     fn bind_model(&self, request_context: Rc<dyn IRequestContext>) -> ModelValidationResult<Rc<dyn Any>> {
 //         todo!()
 //     }
 
-//     // fn bind_model(self: &Self, request_context: Rc<dyn IRequestContext>) -> ModelValidationResult<Rc<dyn Any>> {
+//     // fn bind_model(&self, request_context: Rc<dyn IRequestContext>) -> ModelValidationResult<Rc<dyn Any>> {
 //     //     if let Some(body) = request_context.get_body() {
 //     //         ModelValidationResult::<Rc<dyn Any>>::Ok(Rc::new(Rc::new(UrlEncodedModel::new(body)) as Rc<dyn IViewModel>))
 //     //     } else {

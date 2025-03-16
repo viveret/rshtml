@@ -39,11 +39,11 @@ impl JsonDecoder {
 }
 
 impl IModelBinder for JsonDecoder {
-    fn matches(self: &Self, _: &dyn IRequestContext) -> bool {
+    fn matches(&self, _: &dyn IRequestContext) -> bool {
         false
     }
 
-    fn bind_model(self: &Self, _: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
+    fn bind_model(&self, _: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
         todo!("bind_model")
 
         // let mut body_bytes = vec![];
@@ -88,7 +88,7 @@ impl IModelBinder for JsonDecoder {
         // let body = Self::decode_body(found_content_length, found_content_type, request_bytes, body_content_decoder_service);
     }
 
-    fn type_info(self: &Self) -> Box<TypeInfo> {
+    fn type_info(&self) -> Box<TypeInfo> {
         TypeInfo::rc_of::<Self>()
     }
 }

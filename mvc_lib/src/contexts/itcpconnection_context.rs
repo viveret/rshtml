@@ -10,10 +10,10 @@ use crate::http::ihttp_body_stream_format::IHttpBodyStreamFormat;
 #[automock]
 pub trait ITcpConnectionContext {
     // returns a string representation of the connection context.
-    fn to_string(self: &Self) -> String;
+    fn to_string(&self) -> String;
 
     // get the remote address of the connection.
-    fn get_remote_addr(self: &Self) -> std::net::SocketAddr;
+    fn get_remote_addr(&self) -> std::net::SocketAddr;
 
     fn get_connection_id(&self) -> u32;
 

@@ -16,52 +16,52 @@ use super::iresponse_context::IResponseContext;
 // a view context is created for each view that is rendered.
 pub trait IViewContext: Send + Sync {
     // get the view renderer for the view context.
-    fn get_view_renderer(self: &Self) -> Rc<dyn IViewRenderer>;
+    fn get_view_renderer(&self) -> Rc<dyn IViewRenderer>;
     // get the context data for the view context.
-    fn get_ctx_data(self: &Self) -> Rc<RefCell<HashMap<String, Box<dyn Any>>>>;
+    fn get_ctx_data(&self) -> Rc<RefCell<HashMap<String, Box<dyn Any>>>>;
     // get the view data for the view context.
-    fn get_view_data(self: &Self) -> Rc<RefCell<HashMap<String, String>>>;
+    fn get_view_data(&self) -> Rc<RefCell<HashMap<String, String>>>;
     // get the view model for the view context.
-    fn get_viewmodel(self: &Self) -> Option<Rc<dyn IViewModel>>;
+    fn get_viewmodel(&self) -> Option<Rc<dyn IViewModel>>;
     // get the view for the view context.
-    fn get_view(self: &Self) -> Rc<dyn IView>;
+    fn get_view(&self) -> Rc<dyn IView>;
     // get the view for the view context as a reference.
-    fn get_view_as_ref(self: &Self) -> &dyn IView;
+    fn get_view_as_ref(&self) -> &dyn IView;
 
     // if the view defines a view start path, this returns the path.
-    fn get_view_start_path(self: &Self) -> Option<String>;
+    fn get_view_start_path(&self) -> Option<String>;
 
     // get the response context for the view context.
-    fn get_response_context(self: &Self) -> &dyn IResponseContext;
+    fn get_response_context(&self) -> &dyn IResponseContext;
     // get the request context for the view context.
-    fn get_request_context(self: &Self) -> &dyn IRequestContext;
+    fn get_request_context(&self) -> &dyn IRequestContext;
 
     // get a string from the view data or the controller context.
-    fn get_string(self: &Self, key: String) -> String;
+    fn get_string(&self, key: String) -> String;
     // get a string from the view data or the controller context.
-    fn get_str(self: &Self, key: &str) -> String;
+    fn get_str(&self, key: &str) -> String;
     // try to get a string from the view data or the controller context.
-    fn try_get_string(self: &Self, key: String) -> Option<String>;
+    fn try_get_string(&self, key: String) -> Option<String>;
     // try to get a string from the view data or the controller context.
-    fn try_get_str(self: &Self, key: &str) -> Option<String>;
+    fn try_get_str(&self, key: &str) -> Option<String>;
     
     // insert a string into the view data.
-    fn insert_string(self: &Self, key: String, value: String) -> String;
+    fn insert_string(&self, key: String, value: String) -> String;
     // insert a string into the view data.
-    fn insert_str(self: &Self, key: &str, value: String) -> String;
+    fn insert_str(&self, key: &str, value: String) -> String;
 
     // open a data (project/module) file from the view context.
-    fn open_data_file(self: &Self, path: &str) -> Result<std::fs::File, std::io::Error>;
+    fn open_data_file(&self, path: &str) -> Result<std::fs::File, std::io::Error>;
     // open a view file from the view context.
-    fn open_view_file(self: &Self, path: &str) -> Result<std::fs::File, std::io::Error>;
+    fn open_view_file(&self, path: &str) -> Result<std::fs::File, std::io::Error>;
 
     // resolve a views path string from the view context.
-    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String>;
+    fn resolve_views_path_string(&self, path: &str) -> Option<String>;
 
     // resolve a data file path string from the view context.
-    fn resolve_data_file_path_string(self: &Self, path: &str) -> Option<String>;
+    fn resolve_data_file_path_string(&self, path: &str) -> Option<String>;
 
-    fn get_markdown_file_nocache(self: &Self, path: &str) -> Option<String>;
+    fn get_markdown_file_nocache(&self, path: &str) -> Option<String>;
 }
 
 // this struct implements IViewContext.
@@ -134,43 +134,43 @@ impl <'a> ViewContext<'a> {
 }
 
 impl <'a> IViewContext for ViewContext<'a> {
-    fn get_view_renderer(self: &Self) -> Rc<dyn IViewRenderer> {
+    fn get_view_renderer(&self) -> Rc<dyn IViewRenderer> {
         self.view_renderer.clone()
     }
 
-    fn get_view_data(self: &Self) -> Rc<RefCell<HashMap<String, String>>> {
+    fn get_view_data(&self) -> Rc<RefCell<HashMap<String, String>>> {
         self.viewdata.clone()
     }
 
-    fn get_ctx_data(self: &Self) -> Rc<RefCell<HashMap<String, Box<dyn Any>>>> {
+    fn get_ctx_data(&self) -> Rc<RefCell<HashMap<String, Box<dyn Any>>>> {
         self.ctxdata.clone()
     }
 
-    fn get_viewmodel(self: &Self) -> Option<Rc<dyn IViewModel>> {
+    fn get_viewmodel(&self) -> Option<Rc<dyn IViewModel>> {
         match self.viewmodel {
             Some(ref vm) => Some(vm.clone()),
             None => None,
         }
     }
 
-    fn get_view(self: &Self) -> Rc<dyn IView> {
+    fn get_view(&self) -> Rc<dyn IView> {
         self.view.clone()
     }
 
-    fn get_view_as_ref(self: &Self) -> &dyn IView {
+    fn get_view_as_ref(&self) -> &dyn IView {
         self.view.as_ref()
     }
 
-    fn get_response_context(self: &Self) -> &dyn IResponseContext {
+    fn get_response_context(&self) -> &dyn IResponseContext {
         unimplemented!()
         // self.response_context
     }
 
-    fn get_request_context(self: &Self) -> &dyn IRequestContext {
+    fn get_request_context(&self) -> &dyn IRequestContext {
         self.request_context
     }
 
-    fn get_string(self: &Self, key: String) -> String {
+    fn get_string(&self, key: String) -> String {
         match self.get_view_data().as_ref().borrow().get(&key) {
             Some(s) if s.len() > 0 => s.clone(),
             Some(_) | None => {
@@ -184,7 +184,7 @@ impl <'a> IViewContext for ViewContext<'a> {
         }
     }
 
-    fn try_get_string(self: &Self, key: String) -> Option<String> {
+    fn try_get_string(&self, key: String) -> Option<String> {
         match self.get_view_data().as_ref().borrow().get(&key) {
             Some(s) => Some(s.clone()),
             None => {
@@ -198,24 +198,24 @@ impl <'a> IViewContext for ViewContext<'a> {
         }
     }
 
-    fn get_str(self: &Self, key: &str) -> String {
+    fn get_str(&self, key: &str) -> String {
         self.get_string(key.to_string())
     }
 
-    fn try_get_str(self: &Self, key: &str) -> Option<String> {
+    fn try_get_str(&self, key: &str) -> Option<String> {
         self.try_get_string(key.to_string())
     }
     
-    fn insert_string(self: &Self, key: String, value: String) -> String {
+    fn insert_string(&self, key: String, value: String) -> String {
         self.get_view_data().as_ref().borrow_mut().insert(key, value.clone());
         value
     }
 
-    fn insert_str(self: &Self, key: &str, value: String) -> String {
+    fn insert_str(&self, key: &str, value: String) -> String {
         self.insert_string(key.to_string(), value)
     }
 
-    fn open_data_file(self: &Self, path: &str) -> Result<std::fs::File, std::io::Error> {
+    fn open_data_file(&self, path: &str) -> Result<std::fs::File, std::io::Error> {
         match self.resolve_data_file_path_string(path) {
             Some(path) => {
                 std::fs::File::open(path)
@@ -226,7 +226,7 @@ impl <'a> IViewContext for ViewContext<'a> {
         }
     }
 
-    fn open_view_file(self: &Self, path: &str) -> Result<std::fs::File, std::io::Error> {
+    fn open_view_file(&self, path: &str) -> Result<std::fs::File, std::io::Error> {
         match self.resolve_views_path_string(path) {
             Some(path) => {
                 std::fs::File::open(path)
@@ -238,20 +238,20 @@ impl <'a> IViewContext for ViewContext<'a> {
     }
 
     // this needs to be fixed to be more flexible and like .net core using config and options
-    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String> {
+    fn resolve_views_path_string(&self, path: &str) -> Option<String> {
         self.view_renderer.resolve_views_path_string(path)
     }
 
     // this needs to be fixed to be more flexible and like .net core using config and options
-    fn resolve_data_file_path_string(self: &Self, path: &str) -> Option<String> {
+    fn resolve_data_file_path_string(&self, path: &str) -> Option<String> {
         self.view_renderer.resolve_data_file_path_string(path)
     }
 
-    fn get_view_start_path(self: &Self) -> Option<String> {
+    fn get_view_start_path(&self) -> Option<String> {
         self.try_get_str("viewstart")
     }
 
-    fn get_markdown_file_nocache(self: &Self, path: &str) -> Option<String> {
+    fn get_markdown_file_nocache(&self, path: &str) -> Option<String> {
         match self.open_data_file(path) {
             Ok(mut f) => {
                 let mut buffer = String::new();

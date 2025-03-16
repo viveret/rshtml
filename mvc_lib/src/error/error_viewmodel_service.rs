@@ -23,7 +23,7 @@ use crate::services::service_scope::ServiceScope;
 
 
 pub trait IErrorViewModelService {
-    fn create_error_viewmodel(self: &Self, error: Rc<dyn Error>) -> Rc<dyn IViewModel>;
+    fn create_error_viewmodel(&self, error: Rc<dyn Error>) -> Rc<dyn IViewModel>;
 }
 
 pub struct ErrorViewModelService {
@@ -47,7 +47,7 @@ impl ErrorViewModelService {
 }
 
 impl IErrorViewModelService for ErrorViewModelService {
-    fn create_error_viewmodel(self: &Self, error: Rc<dyn Error>) -> Rc<dyn IViewModel> {
+    fn create_error_viewmodel(&self, error: Rc<dyn Error>) -> Rc<dyn IViewModel> {
         Rc::new(BasicErrorViewModel::new(error)) as Rc<dyn IViewModel>
     }
 }

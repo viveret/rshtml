@@ -5,13 +5,13 @@ use std::rc::Rc;
 // this trait is used to get the http serving options.
 pub trait IHttpOptions {
     // get the ip address to serve on.
-    fn get_ip(self: &Self) -> Cow<'static, str>;
+    fn get_ip(&self) -> Cow<'static, str>;
     // get the port to serve on.
-    fn get_port(self: &Self) -> u16;
+    fn get_port(&self) -> u16;
     // get the port to serve https on.
-    fn get_port_https(self: &Self) -> u16;
+    fn get_port_https(&self) -> u16;
     // get the ip address and port to serve on.
-    fn get_ip_and_port(self: &Self) -> String;
+    fn get_ip_and_port(&self) -> String;
 }
 
 // this struct implements IHttpOptions.
@@ -67,19 +67,19 @@ impl HttpOptions {
 }
 
 impl IHttpOptions for HttpOptions {
-    fn get_ip(self: &Self) -> Cow<'static, str> {
+    fn get_ip(&self) -> Cow<'static, str> {
         self.ip.clone()
     }
 
-    fn get_port(self: &Self) -> u16 {
+    fn get_port(&self) -> u16 {
         self.port
     }
 
-    fn get_port_https(self: &Self) -> u16 {
+    fn get_port_https(&self) -> u16 {
         self.port_https
     }
 
-    fn get_ip_and_port(self: &Self) -> String {
+    fn get_ip_and_port(&self) -> String {
         format!("{}:{}", self.ip, self.port)
     }
 }

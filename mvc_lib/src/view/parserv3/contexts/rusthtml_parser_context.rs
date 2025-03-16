@@ -236,7 +236,7 @@ impl RustHtmlParserContext {
 }
 
 impl IRustHtmlParserContext for RustHtmlParserContext {
-    fn get_model_type_name(self: &Self) -> String {
+    fn get_model_type_name(&self) -> String {
         let mut s = String::new();
         for type_part in self.get_model_type() {
             s.push_str(&type_part.to_string());
@@ -244,17 +244,17 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         s
     }
 
-    fn get_model_type_stream(self: &Self) -> TokenStream {
+    fn get_model_type_stream(&self) -> TokenStream {
         TokenStream::from_iter(self.get_model_type())
     }
 
-    fn get_model_type(self: &Self) -> Vec<TokenTree> {
+    fn get_model_type(&self) -> Vec<TokenTree> {
         self.model_type.borrow().clone().unwrap_or(vec![])
     }
 
     // try to get a parameter value as a string.
     // key: the key of the parameter.
-    fn try_get_param_string(self: &Self, key: &str) -> Option<String> {
+    fn try_get_param_string(&self, key: &str) -> Option<String> {
         match self.params.borrow().get(&key.to_string()) {
             Some(str_val) => {
                 let s = snailquote::unescape(str_val).expect("couldn't unescape string");
@@ -266,7 +266,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
 
-    fn get_param_string(self: &Self, key: &str) -> Result<String, RustHtmlError> {
+    fn get_param_string(&self, key: &str) -> Result<String, RustHtmlError> {
         match self.params.borrow().get(&key.to_string()) {
             Some(str_val) => {
                 let s = snailquote::unescape(str_val).expect("couldn't unescape string");
@@ -280,7 +280,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
 
-    fn get_functions_section(self: &Self) -> Option<TokenStream> {
+    fn get_functions_section(&self) -> Option<TokenStream> {
         if let Some(has_functions) = self.functions_section.borrow().as_ref() {
             Some(has_functions.clone())
         } else {
@@ -288,7 +288,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
 
-    fn get_struct_section(self: &Self) -> Option<TokenStream> {
+    fn get_struct_section(&self) -> Option<TokenStream> {
         if let Some(has_struct) = self.struct_section.borrow().as_ref() {
             Some(has_struct.clone())
         } else {
@@ -296,7 +296,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
 
-    fn get_impl_section(self: &Self) -> Option<TokenStream> {
+    fn get_impl_section(&self) -> Option<TokenStream> {
         if let Some(has_impl) = self.impl_section.borrow().as_ref() {
             Some(has_impl.clone())
         } else {
@@ -304,7 +304,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
 
-    fn get_model_ident(self: &Self) -> Option<TokenStream> {
+    fn get_model_ident(&self) -> Option<TokenStream> {
         if let Some(has_model) = self.model_type.borrow().as_ref() {
             Some(TokenStream::from_iter(has_model.clone()))
         } else {
@@ -312,31 +312,31 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
 
-    fn set_model_type(self: &Self, value: Option<Vec<TokenTree>>) {
+    fn set_model_type(&self, value: Option<Vec<TokenTree>>) {
         *self.model_type.borrow_mut() = value;
     }
 
-    fn htmltag_scope_stack_push(self: &Self, s: String) {
+    fn htmltag_scope_stack_push(&self, s: String) {
         self.htmltag_scope_stack.borrow_mut().push(s);
     }
 
-    fn htmltag_scope_stack_pop(self: &Self) -> Option<String> {
+    fn htmltag_scope_stack_pop(&self) -> Option<String> {
         self.htmltag_scope_stack.borrow_mut().pop()
     }
 
-    fn mut_punct_scope_stack(self: &Self) -> RefMut<Vec<char>> {
+    fn mut_punct_scope_stack(&self) -> RefMut<Vec<char>> {
         self.punctuation_scope_stack.borrow_mut()
     }
 
-    fn push_use_statements(self: &Self, rshtml: TokenStream) {
+    fn push_use_statements(&self, rshtml: TokenStream) {
         self.use_statements.borrow_mut().push(rshtml)
     }
 
-    fn get_implicit_use_statements(self: &Self) -> proc_macro2::TokenStream {
+    fn get_implicit_use_statements(&self) -> proc_macro2::TokenStream {
         self.implicit_use_statements.clone()
     }
 
-    fn get_use_statements_stream(self: &Self) -> proc_macro2::TokenStream {
+    fn get_use_statements_stream(&self) -> proc_macro2::TokenStream {
         let tokens = 
             self.use_statements.borrow()
                 .iter()
@@ -348,11 +348,11 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         )
     }
 
-    fn mut_params(self: &Self) -> RefMut<HashMap<String, String>> {
+    fn mut_params(&self) -> RefMut<HashMap<String, String>> {
         self.params.borrow_mut()
     }
 
-    fn get_environment_name(self: &Self) -> String {
+    fn get_environment_name(&self) -> String {
         self.environment_name.clone()
     }
 
@@ -360,27 +360,27 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         self.raw.borrow().clone()
     }
 
-    fn set_raw(self: &Self, value: String) {
+    fn set_raw(&self, value: String) {
         *self.raw.borrow_mut() = value;
     }
 
-    fn set_functions_section(self: &Self, value: Option<TokenStream>) {
+    fn set_functions_section(&self, value: Option<TokenStream>) {
         *self.functions_section.borrow_mut() = value;
     }
 
-    fn set_impl_section(self: &Self, value: Option<TokenStream>) {
+    fn set_impl_section(&self, value: Option<TokenStream>) {
         *self.impl_section.borrow_mut() = value;
     }
 
-    fn set_struct_section(self: &Self, value: Option<TokenStream>) {
+    fn set_struct_section(&self, value: Option<TokenStream>) {
         *self.struct_section.borrow_mut() = value;
     }
 
-    fn get_directives(self: &Self) -> Vec<Rc<dyn IRustHtmlDirective>> {
+    fn get_directives(&self) -> Vec<Rc<dyn IRustHtmlDirective>> {
         self.directives.clone()
     }
 
-    fn try_get_directive(self: &Self, name: String) -> Option<Rc<dyn IRustHtmlDirective>> {
+    fn try_get_directive(&self, name: String) -> Option<Rc<dyn IRustHtmlDirective>> {
         let x = self.directives
             .iter()
             .filter(|x| x.matches(&name))
@@ -398,23 +398,23 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
 
-    fn get_is_raw_tokenstream(self: &Self) -> bool {
+    fn get_is_raw_tokenstream(&self) -> bool {
         self.is_raw_tokenstream
     }
 
-    fn get_tag_parsed_handler(self: &Self) -> Vec<Rc<dyn IHtmlTagParsed>> {
+    fn get_tag_parsed_handler(&self) -> Vec<Rc<dyn IHtmlTagParsed>> {
         self.sub_processors.tag_parsed_handlers.clone()
     }
 
-    fn get_node_parsed_handler(self: &Self) -> Vec<Rc<dyn IHtmlNodeParsed>> {
+    fn get_node_parsed_handler(&self) -> Vec<Rc<dyn IHtmlNodeParsed>> {
         self.sub_processors.node_parsed_handlers.clone()
     }
 
-    fn get_section(self: &Self, name: &String) -> Option<TokenStream> {
+    fn get_section(&self, name: &String) -> Option<TokenStream> {
         self.sections.borrow().get(name).cloned()
     }
 
-    fn set_section(self: &Self, name: String, value: Option<TokenStream>) {
+    fn set_section(&self, name: String, value: Option<TokenStream>) {
         if let Some(v) = value {
             self.sections.borrow_mut().insert(name, v);
         } else {
@@ -422,11 +422,11 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
 
-    fn push_inject_statements(self: &Self, rust: TokenStream) {
+    fn push_inject_statements(&self, rust: TokenStream) {
         self.inject_statements.borrow_mut().push(rust);
     }
 
-    fn get_inject_statements_stream(self: &Self) -> proc_macro2::TokenStream {
+    fn get_inject_statements_stream(&self) -> proc_macro2::TokenStream {
         let mut model_based_injections = vec![];
 
         if let Some(model_type) = self.model_type.borrow().as_ref() {
@@ -470,19 +470,19 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         )
     }
 
-    fn get_preprocessors(self: &Self) -> Vec<Rc<dyn IRustHtmlProcessor>> {
+    fn get_preprocessors(&self) -> Vec<Rc<dyn IRustHtmlProcessor>> {
         self.sub_processors.preprocessors.clone()
     }
 
-    fn get_postprocessors(self: &Self) -> Vec<Rc<dyn IRustHtmlProcessor>> {
+    fn get_postprocessors(&self) -> Vec<Rc<dyn IRustHtmlProcessor>> {
         self.sub_processors.postprocessors.clone()
     }
 
-    fn get_rust_preprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>> {
+    fn get_rust_preprocessors(&self) -> Vec<Rc<dyn IRustProcessor>> {
         self.sub_processors.rust_preprocessors.clone()
     }
 
-    fn get_rust_postprocessors(self: &Self) -> Vec<Rc<dyn IRustProcessor>> {
+    fn get_rust_postprocessors(&self) -> Vec<Rc<dyn IRustProcessor>> {
         self.sub_processors.rust_postprocessors.clone()
     }
 
@@ -502,7 +502,7 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         Ok(())
     }
 
-    fn push_html_tag_parse_context(self: &Self, tag: Rc<dyn IHtmlTagParseContext>) {
+    fn push_html_tag_parse_context(&self, tag: Rc<dyn IHtmlTagParseContext>) {
         self.htmltag_parse_scope_stack.borrow_mut().push(tag);
     }
 
@@ -558,15 +558,225 @@ impl IRustHtmlParserContext for RustHtmlParserContext {
         }
     }
     
-    fn log_error(self: &Self, error: RustHtmlError) {
+    fn log_error(&self, error: RustHtmlError) {
         // self.log.push(error.to_string());
     }
     
-    fn log_info(self: &Self, info: String) {
+    fn log_info(&self, info: String) {
         // todo!()
     }
     
-    fn insert_params(self: &Self, key: String, value: String) {
+    fn insert_params(&self, key: String, value: String) {
         self.params.borrow_mut().insert(key, value);
+    }
+}
+
+
+pub struct MockRustHtmlParserContext {
+
+}
+
+impl MockRustHtmlParserContext {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl IRustHtmlParserContext for MockRustHtmlParserContext {
+    fn get_call_stack(&self) -> &CallstackTracker {
+        todo!()
+    }
+
+    fn get_max_call_stack_count(&self) -> usize {
+        0
+    }
+
+    fn check_call_stack_count(&self) -> Result<(), RustHtmlError> {
+        Ok(())
+    }
+
+    fn get_is_in_html_mode(&self) -> bool {
+        false
+    }
+
+    fn push_is_in_html_mode(&self, v: bool) {
+        
+    }
+
+    fn pop_is_in_html_mode(&self) -> bool {
+        false
+    }
+
+    fn push_output_buffer(&self, buffer: RustHtmlTokenBuffer) {
+        
+    }
+
+    fn pop_output_buffer(&self) -> Option<RustHtmlTokenBuffer> {
+        None
+    }
+
+    fn get_output_buffer(&self) -> Option<RustHtmlTokenBuffer> {
+        None
+    }
+
+    fn push_output_token(&self, token: RustHtmlToken) -> Result<(), RustHtmlError> {
+        Ok(())
+    }
+
+    fn push_output_tokens(&self, token: &[RustHtmlToken]) -> Result<(), RustHtmlError> {
+        Ok(())
+    }
+
+    fn get_is_raw_tokenstream(&self) -> bool {
+        false
+    }
+
+    fn get_model_type_name(&self) -> String {
+        String::new()
+    }
+
+    fn get_model_type_stream(&self) -> TokenStream {
+        TokenStream::new()
+    }
+
+    fn get_model_type(&self) -> Vec<TokenTree> {
+        vec![]
+    }
+
+    fn set_model_type(&self, value: Option<Vec<TokenTree>>) {
+        
+    }
+
+    fn try_get_param_string(&self, key: &str) -> Option<String> {
+        None
+    }
+
+    fn get_param_string(&self, key: &str) -> Result<String, RustHtmlError> {
+        Ok(String::new())
+    }
+
+    fn get_functions_section(&self) -> Option<TokenStream> {
+        None
+    }
+
+    fn get_struct_section(&self) -> Option<TokenStream> {
+        None
+    }
+
+    fn get_impl_section(&self) -> Option<TokenStream> {
+        None
+    }
+
+    fn get_model_ident(&self) -> Option<TokenStream> {
+        None
+    }
+
+    fn htmltag_scope_stack_push(&self, s: String) {
+    }
+
+    fn htmltag_scope_stack_pop(&self) -> Option<String> {
+        None
+    }
+
+    fn mut_punct_scope_stack(&self) -> RefMut<Vec<char>> {
+        todo!()
+    }
+
+    fn push_use_statements(&self, rust: TokenStream) {
+    }
+
+    fn get_implicit_use_statements(&self) -> proc_macro2::TokenStream {
+        TokenStream::new()
+    }
+
+    fn get_use_statements_stream(&self) -> proc_macro2::TokenStream {
+        TokenStream::new()
+    }
+
+    fn push_inject_statements(&self, rust: TokenStream) {
+    }
+
+    fn get_inject_statements_stream(&self) -> proc_macro2::TokenStream {
+        TokenStream::new()
+    }
+
+    fn mut_params(&self) -> RefMut<HashMap<String, String>> {
+        todo!()
+    }
+
+    fn insert_params(&self, key: String, value: String) {
+        
+    }
+
+    fn get_environment_name(&self) -> String {
+        String::new()
+    }
+
+    fn get_raw(&self) -> String {
+        String::new()
+    }
+
+    fn set_raw(&self, value: String) {
+        
+    }
+
+    fn get_section(&self, name: &String) -> Option<TokenStream> {
+        None
+    }
+
+    fn set_section(&self, name: String, value: Option<TokenStream>) {
+    }
+
+    fn set_functions_section(&self, value: Option<TokenStream>) {
+    }
+
+    fn set_impl_section(&self, value: Option<TokenStream>) {
+    }
+
+    fn set_struct_section(&self, value: Option<TokenStream>) {
+    }
+
+    fn get_directives(&self) -> Vec<Rc<dyn IRustHtmlDirective>> {
+        vec![]
+    }
+
+    fn try_get_directive(&self, name: String) -> Option<Rc<dyn IRustHtmlDirective>> {
+        None
+    }
+
+    fn get_tag_parsed_handler(&self) -> Vec<Rc<dyn IHtmlTagParsed>> {
+        vec![]
+    }
+
+    fn get_node_parsed_handler(&self) -> Vec<Rc<dyn IHtmlNodeParsed>> {
+        vec![]
+    }
+
+    fn get_preprocessors(&self) -> Vec<Rc<dyn IRustHtmlProcessor>> {
+        vec![]
+    }
+
+    fn get_postprocessors(&self) -> Vec<Rc<dyn IRustHtmlProcessor>> {
+        vec![]
+    }
+
+    fn get_rust_preprocessors(&self) -> Vec<Rc<dyn IRustProcessor>> {
+        vec![]
+    }
+
+    fn get_rust_postprocessors(&self) -> Vec<Rc<dyn IRustProcessor>> {
+        vec![]
+    }
+
+    fn push_html_tag_parse_context(&self, tag_parse_ctx: Rc<dyn IHtmlTagParseContext>) {
+        
+    }
+
+    fn log_error(&self, error: RustHtmlError) {
+        
+    }
+
+    fn log_info(&self, info: String) {
+        
     }
 }

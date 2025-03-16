@@ -30,7 +30,7 @@ impl QueryString {
     // get a value from the query string by key.
     // key: the key to get the value for.
     // returns: the value for the key if found, otherwise None.
-    pub fn get(self: &Self, key: &str) -> Option<String> {
+    pub fn get(&self, key: &str) -> Option<String> {
         match self.entries.get(key) {
             Some(v) => Some(v.join("\n")),
             None => None,
@@ -38,7 +38,7 @@ impl QueryString {
     }
 
     // gets a string representation of the query string.
-    pub fn to_string(self: &Self) -> String {
+    pub fn to_string(&self) -> String {
         let mut result = String::new();
         for (key, values) in &self.entries {
             for value in values {
@@ -49,7 +49,7 @@ impl QueryString {
         result
     }
 
-    pub fn to_str(self: &Self) -> &str {
+    pub fn to_str(&self) -> &str {
         self.raw_str.as_str()
     }
 }

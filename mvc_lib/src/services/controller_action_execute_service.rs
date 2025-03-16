@@ -50,11 +50,11 @@ impl ControllerActionExecuteService {
 }
 
 impl IRequestMiddlewareService for ControllerActionExecuteService {
-    fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
+    fn set_next(&self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         if let Some(action) = request_context.get_controller_action_optional() {
             let controller = self.mapper_service.get_mapper().get_controller(action.get_controller_name().to_string());
             let controller_context = IControllerExtensions::create_context(controller.clone(), request_context, response_context);

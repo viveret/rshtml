@@ -14,10 +14,10 @@ pub trait IModelBinderResolver {
     // resolves the correct IModelBinder for the given content type.
     // content_type: the content type to resolve the IModelBinder for.
     // returns: the resolved IModelBinder if found, otherwise None.
-    fn resolve_for_request(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IModelBinder>>;
+    fn resolve_for_request(&self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IModelBinder>>;
 
     // get the IModelBinder instances used by this IModelBinderResolver.
-    fn get_binders(self: &Self) -> Vec<Rc<dyn IModelBinder>>;
+    fn get_binders(&self) -> Vec<Rc<dyn IModelBinder>>;
 }
 
 // this struct is used to resolve the correct IModelBinder for a given content type and context.
@@ -54,7 +54,7 @@ impl ModelBinderResolver {
 }
 
 impl IModelBinderResolver for ModelBinderResolver {
-    fn resolve_for_request(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IModelBinder>> {
+    fn resolve_for_request(&self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IModelBinder>> {
         for it in self.model_binders.iter() {
             if it.matches(request_context) {
                 return Some(it.clone());
@@ -63,7 +63,7 @@ impl IModelBinderResolver for ModelBinderResolver {
         None
     }
 
-    fn get_binders(self: &Self) -> Vec<Rc<dyn IModelBinder>> {
+    fn get_binders(&self) -> Vec<Rc<dyn IModelBinder>> {
         self.model_binders.clone()
     }
 }

@@ -25,7 +25,7 @@ impl HtmlFormDirective {
 /*
     // parse the form function call and add the form tokens to the output.
     // the form function call is called between the form opening and closing tags.
-    fn parse_form_function_call(self: &Self, ctx: Rc<dyn IRustHtmlParserContext>, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: &dyn IPeekableTokenTree, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
+    fn parse_form_function_call(&self, ctx: Rc<dyn IRustHtmlParserContext>, parser: Rc<dyn IRustHtmlParserAll>, output: &mut Vec<RustHtmlToken>, it: &dyn IPeekableTokenTree, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResult, RustHtmlError> {
         // println!("parsing form function call");
 
         // parse method
@@ -163,7 +163,7 @@ impl HtmlFormDirective {
         Ok(RustHtmlDirectiveResult::OkContinue)
     }
 
-    fn parse_form_render_closure(self: &Self,
+    fn parse_form_render_closure(&self,
         _ctx: Rc<dyn IRustHtmlParserContext>,
         _parser: Rc<dyn IRustHtmlParserAll>,
         _output: &mut Vec<RustHtmlToken>,
@@ -210,7 +210,7 @@ impl HtmlFormDirective {
         }
     }
     
-    fn try_parse_object_route_values(self: &Self, it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError> {
+    fn try_parse_object_route_values(&self, it: &dyn IPeekableTokenTree) -> Result<Option<HashMap<String, Vec<RustHtmlToken>>>, RustHtmlError> {
         if let Some(group_object) = Self::peek_group_with_braces(it) {
             // skip group after peeking
             it.next();
@@ -356,11 +356,11 @@ impl HtmlFormDirective {
 }
 
 impl IRustHtmlDirective for HtmlFormDirective {
-    fn matches(self: &Self, name: &String) -> bool {
+    fn matches(&self, name: &String) -> bool {
         name == "form"
     }
 
-    fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
+    fn execute_new_v3(&self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         todo!("execute_new_v3 for html_form directive")
     }
 }

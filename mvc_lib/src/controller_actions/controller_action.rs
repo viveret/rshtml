@@ -24,29 +24,29 @@ use super::route_pattern::ControllerActionRoutePattern;
 // controller actions can be decorated with controller action features to add functionality to the controller action.
 pub trait IControllerAction {
     // get a string representation of the controller action.
-    fn to_string(self: &Self) -> String;
+    fn to_string(&self) -> String;
     // get the path for the controller action.
-    fn get_path(self: &Self) -> ActionPath;
+    fn get_path(&self) -> ActionPath;
     // get the name of the controller action (the name of the member function, the name of the static function, or the name of the closure).
-    fn get_name(self: &Self) -> Cow<'static, str>;
+    fn get_name(&self) -> Cow<'static, str>;
     // get the name of the controller.
-    fn get_controller_name(self: &Self) -> Cow<'static, str>;
+    fn get_controller_name(&self) -> Cow<'static, str>;
     // get the name of the area.
-    fn get_area_name(self: &Self) -> String;
+    fn get_area_name(&self) -> String;
     // get the route pattern for the controller action.
-    fn get_route_pattern(self: &Self) -> Rc<ControllerActionRoutePattern>;
+    fn get_route_pattern(&self) -> Rc<ControllerActionRoutePattern>;
     // get the HTTP methods allowed for the controller action.
-    fn get_http_methods_allowed(self: &Self) -> Vec<Method>;
+    fn get_http_methods_allowed(&self) -> Vec<Method>;
     // get whether or not the model should be validated for the controller action.
-    fn get_should_validate_model(self: &Self) -> bool;
+    fn get_should_validate_model(&self) -> bool;
     // get model type
-    fn get_model_type(self: &Self) -> Option<Box<TypeInfo>>;
+    fn get_model_type(&self) -> Option<Box<TypeInfo>>;
     // get the controller action features for the controller action.
-    fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>>;
+    fn get_features(&self) -> Vec<Rc<dyn IControllerActionFeature>>;
     // get whether or not the action matches the request.
-    fn is_route_match(self: &Self, request_context: &dyn IRequestContext) -> Result<bool, Rc<dyn Error>>;
+    fn is_route_match(&self, request_context: &dyn IRequestContext) -> Result<bool, Rc<dyn Error>>;
     // invoke the controller action for the request and context.
-    fn invoke(self: &Self, request_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>>;
+    fn invoke(&self, request_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>>;
 }
 
 // extension methods for IControllerAction

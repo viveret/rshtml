@@ -18,101 +18,101 @@ impl<T> VecDbSet<T> {
 }
 
 impl<T> IDbSet<T> for VecDbSet<T> where T: 'static + Clone + PartialEq {
-    fn add(self: &Self, item: &T) {
+    fn add(&self, item: &T) {
         // create new id if it doesn't exist
         // if the item does have an id, then throw an error
         self.entities.borrow_mut().push(item.clone());
     }
 
-    fn add_range(self: &Self, items: Vec<T>) {
+    fn add_range(&self, items: Vec<T>) {
         self.entities.borrow_mut().extend(items);
     }
 
-    fn attach(self: &Self, item: &T) {
+    fn attach(&self, item: &T) {
         // if the item doesn't have an id, then throw an error
         // if the item does have an id, then add it to the list
         self.entities.borrow_mut().push(item.clone());
     }
 
-    fn create(self: &Self) -> T {
+    fn create(&self) -> T {
         todo!("create")
     }
 
-    fn find(self: &Self) -> Vec<T> {
+    fn find(&self) -> Vec<T> {
         vec![]
     }
 
-    fn get_all(self: &Self) -> Vec<T> {
+    fn get_all(&self) -> Vec<T> {
         self.entities.borrow().clone()
     }
 
-    fn remove(self: &Self, item: &T) {
+    fn remove(&self, item: &T) {
         self.entities.borrow_mut().retain(|x| x != item);
     }
 
-    fn remove_range(self: &Self, item: Vec<T>) {
+    fn remove_range(&self, item: Vec<T>) {
         self.entities.borrow_mut().retain(|x| !item.contains(x));
     }
 
-    fn upcast(self: &Self) -> &dyn IDbSetAny {
+    fn upcast(&self) -> &dyn IDbSetAny {
         self
     }
 
-    fn entity_type_info(self: &Self) -> TypeInfo {
+    fn entity_type_info(&self) -> TypeInfo {
         TypeInfo::of::<T>()
     }
 
-    fn entity_type_name(self: &Self) -> &'static str {
+    fn entity_type_name(&self) -> &'static str {
         nameof::name_of_type!(T)
     }
 }
 
 impl<T> IDbSetAny for VecDbSet<T> where T: 'static + Clone + PartialEq {
-    fn add_any(self: &Self, _item: Box<dyn std::any::Any>) {
+    fn add_any(&self, _item: Box<dyn std::any::Any>) {
         todo!("add_any")
     }
 
-    fn add_range_any(self: &Self, _items: Vec<Box<dyn std::any::Any>>) {
+    fn add_range_any(&self, _items: Vec<Box<dyn std::any::Any>>) {
         todo!("add_range_any")
     }
 
-    fn attach_any(self: &Self, _item: Box<dyn std::any::Any>) {
+    fn attach_any(&self, _item: Box<dyn std::any::Any>) {
         todo!("attach_any")
     }
 
-    fn create_any(self: &Self) -> Box<dyn std::any::Any> {
+    fn create_any(&self) -> Box<dyn std::any::Any> {
         todo!("create_any")
     }
 
-    fn find_any(self: &Self) -> Vec<Box<dyn std::any::Any>> {
+    fn find_any(&self) -> Vec<Box<dyn std::any::Any>> {
         todo!("find_any")
     }
 
-    fn get_all_any(self: &Self) -> Vec<Box<dyn std::any::Any>> {
+    fn get_all_any(&self) -> Vec<Box<dyn std::any::Any>> {
         todo!("get_all_any")
     }
 
-    fn remove_any(self: &Self, _item: Box<dyn std::any::Any>) {
+    fn remove_any(&self, _item: Box<dyn std::any::Any>) {
         todo!("remove_any")
     }
 
-    fn remove_range_any(self: &Self, _item: Vec<Box<dyn std::any::Any>>) {
+    fn remove_range_any(&self, _item: Vec<Box<dyn std::any::Any>>) {
         todo!("remove_range_any")
     }
 
-    fn as_any(self: &Self, _type_info: TypeInfo) -> &dyn std::any::Any {
+    fn as_any(&self, _type_info: TypeInfo) -> &dyn std::any::Any {
         todo!("as_any")
     }
 
-    fn entity_type_info(self: &Self) -> TypeInfo {
+    fn entity_type_info(&self) -> TypeInfo {
         TypeInfo::of::<T>()
     }
 
-    fn entity_type_name(self: &Self) -> &'static str {
+    fn entity_type_name(&self) -> &'static str {
         nameof::name_of_type!(T)
     }
 
-    fn save_changes(self: &Self) {
+    fn save_changes(&self) {
         
     }
 }

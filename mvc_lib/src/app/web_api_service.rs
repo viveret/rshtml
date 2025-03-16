@@ -7,7 +7,7 @@ pub trait WebApiService {
 }
 
 impl BackgroundService for dyn WebApiService {
-    fn run(self: &Self, _args: Vec<String>) {
+    fn run(&self, _args: Vec<String>) {
         
     }
 }

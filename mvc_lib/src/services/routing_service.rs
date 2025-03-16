@@ -52,11 +52,11 @@ impl RoutingService {
 }
 
 impl IRequestMiddlewareService for RoutingService {
-    fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
+    fn set_next(&self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         let route_matcher = RouteDataControllerActionMatcher::new(self.routemap.get_mapper().clone());
         let action_option = route_matcher.get_action_for_request(response_context, request_context, services)?;
 

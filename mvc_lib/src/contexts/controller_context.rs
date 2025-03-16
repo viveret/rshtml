@@ -17,34 +17,34 @@ use super::iresponse_context::IResponseContext;
 // a controller context is created for each controller that is created.
 pub trait IControllerContext {
     // get the request context for the controller context.
-    fn get_request_context(self: &Self) -> &dyn IRequestContext;
+    fn get_request_context(&self) -> &dyn IRequestContext;
     // get the response context for the controller context.
-    fn get_response_context(self: &Self) -> &dyn IResponseContext;
+    fn get_response_context(&self) -> &dyn IResponseContext;
     // get the context data for the controller context.
-    fn get_context_data(self: &Self) -> HashMap<String, Rc<Box<dyn Any>>>;
+    fn get_context_data(&self) -> HashMap<String, Rc<Box<dyn Any>>>;
     // get the view data for the controller context.
-    fn get_view_data(self: &Self) -> HashMap<String, String>;
+    fn get_view_data(&self) -> HashMap<String, String>;
     // get the controller for the controller context.
-    fn get_controller(self: &Self) -> Rc<dyn IController>;
+    fn get_controller(&self) -> Rc<dyn IController>;
     // get the route data for the controller context.
-    fn get_route_data_result(self: &Self) -> Result<Box<RouteData>, Rc<dyn Error>>;
+    fn get_route_data_result(&self) -> Result<Box<RouteData>, Rc<dyn Error>>;
 
     // get a string from the context.
-    fn get_string(self: &Self, key: String) -> String;
+    fn get_string(&self, key: String) -> String;
     // get a string from the context.
-    fn get_str(self: &Self, key: &str) -> String;
+    fn get_str(&self, key: &str) -> String;
     
     // insert a string into the context data.
-    fn insert_string(self: &Self, key: String, value: String) -> String;
+    fn insert_string(&self, key: String, value: String) -> String;
     // insert a string into the context data.
-    fn insert_str(self: &Self, key: &str, value: String) -> String;
+    fn insert_str(&self, key: &str, value: String) -> String;
 
     // bind the action model type to the request context body content.
-    // fn bind_model(self: &Self, type_info: TypeInfo, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>>;
+    // fn bind_model(&self, type_info: TypeInfo, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>>;
 
-    // fn set_model(self: &Self, model: Rc<dyn IModel>);
-    // fn get_model(self: &Self, expected_type: &TypeInfo) -> Option<Rc<dyn IModel>>;
-    //fn bind_model<T: 'static>(self: &Self, services: &dyn IServiceCollection) -> Result<Rc<T>, Rc<dyn Error>>;
+    // fn set_model(&self, model: Rc<dyn IModel>);
+    // fn get_model(&self, expected_type: &TypeInfo) -> Option<Rc<dyn IModel>>;
+    //fn bind_model<T: 'static>(&self, services: &dyn IServiceCollection) -> Result<Rc<T>, Rc<dyn Error>>;
 }
 
 // this struct implements IControllerContext.
@@ -82,7 +82,7 @@ impl <'a> ControllerContext<'a> {
     // parse the route data from the controller context.
     // returns: the route data for the controller context or an error if the route data could not be parsed.
     pub fn parse_route_data(
-        self: &Self,
+        &self,
     ) -> Result<Box<RouteData>, Rc<dyn Error>> {
         let mut route_data = RouteData::new();
         
@@ -106,31 +106,31 @@ impl <'a> ControllerContext<'a> {
 }
 
 impl <'a> IControllerContext for ControllerContext<'a> {
-    fn get_request_context(self: &Self) -> &dyn IRequestContext {
+    fn get_request_context(&self) -> &dyn IRequestContext {
         self.request_context
     }
 
-    fn get_response_context(self: &Self) -> &dyn IResponseContext {
+    fn get_response_context(&self) -> &dyn IResponseContext {
         self.response_context
     }
 
-    fn get_context_data(self: &Self) -> HashMap<String, Rc<Box<dyn Any>>> {
+    fn get_context_data(&self) -> HashMap<String, Rc<Box<dyn Any>>> {
         self.context_data.borrow().clone()
     }
 
-    fn get_view_data(self: &Self) -> HashMap<String, String> {
+    fn get_view_data(&self) -> HashMap<String, String> {
         self.view_data.borrow().clone()
     }
 
-    fn get_controller(self: &Self) -> Rc<dyn IController> {
+    fn get_controller(&self) -> Rc<dyn IController> {
         self.controller.clone()
     }
 
-    fn get_route_data_result(self: &Self) -> Result<Box<RouteData>, Rc<dyn Error>> {
+    fn get_route_data_result(&self) -> Result<Box<RouteData>, Rc<dyn Error>> {
         self.parse_route_data()
     }
 
-    fn get_string(self: &Self, key: String) -> String {
+    fn get_string(&self, key: String) -> String {
         match self.view_data.borrow().get(&key) {
             Some(s) => s.clone(),
             None => {
@@ -139,20 +139,20 @@ impl <'a> IControllerContext for ControllerContext<'a> {
         }
     }
 
-    fn get_str(self: &Self, key: &str) -> String {
+    fn get_str(&self, key: &str) -> String {
         self.get_string(key.to_string())
     }
     
-    fn insert_string(self: &Self, key: String, value: String) -> String {
+    fn insert_string(&self, key: String, value: String) -> String {
         self.view_data.borrow_mut().insert(key, value.clone());
         value
     }
 
-    fn insert_str(self: &Self, key: &str, value: String) -> String {
+    fn insert_str(&self, key: &str, value: String) -> String {
         self.insert_string(key.to_string(), value)
     }
 
-    // fn bind_model(self: &Self, type_info: TypeInfo, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
+    // fn bind_model(&self, type_info: TypeInfo, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
     //     if let Some(body) = self.request_context.get_body_content() {
     //         let model_binder_service = ServiceCollectionExtensions::get_required_single::<dyn IModelBinderService>(services);
     //         match model_binder_service.bind_model(self.request_context, &type_info) {
@@ -175,16 +175,16 @@ impl <'a> IControllerContext for ControllerContext<'a> {
     //     }
     // }
 
-    // fn get_model(self: &Self, expected_type: &TypeInfo) -> Option<Rc<dyn IModel>> {
+    // fn get_model(&self, expected_type: &TypeInfo) -> Option<Rc<dyn IModel>> {
     //     self.model.borrow().clone()
     // }
 
-    // fn set_model(self: &Self, model: Rc<dyn IModel>) {
+    // fn set_model(&self, model: Rc<dyn IModel>) {
     //     self.model.borrow_mut().replace(model);
     // }
 
     // new_fn: fn() -> Box<dyn Any>
-    // fn bind_model<T: 'static>(self: &Self, services: &dyn IServiceCollection) -> Result<Rc<T>, Rc<dyn Error>> {
+    // fn bind_model<T: 'static>(&self, services: &dyn IServiceCollection) -> Result<Rc<T>, Rc<dyn Error>> {
     //     let binder_resolver = ServiceCollectionExtensions::get_required_single::<dyn IModelBinderResolver>(services);
     //     let binder = binder_resolver.resolve_for_content_type(self.request_context).unwrap();
     //     let model = binder.bind_model(self.request_context);

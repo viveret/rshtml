@@ -36,7 +36,7 @@ impl ViewResult {
     }
 
     // write the view result to the response body
-    pub fn write_response(self: &Self, view_render_result: Result<HtmlString, RustHtmlError>, response_context: &dyn IResponseContext) -> std::io::Result<()> {
+    pub fn write_response(&self, view_render_result: Result<HtmlString, RustHtmlError>, response_context: &dyn IResponseContext) -> std::io::Result<()> {
         response_context.add_header_str("Content-Type", "text/html");
         match view_render_result {
             Ok(ok_view_result) => {
@@ -51,11 +51,11 @@ impl ViewResult {
 }
 
 impl IActionResult for ViewResult {
-    fn get_statuscode(self: &Self) -> StatusCode {
+    fn get_statuscode(&self) -> StatusCode {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
+    fn configure_response(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
         let view_renderer = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
         let html = view_renderer.render_with_layout_if_specified(&self.path, self.model.clone(), request_context, services);
         match self.write_response(html, response_context) {

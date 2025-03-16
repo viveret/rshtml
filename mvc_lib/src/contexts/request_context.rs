@@ -264,15 +264,15 @@ impl <'a> RequestContext<'a> {
 }
 
 impl<'a> IRequestContext for RequestContext<'a> {
-    fn get_type_name(self: &Self) -> &'static str {
+    fn get_type_name(&self) -> &'static str {
         nameof::name_of_type!(RequestContext)
     }
 
-    fn get_host_name(self: &Self) -> &String {
+    fn get_host_name(&self) -> &String {
         self.host_name.as_ref()
     }
 
-    fn get_url(self: &Self) -> url::Url {
+    fn get_url(&self) -> url::Url {
         let port = self.get_port();
         let port_str = if port == 80 || port == 443 { "".to_string() } else { format!(":{}", port) };
 
@@ -290,39 +290,39 @@ impl<'a> IRequestContext for RequestContext<'a> {
         url::Url::parse(url_str).expect("Invalid url")
     }
 
-    fn get_scheme(self: &Self) -> &String {
+    fn get_scheme(&self) -> &String {
         self.scheme.as_ref()
     }
 
-    fn get_port(self: &Self) -> u16 {
+    fn get_port(&self) -> u16 {
         self.port
     }
 
-    fn get_path(self: &Self) -> &String {
+    fn get_path(&self) -> &String {
         self.path.as_ref()
     }
 
-    fn get_query(self: &Self) -> &QueryString {
+    fn get_query(&self) -> &QueryString {
         &self.query
     }
 
-    fn get_connection_context(self: &Self) -> &dyn IHttpConnectionContext {
+    fn get_connection_context(&self) -> &dyn IHttpConnectionContext {
         self.connection_context
     }
 
-    fn get_controller_action_optional(self: &Self) -> Option<Rc<dyn IControllerAction>> {
+    fn get_controller_action_optional(&self) -> Option<Rc<dyn IControllerAction>> {
         self.controller_action.borrow().clone()
     }
 
-    fn get_controller_action(self: &Self) -> Rc<dyn IControllerAction> {
+    fn get_controller_action(&self) -> Rc<dyn IControllerAction> {
         self.controller_action.borrow().as_ref().expect("self.controller_action.borrow().as_ref()").clone()
     }
 
-    fn set_controller_action(self: &Self, controller: Option<Rc<dyn IControllerAction>>) {
+    fn set_controller_action(&self, controller: Option<Rc<dyn IControllerAction>>) {
         self.controller_action.replace(controller);
     }
 
-    fn get_string(self: &Self, key: String) -> String {
+    fn get_string(&self, key: String) -> String {
         match self.route_data.borrow().map.get(&key) {
             Some(v) => v.clone(),
             None => {
@@ -331,7 +331,7 @@ impl<'a> IRequestContext for RequestContext<'a> {
         }
     }
 
-    fn get_str(self: &Self, key: &str) -> String {
+    fn get_str(&self, key: &str) -> String {
         self.get_string(key.to_string())
     }
 
@@ -344,19 +344,19 @@ impl<'a> IRequestContext for RequestContext<'a> {
         self.insert_string(key.to_string(), value)
     }
 
-    fn get_method(self: &Self) -> &Method {
+    fn get_method(&self) -> &Method {
         &self.method
     }
 
-    // fn get_body_content(self: &Self) -> Option<Rc<dyn IBodyContent>> {
+    // fn get_body_content(&self) -> Option<Rc<dyn IBodyContent>> {
     //     self.body_content.borrow().clone()
     // }
 
-    fn get_auth_claims(self: &Self) -> Vec<Rc<dyn IAuthClaim>> {
+    fn get_auth_claims(&self) -> Vec<Rc<dyn IAuthClaim>> {
         self.auth_claims.borrow().clone()
     }
     
-    fn get_cookies_parsed(self: &Self) -> Option<HashMap<String, String>> {
+    fn get_cookies_parsed(&self) -> Option<HashMap<String, String>> {
         let cookie_header = self.headers.get("cookie");
         match cookie_header {
             Some(header) => {
@@ -378,30 +378,30 @@ impl<'a> IRequestContext for RequestContext<'a> {
         }
     }
 
-    fn get_http_version(self: &Self) -> http::version::Version {
+    fn get_http_version(&self) -> http::version::Version {
         self.http_version
     }
 
-    fn get_headers(self: &Self) -> &HeaderMap {
+    fn get_headers(&self) -> &HeaderMap {
         &self.headers
     }
 
-    fn get_route_data(self: &Self) -> RouteData {
+    fn get_route_data(&self) -> RouteData {
         self.route_data.borrow().clone()
     }
 
-    fn mut_route_data(self: &Self) -> &RefCell<RouteData> {
+    fn mut_route_data(&self) -> &RefCell<RouteData> {
         &self.route_data
     }
 
-    fn get_model_validation_result(self: &Self) -> Option<ModelValidationResult<AnyIModel>> {
+    fn get_model_validation_result(&self) -> Option<ModelValidationResult<AnyIModel>> {
         match self.model_validation_result.borrow().as_ref() {
             Some(v) => Some(v.clone()),
             None => None,
         }
     }
 
-    fn set_model_validation_result(self: &Self, v: Option<ModelValidationResult<AnyIModel>>) {
+    fn set_model_validation_result(&self, v: Option<ModelValidationResult<AnyIModel>>) {
         if let Some(ref v2) = v {
             self.model_validation_result.replace(Some(v2.clone()));
             match v2 {
@@ -423,7 +423,7 @@ impl<'a> IRequestContext for RequestContext<'a> {
     }
     
     // this function is used to get the content length from the headers.
-    fn get_content_length(self: &Self) -> Option<usize> {
+    fn get_content_length(&self) -> Option<usize> {
         if let Some(content_length_header_val) = self.headers.get("Content-Length") {
             match content_length_header_val.to_str() {
                 Ok(content_length_str) => {
@@ -447,7 +447,7 @@ impl<'a> IRequestContext for RequestContext<'a> {
     }
     
     // this function is used to get the content type from the headers.
-    fn get_content_type(self: &Self) -> Option<ContentType> {
+    fn get_content_type(&self) -> Option<ContentType> {
         // get_headers().get("Content-Type").unwrap()
         if let Some(content_type_header_val) = self.headers.get("Content-Type") {
             match content_type_header_val.to_str() {
@@ -464,11 +464,11 @@ impl<'a> IRequestContext for RequestContext<'a> {
         }
     }
 
-    fn use_decoder(self: &Self, decoder: Rc<dyn IHttpBodyStreamFormat>) {
+    fn use_decoder(&self, decoder: Rc<dyn IHttpBodyStreamFormat>) {
         self.decoders.borrow_mut().push(decoder);
     }
 
-    fn decode_and_bind_body(self: &Self, services: &dyn IServiceCollection) -> Option<Rc<dyn IBodyContent>> {
+    fn decode_and_bind_body(&self, services: &dyn IServiceCollection) -> Option<Rc<dyn IBodyContent>> {
         // // get content type from request
 
         // if let Some(content_type) = request_context.get_content_type() {
@@ -559,11 +559,11 @@ impl<'a> IRequestContext for RequestContext<'a> {
         None
     }
 
-    fn get_uuid(self: &Self) -> &uuid::Uuid {
+    fn get_uuid(&self) -> &uuid::Uuid {
         &self.uuid
     }
 
-    fn try_get_string(self: &Self,key:String) -> Option<String> {
+    fn try_get_string(&self,key:String) -> Option<String> {
         match self.route_data.borrow().map.get(&key) {
             Some(v) => Some(v.clone()),
             None => {

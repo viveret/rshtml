@@ -46,19 +46,19 @@ impl <'a> ResponseContext<'a> {
 }
 
 impl <'a> IResponseContext for ResponseContext<'a> {
-    fn add_header_string(self: &Self, name: String, value: String) {
+    fn add_header_string(&self, name: String, value: String) {
         self.connection_context.add_header_string(name, value);
     }
 
-    fn add_header_str(self: &Self, name: &str, value: &str) {
+    fn add_header_str(&self, name: &str, value: &str) {
         self.connection_context.add_header_str(name, value);
     }
 
-    fn get_header(self: &Self, name: &str) -> Option<String> {
+    fn get_header(&self, name: &str) -> Option<String> {
         self.connection_context.get_pending_header(name)
     }
 
-    fn status_message(self: &Self) -> String {
+    fn status_message(&self) -> String {
         self.connection_context.get_pending_status_message()
     }
 
@@ -82,29 +82,29 @@ impl <'a> IResponseContext for ResponseContext<'a> {
         self.connection_context
     }
 
-    fn use_encoder(self: &Self, encoder: Rc<dyn IHttpBodyStreamFormat>) {
+    fn use_encoder(&self, encoder: Rc<dyn IHttpBodyStreamFormat>) {
         self.encoders.borrow_mut().push(encoder);
     }
 
-    fn get_action_result(self: &Self) -> Option<Rc<dyn IActionResult>> {
+    fn get_action_result(&self) -> Option<Rc<dyn IActionResult>> {
         match self.action_result.borrow().clone() {
             Some(action_result) => Some(action_result),
             None => None,
         }
     }
 
-    fn set_action_result(self: &Self, action_result: Option<Rc<dyn IActionResult>>) {
+    fn set_action_result(&self, action_result: Option<Rc<dyn IActionResult>>) {
         if let Some(action_result) = action_result.as_ref() {
             self.set_status_code(action_result.get_statuscode());
         }
         self.action_result.replace(action_result);
     }
 
-    fn get_str(self: &Self, _key: &str) -> Option<String> {
+    fn get_str(&self, _key: &str) -> Option<String> {
         None
     }
 
-    fn get_string(self: &Self, _key: String) -> Option<String> {
+    fn get_string(&self, _key: String) -> Option<String> {
         None
     }
 
@@ -120,18 +120,18 @@ impl <'a> IResponseContext for ResponseContext<'a> {
     fn remove_string(self: &mut Self, _key: String) {
     }
 
-    fn get_has_started_writing(self: &Self) -> bool {
+    fn get_has_started_writing(&self) -> bool {
         self.connection_context.get_has_started_writing()
     }
 
-    fn set_result_500_if_not_started_writing(self: &Self) {
+    fn set_result_500_if_not_started_writing(&self) {
         if !self.get_has_started_writing() && self.get_action_result().is_none() {
             println!("Writing 500 because no response was written to the client.");
             self.set_action_result(Some(Rc::new(crate::action_results::http_result::InternalServerErrorResult::new("No response was written to the client.".to_string()))));
         }
     }
 
-    fn invoke_action_result(self: &Self, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
+    fn invoke_action_result(&self, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
         if let Some(action_result) = self.get_action_result() {
             self.set_status_code(action_result.get_statuscode());
             action_result.configure_response(self, request_context, services)?;

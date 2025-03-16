@@ -29,7 +29,7 @@ impl RouteValuesBuilder {
         }
     }
 
-    pub fn build(self: &Self) -> HashMap<String, String> {
+    pub fn build(&self) -> HashMap<String, String> {
         self.route_values.clone()
     }
 

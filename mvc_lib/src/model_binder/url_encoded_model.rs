@@ -67,29 +67,29 @@ impl UrlEncodedModel {
 }
 
 // impl IBodyContent for UrlEncodedModel {
-//     fn get_content_type(self: &Self) -> ContentType {
+//     fn get_content_type(&self) -> ContentType {
 //         ContentType {
 //             mime_type: "application/x-www-form-urlencoded".to_string(),
 //             options: "".to_string(),
 //         }
 //     }
 
-//     fn get_content_length(self: &Self) -> usize {
+//     fn get_content_length(&self) -> usize {
 //         self.0.to_string().len()
 //     }
 
-//     fn get_self_type(self: &Self) -> ContentType {
+//     fn get_self_type(&self) -> ContentType {
 //         ContentType {
 //             mime_type: "application/x-www-form-urlencoded".to_string(),
 //             options: "".to_string(),
 //         }
 //     }
 
-//     fn data(self: &Self) -> &dyn std::any::Any {
+//     fn data(&self) -> &dyn std::any::Any {
 //         &self.0
 //     }
 
-//     fn to_string(self: &Self) -> String {
+//     fn to_string(&self) -> String {
 //         format!("UrlEncodedModel: {:?}", self.0)
 //     }
 // }

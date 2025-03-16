@@ -158,21 +158,21 @@ pub fn rusthtml_view_macro_with_context(input: TokenStream) -> (Rc<RustHtmlParse
                 }
 
                 impl IView for #view_name_ident {
-                    fn get_path(self: &Self) -> String {
+                    fn get_path(&self) -> String {
                         self.ViewPath.to_string()
                     }
                 
-                    fn get_raw(self: &Self) -> String {
+                    fn get_raw(&self) -> String {
                         self.raw.to_string()
                     }
                 
                     // if the view defines a model type, this returns the type id
-                    fn get_model_type_name(self: &Self) -> Option<String> {
+                    fn get_model_type_name(&self) -> Option<String> {
                         Some(self.model_type_name.to_string())
                     }
                 
                     // using template, render the view given the current data
-                    fn render(self: &Self, view_context: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
+                    fn render(&self, view_context: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
                         // self.view_context.replace(view_context);
 
                         #view_model_tokens
@@ -193,10 +193,10 @@ pub fn rusthtml_view_macro_with_context(input: TokenStream) -> (Rc<RustHtmlParse
             };
 
             if log_final_view_to_external_file {
-                std::fs::create_dir_all("rusthtml-tmp/views/").expect("could not create tmp folder");
+                std::fs::create_dir_all("rusthtml-tmp/views/").expect("could not create tmp folder rusthtml-tmp");
                 let path = format!("rusthtml-tmp/views/{}.rs", view_name);
-                std::fs::remove_file(path.as_str()).expect("could not remove file");
-                std::fs::write(path.as_str(), s.to_string()).expect("could not write contents");
+                // std::fs::remove_file(path.as_str()).expect("could not remove file from rusthtml-tmp");
+                std::fs::write(path.as_str(), s.to_string()).expect("could not write contents to view in rusthtml-tmp");
             }
             s
         },

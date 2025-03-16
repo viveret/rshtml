@@ -16,7 +16,7 @@ use crate::services::service_collection::IServiceCollection;
 
 // this trait is for a middleware service that redirects HTTP requests to HTTPS.
 pub trait IRedirectHttpsMiddlewareService: IRequestMiddlewareService {
-    fn redirect_to_https(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext) -> Result<MiddlewareResult, Rc<dyn Error>>;
+    fn redirect_to_https(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext) -> Result<MiddlewareResult, Rc<dyn Error>>;
 }
 
 // define the middleware service that redirects HTTP requests to HTTPS.
@@ -37,7 +37,7 @@ impl RedirectHttpsMiddlewareService {
 }
 
 impl IRedirectHttpsMiddlewareService for RedirectHttpsMiddlewareService {
-    fn redirect_to_https(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn redirect_to_https(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext) -> Result<MiddlewareResult, Rc<dyn Error>> {
         let mut url = request_context.get_url().clone();
         if let Err(_) = url.set_scheme("https") {
             return Err(Rc::new(std::io::Error::new(std::io::ErrorKind::Other, format!("Error setting scheme to https"))));
@@ -48,11 +48,11 @@ impl IRedirectHttpsMiddlewareService for RedirectHttpsMiddlewareService {
 }
 
 impl IRequestMiddlewareService for RedirectHttpsMiddlewareService {
-    fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
+    fn set_next(&self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         if request_context.get_scheme() == "http" {
             return self.redirect_to_https(response_context, request_context);
         }

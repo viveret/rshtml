@@ -3,12 +3,10 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
-use proc_macro::TokenTree;
 use proc_macro2::{Delimiter, Ident};
 
 use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
-use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use crate::view::parserv3::parserv3::IParserV3;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -248,13 +246,13 @@ impl IParserV3RustParser for ParserV3RustParser {
                     // println!("parse_expression token: {}", token.to_string());
 
                     let mut tokens = vec![token];
-                    let mut last_token_was_ident = false;
+                    let mut last_token_was_ident = true;
                     while let Some(token) = it.peek() {
                         if ct.is_cancelled() {
                             return Err(RustHtmlError::from_cancellationtoken(ct));
                         }
 
-                        // println!("parse_expression token: {}", token.to_string());
+                        // println!("parse_expression ident token: {}", token.to_string());
 
                         let mut break_after_add = false;
                         let mut overwrite_token_to_add = None;

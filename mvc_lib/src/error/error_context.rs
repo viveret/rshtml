@@ -40,15 +40,15 @@ impl<'a> ErrorContext<'a> {
 }
 
 impl<'a> IErrorContext for ErrorContext<'a> {
-    fn get_error(self: &Self) -> Rc<dyn Error> {
+    fn get_error(&self) -> Rc<dyn Error> {
         self.error.clone()
     }
 
-    fn get_request_context(self: &Self) -> Option<&dyn IRequestContext> {
+    fn get_request_context(&self) -> Option<&dyn IRequestContext> {
         self.request_context
     }
 
-    fn get_response_context(self: &Self) -> Option<&dyn IResponseContext> {
+    fn get_response_context(&self) -> Option<&dyn IResponseContext> {
         self.response_context
     }
 }

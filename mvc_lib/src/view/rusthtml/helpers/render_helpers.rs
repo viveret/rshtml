@@ -24,15 +24,15 @@ impl <'a> RenderHelpers<'a> {
 }
 
 impl <'a> IRenderHelpers<'a> for RenderHelpers<'a> {
-    fn section<'b, 'c, 'd>(self: &Self, _: &'b str) -> Result<HtmlString, RustHtmlError> {
+    fn section<'b, 'c, 'd>(&self, _: &'b str) -> Result<HtmlString, RustHtmlError> {
         Ok(HtmlString::new_from_html("".to_string()))
     }
 
-    fn section_optional<'b, 'c, 'd>(self: &Self, _: &'b str) -> Result<HtmlString, RustHtmlError> {
+    fn section_optional<'b, 'c, 'd>(&self, _: &'b str) -> Result<HtmlString, RustHtmlError> {
         Ok(HtmlString::new_from_html("".to_string()))
     }
 
-    fn body<'b>(self: &Self) -> Result<HtmlString, RustHtmlError> {
+    fn body<'b>(&self) -> Result<HtmlString, RustHtmlError> {
         let ctxdata_rc = self.view_context.get_ctx_data();
         let ctxdata = ctxdata_rc.as_ref().borrow();
         let viewdata_rc = self.view_context.get_view_data();

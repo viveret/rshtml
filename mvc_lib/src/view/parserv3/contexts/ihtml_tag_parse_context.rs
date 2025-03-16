@@ -6,7 +6,7 @@ use proc_macro2::Ident;
 use proc_macro2::{Literal, Punct};
 
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
-use crate::view::rusthtml::rusthtml_token::RustHtmlIdentOrPunct;
+use crate::view::rusthtml::rusthtml_token::{RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct};
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
 use super::irusthtml_parser_context::IRustHtmlParserContext;
@@ -21,6 +21,10 @@ pub trait IHtmlTagParseContext {
     fn is_void_tag(&self) -> bool;
 
     fn set_is_void_tag(&self, v: bool);
+
+    fn is_explicit_void_tag(&self) -> bool;
+    
+    fn set_is_explicit_void_tag(&self, v: bool);
 
     // formats the RustHtml tag name as a string.
     // tag_name: the RustHtml tag name to format as a string.
@@ -48,13 +52,30 @@ pub trait IHtmlTagParseContext {
 
     fn set_is_opening_tag(&self, is_opening_tag: bool);
 
-    fn html_attrs_insert(&self, key: String, val: Option<RustHtmlToken>);
+    fn set_only_add_inner(&self, v: bool);
+    fn get_only_add_inner(&self) -> Option<bool>;
+    
+    fn set_ignore(&self, v: bool);
+    fn get_ignore(&self) -> bool;
 
-    fn html_attrs_get(&self, key: &str) -> Option<Option<RustHtmlToken>>;
+    fn html_attrs_insert(&self,
+        key_tokens: Option<Vec<RustHtmlToken>>,
+        key_tokens_special: Option<RustHtmlIdentAndPunctOrLiteral>, 
+        key: String,
+        equals: Option<RustHtmlToken>,
+        equals_token_punct: Option<Punct>,
+        value: Option<String>,
+        value_literal: Option<Literal>,
+        value_tokens: Option<Vec<RustHtmlToken>>,
+        value_tokens_special: Option<RustHtmlIdentAndPunctOrLiteral>);
 
-    fn get_html_attr(&self, key: &str) -> Option<RustHtmlToken>;
+    fn html_attrs_get(&self, key: &str) -> Option<Option<Vec<RustHtmlToken>>>;
 
-    fn get_html_attrs(&self) -> HashMap<String, Option<RustHtmlToken>>;
+    fn get_html_attr(&self, key: &str) -> Option<Vec<RustHtmlToken>>;
+
+    fn get_html_attrs(&self) -> HashMap<String, Option<Vec<RustHtmlToken>>>;
+
+    fn get_html_attrs_output(&self) -> Vec<RustHtmlToken>;
 
     // fn add_operation_to_ooo_log(&self, operation: String);
 

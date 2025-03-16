@@ -94,7 +94,7 @@ impl <'a> UrlHelpers<'a> {
 }
 
 impl <'a> IUrlHelpers for UrlHelpers<'a> {
-    fn url_action(self: &Self,
+    fn url_action(&self,
         is_relative: bool,
         is_https: Option<bool>,
         protocol: Option<&str>,

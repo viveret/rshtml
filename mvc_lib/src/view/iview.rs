@@ -10,18 +10,18 @@ use crate::services::service_collection::IServiceCollection;
 // it is used by the view renderer to render views.
 pub trait IView {
     // relative to root "views" folder
-    fn get_path(self: &Self) -> String;
+    fn get_path(&self) -> String;
 
     // raw rust + HTML template data
-    fn get_raw(self: &Self) -> String;
+    fn get_raw(&self) -> String;
 
     // if the view defines a model type, this returns the type id
-    fn get_model_type_name(self: &Self) -> Option<String>;
+    fn get_model_type_name(&self) -> Option<String>;
 
     // using template, render the view given the current data
-    fn render(self: &Self, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
+    fn render(&self, ctx: &dyn IViewContext, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
     
-    // fn render_borrowed(self: &Self, ctx: Rc<dyn IViewContext>, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
+    // fn render_borrowed(&self, ctx: Rc<dyn IViewContext>, services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
 
     // might add section renderers, the layout name, and "IsBeingRendered" flag
 }

@@ -10,11 +10,11 @@ use glob::glob;
 pub trait IFileProviderControllerOptions {
     // get the file path for a given path.
     // path: the path to get the file path for.
-    fn get_file(self: &Self, path: String) -> Option<String>;
+    fn get_file(&self, path: String) -> Option<String>;
 
     // get the mapped paths with the alias as the key and the path as the value.
     // recursive: whether to get the paths recursively.
-    fn get_mapped_paths(self: &Self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>>;
+    fn get_mapped_paths(&self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>>;
 }
 
 // this struct implements IFileProviderControllerOptions.
@@ -65,7 +65,7 @@ impl FileProviderControllerOptions {
 }
 
 impl IFileProviderControllerOptions for FileProviderControllerOptions {
-    fn get_file(self: &Self, path: String) -> Option<String> {
+    fn get_file(&self, path: String) -> Option<String> {
         for (serving_file_alias, serving_file_path) in self.serving_files.entries() {
             // println!("FileProviderControllerOptions comparing serving_file_alias {} to path {}", serving_file_alias, path);
             if serving_file_alias == &path.as_str() {
@@ -91,7 +91,7 @@ impl IFileProviderControllerOptions for FileProviderControllerOptions {
         return None;
     }
 
-    fn get_mapped_paths(self: &Self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>> {
+    fn get_mapped_paths(&self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>> {
         let all_paths = self.serving_directories
             .iter()
             .map(|path| {

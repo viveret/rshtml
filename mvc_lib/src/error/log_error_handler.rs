@@ -32,12 +32,12 @@ impl LogErrorHandler {
 }
 
 impl IErrorHandler for LogErrorHandler {
-    fn handle_error(self: &Self, error_context: &dyn IErrorContext) -> Result<bool, Rc<dyn Error>> {
+    fn handle_error(&self, error_context: &dyn IErrorContext) -> Result<bool, Rc<dyn Error>> {
         println!("LogErrorHandler::handle_error: {:?}", error_context.get_error());
         Ok(true)
     }
 
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         nameof::name_of_type!(LogErrorHandler).to_string()
     }
 }

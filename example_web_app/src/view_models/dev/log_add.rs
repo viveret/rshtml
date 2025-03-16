@@ -132,15 +132,15 @@ impl LogAddInputModelBinder {
 }
 
 impl IModelBinder for LogAddInputModelBinder {
-    fn type_info(self: &Self) -> Box<TypeInfo> {
+    fn type_info(&self) -> Box<TypeInfo> {
         Box::new(TypeInfo::of::<LogAddInputModel>())
     }
 
-    fn matches(self: &Self, _request_context: &dyn IRequestContext) -> bool {
+    fn matches(&self, _request_context: &dyn IRequestContext) -> bool {
         true
     }
 
-    fn bind_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
+    fn bind_model(&self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
         let mut model = LogAddInputModel::default();
         // if let Some(body) = request_context.get_body_content() {
             let content_type = request_context.get_content_type().expect("LogAddInputModelBinder.bind_model: content_type is None.");

@@ -26,6 +26,9 @@ regex = "1.7.1"
 rustc_lexer = "0.1.0"
 sysinfo = "0.28.4"
 
+[dependencies.core_lib]
+path = "../core_lib"
+
 [dependencies.core_macro_lib]
 path = "../core_macro_lib"
 

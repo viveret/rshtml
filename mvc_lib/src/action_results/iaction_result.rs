@@ -29,8 +29,8 @@ impl<T: 'static + std::fmt::Debug> IActionResultToAny for T {
 
 pub trait IActionResult: IActionResultToAny {
     // get the status code of the action result
-    fn get_statuscode(self: &Self) -> StatusCode;
+    fn get_statuscode(&self) -> StatusCode;
 
     // configure the response based on the action result
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>>;
+    fn configure_response(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>>;
 }

@@ -3,9 +3,11 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use proc_macro2::Literal;
 use proc_macro2::Punct;
 
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
+use crate::view::rusthtml::rusthtml_token::RustHtmlIdentAndPunctOrLiteral;
 use crate::view::rusthtml::rusthtml_token::RustHtmlIdentOrPunct;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 
@@ -13,21 +15,52 @@ use super::ihtml_tag_parse_context::IHtmlTagParseContext;
 use super::irusthtml_parser_context::IRustHtmlParserContext;
 
 
+pub struct HtmlAttrRustTokenGroup {
+    pub key_tokens: Option<Vec<RustHtmlToken>>,
+    pub key_tokens_special: Option<RustHtmlIdentAndPunctOrLiteral>,
+    pub key: String,
+    pub equals_token: Option<RustHtmlToken>,
+    pub equals_token_punct: Option<Punct>,
+    pub value: Option<String>,
+    pub value_literal: Option<Literal>,
+    pub value_tokens: Option<Vec<RustHtmlToken>>,
+    pub value_tokens_special: Option<RustHtmlIdentAndPunctOrLiteral>,
+}
+
+impl HtmlAttrRustTokenGroup {
+    pub fn to_output(&self) -> Vec<RustHtmlToken> {
+        if self.equals_token.is_some() {
+            vec![
+                RustHtmlToken::HtmlTagAttributeName(self.key.clone(), self.key_tokens_special.clone()),
+                RustHtmlToken::HtmlTagAttributeEquals('=', self.equals_token_punct.clone()),
+                RustHtmlToken::HtmlTagAttributeValue(self.value.clone(), self.value_literal.clone(), self.value_tokens_special.clone(), self.value_tokens.clone()),
+            ]
+        } else {
+            vec![
+                RustHtmlToken::HtmlTagAttributeName(self.key.clone(), self.key_tokens_special.clone()),
+            ]
+        }
+    }
+}
+
+
 // this is the main parsing context for the RustHtml language.
 // it is used to parse the RustHtml language into a RustHtmlToken stream of RustHtml tokens.
 pub struct HtmlTagParseContext {
     // main context of the parser
-    main_context: Option<Rc<dyn IRustHtmlParserContext>>,
+    pub main_context: Option<Rc<dyn IRustHtmlParserContext>>,
     // the HTML tag name
-    tag_name: RefCell<Vec<RustHtmlIdentOrPunct>>,
+    pub tag_name: RefCell<Vec<RustHtmlIdentOrPunct>>,
     // the HTML tag attributes
-    html_attrs: RefCell<HashMap<String, Option<RustHtmlToken>>>,
-    is_self_contained_tag: RefCell<bool>,
-    is_opening_tag: RefCell<bool>,
-    is_explicit_void_tag: RefCell<bool>,
+    pub html_attrs: RefCell<HashMap<String, HtmlAttrRustTokenGroup>>,
+    pub is_self_contained_tag: RefCell<bool>,
+    pub is_opening_tag: RefCell<bool>,
+    pub is_explicit_void_tag: RefCell<bool>,
     // end tag punct
-    tag_end_punct: RefCell<Vec<Punct>>,
-    add_inner: RefCell<bool>,
+    pub tag_end_punct: RefCell<Vec<Punct>>,
+    pub add_inner: RefCell<bool>,
+    pub only_add_inner: RefCell<Option<bool>>,
+    pub ignore: RefCell<bool>,
 }
 impl HtmlTagParseContext {
     pub fn new(main_ctx: Option<Rc<dyn IRustHtmlParserContext>>) -> Self {
@@ -40,6 +73,8 @@ impl HtmlTagParseContext {
             is_explicit_void_tag: RefCell::new(false),
             tag_end_punct: RefCell::new(vec![]),
             add_inner: RefCell::new(true),
+            only_add_inner: RefCell::new(None),
+            ignore: RefCell::new(false),
         }
     }
 
@@ -57,13 +92,13 @@ impl HtmlTagParseContext {
 }
 
 impl IHtmlTagParseContext for HtmlTagParseContext {
-    fn get_main_context(self: &Self) -> Rc<dyn IRustHtmlParserContext> {
+    fn get_main_context(&self) -> Rc<dyn IRustHtmlParserContext> {
         self.main_context.as_ref().expect("called get_main_context, expected context but none was supplied").clone()
     }
 
     // returns true if the tag is a void tag (e.g. <input /> or <hr />)
     // returns false if the tag is not a void tag (e.g. <div></div> or <p></p>)
-    fn is_void_tag(self: &Self) -> bool {
+    fn is_void_tag(&self) -> bool {
         match self.tag_name_as_str().as_str() {
             "input" | "hr" | "br" | "!DOCTYPE" => true,
             _ => *self.is_explicit_void_tag.borrow(),
@@ -71,20 +106,20 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
     }
 
     // returns the tag name as a string.
-    fn tag_name_as_str(self: &Self) -> String {
+    fn tag_name_as_str(&self) -> String {
         return self.fmt_tag_name_as_str(self.tag_name.borrow().as_ref());
     }
 
     // formats the RustHtml tag name as a string.
     // tag_name: the RustHtml tag name to format as a string.
     // returns the formatted RustHtml tag name as a string.
-    fn fmt_tag_name_as_str(self: &Self, tag_name: &Vec<RustHtmlIdentOrPunct>) -> String {
+    fn fmt_tag_name_as_str(&self, tag_name: &Vec<RustHtmlIdentOrPunct>) -> String {
         RustHtmlIdentOrPunct::to_string_join(tag_name)
     }
 
     // called when the tag name is parsed.
     // output: the output RustHtml token stream to add the tag name to.
-    fn on_html_tag_name_parsed(self: &Self, tag_name: Vec<RustHtmlIdentOrPunct>) -> Result<RustHtmlToken, RustHtmlError> {
+    fn on_html_tag_name_parsed(&self, tag_name: Vec<RustHtmlIdentOrPunct>) -> Result<RustHtmlToken, RustHtmlError> {
         if tag_name.is_empty() {
             panic!("tag_name.is_empty() = true")
         }
@@ -126,23 +161,47 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
         *self.is_opening_tag.borrow_mut() = is_opening_tag;
     }
 
-    fn html_attrs_insert(&self, key: String, val: Option<RustHtmlToken>) {
-        self.html_attrs.borrow_mut().insert(key, val);
+    fn html_attrs_insert(&self, 
+        key_tokens: Option<Vec<RustHtmlToken>>, 
+        key_tokens_special: Option<RustHtmlIdentAndPunctOrLiteral>, 
+        key: String,
+        equals_token: Option<RustHtmlToken>,
+        equals_token_punct: Option<Punct>,
+        value: Option<String>,
+        value_literal: Option<Literal>,
+        value_tokens: Option<Vec<RustHtmlToken>>,
+        value_tokens_special: Option<RustHtmlIdentAndPunctOrLiteral>) {
+        self.html_attrs.borrow_mut().insert(key.clone(), HtmlAttrRustTokenGroup { 
+            key_tokens, key_tokens_special, key, equals_token, equals_token_punct,
+            value_tokens, value, value_literal, value_tokens_special
+        });
     }
 
-    fn html_attrs_get(&self, key: &str) -> Option<Option<RustHtmlToken>> {
-        self.html_attrs.borrow().get(key).cloned()
+    fn html_attrs_get(&self, key: &str) -> Option<Option<Vec<RustHtmlToken>>> {
+        self.html_attrs.borrow().get(key)
+            .map(|x| &x.value_tokens)
+            .cloned()
     }
 
-    fn get_html_attr(&self, key: &str) -> Option<RustHtmlToken> {
+    fn get_html_attr(&self, key: &str) -> Option<Vec<RustHtmlToken>> {
         match self.html_attrs.borrow().get(key) {
-            Some(val) => val.clone(),
+            Some(val) => val.value_tokens.clone(),
             None => None,
         }
     }
 
-    fn get_html_attrs(&self) -> HashMap<String, Option<RustHtmlToken>> {
-        self.html_attrs.borrow().clone()
+    fn get_html_attrs(&self) -> HashMap<String, Option<Vec<RustHtmlToken>>> {
+        let mut hashmap: HashMap<String, Option<Vec<RustHtmlToken>>> = HashMap::new();
+
+        for (key, values) in self.html_attrs.borrow().iter() {
+            hashmap.insert(key.clone(), values.value_tokens.clone());
+        }
+
+        hashmap
+    }
+
+    fn get_html_attrs_output(&self) -> Vec<RustHtmlToken> {
+        self.html_attrs.borrow().iter().flat_map(|x| x.1.to_output()).collect()
     }
 
     // fn on_kvp_defined(&self) -> Result<Vec<RustHtmlToken>, RustHtmlError> {
@@ -228,5 +287,29 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
     
     fn set_is_void_tag(&self, v: bool) {
         self.is_explicit_void_tag.replace(v);
+    }
+    
+    fn is_explicit_void_tag(&self) -> bool {
+        *self.is_explicit_void_tag.borrow()
+    }
+    
+    fn set_is_explicit_void_tag(&self, v: bool) {
+        self.is_explicit_void_tag.replace(v);
+    }
+    
+    fn set_only_add_inner(&self, v: bool) {
+        self.only_add_inner.replace(Some(v));
+    }
+    
+    fn get_only_add_inner(&self) -> Option<bool> {
+        *self.only_add_inner.borrow()
+    }
+    
+    fn set_ignore(&self, v: bool) {
+        self.ignore.replace(v);
+    }
+    
+    fn get_ignore(&self) -> bool {
+        *self.ignore.borrow()
     }
 }

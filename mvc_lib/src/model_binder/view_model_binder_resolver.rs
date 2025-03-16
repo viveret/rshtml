@@ -15,12 +15,12 @@ use super::model_validation_result::ModelValidationResult;
 // this trait represents a view model binder resolver which is used to resolve the correct IModelBinder for a given content type and context.
 pub trait IModelBinderResolver {
     // resolves the correct IModelBinder for the given content type.
-    fn resolve_for_content_type(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IModelBinder>>;
+    fn resolve_for_content_type(&self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IModelBinder>>;
 
     // binds and validates the view model for the given request context.
     // request_context: the request context to bind and validate the view model for.
     // returns: the result of the binding and validation.
-    fn bind_and_validate_view_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel>;
+    fn bind_and_validate_view_model(&self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel>;
 }
 
 
@@ -59,7 +59,7 @@ impl ModelBinderResolver {
 }
 
 impl IModelBinderResolver for ModelBinderResolver {
-    fn resolve_for_content_type(self: &Self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IModelBinder>> {
+    fn resolve_for_content_type(&self, request_context: &dyn IRequestContext) -> Option<Rc<dyn IModelBinder>> {
         for it in self.model_binders.iter() {
             if it.matches(request_context) {
                 return Some(it.clone());
@@ -68,7 +68,7 @@ impl IModelBinderResolver for ModelBinderResolver {
         None
     }
 
-    fn bind_and_validate_view_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
+    fn bind_and_validate_view_model(&self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
         if let Some(binder) = self.resolve_for_content_type(request_context.clone()) {
             return binder.bind_model(request_context);
         }

@@ -41,11 +41,11 @@ impl RedirectActionResult {
 }
 
 impl IActionResult for RedirectActionResult {
-    fn get_statuscode(self: &Self) -> http::StatusCode {
+    fn get_statuscode(&self) -> http::StatusCode {
         http::StatusCode::TEMPORARY_REDIRECT
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), std::rc::Rc<dyn std::error::Error>> {
+    fn configure_response(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), std::rc::Rc<dyn std::error::Error>> {
         let url = crate::routing::url_helpers::UrlHelpers::url_action_static(
             self.area_name.as_deref(),
             self.controller_name.as_deref(),

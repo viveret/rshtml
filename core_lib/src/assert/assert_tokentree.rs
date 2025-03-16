@@ -1,5 +1,7 @@
 
 
+use as_any::AsAny;
+use nameof::{name_of, name_of_type};
 use proc_macro2::{TokenTree, Literal, Ident, Group, Punct};
 
 // assert that the token is a punct with the given value
@@ -81,5 +83,24 @@ fn iterate_left_and_right<'a>(
 
 // Function to assert equality of individual tokens
 fn assert_tokentree(token_left: TokenTree, token_right: TokenTree) {
-    assert_eq!(token_left.to_string(), token_right.to_string(), "Token mismatch: left = {}, right = {}", token_left, token_right);
+    let ltype = tokentree_variant_name(&token_left);
+    let rtype = tokentree_variant_name(&token_right);
+    assert_eq!(token_left.to_string(), token_right.to_string(), "Token mismatch: left ({}) = {}, right ({}) = {}", ltype, token_left, rtype, token_right);
+}
+
+
+fn tokentree_variant_name(t: &TokenTree) -> &'static str {
+    match t {
+        TokenTree::Group(g) => {
+            match g.delimiter() {
+                proc_macro2::Delimiter::Parenthesis => "paren group",
+                proc_macro2::Delimiter::Brace => "brace group",
+                proc_macro2::Delimiter::Bracket => "bracket group",
+                proc_macro2::Delimiter::None => "paren group",
+            }
+        }
+        TokenTree::Ident(_) => "ident",
+        TokenTree::Punct(_) => "punct",
+        TokenTree::Literal(_) => "literal",
+    }
 }

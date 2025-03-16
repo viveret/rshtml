@@ -25,11 +25,11 @@ impl MarkdownFileConstDirective {
 }
 
 impl IRustHtmlDirective for MarkdownFileConstDirective {
-    fn matches(self: &Self, name: &String) -> bool {
+    fn matches(&self, name: &String) -> bool {
         name == "mdfile_const" || name == "markdownfile_const"
     }
 
-    fn execute_new_v3(self: &Self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
+    fn execute_new_v3(&self, context: Rc<dyn IRustHtmlParserContext>, identifier: &Ident, ident_token: &RustHtmlToken, parser: Rc<dyn crate::view::parserv3::parserv3::IParserV3>, it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         let ident_tokens_rshtml = parser.get_rust_parser().parse_expression(it, context, ct.clone())?;
         let ident_tokens_rshtml_stream = Rc::new(VecPeekableRustHtmlToken::new(ident_tokens_rshtml));
         let ident_tokens_peekable_stream = parser.get_converter_out().convert(ident_tokens_rshtml_stream, ct.clone())?;

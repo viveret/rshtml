@@ -35,7 +35,7 @@ impl <'a, TModel: 'static + IModel> HtmlHelpers<'a, TModel> {
 }
 
 impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a, TModel> {
-    fn form<'b, F>(self: &Self, method: http::method::Method, action: Cow<'b, str>, html_attrs: Option<&HashMap<String, String>>, inner_render_fn: F) -> HtmlString where F: Fn() -> () {
+    fn form<'b, F>(&self, method: http::method::Method, action: Cow<'b, str>, html_attrs: Option<&HashMap<String, String>>, inner_render_fn: F) -> HtmlString where F: Fn() -> () {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         let html_output = HtmlBuffer::new();
         html_output.write_html_str(
@@ -51,12 +51,12 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         html_output.collect_html()
     }
 
-    fn submit(self: &Self, text: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn submit(&self, text: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         HtmlString { content: format!("<button type=\"submit\" {}>{}</button>", html_attrs_str, html_escape::encode_text(&text)) }
     }
 
-    fn input(self: &Self, name: &str, input_type: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn input(&self, name: &str, input_type: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         HtmlString { content: 
             format!("<input type=\"{}\" name=\"{}\" value=\"{}\" {}/>", 
@@ -68,7 +68,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn hidden(self: &Self, name: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn hidden(&self, name: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         HtmlString { content: 
             format!("<input type=\"hidden\" name=\"{}\" value=\"{}\" {}/>", 
@@ -79,7 +79,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn checkbox(self: &Self, name: &str, checked: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn checkbox(&self, name: &str, checked: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         HtmlString { content: 
             format!("<input type=\"checkbox\" name=\"{}\" {} {}/>", 
@@ -90,7 +90,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn textarea(self: &Self, name: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn textarea(&self, name: &str, value: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         HtmlString { content: 
             format!("<textarea name=\"{}\" {}>{}</textarea>", 
@@ -100,7 +100,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn label(self: &Self, for_name: &str, text: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn label(&self, for_name: &str, text: &str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         HtmlString { content: 
             format!("<label for=\"{}\" {}>{}</label>", 
@@ -111,7 +111,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn select(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn select(&self, name: &str, options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         let mut html = format!("<select name=\"{}\" {}>", html_escape::encode_text(&name), html_attrs_str);
         for option in options {
@@ -121,7 +121,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         HtmlString { content: html }
     }
 
-    fn select_multiple(self: &Self, name: &str, options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn select_multiple(&self, name: &str, options: Vec<(String, String)>, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         let mut html = format!("<select name=\"{}\" multiple {}>", html_escape::encode_text(&name), html_attrs_str);
         for option in options {
@@ -131,7 +131,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         HtmlString { content: html }
     }
 
-    fn option(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn option(&self, value: &str, text: &str, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         HtmlString { content: 
             format!("<option value=\"{}\" {} {}>{}</option>", 
@@ -143,7 +143,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn option_selected(self: &Self, value: &str, text: &str, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn option_selected(&self, value: &str, text: &str, disabled: bool, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         HtmlString { content: 
             format!("<option value=\"{}\" selected {} {}>{}</option>", 
@@ -155,7 +155,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn option_group(self: &Self, label: &str, options: Vec<(String, String)>, disabled: bool, _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn option_group(&self, label: &str, options: Vec<(String, String)>, disabled: bool, _html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let mut html = format!("<optgroup label=\"{}\">", html_escape::encode_text(&label));
         for option in options {
             html = format!("{}<option value=\"{}\" {}>{}</option>", html, html_escape::encode_text(&option.0), if disabled { "disabled" } else { "" }, html_escape::encode_text(&option.1));
@@ -164,7 +164,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         HtmlString { content: html }
     }
 
-    fn append_html_attrs_into_first(self: &Self, html_attrs_first: Option<&HashMap<String, String>>, html_attrs_second: Option<&HashMap<String, String>>) -> Option<HashMap<String, String>> {
+    fn append_html_attrs_into_first(&self, html_attrs_first: Option<&HashMap<String, String>>, html_attrs_second: Option<&HashMap<String, String>>) -> Option<HashMap<String, String>> {
         if let Some(html_attrs_first) = html_attrs_first {
             let mut new_first = html_attrs_first.clone();
             if let Some(html_attrs_second) = html_attrs_second {
@@ -183,12 +183,12 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn append_html_attrs_into_new(self: &Self, html_attrs_first: Option<&HashMap<String, String>>, html_attrs_second: Option<&HashMap<String, String>>) -> HashMap<String, String> {
+    fn append_html_attrs_into_new(&self, html_attrs_first: Option<&HashMap<String, String>>, html_attrs_second: Option<&HashMap<String, String>>) -> HashMap<String, String> {
         let copy_first = html_attrs_first.clone();
         <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::append_html_attrs_into_first(self, copy_first, html_attrs_second).expect("append_html_attrs_into_first").clone()
     }
 
-    fn html_attrs_str_to_string(self: &Self, html_attrs: Option<&HashMap<&str, &str>>) -> Option<HashMap<String, String>> {
+    fn html_attrs_str_to_string(&self, html_attrs: Option<&HashMap<&str, &str>>) -> Option<HashMap<String, String>> {
         if let Some(html_attrs) = html_attrs {
             Some(html_attrs.iter().map(|x| (x.0.to_string().clone(), x.1.to_string().clone())).collect())
         } else {
@@ -196,11 +196,11 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn html_attrs_array_tuple_str_to_string(self: &Self, html_attrs: &[(&str, &str)]) -> HashMap<String, String> {
+    fn html_attrs_array_tuple_str_to_string(&self, html_attrs: &[(&str, &str)]) -> HashMap<String, String> {
         html_attrs.iter().map(|x| (x.0.to_string(), x.1.to_string())).collect()
     }
 
-    fn html_attrs_to_string(self: &Self, html_attrs: Option<&HashMap<String, String>>) -> String {
+    fn html_attrs_to_string(&self, html_attrs: Option<&HashMap<String, String>>) -> String {
         if let Some(html_attrs) = html_attrs {
             let mut html = String::new();
             for (key, value) in html_attrs {
@@ -217,7 +217,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn link<'b>(self: &Self, href: &'b str, text: &'b str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn link<'b>(&self, href: &'b str, text: &'b str, html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         let html_attrs_str = <HtmlHelpers<'_, TModel> as IHtmlHelpers<'_, TModel>>::html_attrs_to_string(self, html_attrs);
         HtmlString { content: 
             format!("<a href=\"{}\" {}>{}</a>", 
@@ -298,7 +298,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         }
     }
 
-    fn label_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(self: &Self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
+    fn label_for<TProperty: 'static + ToString, TFn: 'static + Fn(&TModel) -> TProperty>(&self, expr: (TFn, proc_macro2::TokenStream), html_attrs: Option<&HashMap<String, String>>) -> HtmlString {
         // first get property name
         let property_name = extract_property_name(expr.1);
 
@@ -338,7 +338,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         self.option_selected(property_name.as_str(), property_name.as_str(), disabled, html_attrs)
     }
 
-    fn validation_summary(self: &Self) -> HtmlString {
+    fn validation_summary(&self) -> HtmlString {
         if let Some(result) = self.view_context.get_request_context().get_model_validation_result() {
             match result {
                 ModelValidationResult::Ok(_) |

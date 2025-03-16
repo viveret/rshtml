@@ -49,7 +49,7 @@ impl JsonAuthRole {
 }
 
 impl IAuthRole for JsonAuthRole {
-    fn get_name(self: &Self) -> String {
+    fn get_name(&self) -> String {
         self.name.clone()
     }
 }
@@ -80,96 +80,96 @@ impl AuthRoleJsonFileDbSet {
 }
 
 impl IDbSetAny for AuthRoleJsonFileDbSet {
-    fn add_any(self: &Self, item: Box<dyn Any>) {
+    fn add_any(&self, item: Box<dyn Any>) {
         self.json_dbset.add_any(item)
     }
 
-    fn add_range_any(self: &Self, items: Vec<Box<dyn Any>>) {
+    fn add_range_any(&self, items: Vec<Box<dyn Any>>) {
         self.json_dbset.add_range_any(items)
     }
 
-    fn attach_any(self: &Self, item: Box<dyn Any>) {
+    fn attach_any(&self, item: Box<dyn Any>) {
         self.json_dbset.attach_any(item)
     }
 
-    fn create_any(self: &Self) -> Box<dyn Any> {
+    fn create_any(&self) -> Box<dyn Any> {
         self.json_dbset.create_any()
     }
 
-    fn find_any(self: &Self) -> Vec<Box<dyn Any>> {
+    fn find_any(&self) -> Vec<Box<dyn Any>> {
         self.json_dbset.find_any()
     }
 
-    fn get_all_any(self: &Self) -> Vec<Box<dyn Any>> {
+    fn get_all_any(&self) -> Vec<Box<dyn Any>> {
         self.json_dbset.get_all_any()
     }
 
-    fn remove_any(self: &Self, item: Box<dyn Any>) {
+    fn remove_any(&self, item: Box<dyn Any>) {
         self.json_dbset.remove_any(item)
     }
 
-    fn remove_range_any(self: &Self, items: Vec<Box<dyn Any>>) {
+    fn remove_range_any(&self, items: Vec<Box<dyn Any>>) {
         self.json_dbset.remove_range_any(items)
     }
 
-    fn as_any(self: &Self, _type_info: TypeInfo) -> &dyn Any {
+    fn as_any(&self, _type_info: TypeInfo) -> &dyn Any {
         self
     }
 
-    fn entity_type_info(self: &Self) -> TypeInfo {
+    fn entity_type_info(&self) -> TypeInfo {
         IDbSet::entity_type_info(&self.json_dbset)
     }
 
-    fn entity_type_name(self: &Self) -> &'static str {
+    fn entity_type_name(&self) -> &'static str {
         IDbSet::entity_type_name(&self.json_dbset)
     }
 
-    fn save_changes(self: &Self) {
+    fn save_changes(&self) {
         self.json_dbset.save_changes();
     }
 }
 
 impl IDbSet<JsonAuthRole> for AuthRoleJsonFileDbSet {
-    fn add(self: &Self, item: &JsonAuthRole) {
+    fn add(&self, item: &JsonAuthRole) {
         self.json_dbset.add(item);
     }
-    fn add_range(self: &Self, items: Vec<JsonAuthRole>) {
+    fn add_range(&self, items: Vec<JsonAuthRole>) {
         self.json_dbset.add_range(items);
     }
 
-    fn attach(self: &Self, item: &JsonAuthRole) {
+    fn attach(&self, item: &JsonAuthRole) {
         self.json_dbset.attach(item);
     }
 
-    fn create(self: &Self) -> JsonAuthRole {
+    fn create(&self) -> JsonAuthRole {
         self.json_dbset.create()
     }
 
-    fn find(self: &Self) -> Vec<JsonAuthRole> {
+    fn find(&self) -> Vec<JsonAuthRole> {
         self.json_dbset.find()
     }
 
-    fn get_all(self: &Self) -> Vec<JsonAuthRole> {
+    fn get_all(&self) -> Vec<JsonAuthRole> {
         self.json_dbset.get_all()
     }
 
-    fn remove(self: &Self, item: &JsonAuthRole) {
+    fn remove(&self, item: &JsonAuthRole) {
         self.json_dbset.remove(item);
     }
 
-    fn remove_range(self: &Self, items: Vec<JsonAuthRole>) {
+    fn remove_range(&self, items: Vec<JsonAuthRole>) {
         self.json_dbset.remove_range(items);
     }
 
-    fn entity_type_info(self: &Self) -> TypeInfo {
+    fn entity_type_info(&self) -> TypeInfo {
         IDbSet::entity_type_info(&self.json_dbset)
     }
 
-    fn entity_type_name(self: &Self) -> &'static str {
+    fn entity_type_name(&self) -> &'static str {
         IDbSet::entity_type_name(&self.json_dbset)
     }
 
-    fn upcast(self: &Self) -> &dyn IDbSetAny {
+    fn upcast(&self) -> &dyn IDbSetAny {
         self
     }
 }

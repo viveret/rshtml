@@ -12,7 +12,7 @@ pub trait IUrlHelpers {
     // controller_name: the name of the controller. If None, the current or default controller is used.
     // area_name: the name of the area. If None, the current or default area is used.
     // route_values: the route values for the url. If None, the no route values are used.
-    fn url_action(self: &Self,
+    fn url_action(&self,
         is_relative: bool,
         is_https: Option<bool>,
         protocol: Option<&str>,

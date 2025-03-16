@@ -19,7 +19,7 @@ mvc_macro_lib::rusthtml_view_macro! {
             None => "No model type required".to_string(),
         };
         <li>
-            <a href=@href>@compiled_view.path.as_str() <span>@" "</span> @model_type_name</a>
+            <a href=@&href>@compiled_view.path.as_str() <span>@" "</span> @model_type_name</a>
         </li>
     }
     </ul>

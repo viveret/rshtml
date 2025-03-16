@@ -47,7 +47,7 @@ impl ModelEncoderResolver {
     // resolves the correct IViewModelEncoder for the given content type.
     // content_type: the content type to resolve the IViewModelEncoder for.
     // returns: the resolved IViewModelEncoder if found, otherwise None.
-    pub fn resolve_for_content_type(self: &Self, content_type: &str) -> Option<Rc<dyn IViewModelEncoder>> {
+    pub fn resolve_for_content_type(&self, content_type: &str) -> Option<Rc<dyn IViewModelEncoder>> {
         for it in self.view_model_binders.iter() {
             if it.matches_content_type(content_type) {
                 return Some(it.clone());
@@ -60,7 +60,7 @@ impl ModelEncoderResolver {
     // model: the view model to encode.
     // response_context: the response context to encode the view model for.
     // returns: the result of the encoding.
-    pub fn encode_view_model(self: &Self, _: Box<dyn Any>, _: &dyn IResponseContext) -> ModelValidationResult<AnyIModel> {
+    pub fn encode_view_model(&self, _: Box<dyn Any>, _: &dyn IResponseContext) -> ModelValidationResult<AnyIModel> {
         // let headers = response_context.get_headers();
         // let content_type = headers.get("Content-Type").unwrap().to_str().unwrap();
         // if let Some(binder) = self.resolve_for_content_type(content_type) {

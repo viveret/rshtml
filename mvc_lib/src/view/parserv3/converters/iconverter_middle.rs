@@ -10,6 +10,7 @@ use crate::view::parserv3::parserv3::IParserV3;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 pub trait IConverterMiddle {
+    // whole stream or know when to break, specifically context.htmltag_scope_stack when at the end of an html recursion
     fn convert(&self,
         input: Rc<dyn IPeekableRustHtmlToken>,
         context: Rc<dyn IRustHtmlParserContext>,
@@ -127,7 +128,7 @@ impl ConverterNormal {
             return Err(RustHtmlError::from_cancellationtoken(ct));
         }
 
-        // println!("convert_html: {}", token.to_string());
+        println!("convert_html: {}", token.to_string());
 
         match token {
             RustHtmlToken::Group(d, s, g) => {
@@ -159,7 +160,7 @@ impl ConverterNormal {
                         // start of tag
                         // what happened to the tag parser?
                         // peek after start of tag
-                        // println!("peek tag start: {:?}", input.peek().unwrap());
+                        println!("peek tag start: {:?}", input.peek().unwrap());
                         let result = self.get_parser().get_html_parser().parse_tag(input, context, ct)?;
                         if let Some(x) = result.1 {
                             return Ok(x);
@@ -190,7 +191,7 @@ impl ConverterNormal {
             return Err(RustHtmlError::from_cancellationtoken(ct));
         }
 
-        // println!("convert_rust: {}", token.to_string());
+        println!("convert_rust: {}", token.to_string());
 
         match token {
             RustHtmlToken::Group(d, s, g) => {
@@ -213,22 +214,6 @@ impl ConverterNormal {
                         Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
                     },
                     '<' => {
-                        // check if tag name
-                        // let possible_tag_name = input.peek();
-                        // if let Some(RustHtmlToken::Identifier(i)) = possible_tag_name {
-                        //     match i.to_string().as_str() {
-                        //         "h1" | "h2" | "h3" | "p" | "body" | "html" | "div" => {
-                        //             panic!("are you sure? {}", Backtrace::capture());
-                        //         },
-                        //         _ => {
-                        //         }
-                        //     }
-                        // }
-
-                        // is ok
-                        // Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
-
-                        // assume start of HTML?
                         context.push_is_in_html_mode(true);
                         let r = self.convert_html(token, input, context.clone(), ct);
                         context.pop_is_in_html_mode();

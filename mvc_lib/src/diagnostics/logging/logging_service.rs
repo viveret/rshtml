@@ -73,7 +73,7 @@ impl ILogger for LoggingService {
 }
 
 impl ILoggerSink for LoggingService {
-    fn log(self: &Self, level: log::Level, message: &str) {
+    fn log(&self, level: log::Level, message: &str) {
         self.logger.log(level, message);
     }
 

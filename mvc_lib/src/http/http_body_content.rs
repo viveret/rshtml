@@ -25,13 +25,13 @@ impl ContentType {
 }
 
 pub trait IBodyContent {
-    fn get_http_context(self: &Self) -> &dyn IHttpConnectionContext;
+    fn get_http_context(&self) -> &dyn IHttpConnectionContext;
     
-    fn get_self_type(self: &Self) -> ContentType;
-    fn get_content_type(self: &Self) -> ContentType;
-    fn get_content_length(self: &Self) -> usize;
+    fn get_self_type(&self) -> ContentType;
+    fn get_content_type(&self) -> ContentType;
+    fn get_content_length(&self) -> usize;
 
     // returns a string representation of the body content for debugging.
     // do not use this for decoding the body content, instead use the get_body_raw method.
-    fn to_string(self: &Self) -> String;
+    fn to_string(&self) -> String;
 }

@@ -12,14 +12,14 @@ use super::service_scope::ServiceScope;
 // this is a trait for a class that can provide file services.
 pub trait IFileProviderService {
     // opens a file for reading.
-    fn open_read(self: &Self, path: &str) -> Result<Box<dyn Read>>;
+    fn open_read(&self, path: &str) -> Result<Box<dyn Read>>;
     // opens a file for writing.
-    fn open_write(self: &Self, path: &str) -> Result<Box<dyn Write>>;
+    fn open_write(&self, path: &str) -> Result<Box<dyn Write>>;
 
     // reads a string from a file.
-    fn read_string(self: &Self, path: &str) -> Result<String>;
+    fn read_string(&self, path: &str) -> Result<String>;
     // writes a string to a file.
-    fn write_string(self: &Self, path: &str, data: &String) -> Result<()>;
+    fn write_string(&self, path: &str, data: &String) -> Result<()>;
 }
 
 // implementation of the file provider service.
@@ -46,21 +46,21 @@ impl FileProviderService {
 }
 
 impl IFileProviderService for FileProviderService {
-    fn open_read(self: &Self, path: &str) -> Result<Box<dyn Read>> {
+    fn open_read(&self, path: &str) -> Result<Box<dyn Read>> {
         let file = File::open(path)?;
         Ok(Box::new(BufReader::new(file)))
     }
 
-    fn open_write(self: &Self, path: &str) -> Result<Box<dyn Write>> {
+    fn open_write(&self, path: &str) -> Result<Box<dyn Write>> {
         let file = File::open(path)?;
         Ok(Box::new(BufWriter::new(file)))
     }
 
-    fn read_string(self: &Self, path: &str) -> Result<String> {
+    fn read_string(&self, path: &str) -> Result<String> {
         Ok(std::fs::read_to_string(path)?)
     }
     
-    fn write_string(self: &Self, path: &str, data: &String) -> Result<()> {
+    fn write_string(&self, path: &str, data: &String) -> Result<()> {
         let mut file = File::create(path)?;
         file.write_all(data.as_bytes())?;
         Ok(())

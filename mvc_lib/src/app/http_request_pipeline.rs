@@ -72,7 +72,7 @@ impl HttpRequestPipeline {
     /// 
     /// # Returns
     /// * The result of processing the request.
-    fn process_request_using_middleware(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
+    fn process_request_using_middleware(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
         // Get the middleware services
         let middleware = ServiceCollectionExtensions::get_required_multiple::<dyn IRequestMiddlewareService>(services);
         // Throw an error if there are no middleware services
@@ -95,7 +95,7 @@ impl HttpRequestPipeline {
     // Set the next middleware service for each middleware service.
     // This creates a linked list of middleware services that can be used to process a request.
     // middleware: the middleware services.
-    fn for_each_set_next(self: &Self, middleware: &Vec<Rc<dyn IRequestMiddlewareService>>) {
+    fn for_each_set_next(&self, middleware: &Vec<Rc<dyn IRequestMiddlewareService>>) {
         // Create an iterator over the middleware
         let mut it = middleware.iter().cloned().peekable();
         // Loop through each middleware service
@@ -117,7 +117,7 @@ impl HttpRequestPipeline {
 }
 
 impl IHttpRequestPipeline for HttpRequestPipeline {
-    fn process_request<'a>(self: &Self, connection_context: &dyn IHttpConnectionContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
+    fn process_request<'a>(&self, connection_context: &dyn IHttpConnectionContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
         // println!("HttpRequestPipeline::process_request {}", self.times_called.borrow());
         // *self.times_called.borrow_mut() += 1;
         

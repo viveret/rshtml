@@ -54,11 +54,11 @@ impl AuthorizeControllerActionFeatureMiddleware {
 }
 
 impl IRequestMiddlewareService for AuthorizeControllerActionFeatureMiddleware {
-    fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
+    fn set_next(&self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         let auth_service = ServiceCollectionExtensions::get_required_single::<dyn IAuthorizationService>(services);
         let controller_name = request_context.get_str("ControllerName");
 

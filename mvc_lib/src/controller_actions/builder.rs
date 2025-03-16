@@ -75,25 +75,25 @@ impl ControllerActionBuilder {
     }
 
     // set the route pattern for the controller action.
-    pub fn set_area_name(self: &Self) -> &Self {
+    pub fn set_area_name(&self) -> &Self {
         self
     }
 
     // set the controller name for the controller action.
-    pub fn set_controller_name(self: &Self, name: Cow<'static, str>) -> &Self {
+    pub fn set_controller_name(&self, name: Cow<'static, str>) -> &Self {
         self.controller_name.replace(Some(name));
         self
     }
 
     // set the action name for the controller action.
-    pub fn set_name(self: &Self, name: &'static str) -> &Self {
+    pub fn set_name(&self, name: &'static str) -> &Self {
         self.action_name.replace(Some(name.into()));
         self
     }
 
     // set the function for the controller action as a member function.
     pub fn set_member_fn<T:'static + IController>(
-        self: &Self, 
+        &self, 
         member_fn_validated: Option<Box<fn(self_arg: &T, model: ModelValidationResult<AnyIModel>, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>>>>,
         member_fn_not_validated: Option<Box<fn(self_arg: &T, &dyn IControllerContext, &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>>>>,
     ) -> &Self {
@@ -183,13 +183,13 @@ impl ControllerActionBuilder {
     }
 
     // set the HTTP methods allowed for the controller action.
-    pub fn methods(self: &Self, methods: &[Method]) -> &Self {
+    pub fn methods(&self, methods: &[Method]) -> &Self {
         self.http_methods.borrow_mut().replace(methods.to_vec());
         self
     }
 
     // build the controller action and return the appropriate type for the function type.
-    pub fn build(self: &Self) -> Rc<dyn IControllerAction> {
+    pub fn build(&self) -> Rc<dyn IControllerAction> {
         match self.route_type.borrow().as_ref().expect("self.route_type.borrow().as_ref()") {
             RouteType::Closure => self.build_closure(),
             RouteType::MemberFn => self.build_member_fn(),
@@ -198,12 +198,12 @@ impl ControllerActionBuilder {
     }
 
     // build the controller action as a member function.
-    fn build_member_fn(self: &Self) -> Rc<dyn IControllerAction> {
+    fn build_member_fn(&self) -> Rc<dyn IControllerAction> {
         self.member_fn_action.borrow().as_ref().expect("self.member_fn_action.borrow().as_ref()").clone()
     }
 
     // build the controller action as a closure function.
-    fn build_closure(self: &Self) -> Rc<dyn IControllerAction> {
+    fn build_closure(&self) -> Rc<dyn IControllerAction> {
         Rc::new(
             if self.should_validate_model.borrow().unwrap_or(false) {
                 ControllerActionClosure::new_validated(
@@ -250,7 +250,7 @@ impl<'a, T: IController> ControllerActionsBuilder<'a, T> {
     // add a controller action to the builder. this will return the new action builder.
     // route_pattern: the route pattern for the controller action.
     // returns: the new action builder.
-    pub fn add(self: &Self, route_pattern: &'static str) -> Rc<ControllerActionBuilder> {
+    pub fn add(&self, route_pattern: &'static str) -> Rc<ControllerActionBuilder> {
         let action = Rc::new(ControllerActionBuilder::new(route_pattern));
         self.actions.borrow_mut().push(action.clone());
         action.set_controller_name(Cow::Borrowed(self.controller.get_type_name()));
@@ -259,7 +259,7 @@ impl<'a, T: IController> ControllerActionsBuilder<'a, T> {
 
     // build all the actions for the controller and return them as a vector.
     // returns: all the actions for the controller.
-    pub fn build(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
+    pub fn build(&self) -> Vec<Rc<dyn IControllerAction>> {
         let mut actions = vec![];
 
         for action in self.actions.borrow().iter() {

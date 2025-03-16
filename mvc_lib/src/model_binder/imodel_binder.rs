@@ -9,15 +9,15 @@ use super::model_validation_result::ModelValidationResult;
 // it is used by the ModelBinderResolverMiddleware between the RequestDecoderMiddleware and the ControllerMiddleware.
 pub trait IModelBinder {
     // get the type info for the view model binder.
-    fn type_info(self: &Self) -> Box<TypeInfo>;
+    fn type_info(&self) -> Box<TypeInfo>;
 
     // whether or not this IModelBinder can bind the given request.'
     // request_context: the request context to check if this IModelBinder can bind.
     // returns: true if this IModelBinder can bind the given request, otherwise false.
-    fn matches(self: &Self, request_context: &dyn IRequestContext) -> bool;
+    fn matches(&self, request_context: &dyn IRequestContext) -> bool;
 
     // bind and validate the model for the given request context.
     // request_context: the request context to bind and validate the model for.
     // returns: the result of the binding and validation.
-    fn bind_model(self: &Self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel>;
+    fn bind_model(&self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel>;
 }

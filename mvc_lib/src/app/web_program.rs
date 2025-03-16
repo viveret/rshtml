@@ -26,7 +26,7 @@ pub trait IWebProgram {
     fn configure_services(self: &mut Self);
     
     // start is called by the host to allow the program to start itself.
-    fn start(self: &Self, args: Rc<Vec<String>>);
+    fn start(&self, args: Rc<Vec<String>>);
 
     // main is called by the host to allow the program to configure options, configure services, and start itself.
     fn main(self: &mut Self, args: Rc<Vec<String>>);
@@ -67,7 +67,7 @@ impl <'a> WebProgram<'a> {
         self
     }
 
-    pub fn client_connected(self: &Self, client: Result<TcpStream, std::io::Error>) {
+    pub fn client_connected(&self, client: Result<TcpStream, std::io::Error>) {
         let next_client_connection_id = self.next_client_connection_id.borrow().clone();
         *self.next_client_connection_id.borrow_mut() += 1;
         match client {
@@ -135,7 +135,7 @@ impl <'a> IWebProgram for WebProgram<'a> {
         DefaultServices::add_http_request_pipeline(&mut self.services_builder.borrow_mut());
     }
 
-    fn start(self: &Self, _args: Rc<Vec<String>>) {
+    fn start(&self, _args: Rc<Vec<String>>) {
         let services = &self.services_builder.clone().into_inner();
         (self.onstart_fn.expect("on_start_fn not set"))(services);
 

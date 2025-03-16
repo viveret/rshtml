@@ -214,7 +214,7 @@ impl<T: IController> ControllerActionMemberFn<T> {
 }
 
 impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T> {
-    fn invoke(self: &Self, controller_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
+    fn invoke(&self, controller_context: &dyn IControllerContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
         let base_controller = controller_context.get_controller();
         let controller = base_controller.as_ref().as_any().downcast_ref::<T>().expect("Could not downcast base_controller to T where T: IController.");
 
@@ -244,7 +244,7 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
         Ok(())
     }
 
-    fn is_route_match(self: &Self, request_context: &dyn IRequestContext) -> Result<bool, Rc<dyn Error>> {
+    fn is_route_match(&self, request_context: &dyn IRequestContext) -> Result<bool, Rc<dyn Error>> {
         if !IControllerActionExtensions::is_method_match(self, request_context) {
             return Ok(false);
         }
@@ -263,29 +263,29 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
         }
     }
 
-    fn get_name(self: &Self) -> Cow<'static, str> {
+    fn get_name(&self) -> Cow<'static, str> {
         self.name.clone()
     }
 
-    fn get_controller_name(self: &Self) -> Cow<'static, str> {
+    fn get_controller_name(&self) -> Cow<'static, str> {
         self.controller_name.clone()
     }
 
-    fn get_area_name(self: &Self) -> String {
+    fn get_area_name(&self) -> String {
         self.area_name.clone()
     }
 
-    fn get_route_pattern(self: &Self) -> Rc<ControllerActionRoutePattern> {
+    fn get_route_pattern(&self) -> Rc<ControllerActionRoutePattern> {
         self.route_pattern.clone()
     }
 
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         let methods = self.get_http_methods_allowed();
         let methods_str = if methods.len() > 0 { format!("{:?}", methods) } else { "[[*]]".to_string() };
         format!("{} {} mapped to {}", methods_str, self.get_path(), self.route_pattern.raw)
     }
 
-    fn get_path(self: &Self) -> ActionPath {
+    fn get_path(&self) -> ActionPath {
         let mut path_builder = ActionPathBuilder::new();
         path_builder
             .add(&self.area_name, false)
@@ -294,19 +294,19 @@ impl<T: 'static + IController> IControllerAction for ControllerActionMemberFn<T>
             .as_action_path()
     }
 
-    fn get_http_methods_allowed(self: &Self) -> Vec<Method> {
+    fn get_http_methods_allowed(&self) -> Vec<Method> {
         self.http_methods_allowed.clone()
     }
 
-    fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
+    fn get_features(&self) -> Vec<Rc<dyn IControllerActionFeature>> {
         self.features.iter().cloned().collect()
     }
 
-    fn get_should_validate_model(self: &Self) -> bool {
+    fn get_should_validate_model(&self) -> bool {
         self.should_validate_model
     }
 
-    fn get_model_type(self: &Self) -> Option<Box<crate::core::type_info::TypeInfo>> {
+    fn get_model_type(&self) -> Option<Box<crate::core::type_info::TypeInfo>> {
         self.model_type.clone()
     }
 }

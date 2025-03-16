@@ -40,7 +40,7 @@ impl IModelProperty for ReflectedProperty {
         self.return_type.clone()
     }
 
-    fn get_name(self: &Self) -> String {
+    fn get_name(&self) -> String {
         self.name.clone()
     }
 

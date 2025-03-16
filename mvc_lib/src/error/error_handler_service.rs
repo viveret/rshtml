@@ -18,7 +18,7 @@ use super::ierror_handler::IErrorHandler;
 
 // this is a trait for a class that can be used to handle errors by using any number of error handlers.
 pub trait IErrorHandlerService {
-    fn handle_error(self: &Self, error: Rc<dyn Error>, request_context: Option<&dyn IRequestContext>, response_context: Option<&dyn IResponseContext>) -> Result<(), Rc<dyn Error>>;
+    fn handle_error(&self, error: Rc<dyn Error>, request_context: Option<&dyn IRequestContext>, response_context: Option<&dyn IResponseContext>) -> Result<(), Rc<dyn Error>>;
 }
 
 pub struct ErrorHandlerService {
@@ -50,7 +50,7 @@ impl ErrorHandlerService {
 }
 
 impl IErrorHandlerService for ErrorHandlerService {
-    fn handle_error(self: &Self, error: Rc<dyn Error>, request_context: Option<&dyn IRequestContext>, response_context: Option<&dyn IResponseContext>) -> Result<(), Rc<dyn Error>> {
+    fn handle_error(&self, error: Rc<dyn Error>, request_context: Option<&dyn IRequestContext>, response_context: Option<&dyn IResponseContext>) -> Result<(), Rc<dyn Error>> {
         // self.logging_service.log_error(format!("[{}] ErrorHandlerService::handle_error: {:?}", request_context.get_connection_context().get_connection_id(), error).as_str());
 
         // try to handle the error with the error handlers. If at least one error handler handles the error, then return Ok(true).

@@ -36,11 +36,11 @@ impl ResponseEncoderMiddleware {
 }
 
 impl IRequestMiddlewareService for ResponseEncoderMiddleware {
-    fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
+    fn set_next(&self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         // get accept header from request
         let accept_header = request_context.get_headers().get("Accept").unwrap();
         let _accept_str = accept_header.to_str().unwrap();

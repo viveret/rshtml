@@ -37,11 +37,11 @@ impl TcpConnectionContext {
 }
 
 impl ITcpConnectionContext for TcpConnectionContext {
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         format!("{:?}", self.get_remote_addr())
     }
 
-    fn get_remote_addr(self: &Self) -> std::net::SocketAddr {
+    fn get_remote_addr(&self) -> std::net::SocketAddr {
         self.stream.borrow().borrow().remote_addr().clone()
     }
 

@@ -46,19 +46,19 @@ impl LocalHostOnlyControllerActionFeature {
 }
 
 impl IControllerActionFeature for LocalHostOnlyControllerActionFeature {
-    fn get_type_info(self: &Self) -> TypeInfo {
+    fn get_type_info(&self) -> TypeInfo {
         TypeInfo::of::<LocalHostOnlyControllerActionFeature>()
     }
 
-    fn get_name(self: &Self) -> String {
+    fn get_name(&self) -> String {
         name_of_type!(LocalHostOnlyControllerActionFeature).to_string()
     }
 
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         format!("{}", self.get_name())
     }
 
-    fn invoke(self: &Self, _request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn invoke(&self, _request_context: Rc<dyn IRequestContext>, _response_context: Rc<ResponseContext>, _services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         Ok(MiddlewareResult::OkContinue)
     }
 
@@ -99,11 +99,11 @@ impl LocalHostOnlyControllerActionFeatureMiddleware {
 }
 
 impl IRequestMiddlewareService for LocalHostOnlyControllerActionFeatureMiddleware {
-    fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
+    fn set_next(&self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         let controller_name = request_context.get_str("ControllerName");
 
         if controller_name.len() > 0 {

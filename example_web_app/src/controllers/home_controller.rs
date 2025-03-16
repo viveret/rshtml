@@ -62,15 +62,15 @@ impl HomeController {
 }
 
 impl IController for HomeController {
-    fn get_route_area(self: &Self) -> String {
+    fn get_route_area(&self) -> String {
         String::new()
     }
 
-    fn get_type_name(self: &Self) -> &'static str {
+    fn get_type_name(&self) -> &'static str {
         nameof::name_of_type!(HomeController)
     }
 
-    fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
+    fn get_actions(&self) -> Vec<Rc<dyn IControllerAction>> {
         let actions_builder = ControllerActionsBuilder::new(self);
         let controller_name = IControllerExtensions::get_name(self);
         
@@ -83,7 +83,7 @@ impl IController for HomeController {
         actions_builder.build()
     }
 
-    fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
+    fn get_features(&self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![]
     }
 }

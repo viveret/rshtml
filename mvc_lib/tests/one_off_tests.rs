@@ -3,7 +3,7 @@ use std::{collections::HashMap, rc::Rc};
 use core_lib::{assert::assert_tokentree::assert_tokentree_stream, asyncly::cancellation_token::CancellationToken};
 use quote::quote;
 
-use mvc_lib::{contexts::view_context, view::{macro_impl::{rusthtml_view_macro_impl, rusthtml_view_macro_with_context}, parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext, rusthtml::html_string::HtmlString}};
+use mvc_lib::{contexts::view_context, view::{macro_impl::{rusthtml_macro_impl, rusthtml_view_macro_impl, rusthtml_view_macro_with_context}, parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext, rusthtml::html_string::HtmlString}};
 
 
 
@@ -259,6 +259,23 @@ pub fn test_html_tag_attributes_bug() {
 }
 
 #[test]
+pub fn test_html_single_tag_single_attribute_bug() {
+    let input = quote::quote! {
+        <li><a class=@home_class href="/">Home</a></li>
+    };
+
+    let result = rusthtml_macro_impl(input);
+    let expected_result = quote::quote! {
+        html_output.write_html_str("<li><a class=");
+        html_output.write_html_str(&home_class);
+        html_output.write_html_str(" href=\"/\">Home</a></li>");
+    };
+
+    assert_eq!(expected_result.to_string(), result.to_string());
+}
+
+
+#[test]
 pub fn test_html_tag_attributes_bug2() {
     /*
     could not compile rust html: RustHtmlError("convert_html_punct_to_rusthtmltoken Unexpected '=' before Literal { kind: Str, symbol: \"/\", suffix: None, span: #0 bytes(64250..64253) } (key was None)")
@@ -270,10 +287,8 @@ pub fn test_html_tag_attributes_bug2() {
         <li><a class=@learn_class href=@learn_href>Learn</a></li>
         <li><a class=@dev_class href=@dev_href>@"Dev Tools"</a></li>
     };
-/*
-    let ct = Rc::new(CancellationToken::new());
-    let parser = RustHtmlParser::new(true, "test".to_string());
-    let result = parser.expand_tokenstream(input, ct).unwrap();
+
+    let result = rusthtml_macro_impl(input);
     let expected_result = quote::quote! {
         html.write_str("<li><a class=");
         html.write_str(&home_class);
@@ -291,6 +306,5 @@ pub fn test_html_tag_attributes_bug2() {
     };
 
     assert_eq!(expected_result.to_string(), result.to_string());
- */
 }
 

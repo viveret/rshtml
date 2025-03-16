@@ -44,11 +44,11 @@ impl RequestDecoderMiddleware {
 }
 
 impl IRequestMiddlewareService for RequestDecoderMiddleware {
-    fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
+    fn set_next(&self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         request_context.decode_and_bind_body(services);
         
         if let Some(next) = self.next.borrow().as_ref() {
@@ -139,11 +139,11 @@ impl IHttpBodyStreamFormat for GzipBodyStreamFormat {
         Rc::new(RefCell::new(GzipBodyStream::new(stream)))
     }
 
-    fn encode(self: &Self, stream: Rc<RefCell<dyn ITcpStreamWrapper>>, _content_type: &ContentType) -> Rc<RefCell<dyn ITcpStreamWrapper>> {
+    fn encode(&self, stream: Rc<RefCell<dyn ITcpStreamWrapper>>, _content_type: &ContentType) -> Rc<RefCell<dyn ITcpStreamWrapper>> {
         Rc::new(RefCell::new(GzipBodyStream::new(stream)))
     }
 
-    fn type_info(self: &Self) -> Box<TypeInfo> {
+    fn type_info(&self) -> Box<TypeInfo> {
         Box::new(TypeInfo::of::<Self>())
     }
 }

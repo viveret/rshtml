@@ -15,6 +15,23 @@ pub enum RustHtmlIdentOrPunct {
     Punct(Punct),
 }
 
+impl PartialEq for RustHtmlIdentOrPunct {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            // Compare two Ident variants
+            (RustHtmlIdentOrPunct::Ident(ident_a), RustHtmlIdentOrPunct::Ident(ident_b)) => {
+                ident_a == ident_b
+            }
+            // Compare two Punct variants
+            (RustHtmlIdentOrPunct::Punct(punct_a), RustHtmlIdentOrPunct::Punct(punct_b)) => {
+                punct_a.as_char() == punct_b.as_char() && punct_a.spacing() == punct_b.spacing()
+            }
+            // If one is Ident and the other is Punct, they are not equal
+            _ => false,
+        }
+    }
+}
+
 impl RustHtmlIdentOrPunct {
     pub fn to_string(&self) -> String {
         match self {
@@ -65,8 +82,8 @@ pub enum RustHtmlToken {
     HtmlTagEnd(String, Option<Vec<RustHtmlIdentOrPunct>>),
     HtmlTagAttributeName(String, Option<RustHtmlIdentAndPunctOrLiteral>),
     HtmlTagAttributeEquals(char, Option<Punct>),
-    HtmlTagAttributeValue(Option<String>, Option<Literal>, Option<Vec<RustHtmlIdentOrPunct>>, Option<Vec<RustHtmlToken>>),
-    HtmlTagCloseVoidPunct(Option<(char, Punct)>),
+    HtmlTagAttributeValue(Option<String>, Option<Literal>, Option<RustHtmlIdentAndPunctOrLiteral>, Option<Vec<RustHtmlToken>>),
+    HtmlTagCloseVoidPunct(String, Option<(char, Punct)>),
     HtmlTagCloseSelfContainedPunct,
     HtmlTagCloseStartChildrenPunct,
 
@@ -112,7 +129,7 @@ impl RustHtmlToken {
                     "".to_string()
                 }
             },
-            RustHtmlToken::HtmlTagCloseVoidPunct(c) => if c.is_some() { "/>" } else { ">" }.to_string(),
+            RustHtmlToken::HtmlTagCloseVoidPunct(_name, c) => if c.is_some() { "/>" } else { ">" }.to_string(),
             RustHtmlToken::HtmlTagCloseSelfContainedPunct => "/>".to_string(),
             RustHtmlToken::HtmlTagCloseStartChildrenPunct => ">".to_string(),
             // RustHtmlToken::ExternalRustHtml(s, _) => s.to_string(),
@@ -162,5 +179,39 @@ impl RustHtmlToken {
                 }
             },
         }
+    }
+
+    pub fn variant_name(&self) -> &'static str {
+        match self {
+            RustHtmlToken::Space(_) => "Space",
+            RustHtmlToken::HtmlTextNode(_) => "HtmlTextNode",
+            RustHtmlToken::HtmlTagVoid(_, rust_html_ident_or_puncts) => "HtmlTagVoid",
+            RustHtmlToken::HtmlTagStart(_, rust_html_ident_or_puncts) => "HtmlTagStart",
+            RustHtmlToken::HtmlTagEnd(_, rust_html_ident_or_puncts) => "HtmlTagEnd",
+            RustHtmlToken::HtmlTagAttributeName(_, rust_html_ident_and_punct_or_literal) => "HtmlTagAttributeName",
+            RustHtmlToken::HtmlTagAttributeEquals(_, punct) => "HtmlTagAttributeEquals",
+            RustHtmlToken::HtmlTagAttributeValue(_, literal, rust_html_ident_and_punct_or_literal, rust_html_tokens) => "HtmlTagAttributeValue",
+            RustHtmlToken::HtmlTagCloseVoidPunct(_, _) => "HtmlTagCloseVoidPunct",
+            RustHtmlToken::HtmlTagCloseSelfContainedPunct => "HtmlTagCloseSelfContainedPunct",
+            RustHtmlToken::HtmlTagCloseStartChildrenPunct => "HtmlTagCloseStartChildrenPunct",
+            RustHtmlToken::AppendToHtml(rust_html_tokens) => "AppendToHtml",
+            RustHtmlToken::Literal(literal, _) => "Literal",
+            RustHtmlToken::Identifier(ident) => "Identifier",
+            RustHtmlToken::ReservedChar(_, punct) => "ReservedChar",
+            RustHtmlToken::ReservedIndent(_, ident) => "ReservedIndent",
+            RustHtmlToken::Group(delimiter, ipeekable_rust_html_token, group) => "Group",
+            RustHtmlToken::GroupParsed(delimiter, rust_html_tokens) => "GroupParsed",
+            RustHtmlToken::GroupOpen(delimiter, span) => "GroupOpen",
+            RustHtmlToken::GroupClose(delimiter, span) => "GroupClose",
+        }
+    }
+}
+
+
+impl PartialEq for RustHtmlToken {
+    fn eq(&self, other: &Self) -> bool {
+        // match (self, other) {
+        // }
+        self.to_string() == other.to_string()
     }
 }

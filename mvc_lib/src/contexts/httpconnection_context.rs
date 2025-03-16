@@ -76,7 +76,7 @@ impl IHttpConnectionContext for HttpConnectionContext {
         Ok(())
     }
 
-    fn end_reading(self: &Self) -> std::io::Result<()> {
+    fn end_reading(&self) -> std::io::Result<()> {
         Ok(())
     }
 
@@ -115,7 +115,7 @@ impl IHttpConnectionContext for HttpConnectionContext {
         Ok(())
     }
 
-    fn end_writing(self: &Self) -> std::io::Result<()> {
+    fn end_writing(&self) -> std::io::Result<()> {
         Ok(())
     }
 

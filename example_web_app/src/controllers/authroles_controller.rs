@@ -88,7 +88,7 @@ impl AuthRolesController {
     }
 
     // get all the roles from the dbset as a vector.
-    pub fn get_roles(self: &Self) -> Vec<JsonAuthRole> {
+    pub fn get_roles(&self) -> Vec<JsonAuthRole> {
         self.authroles_dbset.get_authroles_dbset()
             .as_any(TypeInfo::of::<JsonFileDbSet<JsonAuthRole>>())
             .downcast_ref::<AuthRoleJsonFileDbSet>()
@@ -98,20 +98,20 @@ impl AuthRolesController {
     }
 
     // get the index view, which shows all the roles.
-    pub fn get_index(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
+    pub fn get_index(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let roles = self.get_roles();
         let view_model = Rc::new(IndexViewModel::new(roles));
         Ok(Some(Rc::new(ViewResult::new("authroles/index.rs".to_string(), view_model))))
     }
 
     // get the add role view, which allows the user to add a new role.
-    pub fn get_add(self: &Self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
+    pub fn get_add(&self, _controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let view_model = Rc::new(AddViewModel::new(String::new(), None));
         Ok(Some(Rc::new(ViewResult::new("authroles/add.rs".to_string(), view_model))))
     }
 
     // post the add role view, which allows the user to add a new role.
-    pub fn post_add(self: &Self, _: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
+    pub fn post_add(&self, _: ModelValidationResult<LogAddInputModel>, controller_ctx: &dyn IControllerContext, _services: &dyn IServiceCollection) -> Result<Option<Rc<dyn IActionResult>>, Rc<dyn Error>> {
         let _input_model = controller_ctx.get_request_context().get_model_validation_result();
         let new_role = controller_ctx.get_request_context().get_query().get("role"); // to do: this needs to use query parameter
         let view_model = Rc::new(
@@ -136,15 +136,15 @@ impl AuthRolesController {
 }
 
 impl IController for AuthRolesController {
-    fn get_route_area(self: &Self) -> String {
+    fn get_route_area(&self) -> String {
         String::new()
     }
 
-    fn get_type_name(self: &Self) -> &'static str {
+    fn get_type_name(&self) -> &'static str {
         nameof::name_of_type!(AuthRolesController)
     }
 
-    fn get_actions(self: &Self) -> Vec<Rc<dyn IControllerAction>> {
+    fn get_actions(&self) -> Vec<Rc<dyn IControllerAction>> {
         let actions_builder = ControllerActionsBuilder::new(self);
         let controller_name = IControllerExtensions::get_name(self);
         
@@ -171,7 +171,7 @@ impl IController for AuthRolesController {
         actions_builder.build()
     }
 
-    fn get_features(self: &Self) -> Vec<Rc<dyn IControllerActionFeature>> {
+    fn get_features(&self) -> Vec<Rc<dyn IControllerActionFeature>> {
         vec![
             AuthorizeControllerActionFeature::new_service_parse("admin,dev,owner".to_string(), None, Some(vec![
                 Box::new(BypassOnLocalActionFilter::new())

@@ -36,7 +36,7 @@ struct DbSetTestSuite<T> where T: IDbSet<TestPerson> {
 impl<T> DbSetTestSuite<T> where T: IDbSet<TestPerson> {
     pub fn new(dbset: Rc<T>) -> Self { Self { dbset } }
 
-    pub fn perform_tests(self: &Self, save_changes: bool) {
+    pub fn perform_tests(&self, save_changes: bool) {
         // get the type info for the database set
         let _type_info = self.dbset.entity_type_info();
 
@@ -67,7 +67,7 @@ impl<T> DbSetTestSuite<T> where T: IDbSet<TestPerson> {
         }
     }
 
-    pub fn perform_tests_all_options(self: &Self) {
+    pub fn perform_tests_all_options(&self) {
         self.perform_tests(false);
         self.perform_tests(true);
     }

@@ -34,7 +34,7 @@ pub trait IViewRenderer {
     // services: the services available to the view.
     // returns: the rendered view or an error.
     fn render_with_layout_if_specified(
-        self: &Self,
+        &self,
         view_path: &String,
         view_model: Option<Rc<dyn IViewModel>>,
         // response_context: &dyn IResponseContext,
@@ -46,30 +46,30 @@ pub trait IViewRenderer {
     // view_ctx: the view context to get the layout view from.
     // services: the services available to the view.
     // returns: the layout view or None if not specified.
-    fn get_layout_view_from_context(self: &Self, view_ctx: &mut ViewContext, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>>;
+    fn get_layout_view_from_context(&self, view_ctx: &mut ViewContext, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>>;
 
     // get all views available to the view renderer.
     // services: the services available to the view renderer.
     // returns: all views available to the view renderer.
-    fn get_all_views(self: &Self, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>>;
+    fn get_all_views(&self, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>>;
 
     // get all views with the specified path.
     // path: the path to the views to get.
     // services: the services available to the view renderer.
-    fn get_views(self: &Self, path: &String, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>>;
+    fn get_views(&self, path: &String, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>>;
     
     // get the view with the specified path.
     // path: the path to the view to get.
     // services: the services available to the view renderer.
     // returns: the view with the specified path.
-    fn get_view(self: &Self, path: &String, services: &dyn IServiceCollection) -> Rc<dyn IView>;
+    fn get_view(&self, path: &String, services: &dyn IServiceCollection) -> Rc<dyn IView>;
 
 
 
     // resolve the views path string.
-    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String>;
+    fn resolve_views_path_string(&self, path: &str) -> Option<String>;
     // resolve the data file path string.
-    fn resolve_data_file_path_string(self: &Self, path: &str) -> Option<String>;
+    fn resolve_data_file_path_string(&self, path: &str) -> Option<String>;
 }
 
 // this is a struct that implements IViewRenderer.
@@ -105,7 +105,7 @@ impl ViewRenderer  {
 
 impl IViewRenderer for ViewRenderer {
     fn render_with_layout_if_specified(
-        self: &Self,
+        &self,
         view_path: &String,
         view_model: Option<Rc<dyn IViewModel>>,
         request_context: &dyn IRequestContext,
@@ -141,7 +141,7 @@ impl IViewRenderer for ViewRenderer {
         }
     }
 
-    fn get_layout_view_from_context(self: &Self, view_context: &mut ViewContext, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>> {
+    fn get_layout_view_from_context(&self, view_context: &mut ViewContext, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>> {
         let layout_view_path_option = view_context.get_str("Layout");
         println!("layout_view_path_option: {:?}", layout_view_path_option);
         if layout_view_path_option.len() > 0 {
@@ -151,7 +151,7 @@ impl IViewRenderer for ViewRenderer {
         }
     }
 
-    fn get_all_views(self: &Self, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>> {
+    fn get_all_views(&self, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>> {
         self.cached_views
             .borrow_mut()
             .get_or_insert_with(|| 
@@ -163,7 +163,7 @@ impl IViewRenderer for ViewRenderer {
             .collect()
     }
 
-    fn get_views(self: &Self, path: &String, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>> {
+    fn get_views(&self, path: &String, services: &dyn IServiceCollection) -> Vec<Rc<dyn IView>> {
         self.cached_views
             .borrow_mut()
             .get_or_insert_with(|| 
@@ -176,7 +176,7 @@ impl IViewRenderer for ViewRenderer {
             .collect()
     }
 
-    fn get_view(self: &Self, path: &String, services: &dyn IServiceCollection) -> Rc<dyn IView> {
+    fn get_view(&self, path: &String, services: &dyn IServiceCollection) -> Rc<dyn IView> {
         match self.get_views(path, services).first() {
             Some(x) => {
                 x.clone()
@@ -189,7 +189,7 @@ impl IViewRenderer for ViewRenderer {
     }
 
     // this needs to be fixed to be more flexible and like .net core using config and options
-    fn resolve_views_path_string(self: &Self, path: &str) -> Option<String> {
+    fn resolve_views_path_string(&self, path: &str) -> Option<String> {
         let mut cwd = std::env::current_dir().expect("could not get current_dir");
         let mut path = path.to_string();
         // handle '../' and './' in path
@@ -230,7 +230,7 @@ impl IViewRenderer for ViewRenderer {
         }
     }
 
-    fn resolve_data_file_path_string(self: &Self, path: &str) -> Option<String> {
+    fn resolve_data_file_path_string(&self, path: &str) -> Option<String> {
         match std::fs::File::open(path) {
             Ok(_) => {
                 Some(path.to_string())

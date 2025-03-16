@@ -1,3 +1,4 @@
+pub mod assert;
 pub mod html_string;
 pub mod html_tag_parse_context_log;
 pub mod helpers;

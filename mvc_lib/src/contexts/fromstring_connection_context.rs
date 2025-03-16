@@ -29,11 +29,11 @@ impl FromStringConnectionContext {
 }
 
 impl ITcpConnectionContext for FromStringConnectionContext {
-    fn to_string(self: &Self) -> String {
+    fn to_string(&self) -> String {
         format!("FromStringConnectionContext ({}): {}", self.connection_id, self.data)
     }
 
-    fn get_remote_addr(self: &Self) -> std::net::SocketAddr {
+    fn get_remote_addr(&self) -> std::net::SocketAddr {
         unimplemented!()
     }
 

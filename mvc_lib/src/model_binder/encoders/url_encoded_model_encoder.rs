@@ -38,11 +38,11 @@ impl FormUrlEncodedEncoder {
 }
 
 impl IViewModelEncoder for FormUrlEncodedEncoder {
-    fn matches_content_type(self: &Self, content_type: &str) -> bool {
+    fn matches_content_type(&self, content_type: &str) -> bool {
         content_type.starts_with("application/x-www-form-urlencoded") // Content-Type
     }
 
-    fn encode_model(self: &Self, _: Box<dyn Any>, _: &dyn IResponseContext) -> ModelValidationResult<AnyIModel> {
+    fn encode_model(&self, _: Box<dyn Any>, _: &dyn IResponseContext) -> ModelValidationResult<AnyIModel> {
         panic!("encode_model not implemented for FormUrlEncodedEncoder");
     }
 }

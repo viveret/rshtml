@@ -29,11 +29,11 @@ impl HttpRedirectResult {
 }
 
 impl IActionResult for HttpRedirectResult {
-    fn get_statuscode(self: &Self) -> StatusCode {
+    fn get_statuscode(&self) -> StatusCode {
         StatusCode::TEMPORARY_REDIRECT
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
+    fn configure_response(&self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
         response_context.add_header_string("Location".to_string(), self.redirect_target.clone());
         Ok(())
     }
@@ -55,11 +55,11 @@ impl RedirectToActionResult {
 }
 
 impl IActionResult for RedirectToActionResult {
-    fn get_statuscode(self: &Self) -> StatusCode {
+    fn get_statuscode(&self) -> StatusCode {
         StatusCode::TEMPORARY_REDIRECT
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
+    fn configure_response(&self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
         // get the route map service and get the action from the route map.
         let route_map_service = ServiceCollectionExtensions::get_required_single::<dyn IRouteMapService>(services);
         let action = route_map_service.get_mapper().get_action(self.action_name.as_str(), self.controller_name.as_str(), self.area_name.as_str());
@@ -87,11 +87,11 @@ impl InternalServerErrorResult {
 }
 
 impl IActionResult for InternalServerErrorResult {
-    fn get_statuscode(self: &Self) -> StatusCode {
+    fn get_statuscode(&self) -> StatusCode {
         StatusCode::INTERNAL_SERVER_ERROR
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
+    fn configure_response(&self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
         match response_context.get_connection_context().write_str(format!("Error: {}", self.error).as_str()) {
             Ok(_) => Ok(()),
             Err(err) => Err(Rc::new(err)),
@@ -118,11 +118,11 @@ impl OkResult {
 }
 
 impl IActionResult for OkResult {
-    fn get_statuscode(self: &Self) -> StatusCode {
+    fn get_statuscode(&self) -> StatusCode {
         StatusCode::OK
     }
 
-    fn configure_response(self: &Self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
+    fn configure_response(&self, response_context: &dyn IResponseContext, _request_context: &dyn IRequestContext, _services: &dyn IServiceCollection) -> Result<(), Rc<dyn std::error::Error>> {
         match response_context.get_connection_context().write_str(&self.content.as_str()) {
             Ok(_) => Ok(()),
             Err(err) => Err(Rc::new(err)),

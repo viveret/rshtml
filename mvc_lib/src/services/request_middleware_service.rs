@@ -25,12 +25,12 @@ pub trait IRequestMiddlewareService {
     // sets the next middleware service in the pipeline.
     // next: the next middleware service.
     // returns: nothing.
-    fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>);
+    fn set_next(&self, next: Option<Rc<dyn IRequestMiddlewareService>>);
 
     // handles the request.
     // request_context: the request context.
     // response_context: the response context.
     // services: the service collection.
     // returns: the result of the middleware service.
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>>;
+    fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>>;
 }

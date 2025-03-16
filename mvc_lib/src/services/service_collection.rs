@@ -38,11 +38,11 @@ pub trait IServiceCollection: Send + Sync {
     fn get_request_instances(&self) -> &Vec<Rc<ServiceInstance>>;
 
     // find a service descriptor by type info
-    fn find_descriptor(self: &Self, type_info: Box<TypeInfo>) -> Vec<Rc<ServiceDescriptor>>;
+    fn find_descriptor(&self, type_info: Box<TypeInfo>) -> Vec<Rc<ServiceDescriptor>>;
     // find a service descriptor by type id
-    fn find_descriptor_by_id(self: &Self, type_id: TypeId) -> Vec<Rc<ServiceDescriptor>>;
+    fn find_descriptor_by_id(&self, type_id: TypeId) -> Vec<Rc<ServiceDescriptor>>;
     // try to find a service descriptor by type id
-    fn try_find_descriptor_by_id(self: &Self, type_id: TypeId) -> Option<&Vec<Rc<ServiceDescriptor>>>;
+    fn try_find_descriptor_by_id(&self, type_id: TypeId) -> Option<&Vec<Rc<ServiceDescriptor>>>;
 }
 
 
@@ -124,24 +124,24 @@ impl <'a> ServiceCollection<'a> {
     // }
 
     #[allow(dead_code)]
-    fn get_or_instantiate(self: &Self, descriptor: &ServiceDescriptor) -> Vec<Box<dyn Any>> {
+    fn get_or_instantiate(&self, descriptor: &ServiceDescriptor) -> Vec<Box<dyn Any>> {
         self.instantiate(descriptor)
     }
 
     // get or instantiate a service for a HTTP request that is kept alive for the duration of the request
-    fn get_or_instantiate_for_request(self: &Self, descriptor: &ServiceDescriptor) -> Vec<Box<dyn Any>> {
+    fn get_or_instantiate_for_request(&self, descriptor: &ServiceDescriptor) -> Vec<Box<dyn Any>> {
         self.instantiate(descriptor)
     }
 
     // get or instantiate a service that is kept alive for the duration of the current scope
-    fn get_or_instantiate_singleton(self: &Self, descriptor: &ServiceDescriptor) -> Vec<Box<dyn Any>> {
+    fn get_or_instantiate_singleton(&self, descriptor: &ServiceDescriptor) -> Vec<Box<dyn Any>> {
         self.instantiate(descriptor)
     }
 
     // instantiate a service
     // descriptor: the service descriptor
     // returns: the instantiated service
-    fn instantiate(self: &Self, descriptor: &ServiceDescriptor) -> Vec<Box<dyn Any>> {
+    fn instantiate(&self, descriptor: &ServiceDescriptor) -> Vec<Box<dyn Any>> {
         match &descriptor.type_factory {
             Some(regular_fn) => (regular_fn)(self),
             None => {
@@ -161,7 +161,7 @@ impl <'a> ServiceCollection<'a> {
     }
     
     // get a message that a service could not be found for type info
-    fn get_could_not_find_descriptor_message(self: &Self, type_info: Box<TypeInfo>) -> String {
+    fn get_could_not_find_descriptor_message(&self, type_info: Box<TypeInfo>) -> String {
         let mut message = String::new();
         message.push_str(format!("Could not get service for type {}", type_info.type_name).as_str());
         message.push_str(format!("Services:").as_str());
@@ -173,7 +173,7 @@ impl <'a> ServiceCollection<'a> {
     
     // get a message that a service could not be found for a type id
     #[allow(dead_code)]
-    fn get_could_not_find_type_id_message(self: &Self, type_id: TypeId) -> String {
+    fn get_could_not_find_type_id_message(&self, type_id: TypeId) -> String {
         let mut message = String::new();
         message.push_str(format!("Could not get service for type {:?}", type_id).as_str());
         message.push_str(format!("Services:").as_str());
@@ -258,7 +258,7 @@ impl <'a> IServiceCollection for ServiceCollection<'a> {
         &self.request_instances
     }
 
-    fn find_descriptor(self: &Self, type_info: Box<TypeInfo>) -> Vec<Rc<ServiceDescriptor>> {
+    fn find_descriptor(&self, type_info: Box<TypeInfo>) -> Vec<Rc<ServiceDescriptor>> {
         match self.type_id_to_descriptor.get(&type_info.type_id) {
             Some(descriptor) => descriptor.clone(),
             None => {
@@ -276,7 +276,7 @@ impl <'a> IServiceCollection for ServiceCollection<'a> {
         .collect()
     }
 
-    fn find_descriptor_by_id(self: &Self, type_id: TypeId) -> Vec<Rc<ServiceDescriptor>> {
+    fn find_descriptor_by_id(&self, type_id: TypeId) -> Vec<Rc<ServiceDescriptor>> {
         match self.try_find_descriptor_by_id(type_id) {
             Some(descriptor) => descriptor.clone(),
             None => { vec![] }, // panic!("{}", self.get_could_not_find_type_id_message(type_id))
@@ -295,7 +295,7 @@ impl <'a> IServiceCollection for ServiceCollection<'a> {
         .collect()
     }
 
-    fn try_find_descriptor_by_id(self: &Self, type_id: TypeId) -> Option<&Vec<Rc<ServiceDescriptor>>> {
+    fn try_find_descriptor_by_id(&self, type_id: TypeId) -> Option<&Vec<Rc<ServiceDescriptor>>> {
         if let Some(descriptor) = self.type_id_to_descriptor.get(&type_id) {
             Some(descriptor)
         } else {

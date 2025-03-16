@@ -33,10 +33,10 @@ pub trait IHttpConnectionContext {
     fn get_pending_header(&self, name: &str) -> Option<String>;
 
     fn begin_reading(&self) -> std::io::Result<()>;
-    fn end_reading(self: &Self) -> std::io::Result<()>;
+    fn end_reading(&self) -> std::io::Result<()>;
     fn end_reading_begin_writing(&self) -> std::io::Result<()>;
     fn begin_writing(&self) -> std::io::Result<()>;
-    fn end_writing(self: &Self) -> std::io::Result<()>;
+    fn end_writing(&self) -> std::io::Result<()>;
 
     fn write(&self, b: &[u8]) -> std::io::Result<usize>;
     fn write_str(&self, b: &str) -> std::io::Result<usize>;

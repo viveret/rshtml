@@ -46,7 +46,7 @@ impl LogHttpRequestsMiddleware {
     // headers: the headers to print.
     // log_cookies: whether or not to log cookies.
     // returns: nothing.
-    pub fn print_headers(self: &Self, headers: &HeaderMap, log_cookies: bool) {
+    pub fn print_headers(&self, headers: &HeaderMap, log_cookies: bool) {
         for header in headers.iter() {
             if header.0 == "Cookie" || header.0 == "cookie" {
                 if log_cookies {
@@ -70,11 +70,11 @@ impl LogHttpRequestsMiddleware {
 }
 
 impl IRequestMiddlewareService for LogHttpRequestsMiddleware {
-    fn set_next(self: &Self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
+    fn set_next(&self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
         self.next.replace(next);
     }
 
-    fn handle_request(self: &Self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
+    fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         if let Some(options) = &self.options {
             if options.get_log_request() {
                 println!("Inbound HTTP request: {:?} {} {}", request_context.get_http_version(), request_context.get_method(), request_context.get_path());

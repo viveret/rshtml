@@ -7,7 +7,7 @@ use crate::contexts::iresponse_context::IResponseContext;
 
 // context for an error that is being handled by an error handler.
 pub trait IErrorContext {
-    fn get_error(self: &Self) -> Rc<dyn Error>;
-    fn get_request_context(self: &Self) -> Option<&dyn IRequestContext>;
-    fn get_response_context(self: &Self) -> Option<&dyn IResponseContext>;
+    fn get_error(&self) -> Rc<dyn Error>;
+    fn get_request_context(&self) -> Option<&dyn IRequestContext>;
+    fn get_response_context(&self) -> Option<&dyn IResponseContext>;
 }

@@ -15,7 +15,7 @@ use mvc_lib::view::macro_impl::rusthtml_view_macro_impl;
 #[test]
 pub fn example_web_app_learn_details_view() {
     let html = quote::quote! {
-        @viewstart "learn/_view_start.rs"
+        
         @model crate::view_models::learn::DetailsViewModel
         @name "learn_details"
         @{
@@ -40,7 +40,7 @@ pub fn example_web_app_learn_details_view() {
 #[test]
 pub fn example_web_app_learn_index_view() {
     let html = quote::quote! {
-        @viewstart "learn/_view_start.rs"
+        
         @model crate::view_models::learn::IndexViewModel
         @name "learn_index"
         @{

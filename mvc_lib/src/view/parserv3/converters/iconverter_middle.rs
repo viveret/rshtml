@@ -5,6 +5,7 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
+use crate::view::parserv3::core::rusthtml_directive_result::{RustHtmlDirectiveResult, RustHtmlDirectiveResultV3};
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::parserv3::parserv3::IParserV3;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -15,7 +16,7 @@ pub trait IConverterMiddle {
         input: Rc<dyn IPeekableRustHtmlToken>,
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
-    ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError>;
+    ) -> Result<RustHtmlDirectiveResultV3, RustHtmlError>;
 
     fn set_parser(&self, parser: Rc<dyn IParserV3>);
 }
@@ -37,7 +38,7 @@ impl IConverterMiddle for ConverterMiddle {
         input: Rc<dyn IPeekableRustHtmlToken>,
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
-    ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
+    ) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         self.middle.convert(input, context, ct)
     }
 
@@ -77,23 +78,29 @@ impl IConverterMiddle for ConverterMiddleChain {
         input: Rc<dyn IPeekableRustHtmlToken>,
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
-    ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
+    ) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         let mut input = input;
+        let mut last_result_continue_type = RustHtmlDirectiveResult::OkContinue;
         if self.chain.is_empty() {
             panic!("no converters in ConverterMiddleChain");
         }
         for converter in &self.chain {
             let result = converter.convert(input, context.clone(), ct.clone());
             match result {
-                Ok(new_input) => {
-                    input = new_input;
+                Ok(result) => {
+                    if let Some(new_input) = result.1 {
+                        input = new_input;
+                        last_result_continue_type = result.0;
+                    } else {
+                        return Err(RustHtmlError::from_string(format!("converter.convert returned empty stream")));
+                    }
                 },
                 Err(e) => {
                     return Err(e);
                 }
             }
         }
-        Ok(input)
+        Ok(RustHtmlDirectiveResultV3(last_result_continue_type, Some(input)))
     }
 
     fn set_parser(&self, parser: Rc<dyn IParserV3>) {
@@ -123,7 +130,7 @@ impl ConverterNormal {
         input: Rc<dyn IPeekableRustHtmlToken>,
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
-    ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
+    ) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         if ct.is_cancelled() {
             return Err(RustHtmlError::from_cancellationtoken(ct));
         }
@@ -135,7 +142,7 @@ impl ConverterNormal {
                 // recurse
                 match self.convert(s.clone(), context.clone(), ct.clone()) {
                     Ok(new_input) => {
-                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::Group(d.clone(), new_input, None)])))
+                        Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::Group(d.clone(), new_input.1.unwrap(), None)])))))
                     },
                     Err(e) => {
                         Err(e)
@@ -143,7 +150,7 @@ impl ConverterNormal {
                 }
             },
             RustHtmlToken::Identifier(_) | RustHtmlToken::Literal(_, _) => {
-                Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
+                Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))))
             },
             RustHtmlToken::ReservedChar(c, p) => {
                 match c {
@@ -154,7 +161,7 @@ impl ConverterNormal {
                         x
                     },
                     '.' | ',' | ':' | ';' | '!' | '=' | '+' | '-' | '/' | '\\' | '|' | '&' => {
-                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
+                        Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))))
                     },
                     '<' => {
                         // start of tag
@@ -162,11 +169,12 @@ impl ConverterNormal {
                         // peek after start of tag
                         println!("peek tag start: {:?}", input.peek().unwrap());
                         let result = self.get_parser().get_html_parser().parse_tag(input, context, ct)?;
-                        if let Some(x) = result.1 {
-                            return Ok(x);
-                        } else {
-                            panic!("oops");
-                        }
+                        // if let Some(x) = result.1 {
+                        //     return Ok(x);
+                        // } else {
+                        //     panic!("oops");
+                        // }
+                        Ok(result)
                     }
                     _ => {
                         let next_token = input.next();
@@ -186,7 +194,7 @@ impl ConverterNormal {
         input: Rc<dyn IPeekableRustHtmlToken>,
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
-    ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
+    ) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         if ct.is_cancelled() {
             return Err(RustHtmlError::from_cancellationtoken(ct));
         }
@@ -198,7 +206,7 @@ impl ConverterNormal {
                 // recurse
                 match self.convert(s.clone(), context, ct) {
                     Ok(new_input) => {
-                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::Group(d.clone(), new_input, None)])))
+                        Ok(RustHtmlDirectiveResultV3(new_input.0, Some(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::Group(d.clone(), new_input.1.unwrap().clone(), None)])))))
                     },
                     Err(e) => {
                         Err(e)
@@ -206,12 +214,12 @@ impl ConverterNormal {
                 }
             },
             RustHtmlToken::Identifier(_) | RustHtmlToken::Literal(_, _) => {
-                Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
+                Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))))
             },
             RustHtmlToken::ReservedChar(c, p) => {
                 match c {
                     '.' | ',' | ';' | ':' | '!' | '=' | '>' | '/' | '&' | '|' | '-' => {
-                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))
+                        Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))))
                     },
                     '<' => {
                         context.push_is_in_html_mode(true);
@@ -223,7 +231,7 @@ impl ConverterNormal {
                         let append_token = RustHtmlToken::AppendToHtml(
                             self.get_parser().get_rust_parser().parse_expression(input, context, ct)?
                         );
-                        Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![append_token])))
+                        Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(vec![append_token])))))
                     },
                     _ => {
                         let next_token = input.next();
@@ -243,7 +251,7 @@ impl IConverterMiddle for ConverterNormal {
         input: Rc<dyn IPeekableRustHtmlToken>,
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
-    ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
+    ) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         let mut output = vec![];
         loop {
             if ct.is_cancelled() {
@@ -263,17 +271,31 @@ impl IConverterMiddle for ConverterNormal {
             };
             match result {
                 Ok(result_output) => {
-
-                    // check output does not start with @
-                    if let Some(token) = result_output.peek() {
-                        if let RustHtmlToken::ReservedChar(c, p) = token {
-                            if c == '@' {
-                                panic!("wtf (is_in_html_mode = {})", is_in_html_mode);
+                    if let Some(result_output) = result_output.1 {
+                        // check output does not start with @
+                        if let Some(token) = result_output.peek() {
+                            if let RustHtmlToken::ReservedChar(c, p) = token {
+                                if c == '@' {
+                                    panic!("wtf (is_in_html_mode = {})", is_in_html_mode);
+                                }
                             }
                         }
-                    }
 
-                    output.extend(result_output.to_vec());
+                        output.extend(result_output.to_vec());
+                    }
+                    match result_output.0 {
+                        RustHtmlDirectiveResult::OkContinue => {
+                            // println!("continuing after {}", token.to_string());
+                        },
+                        RustHtmlDirectiveResult::OkBreakAppendHtml => {
+                            // println!("break append html after {}", token.to_string());
+                            break;
+                        },
+                        RustHtmlDirectiveResult::OkBreak => {
+                            // println!("break after {}", token.to_string());
+                            break;
+                        },
+                    }
                 },
                 Err(e) => {
                     return Err(e);
@@ -281,7 +303,7 @@ impl IConverterMiddle for ConverterNormal {
             }
         }
 
-        Ok(Rc::new(VecPeekableRustHtmlToken::new(output)))
+        Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(output)))))
     }
 
     fn set_parser(&self, parser: Rc<dyn IParserV3>) {

@@ -228,8 +228,10 @@ impl IParserV3RustParser for ParserV3RustParser {
                             // more than an expression, is a code block
                             // and could have more so need to recurse
                             panic!("meow meow meow");
-                            let inner_expressions = self.get_parser().get_converter_middle().convert(s.clone(), context, ct)?;
-                            prefix_tokens.push(RustHtmlToken::Group(d.clone(), inner_expressions, None));
+                            // let inner_expressions = self.get_parser().get_converter_middle().convert(s.clone(), context, ct)?;
+                            // if let Some(inner_expressions ) = inner_expressions.1 {
+                            //     prefix_tokens.push(RustHtmlToken::Group(d.clone(), inner_expressions, None));
+                            // }
                             // Ok(vec![RustHtmlToken::Group(d.clone(), inner_expressions, None)])
                         },
                         Delimiter::Bracket => {
@@ -286,7 +288,11 @@ impl IParserV3RustParser for ParserV3RustParser {
                                     // need to ensure inner parts are converted
                                     // for some reason this isn't working and '@' is being left in
                                     let inner_result = self.get_parser().get_converter_middle().convert(s.clone(), context.clone(), ct.clone())?;
-                                    overwrite_token_to_add = Some(RustHtmlToken::Group(*d, inner_result, None));
+                                    if let Some(inner_result) = inner_result.1 {
+                                        overwrite_token_to_add = Some(RustHtmlToken::Group(*d, inner_result, None));
+                                    } else {
+                                        overwrite_token_to_add = None;
+                                    }
                                     break_after_add = true;
                                 } else {
                                     return Err(RustHtmlError::from_string(format!("parse_expression invalid group delimiter {:?}", d)))

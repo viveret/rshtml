@@ -1,6 +1,7 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::rc::Rc;
+use mvc_lib::middleware::file_browser_middleware::FileBrowserMiddleware;
 use phf::phf_map;
 
 use mvc_lib::error::error_view_middleware::ErrorViewMiddleware;
@@ -164,7 +165,7 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::use_response_encoders(services);
     DefaultServices::use_model_validation(services);
 
-
+    FileBrowserMiddleware::add_to_services(services);
     AuthorizeControllerActionFeatureMiddleware::add_to_services(services);
     LocalHostOnlyControllerActionFeatureMiddleware::add_to_services(services);
 

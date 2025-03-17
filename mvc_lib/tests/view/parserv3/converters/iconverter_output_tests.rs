@@ -27,7 +27,7 @@ pub fn parser_v3_html_parser_parse_tag() {
     let input = Rc::new(StreamPeekableTokenTree::new(input));
     let input = parserv3.get_converter_in().convert(input);
     let result = parserv3.get_converter_middle().convert(input, context, ct.clone()).expect("converter middle returned error");
-    let converted_out = parserv3.get_converter_out().convert(result, ct).expect("expected converter out to succeed");
+    let converted_out = parserv3.get_converter_out().convert(result.1.unwrap(), ct).expect("expected converter out to succeed");
 
     // assert
     let out_stream = converted_out.to_stream();

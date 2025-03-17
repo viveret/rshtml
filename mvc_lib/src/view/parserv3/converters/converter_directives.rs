@@ -8,6 +8,7 @@ use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserCo
 use crate::view::parserv3::core::peekable::empty_peekable_rusthtmltoken::EmptyPeekableRustHtmlToken;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
+use crate::view::parserv3::core::rusthtml_directive_result::{RustHtmlDirectiveResult, RustHtmlDirectiveResultV3};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::rusthtml::rusthtml_token::RustHtmlToken;
 use crate::view::parserv3::parserv3::IParserV3;
@@ -36,7 +37,7 @@ impl IConverterMiddle for ConverterDirectives {
         input: Rc<dyn IPeekableRustHtmlToken>,
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
-    ) -> Result<Rc<dyn IPeekableRustHtmlToken>, RustHtmlError> {
+    ) -> Result<RustHtmlDirectiveResultV3, RustHtmlError> {
         // context.log_info("ConverterDirectives::convert".to_string());
         // need to peek for name which is an ident
         match input.peek() {
@@ -53,20 +54,18 @@ impl IConverterMiddle for ConverterDirectives {
                                 // execute the directive
                                 input.next();
                                 let v3result = d.execute_new_v3(context, &ident, token, self.get_parser(), input.clone(), ct)?;
-                                if let Some(v3result) = v3result.1 {
+                                if let Some(v3result_stream) = &v3result.1 {
                                     // println!("output of {} directive:", name);
-                                    // for t in v3result.to_vec().into_iter() {
+                                    // for t in v3result_stream.to_vec().into_iter() {
                                     //     print!("{} ", t.to_string());
                                     // }
                                     // println!();
-                                    return Ok(v3result);
-                                } else {
-                                    return Ok(Rc::new(EmptyPeekableRustHtmlToken::new()));
                                 }
+                                return Ok(v3result);
                             }
                             None => {
                                 let exp = self.get_parser().get_rust_parser().parse_expression(input, context.clone(), ct)?;
-                                return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::AppendToHtml(exp)])));
+                                return Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::AppendToHtml(exp)])))));
                             }
                         }
                     },
@@ -75,17 +74,19 @@ impl IConverterMiddle for ConverterDirectives {
                             '@' => {
                                 println!("escaped @");
                                 input.next();
-                                return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])));
+                                return Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))));
                             },
                             '&' => {
                                 input.next();
                                 let mut tokens = vec![token.clone()];
                                 // recurse to get the next token
                                 let next = self.convert(input.clone(), context.clone(), ct.clone())?;
-                                while let Some(t) = next.next() {
-                                    tokens.push(t.clone());
+                                if let Some(next_stream) = next.1 {
+                                    while let Some(t) = next_stream.next() {
+                                        tokens.push(t.clone());
+                                    }
                                 }
-                                return Ok(Rc::new(VecPeekableRustHtmlToken::new(tokens)));
+                                return Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(tokens)))));
                             }
                             _ => {
                                 panic!("Cannot handle reserved char {:?} after @", c)
@@ -94,7 +95,7 @@ impl IConverterMiddle for ConverterDirectives {
                     },
                     RustHtmlToken::Literal(l, p) => {
                         input.next();
-                        return Ok(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::AppendToHtml(vec![token.clone()])])));
+                        return Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(vec![RustHtmlToken::AppendToHtml(vec![token.clone()])])))));
                     },
                     RustHtmlToken::Group(delimiter, stream, group) => {
                         match delimiter {

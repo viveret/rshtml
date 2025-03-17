@@ -41,7 +41,9 @@ impl IRustHtmlDirective for ForDirective {
                                 // recurse
                                 match parser.get_converter_middle().convert(stream.clone(), context.clone(), ct.clone()) {
                                     Ok(new_input) => {
-                                        output.push(RustHtmlToken::Group(*delimiter, new_input, None));
+                                        if let Some(new_input_stream) = new_input.1 {                                            
+                                            output.push(RustHtmlToken::Group(*delimiter, new_input_stream, None));
+                                        }
                                         break;
                                     },
                                     Err(e) => {

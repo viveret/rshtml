@@ -9,7 +9,7 @@ use mvc_lib::view::macro_impl::{rusthtml_view_macro_impl, rusthtml_view_macro_wi
 #[test]
 pub fn test_parse_bug() {
     let html = quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_controller_details"
         @model crate::view_models::dev::controllers::ControllerDetailsViewModel
         @{
@@ -47,7 +47,7 @@ pub fn test_parse_bug() {
 #[test]
 pub fn test_parse_empty() {
     let html = quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_controller_details"
         @model crate::view_models::dev::controllers::ControllerDetailsViewModel
     };
@@ -99,7 +99,7 @@ pub fn test_parse_empty() {
 #[test]
 pub fn test_parse_single_use() {
     let html = quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_controller_details"
         @model crate::view_models::dev::controllers::ControllerDetailsViewModel
         @use quote::quote

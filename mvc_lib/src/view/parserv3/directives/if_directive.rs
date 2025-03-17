@@ -42,7 +42,9 @@ impl IfDirective {
                                 context.push_is_in_html_mode(false);
                                 let group_converted = parser.get_converter_middle().convert(s.clone(), context.clone(), ct.clone())?;
                                 context.pop_is_in_html_mode();
-                                tokens.push(RustHtmlToken::Group(d.clone(), group_converted, None));
+                                if let Some(group_converted_stream) = group_converted.1 {
+                                    tokens.push(RustHtmlToken::Group(d.clone(), group_converted_stream, None));
+                                }
                                 break;
                             },
                             RustHtmlToken::Identifier(i) => {
@@ -58,7 +60,9 @@ impl IfDirective {
                                                 context.push_is_in_html_mode(false);
                                                 let group_converted = parser.get_converter_middle().convert(s.clone(), context.clone(), ct.clone())?;
                                                 context.pop_is_in_html_mode();
-                                                tokens.push(RustHtmlToken::Group(d.clone(), group_converted, None));
+                                                if let Some(group_converted_stream) = group_converted.1 {
+                                                    tokens.push(RustHtmlToken::Group(d.clone(), group_converted_stream, None));
+                                                }
                                                 it.next();
                                                 break;
                                             },
@@ -114,7 +118,9 @@ impl IRustHtmlDirective for IfDirective {
                         context.push_is_in_html_mode(false);
                         let group_converted = parser.get_converter_middle().convert(s.clone(), context.clone(), ct.clone())?;
                         context.pop_is_in_html_mode();
-                        tokens.push(RustHtmlToken::Group(*d, group_converted, None));
+                        if let Some(group_converted_stream) = group_converted.1 {
+                            tokens.push(RustHtmlToken::Group(*d, group_converted_stream, None));
+                        }
 
                         let other_branches = self.check_for_else_or_else_if(context, parser, it, ct)?;
                         tokens.extend_from_slice(&other_branches);

@@ -20,12 +20,13 @@ pub trait IFileProviderService {
     fn read_string(&self, path: &str) -> Result<String>;
     // writes a string to a file.
     fn write_string(&self, path: &str, data: &String) -> Result<()>;
+
+    // list entries in a directory
+    fn list(&self, path: &str) -> Result<Vec<String>>;
 }
 
 // implementation of the file provider service.
 pub struct FileProviderService {
-    // fn open_read(path: &str) -> Read,
-    // fn open_write(path: &str) -> Write,
 }
 
 impl FileProviderService {
@@ -36,7 +37,7 @@ impl FileProviderService {
 
     // creates the file provider service as a service.
     pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
-        vec![Box::new(Rc::new(Self::new()))]
+        vec![Box::new(Rc::new(Self::new()) as Rc<dyn IFileProviderService>)]
     }
 
     // adds the file provider service to the given service collection.
@@ -64,5 +65,13 @@ impl IFileProviderService for FileProviderService {
         let mut file = File::create(path)?;
         file.write_all(data.as_bytes())?;
         Ok(())
+    }
+    
+    fn list(&self, path: &str) -> Result<Vec<String>> {
+        Ok(std::fs::read_dir(path)?.into_iter()
+            .filter_map(|x| x.ok())
+            .filter_map(|x| x.path().to_str().map(|x| x.to_string()))
+            .collect()
+        )
     }
 }

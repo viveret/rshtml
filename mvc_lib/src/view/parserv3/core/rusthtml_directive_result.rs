@@ -8,7 +8,7 @@ use super::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
 // - the directive should continue,
 // - if it should break, and
 // - whether or not to append the HTML.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RustHtmlDirectiveResult {
     // the directive was parsed successfully and should continue
     OkContinue,
@@ -18,5 +18,5 @@ pub enum RustHtmlDirectiveResult {
     OkBreak,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct RustHtmlDirectiveResultV3(pub RustHtmlDirectiveResult, pub Option<Rc<dyn IPeekableRustHtmlToken>>);

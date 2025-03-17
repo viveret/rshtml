@@ -1,7 +1,7 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @use mvc_lib::view::rusthtml::helpers::stacks_html_helpers::StacksHtmlHelpers
     @use crate::view_models::authroles::add::AddViewModel
-    @viewstart "authroles/_view_start.rs"
+    
     @name "authroles_add"
     @model AddViewModel
     @inject custom_html: StacksHtmlHelpers::<AddViewModel>

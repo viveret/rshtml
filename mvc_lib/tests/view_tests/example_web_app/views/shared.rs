@@ -139,7 +139,7 @@ pub fn example_web_app_shared__layout_view() {
 #[test]
 pub fn example_web_app_shared_error_view() {
     let html = quote::quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "error"
         @model mvc_lib::error::error_viewmodel_service::BasicErrorViewModel
         @{

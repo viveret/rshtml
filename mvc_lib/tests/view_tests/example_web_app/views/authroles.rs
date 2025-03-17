@@ -5,7 +5,7 @@ pub fn example_web_app_authroles_add_view() {
     let html = quote::quote! {
         @use mvc_lib::view::rusthtml::helpers::stacks_html_helpers::StacksHtmlHelpers
         @use crate::view_models::authroles::add::AddViewModel
-        @viewstart "authroles/_view_start.rs"
+        
         @name "authroles_add"
         @model AddViewModel
         @inject custom_html: StacksHtmlHelpers::<AddViewModel>
@@ -42,7 +42,7 @@ pub fn example_web_app_authroles_add_view() {
 #[test]
 pub fn example_web_app_authroles_index_view() {
     let html = quote::quote! {
-        @viewstart "authroles/_view_start.rs"
+        
         @name "authroles_index"
         @model crate::view_models::authroles::index::IndexViewModel
         @{

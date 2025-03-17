@@ -93,13 +93,13 @@ impl ParserV3HtmlParser {
             println!("output_inner_partial_vec for {} (before)", ctx.tag_name_as_str());
     
             let output_inner_partial = self.get_parser().get_converter_middle().convert(input.clone(), context.clone(), ct.clone())?;
-            let output_inner_partial_vec = output_inner_partial.to_vec();
+            let output_inner_partial_vec = output_inner_partial.1.unwrap().to_vec();
     
             if output_inner_partial_vec.is_empty() {
                 break;
             }
     
-            println!("output_inner_partial_vec for {}: {}", ctx.tag_name_as_str(), output_inner_partial_vec.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" "));
+            // println!("output_inner_partial_vec for {}: {}", ctx.tag_name_as_str(), output_inner_partial_vec.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" "));
     
             if let Some(last) = output_inner_partial_vec.last() {
                 let last = last.clone();

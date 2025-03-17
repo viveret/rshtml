@@ -116,8 +116,11 @@ impl IParserV3 for ParserV3 {
         ct: Rc<dyn ICancellationToken>
     ) -> Result<Rc<dyn IPeekableTokenTree>, RustHtmlError> {
         let mut input = self.converter_in.convert(input);
-        input = self.converter_middle.convert(input, context, ct.clone())?;
-        self.converter_out.convert(input, ct)
+        if let Some(input) = self.converter_middle.convert(input, context, ct.clone())?.1 {
+            self.converter_out.convert(input, ct)
+        } else {
+            Err(RustHtmlError::from_str("empty return from self.converter_middle.convert"))
+        }
     }
     
     fn expand_tokentree(&self,
@@ -128,18 +131,22 @@ impl IParserV3 for ParserV3 {
         let input_tokentree = Rc::new(StreamPeekableTokenTree::new(input));
         let input_rusthtml = self.converter_in.convert(input_tokentree);
         let output_rusthtml = self.converter_middle.convert(input_rusthtml, context, ct.clone())?;
-        if let Some(RustHtmlToken::ReservedChar(c, p)) = output_rusthtml.peek() {
-            if c == '@' {
-                panic!("something went wrong while expanding Rust HTML (starts with @)");
+        if let Some(out_stream) = output_rusthtml.1 {
+            if let Some(RustHtmlToken::ReservedChar(c, p)) = out_stream.peek() {
+                if c == '@' {
+                    panic!("something went wrong while expanding Rust HTML (starts with @)");
+                }
             }
-        }
 
-        let output = self.converter_out.convert(output_rusthtml, ct)?;
-        if let Some(proc_macro2::TokenTree::Punct(p)) = output.peek() {
-            if p.as_char() == '@' {
-                panic!("something went wrong while converting Rust HTML to plain rust: {}", output.to_stream().to_token_stream().to_string());
+            let output = self.converter_out.convert(out_stream, ct)?;
+            if let Some(proc_macro2::TokenTree::Punct(p)) = output.peek() {
+                if p.as_char() == '@' {
+                    panic!("something went wrong while converting Rust HTML to plain rust: {}", output.to_stream().to_token_stream().to_string());
+                }
             }
+            Ok(output.to_stream())
+        } else {
+            Err(RustHtmlError::from_str("empty return from self.converter_middle.convert"))
         }
-        Ok(output.to_stream())
     }
 }

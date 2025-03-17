@@ -15,7 +15,7 @@ use mvc_lib::view::macro_impl::rusthtml_view_macro_impl;
 #[test]
 pub fn example_web_app_dev_controller_details_view() {
     let html = quote::quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_controller_details"
         @model crate::view_models::dev::controllers::ControllerDetailsViewModel
         @{
@@ -94,7 +94,7 @@ pub fn example_web_app_dev_controller_details_view() {
 #[test]
 pub fn example_web_app_dev_controllers_view() {
     let html = quote::quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_controllers"
         @model crate::view_models::dev::controllers::ControllersViewModel
         @{
@@ -128,7 +128,7 @@ pub fn example_web_app_dev_controllers_view() {
 #[test]
 pub fn example_web_app_dev_index_view() {
     let html = quote::quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_index"
         @model crate::view_models::dev::index::IndexViewModel
         @{
@@ -161,7 +161,7 @@ pub fn example_web_app_dev_controller_log_add_view() {
     let html = quote::quote! {
         @use mvc_lib::view::rusthtml::helpers::stacks_html_helpers::StacksHtmlHelpers
         @use crate::view_models::dev::log_add::LogAddViewModel
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_log_add"
         @model LogAddViewModel
         @inject custom_html: StacksHtmlHelpers::<LogAddViewModel>
@@ -197,7 +197,7 @@ pub fn example_web_app_dev_controller_log_add_view() {
 #[test]
 pub fn example_web_app_dev_controller_log_view() {
     let html = quote::quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_log"
         @model crate::view_models::dev::log::LogViewModel
         @{
@@ -232,7 +232,7 @@ pub fn example_web_app_dev_controller_log_view() {
 #[test]
 pub fn example_web_app_dev_controller_perf_log_view() {
     let html = quote::quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_perf_log"
         @model crate::view_models::dev::perf_log::PerfLogViewModel
         @{
@@ -257,7 +257,7 @@ pub fn example_web_app_dev_controller_perf_log_view() {
 #[test]
 pub fn example_web_app_dev_controller_route_details_view() {
     let html = quote::quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_route_details"
         @model crate::view_models::dev::route_details::RouteDetailsViewModel
         @{
@@ -303,7 +303,7 @@ pub fn example_web_app_dev_controller_route_details_view() {
 #[test]
 pub fn example_web_app_dev_controller_routes_view() {
     let html = quote::quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_routes"
         @model crate::view_models::dev::routes::RoutesViewModel
         @{
@@ -337,7 +337,7 @@ pub fn example_web_app_dev_controller_routes_view() {
 #[test]
 pub fn example_web_app_dev_controller_sysinfo_view() {
     let html = quote::quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_sysinfo"
         @use sysinfo::SystemExt
         @use sysinfo::NetworkExt
@@ -415,7 +415,7 @@ pub fn example_web_app_dev_controller_sysinfo_view() {
 #[test]
 pub fn example_web_app_dev_controller_view_details_view() {
     let html = quote::quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_view_details"
         @model crate::view_models::dev::view_details::ViewDetailsViewModel
         @{
@@ -454,7 +454,7 @@ pub fn example_web_app_dev_controller_view_details_view() {
 #[test]
 pub fn example_web_app_dev_controller_views_view() {
     let html = quote::quote! {
-        @viewstart "dev/_view_start.rs"
+        
         @name "dev_views"
         @model crate::view_models::dev::views::ViewsViewModel
         @{

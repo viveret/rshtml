@@ -139,13 +139,16 @@ impl ParserV3HtmlParser {
         Ok(if ctx.get_add_inner() {
             if ctx.get_only_add_inner().unwrap_or(false) {
                 output.clear();
+                output_inner.pop(); // end tag token
             }
             output.extend_from_slice(&output_inner);
         } else {
-            // add ending token
-            if let Some(ending_token) = output_inner.last() {
-                if let RustHtmlToken::HtmlTagEnd(x, a) = ending_token {
-                    output.push(ending_token.clone())
+            // add ending token if not only adding inner
+            if !ctx.get_only_add_inner().unwrap_or(false) {
+                if let Some(ending_token) = output_inner.last() {
+                    if let RustHtmlToken::HtmlTagEnd(x, a) = ending_token {
+                        output.push(ending_token.clone())
+                    }
                 }
             }
         })

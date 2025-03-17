@@ -6,6 +6,7 @@ use proc_macro2::TokenStream;
 
 use quote::quote;
 
+use crate::action_results::iaction_result::IActionResultToAny;
 use crate::view::parserv3::core::peekable::stream_peekable_tokentree::StreamPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::parserv3::parserv3::ParserV3;
@@ -106,13 +107,23 @@ pub fn rusthtml_view_macro_with_context(input: TokenStream) -> (Rc<RustHtmlParse
             let inject_tokens = parse_context.get_inject_statements_stream();
             let when_compiled = chrono::prelude::Utc::now().to_rfc2822();
             let mut view_start_tokens: Option<TokenStream> = None;
-            if let Some(view_start) = parse_context.try_get_param_string("viewstart") {
-                // println!("view_start_path: {}", view_start_path);
+            let viewstart_name = if let Some(view_start) = parse_context.try_get_param_string("viewstart") {
+                view_start
+            } else if !view_name.ends_with("view_start") && !view_name.ends_with("layout") {
+                "view_start.rs".to_string()
+            } else {
+                String::new()
+            };
+
+            if !viewstart_name.is_empty() && view_name != viewstart_name {
+                // println!("viewstart_name: {}, view_name: {}", viewstart_name, view_name);
                 view_start_tokens = Some(quote! {
+                    println!("doing viewstart {} in {}", #viewstart_name, #view_name);
                     match view_context.get_view_renderer()
-                        .render_with_layout_if_specified(
-                            &#view_start.to_string(),
+                        .render_view(
+                            &#viewstart_name.to_string(),
                             view_context.get_viewmodel(),
+                            Some(view_context.clone()),
                             view_context.get_request_context(),
                             services
                         ) {
@@ -123,7 +134,7 @@ pub fn rusthtml_view_macro_with_context(input: TokenStream) -> (Rc<RustHtmlParse
                                 html_output.write_html_str(format!("could not render view_start: {}", err).as_str());
                             }
                         }
-                });
+                });               
             }
 
             let s = quote! {
@@ -196,7 +207,7 @@ pub fn rusthtml_view_macro_with_context(input: TokenStream) -> (Rc<RustHtmlParse
                 std::fs::create_dir_all("rusthtml-tmp/views/").expect("could not create tmp folder rusthtml-tmp");
                 let path = format!("rusthtml-tmp/views/{}.rs", view_name);
                 // std::fs::remove_file(path.as_str()).expect("could not remove file from rusthtml-tmp");
-                std::fs::write(path.as_str(), s.to_string()).expect("could not write contents to view in rusthtml-tmp");
+                std::fs::write(path.as_str(), ToString::to_string(&s)).expect("could not write contents to view in rusthtml-tmp");
             }
             s
         },

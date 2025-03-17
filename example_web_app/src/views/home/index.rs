@@ -1,7 +1,7 @@
 mvc_macro_lib::rusthtml_view_macro! {
     @name "home_index"
     @{
-        view_context.insert_str("Layout", "shared/_layout.rs".to_string());
+        // view_context.insert_str("Layout", "shared/_layout.rs".to_string());
         view_context.insert_str("Title", "Rust HTML (rshtml) Home".to_string());
     }
     

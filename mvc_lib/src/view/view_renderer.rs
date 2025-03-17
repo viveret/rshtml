@@ -42,6 +42,13 @@ pub trait IViewRenderer {
         services: &dyn IServiceCollection
     ) -> Result<HtmlString, RustHtmlError>;
 
+    fn render_view(&self,
+        view_path: &String,
+        view_model: Option<Rc<dyn IViewModel>>,
+        view_context: Option<Rc<dyn IViewContext>>,
+        request_context: &dyn IRequestContext,
+        services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
+
     // get the layout view from the view context.
     // view_ctx: the view context to get the layout view from.
     // services: the services available to the view.
@@ -239,5 +246,21 @@ impl IViewRenderer for ViewRenderer {
                 None
             },
         }
+    }
+    
+    fn render_view(&self,
+        view_path: &String, 
+        view_model: Option<Rc<dyn IViewModel>>,
+        view_context: Option<&dyn IViewContext>,
+        request_context: &dyn IRequestContext,
+        services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
+        let view_renderer_service_instance = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
+        let body_view_ctx = 
+            if let Some(c) = view_context {
+                c
+            } else {
+                Rc::new(ViewContext::new(self.get_view(view_path, services), view_model, view_renderer_service_instance.clone(), request_context))
+            };
+        body_view_ctx.get_view_as_ref().render(body_view_ctx.as_ref(), services)
     }
 }

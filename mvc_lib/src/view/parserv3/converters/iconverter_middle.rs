@@ -128,7 +128,7 @@ impl ConverterNormal {
             return Err(RustHtmlError::from_cancellationtoken(ct));
         }
 
-        println!("convert_html: {}", token.to_string());
+        // println!("convert_html: {}", token.to_string());
 
         match token {
             RustHtmlToken::Group(d, s, g) => {
@@ -191,7 +191,7 @@ impl ConverterNormal {
             return Err(RustHtmlError::from_cancellationtoken(ct));
         }
 
-        println!("convert_rust: {}", token.to_string());
+        // println!("convert_rust: {}", token.to_string());
 
         match token {
             RustHtmlToken::Group(d, s, g) => {

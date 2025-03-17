@@ -1,9 +1,7 @@
 use std::cell::RefCell;
-use std::fmt::format;
 use std::rc::Rc;
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
-use proc_macro2::Ident;
 
 use crate::view::parserv3::contexts::html_tag_parse_context::HtmlTagParseContext;
 use crate::view::parserv3::contexts::ihtml_tag_parse_context::IHtmlTagParseContext;
@@ -18,7 +16,6 @@ use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 pub trait IParserV3HtmlParser {
     fn parse_tag(&self, input: Rc<dyn IPeekableRustHtmlToken>, context: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>) -> Result<RustHtmlDirectiveResultV3, RustHtmlError>;
-    // fn next_and_parse_html_tag(&self, token: RustHtmlToken, input: Rc<dyn IPeekableRustHtmlToken>, context: Rc<dyn IHtmlTagParseContext>, ct: Rc<dyn ICancellationToken>) -> Result<Option<()>, RustHtmlError>;
 
     fn parse_tag_name(&self, input: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IHtmlTagParseContext>, ct: Rc<dyn ICancellationToken>) -> Result<Vec<RustHtmlIdentOrPunct>, RustHtmlError>;
     fn parse_tag_attribs(&self, input: Rc<dyn IPeekableRustHtmlToken>, ctx: Rc<dyn IHtmlTagParseContext>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError>;
@@ -64,6 +61,95 @@ impl ParserV3HtmlParser {
             Err(RustHtmlError::from_string(format!("Expected {} (char), received nothing", expected_c)))
         }
     }
+    
+    fn parse_tag_start_close(&self, input: &Rc<dyn IPeekableRustHtmlToken>, context: &Rc<dyn IRustHtmlParserContext>, ct: &Rc<dyn ICancellationToken>, ctx: &Rc<HtmlTagParseContext>, output: &mut Vec<RustHtmlToken>) -> Result<(), RustHtmlError> {
+        self.parse_tag_attribs(input.clone(), ctx.clone(), ct.clone())?;
+        let tag_attrs_output_tokens = ctx.get_html_attrs_output();
+        output.extend_from_slice(&tag_attrs_output_tokens);
+        let is_self_contained_tag = self.check_next_char('/', true, input.clone(), context.clone())?;
+        ctx.set_is_self_contained_tag(is_self_contained_tag);
+        Ok(if ctx.is_void_tag() {
+            let tag_name_str = ctx.tag_name_as_str();
+            output.push(RustHtmlToken::HtmlTagCloseVoidPunct(tag_name_str, None))
+        } else if is_self_contained_tag {
+            output.push(RustHtmlToken::HtmlTagCloseSelfContainedPunct)
+        } else {
+            output.push(RustHtmlToken::HtmlTagCloseStartChildrenPunct)
+        })
+    }
+    
+    fn parse_tag_inner_contents(&self, input: Rc<dyn IPeekableRustHtmlToken>, context: Rc<dyn IRustHtmlParserContext>, ct: Rc<dyn ICancellationToken>, ctx: &Rc<HtmlTagParseContext>, output: &mut Vec<RustHtmlToken>) -> Result<(), RustHtmlError> {
+        let mut output_inner = vec![];
+        context.htmltag_scope_stack_push(ctx.tag_name_as_str());
+
+        // this loop is not broken when getting to the end tag
+        // (the inner convert is greedy and reads to the end of the steam)
+        // so it causes a panic when it returns wrong end tag
+        loop {
+            if ct.is_cancelled() {
+                return Err(RustHtmlError::from_cancellationtoken(ct));
+            }
+    
+            println!("output_inner_partial_vec for {} (before)", ctx.tag_name_as_str());
+    
+            let output_inner_partial = self.get_parser().get_converter_middle().convert(input.clone(), context.clone(), ct.clone())?;
+            let output_inner_partial_vec = output_inner_partial.to_vec();
+    
+            if output_inner_partial_vec.is_empty() {
+                break;
+            }
+    
+            println!("output_inner_partial_vec for {}: {}", ctx.tag_name_as_str(), output_inner_partial_vec.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" "));
+    
+            if let Some(last) = output_inner_partial_vec.last() {
+                let last = last.clone();
+                output_inner.extend(output_inner_partial_vec);
+                match last {
+                    RustHtmlToken::HtmlTagEnd(tag_end, _tag_end_tokens) => {
+                        if tag_end == ctx.tag_name_as_str() {
+                            println!("found matching end tag {}", tag_end);
+                            break;
+                        } else {
+                            return Err(RustHtmlError::from_string(format!(
+                                "Mismatched HTML tags inner (found {} but expected {})",
+                                tag_end, ctx.tag_name_as_str()
+                            )));
+                        }
+                    },
+                    _ => {
+                        return Err(RustHtmlError::from_string(format!(
+                            "Unexpected token: {:?}",
+                            last
+                        )));
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+        let last_scope_from_stack = context.htmltag_scope_stack_pop().unwrap();
+        if last_scope_from_stack != ctx.tag_name_as_str() {
+            return Err(RustHtmlError::from_string(format!("Mismatched HTML tags (found {} but expected {})", last_scope_from_stack, ctx.tag_name_as_str())));
+        }
+        if let Some(output_inner_last) = output_inner.last() {
+            if let RustHtmlToken::HtmlTagEnd(_tag_end, _tag_end_tokens) = output_inner_last {
+                self.on_html_node_parsed(ctx.clone(), ct.clone())?;
+            }
+        }
+        Ok(if ctx.get_add_inner() {
+            if ctx.get_only_add_inner().unwrap_or(false) {
+                output.clear();
+            }
+            output.extend_from_slice(&output_inner);
+        } else {
+            // add ending token
+            if let Some(ending_token) = output_inner.last() {
+                if let RustHtmlToken::HtmlTagEnd(x, a) = ending_token {
+                    output.push(ending_token.clone())
+                }
+            }
+        })
+    }
 }
 
 impl IParserV3HtmlParser for ParserV3HtmlParser {
@@ -75,10 +161,9 @@ impl IParserV3HtmlParser for ParserV3HtmlParser {
         if ct.is_cancelled() {
             return Err(RustHtmlError::from_cancellationtoken(ct));
         }
-
-        // tag name
         let ctx = Rc::new(HtmlTagParseContext::new(Some(context.clone())));
 
+        // tag name
         // check that it is a closing tag?
         let is_closing_tag = self.check_next_char('/', true, input.clone(), context.clone())?;
         let tag_name = self.parse_tag_name(input.clone(), ctx.clone(), ct.clone())?;
@@ -90,120 +175,36 @@ impl IParserV3HtmlParser for ParserV3HtmlParser {
         let tag_name_output_token = ctx.on_html_tag_name_parsed(tag_name)?;
         output.push(tag_name_output_token);
 
-        if !is_closing_tag {
-            self.parse_tag_attribs(input.clone(), ctx.clone(), ct.clone())?;
-
-            let tag_attrs_output_tokens = ctx.get_html_attrs_output();
-            output.extend_from_slice(&tag_attrs_output_tokens);
-
-            let is_self_contained_tag = self.check_next_char('/', true, input.clone(), context.clone())?;
-            ctx.set_is_self_contained_tag(is_self_contained_tag);    
-
-            if ctx.is_void_tag() {
-                let tag_name_str = ctx.tag_name_as_str();
-                output.push(RustHtmlToken::HtmlTagCloseVoidPunct(tag_name_str, None))
-            } else if is_self_contained_tag {
-                output.push(RustHtmlToken::HtmlTagCloseSelfContainedPunct)
-            } else {
-                output.push(RustHtmlToken::HtmlTagCloseStartChildrenPunct)
-            }
-        }
+        let continue_result = if !is_closing_tag {
+            self.parse_tag_start_close(&input, &context, &ct, &ctx, &mut output)?;
         
-        println!("parsing tag {}, is_closing_tag={}, is_self_contained={}", ctx.tag_name_as_str(), is_closing_tag, ctx.is_self_contained_tag());
+            println!("parsing start tag {}, is_closing_tag={}, is_self_contained={}", ctx.tag_name_as_str(), is_closing_tag, ctx.is_self_contained_tag());
 
-        // assert next punct is >
-        self.check_next_char('>', false, input.clone(), ctx.get_main_context())?;
-        
-        // tag children
-        let mut output_inner = vec![];
-        if ctx.is_opening_tag() && !ctx.is_void_tag() && !ctx.is_self_contained_tag() {
-            // parse inner elements / code until we find closing tag
-            context.htmltag_scope_stack_push(ctx.tag_name_as_str());
-            loop {
-                if ct.is_cancelled() {
-                    return Err(RustHtmlError::from_cancellationtoken(ct));
-                }
-
-                let output_inner_partial = self.get_parser().get_converter_middle().convert(input.clone(), context.clone(), ct.clone())?;
-                let output_inner_partial_vec = output_inner_partial.to_vec();
-
-                if output_inner_partial_vec.is_empty() {
-                    break;
-                }
-
-                println!("output_inner_partial_vec: {}", output_inner_partial_vec.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" "));
-                
-                if let Some(last) = output_inner_partial_vec.last() {
-                    let last = last.clone();
-                    output_inner.extend(output_inner_partial_vec);
-                    match last {
-                        RustHtmlToken::HtmlTagEnd(tag_end, _tag_end_tokens) => {
-                            if tag_end == ctx.tag_name_as_str() {
-                                println!("found matching end tag {}", tag_end);
-                                break;
-                            } else {
-                                // panic!("tag_end ({}) != ctx.tag_name_as_str() ({})", tag_end, ctx.tag_name_as_str())
-                                return Err(RustHtmlError::from_string(format!(
-                                    "Mismatched HTML tags inner (found {} but expected {})",
-                                    tag_end, ctx.tag_name_as_str()
-                                )));
-                            }
-                        },
-                        // RustHtmlToken::AppendToHtml(tokens) => {
-                        //     output_inner.extend_from_slice(&tokens);
-                        // }
-                        _ => {
-                            // panic!("wtf: {:?}", last);
-                            return Err(RustHtmlError::from_string(format!(
-                                "Unexpected token: {:?}",
-                                last
-                            )));
-                        }
-                    }
-                } else {
-                    break;
-                }
+            // assert next punct is >
+            self.check_next_char('>', false, input.clone(), ctx.get_main_context())?;
+            
+            // tag children
+            if !ctx.is_void_tag() && !ctx.is_self_contained_tag() {
+                self.parse_tag_inner_contents(input, context, ct, &ctx, &mut output)?;
             }
 
-            let last_scope_from_stack = context.htmltag_scope_stack_pop().unwrap();
-            if last_scope_from_stack != ctx.tag_name_as_str() {
-                return Err(RustHtmlError::from_string(format!("Mismatched HTML tags (found {} but expected {})", last_scope_from_stack, ctx.tag_name_as_str())));
-            }
+            RustHtmlDirectiveResult::OkContinue
+        } else {
+            println!("parsing closing tag {}, is_closing_tag={}, is_self_contained={}", ctx.tag_name_as_str(), is_closing_tag, ctx.is_self_contained_tag());
 
-            if let Some(output_inner_last) = output_inner.last() {
-                if let RustHtmlToken::HtmlTagEnd(_tag_end, _tag_end_tokens) = output_inner_last {
-                    self.on_html_node_parsed(ctx.clone(), ct.clone())?;
-                }
-            }
-        }
+            // assert next punct is >
+            self.check_next_char('>', false, input.clone(), ctx.get_main_context())?;
+
+            RustHtmlDirectiveResult::OkBreak
+        };
 
         if ctx.get_ignore() {
-            ctx.set_ignore(false);
-            Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(EmptyPeekableRustHtmlToken::new()))))
+            return Ok(RustHtmlDirectiveResultV3(continue_result, Some(Rc::new(EmptyPeekableRustHtmlToken::new()))));
         } else {
-            if ctx.get_add_inner() {
-                if ctx.get_only_add_inner().unwrap_or(false) {
-                    output.clear();
-                }
-                output.extend_from_slice(&output_inner);
-            } else {
-                // add ending token
-                if let Some(ending_token) = output_inner.last() {
-                    if let RustHtmlToken::HtmlTagEnd(x, a) = ending_token {
-                        output.push(ending_token.clone())
-                    }
-                }
-            }
-
             let tag_stream = Rc::new(VecPeekableRustHtmlToken::new(output));
-    
-            Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(tag_stream)))
+            Ok(RustHtmlDirectiveResultV3(continue_result, Some(tag_stream)))
         }
     }
-    
-    // fn next_and_parse_html_tag(&self, token: RustHtmlToken, input: Rc<dyn IPeekableRustHtmlToken>, context: Rc<dyn IHtmlTagParseContext>, ct: Rc<dyn ICancellationToken>) -> Result<Option<()>, RustHtmlError> {
-    //     todo!("next_and_parse_html_tag")
-    // }
     
     fn get_parser(&self) -> Rc<dyn IParserV3> {
         self.parser.borrow().as_ref().unwrap().clone()

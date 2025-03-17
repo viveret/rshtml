@@ -100,7 +100,7 @@ impl IHtmlTagParseContext for HtmlTagParseContext {
     // returns false if the tag is not a void tag (e.g. <div></div> or <p></p>)
     fn is_void_tag(&self) -> bool {
         match self.tag_name_as_str().as_str() {
-            "input" | "hr" | "br" | "!DOCTYPE" => true,
+            "input" | "hr" | "br" | "!DOCTYPE" | "partial" => true,
             _ => *self.is_explicit_void_tag.borrow(),
         }
     }

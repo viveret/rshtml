@@ -61,6 +61,16 @@ impl From<&HtmlString> for HtmlString {
     }
 }
 
+impl From<Option<HtmlString>> for HtmlString {
+    fn from(item: Option<HtmlString>) -> Self {
+        if let Some(item) = item {
+            HtmlString::new_from_html(item.content.clone())
+        } else {
+            HtmlString::empty()
+        }
+    }
+}
+
 impl From<String> for HtmlString {
     fn from(item: String) -> Self {
         HtmlString::new_data_string(item)

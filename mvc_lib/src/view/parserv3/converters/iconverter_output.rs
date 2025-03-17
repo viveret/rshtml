@@ -44,6 +44,7 @@ pub trait IConverterOutput {
         value_tokens_special: Option<&RustHtmlIdentAndPunctOrLiteral>,
         it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<TokenTree, RustHtmlError>;
     fn convert_appendhtmlstring_to_tokentree(&self, html_string: String, _it: Rc<dyn IPeekableRustHtmlToken>, ct: Rc<dyn ICancellationToken>) -> Result<(), RustHtmlError>;
+    fn convert_ident_or_punct_to_tokenstream(&self, name: &Vec<RustHtmlIdentOrPunct>, ct: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError>;
 
     fn format_tag_open(&self, tag_string: &String, ct: Rc<dyn ICancellationToken>) -> String;
     fn format_tag_close(&self, tag_string: &String, ct: Rc<dyn ICancellationToken>) -> String;
@@ -258,7 +259,9 @@ impl IConverterOutput for ConverterOutput {
         } else if let Some(l) = inner_as_literal {
             Ok(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#l); }))))
         } else if let Some(i) = inner_as_ident {
-            Ok(TokenTree::Group(Group::new(Delimiter::None, TokenStream::new())))
+            let ident = self.convert_ident_or_punct_to_tokenstream(i, ct)?;
+            // Ok(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#ident); }))))
+            Ok(TokenTree::Group(Group::new(Delimiter::None, self.write_html_stream(ident))))
         } else if let Some(inner_tokens) = inner {
             let inner_it = Rc::new(VecPeekableRustHtmlToken::new(inner_tokens.clone()));
             let x = self.convert_rusthtmltokens_to_plain_rust(inner_it, ct)?;
@@ -378,6 +381,10 @@ impl IConverterOutput for ConverterOutput {
     }
     
     fn convert_ident_and_punct_or_literal_to_tokenstream(&self, _tag: &RustHtmlIdentAndPunctOrLiteral, ct: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
+        todo!("convert_ident_and_punct_or_literal_to_tokenstream")
+    }
+    
+    fn convert_ident_or_punct_to_tokenstream(&self, name: &Vec<RustHtmlIdentOrPunct>, ct: Rc<dyn ICancellationToken>) -> Result<TokenStream, RustHtmlError> {
         todo!("convert_ident_and_punct_or_literal_to_tokenstream")
     }
     

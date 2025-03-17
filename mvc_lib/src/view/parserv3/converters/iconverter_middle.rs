@@ -167,7 +167,7 @@ impl ConverterNormal {
                         // start of tag
                         // what happened to the tag parser?
                         // peek after start of tag
-                        println!("peek tag start: {:?}", input.peek().unwrap());
+                        // println!("peek tag start: {:?}", input.peek().unwrap());
                         let result = self.get_parser().get_html_parser().parse_tag(input, context, ct)?;
                         // if let Some(x) = result.1 {
                         //     return Ok(x);

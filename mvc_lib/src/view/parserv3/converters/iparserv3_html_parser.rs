@@ -90,7 +90,7 @@ impl ParserV3HtmlParser {
                 return Err(RustHtmlError::from_cancellationtoken(ct));
             }
     
-            println!("output_inner_partial_vec for {} (before)", ctx.tag_name_as_str());
+            // println!("output_inner_partial_vec for {} (before)", ctx.tag_name_as_str());
     
             let output_inner_partial = self.get_parser().get_converter_middle().convert(input.clone(), context.clone(), ct.clone())?;
             let output_inner_partial_vec = output_inner_partial.1.unwrap().to_vec();
@@ -107,7 +107,7 @@ impl ParserV3HtmlParser {
                 match last {
                     RustHtmlToken::HtmlTagEnd(tag_end, _tag_end_tokens) => {
                         if tag_end == ctx.tag_name_as_str() {
-                            println!("found matching end tag {}", tag_end);
+                            // println!("found matching end tag {}", tag_end);
                             break;
                         } else {
                             return Err(RustHtmlError::from_string(format!(
@@ -178,7 +178,7 @@ impl IParserV3HtmlParser for ParserV3HtmlParser {
         let continue_result = if !is_closing_tag {
             self.parse_tag_start_close(&input, &context, &ct, &ctx, &mut output)?;
         
-            println!("parsing start tag {}, is_closing_tag={}, is_self_contained={}", ctx.tag_name_as_str(), is_closing_tag, ctx.is_self_contained_tag());
+            // println!("parsing start tag {}, is_closing_tag={}, is_self_contained={}", ctx.tag_name_as_str(), is_closing_tag, ctx.is_self_contained_tag());
 
             // assert next punct is >
             self.check_next_char('>', false, input.clone(), ctx.get_main_context())?;
@@ -190,7 +190,7 @@ impl IParserV3HtmlParser for ParserV3HtmlParser {
 
             RustHtmlDirectiveResult::OkContinue
         } else {
-            println!("parsing closing tag {}, is_closing_tag={}, is_self_contained={}", ctx.tag_name_as_str(), is_closing_tag, ctx.is_self_contained_tag());
+            // println!("parsing closing tag {}, is_closing_tag={}, is_self_contained={}", ctx.tag_name_as_str(), is_closing_tag, ctx.is_self_contained_tag());
 
             // assert next punct is >
             self.check_next_char('>', false, input.clone(), ctx.get_main_context())?;

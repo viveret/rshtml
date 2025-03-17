@@ -8,6 +8,7 @@ use crate::contexts::irequest_context::IRequestContext;
 
 use crate::model_binder::iviewmodel::IViewModel;
 use crate::view::iview::IView;
+use crate::view::rusthtml::html_string::HtmlString;
 use crate::view::view_renderer::IViewRenderer;
 
 use super::iresponse_context::IResponseContext;
@@ -61,7 +62,7 @@ pub trait IViewContext: Send + Sync {
     // resolve a data file path string from the view context.
     fn resolve_data_file_path_string(&self, path: &str) -> Option<String>;
 
-    fn get_markdown_file_nocache(&self, path: &str) -> Option<String>;
+    fn get_markdown_file_nocache(&self, path: &str) -> Option<HtmlString>;
 }
 
 // this struct implements IViewContext.
@@ -251,13 +252,13 @@ impl <'a> IViewContext for ViewContext<'a> {
         self.try_get_str("viewstart")
     }
 
-    fn get_markdown_file_nocache(&self, path: &str) -> Option<String> {
+    fn get_markdown_file_nocache(&self, path: &str) -> Option<HtmlString> {
         match self.open_data_file(path) {
             Ok(mut f) => {
                 let mut buffer = String::new();
                 match f.read_to_string(&mut buffer) {
                     Ok(_x) => {
-                        Some(comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default()))
+                        Some(HtmlString::new_from_html(comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default())))
                     },
                     Err(e) => {
                         panic!("Could not read data at {}: {:?}", path, e);

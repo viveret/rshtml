@@ -124,10 +124,10 @@ impl IViewRenderer for ViewRenderer {
         match body_view_ctx.get_view_as_ref().render(&body_view_ctx, services) {
             Ok(body_html) => {
                 // print viewdata keys
-                for (key, value) in body_view_ctx.get_view_data().borrow().iter() {
-                    println!("{}: {:?}", key, value);
-                }
-                println!("peeking at layout view path option for {}", view_path);
+                // for (key, value) in body_view_ctx.get_view_data().borrow().iter() {
+                    // println!("{}: {:?}", key, value);
+                // }
+                // println!("peeking at layout view path option for {}", view_path);
                 let layout_view_option = self.get_layout_view_from_context(&mut body_view_ctx, services);
                 match layout_view_option {
                     Some(ref layout_view) => {
@@ -151,7 +151,7 @@ impl IViewRenderer for ViewRenderer {
 
     fn get_layout_view_from_context(&self, view_context: &mut ViewContext, services: &dyn IServiceCollection) -> Option<Rc<dyn IView>> {
         let layout_view_path_option = view_context.get_str("Layout");
-        println!("layout_view_path_option: {:?}", layout_view_path_option);
+        // println!("layout_view_path_option: {:?}", layout_view_path_option);
         if layout_view_path_option.len() > 0 {
             Some(self.get_view(&layout_view_path_option, services))
         } else {
@@ -258,29 +258,12 @@ impl IViewRenderer for ViewRenderer {
         let view_renderer_service_instance = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
         let view_requested = view_renderer_service_instance.get_view(view_path, services);
         if let Some(body_view_ctx) = view_context {
-            // let view = body_view_ctx.get_view_as_ref();
-            // println!("render view {} borrow context with view {}", view_path, view.get_path());
             view_requested.render(body_view_ctx, services)
         } else {
             let body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model, view_renderer_service_instance.clone(), request_context);
             let view = body_view_ctx.get_view_as_ref();
-            println!("render view {} new context with view {}", view_path, view.get_path());
+            // println!("render view {} new context with view {}", view_path, view.get_path());
             view.render(&body_view_ctx, services)
-        }
-    }
-}
-
-
-enum MayBeArefOrBox<'a> {
-    Ref(&'a dyn IViewContext),
-    Owned(Box<dyn IViewContext>)
-}
-
-impl<'a> MayBeArefOrBox<'a> {
-    pub fn as_ref(&self) -> &dyn IViewContext {
-        match self {
-            MayBeArefOrBox::Ref(r) => *r,
-            MayBeArefOrBox::Owned(o) => &**o,
         }
     }
 }

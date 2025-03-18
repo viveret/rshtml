@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -45,7 +46,7 @@ pub trait IViewRenderer {
     fn render_view(&self,
         view_path: &String,
         view_model: Option<Rc<dyn IViewModel>>,
-        view_context: Option<Rc<dyn IViewContext>>,
+        view_context: Option<&dyn IViewContext>,
         request_context: &dyn IRequestContext,
         services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError>;
 
@@ -255,12 +256,31 @@ impl IViewRenderer for ViewRenderer {
         request_context: &dyn IRequestContext,
         services: &dyn IServiceCollection) -> Result<HtmlString, RustHtmlError> {
         let view_renderer_service_instance = ServiceCollectionExtensions::get_required_single::<dyn IViewRenderer>(services);
-        let body_view_ctx = 
-            if let Some(c) = view_context {
-                c
-            } else {
-                Rc::new(ViewContext::new(self.get_view(view_path, services), view_model, view_renderer_service_instance.clone(), request_context))
-            };
-        body_view_ctx.get_view_as_ref().render(body_view_ctx.as_ref(), services)
+        let view_requested = view_renderer_service_instance.get_view(view_path, services);
+        if let Some(body_view_ctx) = view_context {
+            // let view = body_view_ctx.get_view_as_ref();
+            // println!("render view {} borrow context with view {}", view_path, view.get_path());
+            view_requested.render(body_view_ctx, services)
+        } else {
+            let body_view_ctx = ViewContext::new(self.get_view(view_path, services), view_model, view_renderer_service_instance.clone(), request_context);
+            let view = body_view_ctx.get_view_as_ref();
+            println!("render view {} new context with view {}", view_path, view.get_path());
+            view.render(&body_view_ctx, services)
+        }
+    }
+}
+
+
+enum MayBeArefOrBox<'a> {
+    Ref(&'a dyn IViewContext),
+    Owned(Box<dyn IViewContext>)
+}
+
+impl<'a> MayBeArefOrBox<'a> {
+    pub fn as_ref(&self) -> &dyn IViewContext {
+        match self {
+            MayBeArefOrBox::Ref(r) => *r,
+            MayBeArefOrBox::Owned(o) => &**o,
+        }
     }
 }

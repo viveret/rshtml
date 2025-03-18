@@ -9,6 +9,7 @@ use proc_macro2::TokenStream;
 use proc_macro2::TokenTree;
 use quote::ToTokens;
 
+use crate::action_results::iaction_result::IActionResultToAny;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::parserv3::core::peekable::ipeekable_tokentree::IPeekableTokenTree;
 use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
@@ -263,9 +264,20 @@ impl IConverterOutput for ConverterOutput {
             // Ok(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#ident); }))))
             Ok(TokenTree::Group(Group::new(Delimiter::None, self.write_html_stream(ident))))
         } else if let Some(inner_tokens) = inner {
+            if inner_tokens.len() == 1 {
+                if let Some(RustHtmlToken::Literal(l, s)) = inner_tokens.first() {
+                    if let Some(l) = l {
+                        return Ok(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#l); }))));
+                    } else if let Some(s) = s {
+                        return Ok(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#s); }))));
+                    }
+                }
+            }
+
             let inner_it = Rc::new(VecPeekableRustHtmlToken::new(inner_tokens.clone()));
             let x = self.convert_rusthtmltokens_to_plain_rust(inner_it, ct)?;
             let inner_tokenstream = x.to_token_stream();
+            // println!("inner_tokens: {:?}", inner_tokens);
             Ok(TokenTree::Group(Group::new(Delimiter::None, self.write_html_stream(inner_tokenstream))))
         } else {
             Err(RustHtmlError::from_str("None of the append to html options were set (string, literal, ident, or tokens)"))
@@ -404,7 +416,7 @@ impl IConverterOutput for ConverterOutput {
         if let Some(value) = value {
             Ok(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#value); }))))
         } else if let Some(value_literal) = value_literal {
-            let s = value_literal.to_string();
+            let s = ToString::to_string(&value_literal);
             let s = format!("\"{}\"", html_escape::encode_double_quoted_attribute(&s));
             // let s = value_literal.to_token_stream();
             Ok(TokenTree::Group(Group::new(Delimiter::None, TokenStream::from(quote::quote! { html_output.write_html_str(#s); }))))
@@ -424,7 +436,7 @@ impl IConverterOutput for ConverterOutput {
                     RustHtmlToken::HtmlTagCloseStartChildrenPunct => todo!("convert_rusthtmltagattributevalue_to_tokentree HtmlTagCloseStartChildrenPunct"),
                     RustHtmlToken::AppendToHtml(rust_html_tokens) => todo!("convert_rusthtmltagattributevalue_to_tokentree AppendToHtml"),
                     RustHtmlToken::Literal(literal, s) => {
-                        let s_out = literal.clone().map(|x| x.to_string());
+                        let s_out = literal.clone().map(|x| ToString::to_string(&x));
                         let s_out = s_out.or(s.clone());
                         let s = s_out.unwrap();
                         // let s = format!("{}", &s);

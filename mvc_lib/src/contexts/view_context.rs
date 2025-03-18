@@ -9,6 +9,7 @@ use crate::contexts::irequest_context::IRequestContext;
 use crate::model_binder::iviewmodel::IViewModel;
 use crate::view::iview::IView;
 use crate::view::rusthtml::html_string::HtmlString;
+use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 use crate::view::view_renderer::IViewRenderer;
 
 use super::iresponse_context::IResponseContext;
@@ -261,12 +262,12 @@ impl <'a> IViewContext for ViewContext<'a> {
                         Some(HtmlString::new_from_html(comrak::markdown_to_html(&buffer, &comrak::ComrakOptions::default())))
                     },
                     Err(e) => {
-                        panic!("Could not read data at {}: {:?}", path, e);
+                        Some(HtmlString::new_from_html(format!("Could not read data at {}: {:?}", path, e)))
                     }
                 }
             },
             Err(e) => {
-                panic!("cannot read external markdown file nocache '{}', could not open: {:?}", path, e);
+                Some(HtmlString::new_from_html(format!("cannot read external markdown file nocache '{}', could not open: {:?}", path, e)))
             }
         }
     }

@@ -67,12 +67,9 @@ impl FileProviderControllerOptions {
 impl IFileProviderControllerOptions for FileProviderControllerOptions {
     fn get_file(&self, path: String) -> Option<String> {
         for (serving_file_alias, serving_file_path) in self.serving_files.entries() {
-            // println!("FileProviderControllerOptions comparing serving_file_alias {} to path {}", serving_file_alias, path);
             if serving_file_alias == &path.as_str() {
                 let full_path = Path::new(&serving_file_path);
-                // println!("FileProviderControllerOptions full_path: {}", serving_file_path);
                 if full_path.exists() && full_path.is_file() {
-                    // println!("full_path.exists() && full_path.is_file()");
                     return Some(serving_file_path.to_string());
                 } else {
                     break; // requested files was found in known files to serve but not found on disk
@@ -100,8 +97,6 @@ impl IFileProviderControllerOptions for FileProviderControllerOptions {
                 let mut glob_path = String::new();
                 glob_path.push_str(&parent_dir);
                 glob_path.push_str(if recursive { "**/*" } else { "*" });
-
-                // println!("glob_path: {}", glob_path);
 
                 glob(&glob_path)
                     .expect("Failed to read glob pattern")

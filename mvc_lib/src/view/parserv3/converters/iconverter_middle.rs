@@ -164,17 +164,7 @@ impl ConverterNormal {
                         Ok(RustHtmlDirectiveResultV3(RustHtmlDirectiveResult::OkContinue, Some(Rc::new(VecPeekableRustHtmlToken::new(vec![token.clone()])))))
                     },
                     '<' => {
-                        // start of tag
-                        // what happened to the tag parser?
-                        // peek after start of tag
-                        // println!("peek tag start: {:?}", input.peek().unwrap());
-                        let result = self.get_parser().get_html_parser().parse_tag(input, context, ct)?;
-                        // if let Some(x) = result.1 {
-                        //     return Ok(x);
-                        // } else {
-                        //     panic!("oops");
-                        // }
-                        Ok(result)
+                        self.get_parser().get_html_parser().parse_tag(input, context, ct)
                     }
                     _ => {
                         let next_token = input.next();
@@ -198,8 +188,6 @@ impl ConverterNormal {
         if ct.is_cancelled() {
             return Err(RustHtmlError::from_cancellationtoken(ct));
         }
-
-        // println!("convert_rust: {}", token.to_string());
 
         match token {
             RustHtmlToken::Group(d, s, g) => {

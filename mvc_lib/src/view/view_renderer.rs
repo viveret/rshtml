@@ -238,10 +238,19 @@ impl IViewRenderer for ViewRenderer {
         }
     }
 
+    // this needs to use the file provider service so that it uses
+    // known search paths and can map files to an absolute path correctly.
+    // right now the view_renderer is using the current working directory to search
+    // when compiling views that save external data in the view. the run time version
+    // uses the file provider service which is why this is not an issue for the nocache
+    // directive.
     fn resolve_data_file_path_string(&self, path: &str) -> Option<String> {
-        match std::fs::File::open(path) {
+        // convert path to absolute
+        let path = std::env::current_dir().unwrap().join(path);
+        println!("resolve_data_file_path_string: {:?}", path);
+        match std::fs::File::open(path.clone()) {
             Ok(_) => {
-                Some(path.to_string())
+                Some(path.as_path().to_str().unwrap().to_string())
             },
             Err(_) => {
                 None

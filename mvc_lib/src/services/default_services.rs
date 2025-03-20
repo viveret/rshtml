@@ -30,6 +30,7 @@ use crate::view::view_renderer::ViewRenderer;
 use crate::controllers::icontroller::IController;
 use crate::controllers::file_provider_controller::FileProviderController;
 
+use super::app_content_provider_service::AppContentProviderService;
 use super::controller_action_execute_service::ControllerActionExecuteService;
 
 
@@ -58,6 +59,10 @@ impl DefaultServices {
     pub fn add_performance_logging(services: &mut ServiceCollection) {
         // services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn ILogHttpRequestsOptions>(), LogHttpRequestsOptions::new_service, ServiceScope::Singleton));
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IPerformanceLoggerService>(), PerformanceLoggerService::new_service, ServiceScope::Singleton));
+    }
+
+    pub fn add_app_content(services: &mut ServiceCollection) {
+        AppContentProviderService::add_to_services(services);
     }
 
     // add the default file provider services to the service collection.

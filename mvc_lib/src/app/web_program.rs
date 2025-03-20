@@ -141,6 +141,9 @@ impl <'a> IWebProgram for WebProgram<'a> {
 
         let options = ServiceCollectionExtensions::get_required_single::<dyn IHttpOptions>(services);
 
+        let crate_root = std::env::var("CARGO_MANIFEST_DIR").ok();
+        println!("Crate root directory: {:?}", crate_root);
+        println!("EXE: {}", std::env::current_exe().unwrap().as_path().to_str().unwrap());
         println!("CWD: {}", std::env::current_dir().unwrap().as_path().to_str().unwrap());
         println!("Hosting at {}", options.get_ip_and_port());
         let listener = TcpListener::bind(options.get_ip_and_port()).expect("Could not bind to ip and port");

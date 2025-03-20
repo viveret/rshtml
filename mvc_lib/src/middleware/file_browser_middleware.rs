@@ -63,21 +63,15 @@ impl IRequestMiddlewareService for FileBrowserMiddleware {
             let path_name = url.split_at(base_path.len()).1;
             if path_name.is_empty() || path_name.chars().all(|c| c.is_alphanumeric() || c == '/' || c == '.') {
                 if !path_name.contains("../") { // do not serve upward requests
-                    let p = std::env::current_dir().unwrap();
-                    let mut search_path = p.as_path();
-                    let x = search_path.join(path_name);
-                    if path_name.len() > 0 {
-                        search_path = x.as_path();
-                    }
-    
-                    match self.file_service.list(search_path.to_str().unwrap()) {
+                    let search_path = path_name;
+                    match self.file_service.list(search_path) {
                         Ok(entries) => {
-                            println!("Listing entries in {}", search_path.to_str().unwrap());
+                            println!("Listing entries in {}", search_path);
                             response_context.set_action_result(Some(Rc::new(OkResult::new(entries.join("\n")))));
                             return Ok(MiddlewareResult::OkBreak); // short circuit middleware
                         },
                         Err(e) => {
-                            println!("File browser denied {}, error: {:?}", search_path.to_str().unwrap(), e);
+                            println!("File browser denied {}, error: {:?}", search_path, e);
                             response_context.set_status_code(http::StatusCode::NOT_FOUND);
                             return Ok(MiddlewareResult::OkBreak); // short circuit middleware
                         },

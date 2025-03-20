@@ -2,6 +2,7 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::rc::Rc;
 use mvc_lib::middleware::file_browser_middleware::FileBrowserMiddleware;
+use mvc_lib::options::app_content_provider_service_options::AppContentProviderServiceOptions;
 use phf::phf_map;
 
 use mvc_lib::error::error_view_middleware::ErrorViewMiddleware;
@@ -93,6 +94,7 @@ static SERVING_FILES: phf::Map<&'static str, &'static str> = phf_map! {
     "/stacks.min.css" => "ts/node_modules/@stackoverflow/stacks/dist/css/stacks.min.css",
     "/stacks.css" => "ts/node_modules/@stackoverflow/stacks/dist/css/stacks.css",
 };
+static APP_CONTENT_OPTIONS: AppContentProviderServiceOptions = AppContentProviderServiceOptions { use_cwd: todo!(), use_exe_path: todo!(), use_cargo_path: todo!(), path_order: todo!() };
 static FILE_PROVIDER_OPTIONS: FileProviderControllerOptions = FileProviderControllerOptions { serving_directories: &SERVING_PATHS, serving_files: &SERVING_FILES };
 
 // this is called when the program is configuring options (before it is started).
@@ -100,6 +102,7 @@ static FILE_PROVIDER_OPTIONS: FileProviderControllerOptions = FileProviderContro
 // args: the command line arguments.
 pub fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) -> () {
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IHttpOptions>(), |_| vec![Box::new(Rc::new(HTTP_OPTIONS.clone()) as Rc<dyn IHttpOptions>)], ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<AppContentProviderServiceOptions>(), |_| vec![Box::new(Rc::new(APP_CONTENT_OPTIONS.clone()) as Rc<AppContentProviderServiceOptions>)], ServiceScope::Singleton));
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), |_| vec![Box::new(Rc::new(FILE_PROVIDER_OPTIONS.clone()) as Rc<dyn IFileProviderControllerOptions>)], ServiceScope::Singleton));
 
     // services.add_instance::<HttpOptions, dyn IHttpOptions>(TypeInfo::rc_of::<dyn IHttpOptions>(), &HTTP_OPTIONS);
@@ -135,6 +138,7 @@ pub fn add_controllers(services: &mut ServiceCollection) {
 pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::add_logging(services);
     DefaultServices::add_performance_logging(services);
+    DefaultServices::add_app_content(services);
     DefaultServices::add_file_provider(services);
 
     // add error handlers

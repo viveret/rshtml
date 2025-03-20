@@ -89,11 +89,15 @@ impl IFileProviderControllerOptions for FileProviderControllerOptions {
     }
 
     fn get_mapped_paths(&self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>> {
+        let crate_root = std::env::var("CARGO_MANIFEST_DIR").ok();
+        let exe_path = std::env::current_exe().ok().map(|x| x.to_str().map(|x| x.to_string())).flatten();
+        let cwd_path = std::env::current_dir().ok().map(|x| x.to_str().map(|x| x.to_string())).flatten();
+        let project_path = crate_root.or(cwd_path).or(exe_path).expect("could not get view render project path");
+        
         let all_paths = self.serving_directories
             .iter()
             .map(|path| {
-                let cwd = std::env::current_dir().expect("Failed to get current directory");
-                let parent_dir = format!("{}/{}", cwd.to_str().expect("cwd.to_str()"), path);
+                let parent_dir = format!("{}/{}", project_path, path);
                 let mut glob_path = String::new();
                 glob_path.push_str(&parent_dir);
                 glob_path.push_str(if recursive { "**/*" } else { "*" });

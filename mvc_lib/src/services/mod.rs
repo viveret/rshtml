@@ -1,3 +1,4 @@
+pub mod app_content_provider_service;
 pub mod controller_action_execute_service;
 pub mod authorization_service;
 pub mod default_services;

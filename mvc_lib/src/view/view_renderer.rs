@@ -89,7 +89,10 @@ pub struct ViewRenderer {
 
 impl ViewRenderer  {
     pub fn new() -> Self {
-        let project_path = std::env::current_dir().expect("std::env::current_dir()").to_str().expect("to_str").to_string() + "/example_web_app";
+        let crate_root = std::env::var("CARGO_MANIFEST_DIR").ok();
+        let exe_path = std::env::current_exe().ok().map(|x| x.to_str().map(|x| x.to_string())).flatten();
+        let cwd_path = std::env::current_dir().ok().map(|x| x.to_str().map(|x| x.to_string())).flatten();
+        let project_path = crate_root.or(cwd_path).or(exe_path).expect("could not get view render project path");
         Self {
             cached_views: RefCell::new(None),
             views_path_resolvers: vec![

@@ -115,7 +115,7 @@ impl IParserV3 for ParserV3 {
         context: Rc<dyn IRustHtmlParserContext>,
         ct: Rc<dyn ICancellationToken>
     ) -> Result<Rc<dyn IPeekableTokenTree>, RustHtmlError> {
-        let mut input = self.converter_in.convert(input);
+        let input = self.converter_in.convert(input);
         if let Some(input) = self.converter_middle.convert(input, context, ct.clone())?.1 {
             self.converter_out.convert(input, ct)
         } else {

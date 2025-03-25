@@ -1,12 +1,11 @@
 // based on https://github.com/bodil/typed-html/blob/master/macros/src/lexer.rs
-use std::cell::{RefCell, RefMut};
+use std::cell::{RefMut};
 use std::collections::HashMap;
 use std::rc::Rc;
 
 use proc_macro2::{TokenStream, TokenTree};
 
 use core_lib::sys::call_tracker::CallstackTracker;
-use core_lib::asyncly::icancellation_token::ICancellationToken;
 
 use crate::view::parserv3::converters::inode_parsed::IHtmlNodeParsed;
 use crate::view::parserv3::converters::irust_processor::IRustProcessor;

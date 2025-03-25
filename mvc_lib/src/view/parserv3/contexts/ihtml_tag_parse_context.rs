@@ -2,7 +2,6 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use proc_macro2::Ident;
 use proc_macro2::{Literal, Punct};
 
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;

@@ -5,7 +5,6 @@ use core_lib::asyncly::icancellation_token::ICancellationToken;
 use proc_macro2::Delimiter;
 
 use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
-use crate::view::parserv3::core::peekable::empty_peekable_rusthtmltoken::EmptyPeekableRustHtmlToken;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::parserv3::core::peekable::vec_peekable_rusthtmltoken::VecPeekableRustHtmlToken;
 use crate::view::parserv3::core::rusthtml_directive_result::{RustHtmlDirectiveResult, RustHtmlDirectiveResultV3};

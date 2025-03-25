@@ -38,7 +38,7 @@ impl RouteDataControllerActionMatcher {
         let actions: Vec<Rc<dyn IControllerAction>> = all_actions
             .iter()
             .filter(|x|
-                match x.is_route_match(request_context.clone()) {
+                match x.is_route_match(request_context) {
                     Ok(is_match) => is_match,
                     Err(_) => false,
                 }

@@ -3,7 +3,6 @@ use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use core_lib::asyncly::icancellation_token::ICancellationToken;
 use core_lib::sys::call_tracker::CallstackTracker;
 use proc_macro2::{TokenStream, TokenTree};
 use quote::quote;

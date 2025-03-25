@@ -1,14 +1,12 @@
-use std::collections::HashMap;
 use std::rc::Rc;
-use std::vec;
 
 use core_lib::asyncly::icancellation_token::ICancellationToken;
-use proc_macro2::{Ident, TokenTree, Group, Delimiter, Literal};
+use proc_macro2::{Ident};
 
 use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
 use crate::view::parserv3::core::peekable::ipeekable_rusthtmltoken::IPeekableRustHtmlToken;
 use crate::view::parserv3::core::rusthtml_directive_result::RustHtmlDirectiveResultV3;
-use crate::view::rusthtml::rusthtml_token::{RustHtmlToken, RustHtmlIdentAndPunctOrLiteral, RustHtmlIdentOrPunct};
+use crate::view::rusthtml::rusthtml_token::{RustHtmlToken};
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
 
 use super::irusthtml_directive::IRustHtmlDirective;

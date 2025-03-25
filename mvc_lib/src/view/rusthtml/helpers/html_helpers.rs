@@ -233,7 +233,7 @@ impl <'a, TModel: 'static + IModel> IHtmlHelpers<'a, TModel> for HtmlHelpers<'a,
         if let Some(viewmodel) = self.view_context.get_viewmodel() {
             // first check if it is anyimodel
             let r = if let Some(viewmodel) = viewmodel.downcast_ref::<AnyIModel>() {
-                (expr.0)(viewmodel.get_underlying_value().downcast_ref::<TModel>().expect("input_for error").clone())
+                (expr.0)(viewmodel.get_underlying_value().downcast_ref::<TModel>().expect("input_for error"))
             } else if let Some(viewmodel) = viewmodel.as_any().downcast_ref::<TModel>() {
                 (expr.0)(viewmodel)
             } else {

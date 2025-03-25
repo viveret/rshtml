@@ -69,7 +69,7 @@ impl IModelBinderResolver for ModelBinderResolver {
     }
 
     fn bind_and_validate_view_model(&self, request_context: &dyn IRequestContext) -> ModelValidationResult<AnyIModel> {
-        if let Some(binder) = self.resolve_for_content_type(request_context.clone()) {
+        if let Some(binder) = self.resolve_for_content_type(request_context) {
             return binder.bind_model(request_context);
         }
         ModelValidationResult::<AnyIModel>::OkNone

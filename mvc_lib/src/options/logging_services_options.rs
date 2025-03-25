@@ -52,3 +52,22 @@ impl ILogHttpRequestsOptions for LogHttpRequestsOptions {
         self.log_response_cookies
     }
 }
+
+
+
+pub trait ILoggingOptions {
+
+}
+
+#[derive(Clone)]
+pub struct LoggingOptions {
+
+}
+
+impl LoggingOptions {
+
+}
+
+impl ILoggingOptions for LoggingOptions {
+    
+}

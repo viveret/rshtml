@@ -11,3 +11,4 @@ pub mod service_collection;
 pub mod service_descriptor;
 pub mod service_instance;
 pub mod service_scope;
+pub mod logger;

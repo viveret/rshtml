@@ -2,6 +2,7 @@ use std::any::Any;
 use std::cell::RefCell;
 use std::error::Error;
 use std::rc::Rc;
+use std::vec;
 
 use http::HeaderMap;
 
@@ -11,6 +12,7 @@ use crate::options::logging_services_options::ILogHttpRequestsOptions;
 
 use crate::contexts::iresponse_context::IResponseContext;
 
+use crate::services::logger::ilog_http_requests_logger::ILogHttpRequestsLogger;
 use crate::services::service_collection::{ IServiceCollection, ServiceCollectionExtensions };
 
 use crate::services::request_middleware_service::{ IRequestMiddlewareService, MiddlewareResult };
@@ -21,6 +23,8 @@ use crate::services::request_middleware_service::{ IRequestMiddlewareService, Mi
 pub struct LogHttpRequestsMiddleware {
     // the options for the service.
     options: Option<Rc<dyn ILogHttpRequestsOptions>>,
+    // loggers
+    loggers: Vec<Rc<dyn ILogHttpRequestsLogger>>,
     // the next middleware service in the pipeline
     next: RefCell<Option<Rc<dyn IRequestMiddlewareService>>>
 }
@@ -28,9 +32,13 @@ pub struct LogHttpRequestsMiddleware {
 impl LogHttpRequestsMiddleware {
     // creates a new instance of the service.
     // options: the options for the service.
+    // loggers: where to send request/response data to.
     // returns: the new instance of the service.
-    pub fn new(options: Option<Rc<dyn ILogHttpRequestsOptions>>) -> Self {
-        Self { options: options, next: RefCell::new(None) }
+    pub fn new(
+        options: Option<Rc<dyn ILogHttpRequestsOptions>>,
+        loggers: Vec<Rc<dyn ILogHttpRequestsLogger>>,
+    ) -> Self {
+        Self { options: options, loggers: loggers, next: RefCell::new(None) }
     }
 
     // creates a new instance of the service for the service collection.
@@ -39,6 +47,8 @@ impl LogHttpRequestsMiddleware {
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::try_get_single::<dyn ILogHttpRequestsOptions>(services).expect("could not get options"),
+            vec![],
+            // ServiceCollectionExtensions::try_get_multiple::<dyn ILogHttpRequestsLogger>(services).unwrap_or(Vec::<Rc<dyn ILogHttpRequestsLogger>>::new()),
         )) as Rc<dyn IRequestMiddlewareService>)]
     }
 
@@ -77,12 +87,15 @@ impl IRequestMiddlewareService for LogHttpRequestsMiddleware {
     fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         if let Some(options) = &self.options {
             if options.get_log_request() {
-                println!("Inbound HTTP request: {:?} {} {}", request_context.get_http_version(), request_context.get_method(), request_context.get_path());
-            }
-
-            if options.get_log_request_headers() {
-                println!("Request headers for {}:", request_context.get_path());
-                self.print_headers(request_context.get_headers(), options.get_log_request_cookies());
+                for logger in self.loggers.iter() {
+                    logger.log_request_info(request_context.get_http_version(), request_context.get_method(), request_context.get_path());
+                    if options.get_log_request_headers() {
+                        logger.log_request_headers(request_context.get_path(), request_context.get_headers());
+                    }
+                    if options.get_log_request_cookies() {
+                        logger.log_request_cookies(request_context.get_path(), request_context.get_headers());
+                    }
+                }
             }
         }
 

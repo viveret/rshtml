@@ -32,6 +32,8 @@ use crate::controllers::file_provider_controller::FileProviderController;
 
 use super::app_content_provider_service::AppContentProviderService;
 use super::controller_action_execute_service::ControllerActionExecuteService;
+use super::logger::log_http_requests_console_logger::LogHttpRequestsConsoleLogger;
+use super::logger::log_http_requests_file_logger::LogHttpRequestsFileLogger;
 
 
 
@@ -52,6 +54,8 @@ impl DefaultServices {
     // add the default logging services to the service collection.
     pub fn add_logging(services: &mut ServiceCollection) {
         // services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn ILogHttpRequestsOptions>(), LogHttpRequestsOptions::new_service, ServiceScope::Singleton));
+        // LogHttpRequestsConsoleLogger::add_to_services(services);
+        // LogHttpRequestsFileLogger::add_to_services(services);
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn ILoggingService>(), LoggingService::new_service, ServiceScope::Singleton));
     }
 
@@ -77,7 +81,7 @@ impl DefaultServices {
 
     // add the default request middleware services to the service collection.
     pub fn add_default_request_middleware(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IRequestMiddlewareService>(), LogHttpRequestsMiddleware::new_service, ServiceScope::Singleton));
+        // services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IRequestMiddlewareService>(), LogHttpRequestsMiddleware::new_service, ServiceScope::Singleton));
     }
 
     // add the default routing services to the service collection.

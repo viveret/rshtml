@@ -26,7 +26,7 @@ use mvc_lib::services::authorization_service::AuthorizationService;
 
 use mvc_lib::options::http_options::{IHttpOptions, HttpOptions};
 use mvc_lib::options::file_provider_controller_options::{IFileProviderControllerOptions, FileProviderControllerOptions};
-use mvc_lib::options::logging_services_options::{ ILogHttpRequestsOptions, LogHttpRequestsOptions };
+use mvc_lib::options::logging_services_options::{ ILogHttpRequestsOptions, ILoggingOptions, LogHttpRequestsOptions, LoggingOptions };
 
 use mvc_lib::view::iview::IView;
 
@@ -94,8 +94,9 @@ static SERVING_FILES: phf::Map<&'static str, &'static str> = phf_map! {
     "/stacks.min.css" => "ts/node_modules/@stackoverflow/stacks/dist/css/stacks.min.css",
     "/stacks.css" => "ts/node_modules/@stackoverflow/stacks/dist/css/stacks.css",
 };
-static APP_CONTENT_OPTIONS: AppContentProviderServiceOptions = AppContentProviderServiceOptions { use_cwd: todo!(), use_exe_path: todo!(), use_cargo_path: todo!(), path_order: todo!() };
+static APP_CONTENT_OPTIONS: AppContentProviderServiceOptions = AppContentProviderServiceOptions { use_cwd: false, use_exe_path: false, use_cargo_path: true, use_default_path_order: true, path_order: vec![] };
 static FILE_PROVIDER_OPTIONS: FileProviderControllerOptions = FileProviderControllerOptions { serving_directories: &SERVING_PATHS, serving_files: &SERVING_FILES };
+static LOGGING_OPTIONS: LoggingOptions = LoggingOptions { };
 
 // this is called when the program is configuring options (before it is started).
 // services: the service collection to add options to.
@@ -109,19 +110,21 @@ pub fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) ->
     // services.add_instance::<FileProviderControllerOptions, dyn IFileProviderControllerOptions>(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), &FILE_PROVIDER_OPTIONS);
 
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILogHttpRequestsOptions>(), |_| vec![Box::new(Rc::new(LogHttpRequestsOptions {
-        // log_request: true,
-        // log_response: true,
-        log_request: false,
-        log_response: false,
-        // log_request_headers: true,
-        // log_response_headers: true,
-        // log_request_cookies: true,
-        // log_response_cookies: true,
-        log_request_headers: false,
-        log_response_headers: false,
-        log_request_cookies: false,
-        log_response_cookies: false,
+        log_request: true,
+        log_response: true,
+        // log_request: false,
+        // log_response: false,
+        log_request_headers: true,
+        log_response_headers: true,
+        log_request_cookies: true,
+        log_response_cookies: true,
+        // log_request_headers: false,
+        // log_response_headers: false,
+        // log_request_cookies: false,
+        // log_response_cookies: false,
     }) as Rc<dyn ILogHttpRequestsOptions>)], ServiceScope::Singleton));
+
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILoggingOptions>(), |_| vec![Box::new(Rc::new(LOGGING_OPTIONS.clone()) as Rc<dyn ILoggingOptions>)], ServiceScope::Singleton));
 }
 
 // add controllers to the service collection. Eventually this will be done automatically.

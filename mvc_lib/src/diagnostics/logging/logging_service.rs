@@ -2,7 +2,7 @@ use std::any::Any;
 use std::error::Error;
 use std::rc::Rc;
 
-use crate::options::logging_services_options::ILogHttpRequestsOptions;
+use crate::options::logging_services_options::ILoggingOptions;
 
 use crate::services::service_collection::{ IServiceCollection, ServiceCollectionExtensions };
 
@@ -15,13 +15,13 @@ pub trait ILoggingService: ILogger {
 
 pub struct LoggingService {
     // the options for the service.
-    _options: Option<Rc<dyn ILogHttpRequestsOptions>>,
+    _options: Option<Rc<dyn ILoggingOptions>>,
     logger: Rc<dyn ILogger>,
 }
 
 impl LoggingService {
     pub fn new(
-        options: Option<Rc<dyn ILogHttpRequestsOptions>>
+        options: Option<Rc<dyn ILoggingOptions>>
     ) -> Self {
         Self { 
             _options: options,
@@ -31,7 +31,7 @@ impl LoggingService {
 
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
-            ServiceCollectionExtensions::try_get_single::<dyn ILogHttpRequestsOptions>(services).expect("could not get options"),
+            ServiceCollectionExtensions::try_get_single::<dyn ILoggingOptions>(services).expect("could not get options"),
         )) as Rc<dyn ILoggingService>)]
     }
 

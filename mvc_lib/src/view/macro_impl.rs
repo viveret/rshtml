@@ -99,8 +99,12 @@ fn generate_view_code(parse_context: Rc<RustHtmlParserContext>, html_render_fn: 
                 }
             }
 
-            pub fn new_service() -> Box<dyn Any> {
-                Box::new(Rc::new(Self::new()) as Rc<dyn IView>) as Box<dyn Any>
+            pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+                vec![Box::new(Rc::new(Self::new()) as Rc<dyn IView>) as Box<dyn Any>]
+            }
+
+            pub fn add_to_services(services: &mut ServiceCollection) {
+                services.add(ServiceDescriptor::new_from::<dyn IView, Self>(Self::new_service, ServiceScope::Singleton));
             }
 
             #view_impl

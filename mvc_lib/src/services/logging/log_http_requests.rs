@@ -2,9 +2,6 @@ use std::any::Any;
 use std::cell::RefCell;
 use std::error::Error;
 use std::rc::Rc;
-use std::vec;
-
-use http::HeaderMap;
 
 use crate::contexts::irequest_context::IRequestContext;
 use crate::core::type_info::TypeInfo;
@@ -38,7 +35,7 @@ impl LogHttpRequestsMiddleware {
         options: Option<Rc<dyn ILogHttpRequestsOptions>>,
         loggers: Vec<Rc<dyn ILogHttpRequestsLogger>>,
     ) -> Self {
-        Self { options: options, loggers: loggers, next: RefCell::new(None) }
+        Self { options, loggers, next: RefCell::new(None) }
     }
 
     // creates a new instance of the service for the service collection.
@@ -47,35 +44,8 @@ impl LogHttpRequestsMiddleware {
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
             ServiceCollectionExtensions::try_get_single::<dyn ILogHttpRequestsOptions>(services).expect("could not get options"),
-            vec![],
-            // ServiceCollectionExtensions::try_get_multiple::<dyn ILogHttpRequestsLogger>(services).unwrap_or(Vec::<Rc<dyn ILogHttpRequestsLogger>>::new()),
+            ServiceCollectionExtensions::try_get_multiple::<dyn ILogHttpRequestsLogger>(services).unwrap_or(Vec::<Rc<dyn ILogHttpRequestsLogger>>::new()),
         )) as Rc<dyn IRequestMiddlewareService>)]
-    }
-
-    // prints the HTTP headers to the console.
-    // headers: the headers to print.
-    // log_cookies: whether or not to log cookies.
-    // returns: nothing.
-    pub fn print_headers(&self, headers: &HeaderMap, log_cookies: bool) {
-        for header in headers.iter() {
-            if header.0 == "Cookie" || header.0 == "cookie" {
-                if log_cookies {
-                    println!("\t{}:", header.0);
-                    let cookies: Vec<&str> = header.1.to_str().expect("header.1.to_str()").split(';').map(|x| x.trim()).collect();
-                    for cookie in cookies {
-                        let split_kvp: Vec<&str> = cookie.split('=').collect();
-                        if split_kvp.len() == 2 {
-                            println!("\t\t{}: {}", split_kvp[0], split_kvp[1]);
-                        } else {
-                            println!("\t\t{}", cookie);
-                        }
-                    }
-                }
-
-                continue;
-            }
-            println!("\t{}: {}", header.0, header.1.to_str().expect("header.1.to_str()"));
-        }
     }
 }
 
@@ -88,12 +58,12 @@ impl IRequestMiddlewareService for LogHttpRequestsMiddleware {
         if let Some(options) = &self.options {
             if options.get_log_request() {
                 for logger in self.loggers.iter() {
-                    logger.log_request_info(request_context.get_http_version(), request_context.get_method(), request_context.get_path());
+                    logger.log_request_info(request_context.get_uuid(), request_context.get_http_version(), request_context.get_method(), request_context.get_path());
                     if options.get_log_request_headers() {
-                        logger.log_request_headers(request_context.get_path(), request_context.get_headers());
+                        logger.log_request_headers(request_context.get_uuid(), request_context.get_path(), request_context.get_headers());
                     }
                     if options.get_log_request_cookies() {
-                        logger.log_request_cookies(request_context.get_path(), request_context.get_headers());
+                        logger.log_request_cookies(request_context.get_uuid(), request_context.get_path(), request_context.get_headers());
                     }
                 }
             }
@@ -104,12 +74,15 @@ impl IRequestMiddlewareService for LogHttpRequestsMiddleware {
             
             if let Some(options) = &self.options {
                 if options.get_log_response() {
-                    println!("Outbound HTTP response for {} -> {}", request_context.get_path(), response_context.get_status_code());
-                }
-
-                if options.get_log_response_headers() {
-                    println!("Response headers for {}:", request_context.get_path());
-                    self.print_headers(&response_context.get_headers(), options.get_log_response_cookies());
+                    for logger in self.loggers.iter() {
+                        logger.log_response_info(request_context.get_uuid(), response_context.get_status_code(), request_context.get_path());
+                        if options.get_log_response_headers() {
+                            logger.log_response_headers(request_context.get_uuid(), request_context.get_path(), &response_context.get_headers());
+                        }
+                        if options.get_log_response_cookies() {
+                            logger.log_response_cookies(request_context.get_uuid(), request_context.get_path(), &response_context.get_headers());
+                        }
+                    }
                 }
             }
 

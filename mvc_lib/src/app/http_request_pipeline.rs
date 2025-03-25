@@ -7,8 +7,8 @@ use crate::app::ihttp_request_pipeline::IHttpRequestPipeline;
 use crate::contexts::ihttpconnection_context::IHttpConnectionContext;
 use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::iresponse_context::IResponseContext;
-use crate::diagnostics::logging::logging_service::ILoggingService;
-use crate::diagnostics::logging::logging_service::LoggingService;
+use crate::services::logging::logging_service::ILoggingService;
+use crate::services::logging::logging_service::LoggingService;
 use crate::error::error_handler_service::IErrorHandlerService;
 use crate::errors::RequestError;
 

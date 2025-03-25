@@ -155,7 +155,10 @@ impl RustHtmlParserContext {
                 use mvc_lib::contexts::view_context::IViewContext;
                 use mvc_lib::model_binder::imodel::IModel;
                 use mvc_lib::model_binder::imodel::AnyIModel;
+                use mvc_lib::services::service_scope::ServiceScope;
+                use mvc_lib::services::service_descriptor::ServiceDescriptor;
                 use mvc_lib::services::service_collection::IServiceCollection;
+                use mvc_lib::services::service_collection::ServiceCollection;
                 use mvc_lib::view::rusthtml::helpers::ihtml_helpers::IHtmlHelpers;
                 use mvc_lib::view::rusthtml::helpers::html_helpers::HtmlHelpers;
                 use mvc_lib::view::rusthtml::helpers::irender_helpers::IRenderHelpers;

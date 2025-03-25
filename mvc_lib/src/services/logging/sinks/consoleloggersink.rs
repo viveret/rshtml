@@ -1,4 +1,4 @@
-use crate::diagnostics::logging::iloggersink::ILoggerSink;
+use crate::services::logging::iloggersink::ILoggerSink;
 
 
 

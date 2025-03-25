@@ -3,7 +3,6 @@ use std::fs::File;
 use std::io::{Read, Write, BufReader, BufWriter, Result};
 use std::rc::Rc;
 
-use crate::app::ihttp_request_pipeline::IHttpRequestPipeline;
 use crate::options::app_content_provider_service_options::AppContentProviderServiceOptions;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
@@ -45,7 +44,7 @@ impl AppContentProviderService {
     }
 
     pub fn add_to_services(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new_from::<dyn IHttpRequestPipeline, Self>(Self::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new_from::<dyn IAppContentProviderService, Self>(Self::new_service, ServiceScope::Singleton));
     }
 }
 

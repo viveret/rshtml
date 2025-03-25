@@ -1,6 +1,8 @@
 use std::rc::Rc;
 use std::any::Any;
 
+use uuid::Uuid;
+
 use crate::core::type_info::TypeInfo;
 use crate::services::service_scope::ServiceScope;
 use crate::services::service_descriptor::ServiceDescriptor;
@@ -29,15 +31,27 @@ impl LogHttpRequestsFileLogger {
 }
 
 impl ILogHttpRequestsLogger for LogHttpRequestsFileLogger {
-    fn log_request_info(&self, version: http::version::Version, method: &http::method::Method, path: &String) {
+    fn log_request_info(&self, id: &Uuid, version: http::version::Version, method: &http::method::Method, path: &String) {
         // todo!()
     }
 
-    fn log_request_headers(&self, path: &String, headers: &http::HeaderMap) {
+    fn log_request_headers(&self, id: &Uuid, path: &String, headers: &http::HeaderMap) {
         // todo!()
     }
 
-    fn log_request_cookies(&self, path: &String, headers: &http::HeaderMap) {
+    fn log_request_cookies(&self, id: &Uuid, path: &String, headers: &http::HeaderMap) {
+        // todo!()
+    }
+    
+    fn log_response_info(&self, id: &Uuid, status_code: http::status::StatusCode, path: &String) {
+        // todo!()
+    }
+    
+    fn log_response_headers(&self, id: &Uuid, path: &String, headers: &http::HeaderMap) {
+        // todo!()
+    }
+    
+    fn log_response_cookies(&self, id: &Uuid, path: &String, headers: &http::HeaderMap) {
         // todo!()
     }
 }

@@ -17,8 +17,6 @@ use mvc_lib::core::string_extensions::action_name_to_path;
 use mvc_lib::core::type_info::TypeInfo;
 use mvc_lib::controller_actions::member_fn::ControllerActionMemberFn;
 use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
-use mvc_lib::diagnostics::logging::logging_service::ILoggingService;
-use mvc_lib::diagnostics::logging::logging_service::LoggingService;
 use mvc_lib::model_binder::imodel_attribute::IAttribute;
 use mvc_lib::model_binder::ihaz_attributes::IHazAttributes;
 use mvc_lib::model_binder::imodel::IModel;
@@ -31,6 +29,8 @@ use mvc_lib::model_binder::model_validation_result::ModelValidationResult;
 use mvc_lib::services::routemap_service::IRouteMapService;
 use mvc_lib::services::service_collection::IServiceCollection;
 use mvc_lib::services::service_collection::ServiceCollectionExtensions;
+use mvc_lib::services::logging::logging_service::ILoggingService;
+use mvc_lib::services::logging::logging_service::LoggingService;
 
 use mvc_lib::contexts::controller_context::IControllerContext;
 

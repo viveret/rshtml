@@ -61,31 +61,26 @@ use crate::controllers::authroles_controller::AuthRolesController;
 // add views to the service collection. Eventually this will be done automatically.
 // services: the service collection to add the views to.
 pub fn add_views(services: &mut ServiceCollection) {
-    fn new_dev_views_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
-        vec![
-            view_authroles_index::new_service(),
-            view_authroles_add::new_service(),
-            view_dev_index::new_service(),
-            view_dev_log::new_service(),
-            view_dev_log_add::new_service(),
-            view_dev_log_clear::new_service(),
-            view_dev_perf_log::new_service(),
-            view_dev_views::new_service(),
-            view_dev_view_details::new_service(),
-            view_dev_controllers::new_service(),
-            view_dev_controller_details::new_service(),
-            view_dev_routes::new_service(),
-            view_dev_route_details::new_service(),
-            view_dev_sysinfo::new_service(),
-            view_home_index::new_service(),
-            view_home_view_start::new_service(),
-            view_learn_index::new_service(),
-            view_learn_details::new_service(),
-            view_shared__layout::new_service(),
-            view_error::new_service(),
-        ]
-    }
-    services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IView>(), new_dev_views_service, ServiceScope::Singleton));
+    view_authroles_index::add_to_services(services);
+    view_authroles_add::add_to_services(services);
+    view_dev_index::add_to_services(services);
+    view_dev_log::add_to_services(services);
+    view_dev_log_add::add_to_services(services);
+    view_dev_log_clear::add_to_services(services);
+    view_dev_perf_log::add_to_services(services);
+    view_dev_views::add_to_services(services);
+    view_dev_view_details::add_to_services(services);
+    view_dev_controllers::add_to_services(services);
+    view_dev_controller_details::add_to_services(services);
+    view_dev_routes::add_to_services(services);
+    view_dev_route_details::add_to_services(services);
+    view_dev_sysinfo::add_to_services(services);
+    view_home_index::add_to_services(services);
+    view_home_view_start::add_to_services(services);
+    view_learn_index::add_to_services(services);
+    view_learn_details::add_to_services(services);
+    view_shared__layout::add_to_services(services);
+    view_error::add_to_services(services);
 }
 
 static HTTP_OPTIONS: HttpOptions = HttpOptions { ip: Cow::Borrowed("127.0.0.1"), port: 8080, port_https: 8181 };
@@ -105,23 +100,24 @@ pub fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) ->
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IHttpOptions>(), |_| vec![Box::new(Rc::new(HTTP_OPTIONS.clone()) as Rc<dyn IHttpOptions>)], ServiceScope::Singleton));
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<AppContentProviderServiceOptions>(), |_| vec![Box::new(Rc::new(APP_CONTENT_OPTIONS.clone()) as Rc<AppContentProviderServiceOptions>)], ServiceScope::Singleton));
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), |_| vec![Box::new(Rc::new(FILE_PROVIDER_OPTIONS.clone()) as Rc<dyn IFileProviderControllerOptions>)], ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILoggingOptions>(), |_| vec![Box::new(Rc::new(LOGGING_OPTIONS.clone()) as Rc<dyn ILoggingOptions>)], ServiceScope::Singleton));
 
     // services.add_instance::<HttpOptions, dyn IHttpOptions>(TypeInfo::rc_of::<dyn IHttpOptions>(), &HTTP_OPTIONS);
     // services.add_instance::<FileProviderControllerOptions, dyn IFileProviderControllerOptions>(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), &FILE_PROVIDER_OPTIONS);
 
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILogHttpRequestsOptions>(), |_| vec![Box::new(Rc::new(LogHttpRequestsOptions {
-        log_request: true,
-        log_response: true,
-        // log_request: false,
-        // log_response: false,
-        log_request_headers: true,
-        log_response_headers: true,
-        log_request_cookies: true,
-        log_response_cookies: true,
-        // log_request_headers: false,
-        // log_response_headers: false,
-        // log_request_cookies: false,
-        // log_response_cookies: false,
+        // log_request: true,
+        // log_response: true,
+        log_request: false,
+        log_response: false,
+        // log_request_headers: true,
+        // log_response_headers: true,
+        // log_request_cookies: true,
+        // log_response_cookies: true,
+        log_request_headers: false,
+        log_response_headers: false,
+        log_request_cookies: false,
+        log_response_cookies: false,
     }) as Rc<dyn ILogHttpRequestsOptions>)], ServiceScope::Singleton));
 
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILoggingOptions>(), |_| vec![Box::new(Rc::new(LOGGING_OPTIONS.clone()) as Rc<dyn ILoggingOptions>)], ServiceScope::Singleton));
@@ -130,10 +126,10 @@ pub fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) ->
 // add controllers to the service collection. Eventually this will be done automatically.
 // services: the service collection to add the controllers to.
 pub fn add_controllers(services: &mut ServiceCollection) {
-    services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), HomeController::new_service, ServiceScope::Singleton));
-    services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), LearnController::new_service, ServiceScope::Singleton));
-    services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), DevController::new_service, ServiceScope::Singleton));
-    services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), AuthRolesController::new_service, ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_from::<dyn IController, HomeController>(HomeController::new_service, ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_from::<dyn IController, LearnController>(LearnController::new_service, ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_from::<dyn IController, DevController>(DevController::new_service, ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_from::<dyn IController, AuthRolesController>(AuthRolesController::new_service, ServiceScope::Singleton));
 }
 
 // this is called when the program is configuring services (before it is started).

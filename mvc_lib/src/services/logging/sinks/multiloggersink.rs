@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::diagnostics::logging::iloggersink::ILoggerSink;
+use crate::services::logging::iloggersink::ILoggerSink;
 
 
 // this struct implements ILoggerSink and logs to multiple sinks.

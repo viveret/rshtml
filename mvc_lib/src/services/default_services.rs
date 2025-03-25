@@ -1,8 +1,8 @@
 use crate::core::type_info::TypeInfo;
 
 use crate::app::http_request_pipeline::HttpRequestPipeline;
-use crate::diagnostics::logging::log_http_requests::LogHttpRequestsMiddleware;
-use crate::diagnostics::logging::logging_service::{LoggingService, ILoggingService};
+use crate::services::logging::log_http_requests::LogHttpRequestsMiddleware;
+use crate::services::logging::logging_service::{LoggingService, ILoggingService};
 use crate::diagnostics::performance::iperformance_logger_service::IPerformanceLoggerService;
 use crate::diagnostics::performance::performance_logger_service::PerformanceLoggerService;
 use crate::error::error_handler_middleware::ErrorHandlerMiddleware;
@@ -53,10 +53,11 @@ pub struct DefaultServices {}
 impl DefaultServices {
     // add the default logging services to the service collection.
     pub fn add_logging(services: &mut ServiceCollection) {
-        // services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn ILogHttpRequestsOptions>(), LogHttpRequestsOptions::new_service, ServiceScope::Singleton));
-        // LogHttpRequestsConsoleLogger::add_to_services(services);
-        // LogHttpRequestsFileLogger::add_to_services(services);
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn ILoggingService>(), LoggingService::new_service, ServiceScope::Singleton));
+        
+        LogHttpRequestsConsoleLogger::add_to_services(services);
+        LogHttpRequestsFileLogger::add_to_services(services);
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IRequestMiddlewareService>(), LogHttpRequestsMiddleware::new_service, ServiceScope::Singleton));
     }
 
     // add the default performance logging services to the service collection.

@@ -32,8 +32,8 @@ use crate::controllers::file_provider_controller::FileProviderController;
 
 use super::app_content_provider_service::AppContentProviderService;
 use super::controller_action_execute_service::ControllerActionExecuteService;
-use super::logger::log_http_requests_console_logger::LogHttpRequestsConsoleLogger;
-use super::logger::log_http_requests_file_logger::LogHttpRequestsFileLogger;
+use super::logging::log_http_requests_console_logger::LogHttpRequestsConsoleLogger;
+use super::logging::log_http_requests_file_logger::LogHttpRequestsFileLogger;
 
 
 

@@ -9,10 +9,11 @@ use crate::options::logging_services_options::ILogHttpRequestsOptions;
 
 use crate::contexts::iresponse_context::IResponseContext;
 
-use crate::services::logger::ilog_http_requests_logger::ILogHttpRequestsLogger;
 use crate::services::service_collection::{ IServiceCollection, ServiceCollectionExtensions };
 
 use crate::services::request_middleware_service::{ IRequestMiddlewareService, MiddlewareResult };
+
+use super::ilog_http_requests_logger::ILogHttpRequestsLogger;
 
 
 

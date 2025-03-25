@@ -6,7 +6,7 @@ use crate::services::service_scope::ServiceScope;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_collection::{ServiceCollection, IServiceCollection};
 
-use crate::auth::auth_role_json_file_dbset::AuthRoleJsonFileDbSet;
+use super::auth_role_sql_dbset::AuthRoleSqlDbSet;
 
 // this trait is used to get the authroles dbset
 pub trait IAuthRolesDbSetProvider {
@@ -22,7 +22,8 @@ pub struct GenericAuthRolesDbSetProvider {
 impl GenericAuthRolesDbSetProvider {
     pub fn new() -> Self {
         Self {
-            authroles_dbset: Box::new(AuthRoleJsonFileDbSet::open("data/authrole_dbset.json".to_string()).expect("could not open authrole_dbset.json"))
+            // authroles_dbset: Box::new(AuthRoleJsonFileDbSet::open("data/authrole_dbset.json".to_string()).expect("could not open authrole_dbset.json"))
+            authroles_dbset: Box::new(AuthRoleSqlDbSet::open("data/authrole_dbset.sql".to_string()).expect("could not open authrole_dbset.sql"))
         }
     }
 

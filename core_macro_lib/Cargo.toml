@@ -23,7 +23,7 @@ proc-macro2 = "1.0.53"
 quote = "1.0.23"
 regex = "1.7.1"
 rustc_lexer = "0.1.0"
-syn = "2.0.17"
+syn = { version = "2.0.17", features = ["full", "extra-traits"] }
 
 core_lib = { path = "../core_lib" }
 

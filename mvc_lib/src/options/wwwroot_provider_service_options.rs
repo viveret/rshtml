@@ -1,0 +1,114 @@
+use std::any::Any;
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::path::Path;
+use std::rc::Rc;
+
+use glob::glob;
+
+// this trait abstracts the file provider controller options.
+pub trait IWwwRootProviderServiceOptions {
+    
+}
+
+// this struct implements IFileProviderControllerOptions.
+#[derive(Debug, Clone)]
+pub struct WwwRootProviderServiceOptions {
+    // the directories to serve files from.
+    pub serving_directories: &'static [&'static str],
+    // the files to serve mapped to their aliases.
+    pub serving_files: &'static phf::Map<&'static str, &'static str>,
+}
+
+impl WwwRootProviderServiceOptions {
+    // create a new WwwRootProviderServiceOptions struct from a list of directories to serve files from and a list of files to serve mapped to their aliases.
+    // serving_directories: the directories to serve files from.
+    // serving_files: the files to serve mapped to their aliases.
+    // returns: a new WwwRootProviderServiceOptions struct.
+    pub fn new(
+        serving_directories: &'static [&'static str],
+        serving_files: &'static phf::Map<&'static str, &'static str>
+    ) -> Self {
+        Self {
+            serving_directories: serving_directories,
+            serving_files: serving_files,
+        }
+    }
+
+    // create a new FileProviderControllerOptions struct with default values.
+    pub fn new_defaults() -> Self {
+        static _EMPTY: phf::Map<&'static str, &'static str> = phf::Map::new();
+        Self { serving_directories: &["wwwroot/"], serving_files: &_EMPTY }
+    }
+
+    // create a new FileProviderControllerOptions struct as a service from a list of directories to serve files from and a list of files to serve mapped to their aliases.
+    // serving_directories: the directories to serve files from.
+    // serving_files: the files to serve mapped to their aliases.
+    // returns: a new FileProviderControllerOptions struct as a service.
+    pub fn new_service(
+        serving_directories: &'static [&'static str],
+        serving_files: &'static phf::Map<&'static str, &'static str>
+    ) -> Box<dyn Any> {
+        Box::new(Rc::new(Self::new(serving_directories, serving_files)) as Rc<dyn IWwwRootProviderServiceOptions>)
+    }
+
+    // create a new FileProviderControllerOptions struct as a service with default values.
+    pub fn new_service_defaults() -> Box<dyn Any> {
+        Box::new(Rc::new(Self::new_defaults()) as Rc<dyn IWwwRootProviderServiceOptions>)
+    }
+}
+
+impl IWwwRootProviderServiceOptions for WwwRootProviderServiceOptions {
+    fn get_file(&self, path: String) -> Option<String> {
+        for (serving_file_alias, serving_file_path) in self.serving_files.entries() {
+            if serving_file_alias == &path.as_str() {
+                let full_path = Path::new(&serving_file_path);
+                if full_path.exists() && full_path.is_file() {
+                    return Some(serving_file_path.to_string());
+                } else {
+                    break; // requested files was found in known files to serve but not found on disk
+                }
+            }
+        }
+
+        for serving_directory in self.serving_directories.iter() {
+            let path_string = format!("{}{}", serving_directory, if path.starts_with("/") { &path[1..] } else { path.as_str() });
+            let full_path = Path::new(&path_string);
+            if full_path.exists() && full_path.is_file() {
+                return Some(path_string);
+            }
+        }
+
+        return None;
+    }
+
+    fn get_mapped_paths(&self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>> {
+        let crate_root = std::env::var("CARGO_MANIFEST_DIR").ok();
+        let exe_path = std::env::current_exe().ok().map(|x| x.to_str().map(|x| x.to_string())).flatten();
+        let cwd_path = std::env::current_dir().ok().map(|x| x.to_str().map(|x| x.to_string())).flatten();
+        let project_path = crate_root.or(cwd_path).or(exe_path).expect("could not get view render project path");
+        
+        let all_paths = self.serving_directories
+            .iter()
+            .map(|path| {
+                let parent_dir = format!("{}/{}", project_path, path);
+                let mut glob_path = String::new();
+                glob_path.push_str(&parent_dir);
+                glob_path.push_str(if recursive { "**/*" } else { "*" });
+
+                glob(&glob_path)
+                    .expect("Failed to read glob pattern")
+                    .map(|x| x.expect("Failed to read glob pattern entry"))
+                    .map(|x| x.to_str().expect("x.to_str()").to_string())
+                    .map(|x| (Cow::Owned(x[parent_dir.len() - 1..].to_string()), Cow::Owned(x)))
+                    .collect::<Vec<(Cow<'static, str>, Cow<'static, str>)>>()
+            })
+            .flatten()
+            .chain(
+                self.serving_files.entries().map(|x| (Cow::Borrowed(*x.0), Cow::Borrowed(*x.1)))
+            )
+            .collect();
+
+        all_paths
+    }
+}

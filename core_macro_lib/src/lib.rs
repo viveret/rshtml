@@ -8,6 +8,7 @@ use quote::quote;
 mod ast;
 mod extend_derive;
 mod reflect_attributes_macro;
+mod reflect_entity_type_info;
 mod reflect_methods_macro;
 mod reflect_properties_macro;
 mod ihaz_attributes_macro;
@@ -283,3 +284,10 @@ pub fn callstack_tracker_scope_and_assert(input: proc_macro::TokenStream) -> pro
 
 
 
+
+
+/// Attribute to mark a struct as an entity and its fields as columns
+#[proc_macro_attribute]
+pub fn entity(args: proc_macro::TokenStream, input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    reflect_entity_type_info::entity(args, input)
+}

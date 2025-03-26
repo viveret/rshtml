@@ -23,8 +23,16 @@ impl AppContentProviderServiceOptions {
             use_cwd: true,
             use_exe_path: true,
             use_cargo_path: true,
-            use_default_path_order: false,
-            path_order: Self::SPECIAL_PATH_NAMES.to_vec(),
+            use_default_path_order: true,
+            path_order: vec![],
+        }
+    }
+
+    pub fn get_path_order(&self) -> Vec<SpecialPathName> {
+        if self.use_default_path_order {
+            Self::SPECIAL_PATH_NAMES.to_vec()
+        } else {
+            self.path_order.to_vec()
         }
     }
 }

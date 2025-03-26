@@ -1,9 +1,12 @@
+use std::borrow::Cow;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write, BufReader, BufWriter, Result};
 use std::rc::Rc;
 use std::any::Any;
 
 use crate::core::type_info::TypeInfo;
+use crate::options::wwwroot_provider_service_options::IWwwRootProviderServiceOptions;
 use crate::services::service_collection::IServiceCollection;
 
 use super::service_descriptor::ServiceDescriptor;
@@ -23,16 +26,28 @@ pub trait IFileProviderService {
 
     // list entries in a directory
     fn list(&self, path: &str) -> Result<Vec<String>>;
+
+    // get the file path for a given path.
+    // path: the path to get the file path for.
+    fn get_file(&self, path: String) -> Option<String>;
+
+    // get the mapped paths with the alias as the key and the path as the value.
+    // recursive: whether to get the paths recursively.
+    fn get_mapped_paths(&self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>>;
 }
 
 // implementation of the file provider service.
 pub struct FileProviderService {
+    options: Vec<Rc<dyn IWwwRootProviderServiceOptions>>,
+
 }
 
 impl FileProviderService {
     // creates a new instance of the file provider service.
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(options: Vec<Rc<dyn IWwwRootProviderServiceOptions>>) -> Self {
+        Self {
+            options
+        }
     }
 
     // creates the file provider service as a service.
@@ -73,5 +88,13 @@ impl IFileProviderService for FileProviderService {
             .filter_map(|x| x.path().to_str().map(|x| x.to_string()))
             .collect()
         )
+    }
+    
+    fn get_file(&self, path: String) -> Option<String> {
+        todo!()
+    }
+    
+    fn get_mapped_paths(&self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>> {
+        todo!()
     }
 }

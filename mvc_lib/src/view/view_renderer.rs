@@ -11,6 +11,7 @@ use crate::contexts::view_context::ViewContext;
 
 use crate::core::type_info::TypeInfo;
 use crate::model_binder::iviewmodel::IViewModel;
+use crate::services::app_content_provider_service::IAppContentProviderService;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
@@ -84,16 +85,20 @@ pub struct ViewRenderer {
     // the views available to the view renderer.
     cached_views: RefCell<Option<Vec<Rc<dyn IView>>>>,
     views_path_resolvers: Vec<Rc<dyn IViewsPathResolver>>,
+    app_content_service: RefCell<Option<Rc<dyn IAppContentProviderService>>>,
 }
 
 impl ViewRenderer  {
-    pub fn new() -> Self {
+    pub fn new(
+        app_content_service: Option<Rc<dyn IAppContentProviderService>>
+    ) -> Self {
         let crate_root = std::env::var("CARGO_MANIFEST_DIR").ok();
         let exe_path = std::env::current_exe().ok().map(|x| x.to_str().map(|x| x.to_string())).flatten();
         let cwd_path = std::env::current_dir().ok().map(|x| x.to_str().map(|x| x.to_string())).flatten();
         let project_path = crate_root.or(cwd_path).or(exe_path).expect("could not get view render project path");
         Self {
             cached_views: RefCell::new(None),
+            app_content_service: RefCell::new(app_content_service),
             views_path_resolvers: vec![
                 Rc::new(RegularViewsPathResolver::new(
                     project_path.clone(),
@@ -103,8 +108,10 @@ impl ViewRenderer  {
     }
 
     // create a new instance of the view renderer service for a service collection.
-    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
-        vec![Box::new(Rc::new(ViewRenderer::new()) as Rc<dyn IViewRenderer>)]
+    pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+        vec![Box::new(Rc::new(ViewRenderer::new(
+            ServiceCollectionExtensions::try_get_single::<dyn IAppContentProviderService>(services).ok().flatten()
+        )) as Rc<dyn IViewRenderer>)]
     }
 
     // add the view renderer service to the service collection.
@@ -247,17 +254,20 @@ impl IViewRenderer for ViewRenderer {
     // uses the file provider service which is why this is not an issue for the nocache
     // directive.
     fn resolve_data_file_path_string(&self, path: &str) -> Option<String> {
-        // convert path to absolute
-        let path = std::env::current_dir().unwrap().join(path);
-        println!("resolve_data_file_path_string: {:?}", path);
-        match std::fs::File::open(path.clone()) {
-            Ok(_) => {
-                Some(path.as_path().to_str().unwrap().to_string())
-            },
-            Err(_) => {
-                None
-            },
-        }
+        // // convert path to absolute
+        // let path = std::env::current_dir().unwrap().join(path);
+        // println!("resolve_data_file_path_string: {:?}", path);
+        // match std::fs::File::open(path.clone()) {
+        //     Ok(_) => {
+        //         Some(path.as_path().to_str().unwrap().to_string())
+        //     },
+        //     Err(_) => {
+        //         None
+        //     },
+        // }
+        self.app_content_service.borrow().as_ref()
+            .map(|x| x.resolve_path(path))
+            .flatten()
     }
     
     fn render_view(&self,

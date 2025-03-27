@@ -1,10 +1,10 @@
-use std::any::Any;
 use std::borrow::Cow;
 use std::rc::Rc;
 use mvc_lib::middleware::app_content_browser_middleware::AppContentBrowserMiddleware;
 use mvc_lib::middleware::wwwroot_browser_middleware::WwwRootBrowserMiddleware;
 use mvc_lib::options::app_content_browser_middleware_options::AppContentBrowserMiddlewareOptions;
-use mvc_lib::options::app_content_provider_service_options::AppContentProviderServiceOptions;
+use mvc_lib::options::app_content_provider_service_options::{AppContentProviderServiceOptions, IAppContentProviderServiceOptions};
+use mvc_lib::options::file_provider_options_base::FileProviderOptionsBase;
 use mvc_lib::options::special_path_options::SpecialPathOptions;
 use mvc_lib::options::wwwroot_browser_middleware_options::WwwRootBrowserMiddlewareOptions;
 use mvc_lib::options::wwwroot_provider_controller_options::{IWwwRootProviderControllerOptions, WwwRootProviderControllerOptions};
@@ -87,13 +87,15 @@ pub fn add_views(services: &mut ServiceCollection) {
 }
 
 static HTTP_OPTIONS: HttpOptions = HttpOptions { ip: Cow::Borrowed("127.0.0.1"), port: 8080, port_https: 8181 };
-const SERVING_PATHS: [&'static str; 1] = ["wwwroot/"];
-static SERVING_FILES: phf::Map<&'static str, &'static str> = phf_map! {
+const APP_CONTENT_PATHS: [&'static str; 1] = [""];
+static APP_CONTENT_FILES: phf::Map<&'static str, &'static str> = phf_map! {};
+const WWWROOT_PATHS: [&'static str; 1] = ["wwwroot/"];
+static WWWROOT_FILES: phf::Map<&'static str, &'static str> = phf_map! {
     "/stacks.min.css" => "ts/node_modules/@stackoverflow/stacks/dist/css/stacks.min.css",
     "/stacks.css" => "ts/node_modules/@stackoverflow/stacks/dist/css/stacks.css",
 };
-static APP_CONTENT_OPTIONS: AppContentProviderServiceOptions = AppContentProviderServiceOptions { special_path_options: SpecialPathOptions { use_cwd: false, use_exe_path: false, use_cargo_path: true, use_default_path_order: true, path_order: vec![] } };
-static WWWROOT_OPTIONS: WwwRootProviderServiceOptions = WwwRootProviderServiceOptions { special_path_options: SpecialPathOptions { use_cwd: false, use_exe_path: false, use_cargo_path: true, use_default_path_order: true, path_order: vec![] }, serving_directories: &SERVING_PATHS, serving_files: &SERVING_FILES };
+static APP_CONTENT_OPTIONS: AppContentProviderServiceOptions = AppContentProviderServiceOptions { base: FileProviderOptionsBase { special_path_options: SpecialPathOptions { use_cwd: false, use_exe_path: false, use_cargo_path: true, use_parent_of_cargo_path: true, use_default_path_order: true, path_order: vec![] }, directories: &APP_CONTENT_PATHS, files: &APP_CONTENT_FILES } };
+static WWWROOT_OPTIONS: WwwRootProviderServiceOptions = WwwRootProviderServiceOptions { base: FileProviderOptionsBase { special_path_options: SpecialPathOptions { use_cwd: false, use_exe_path: false, use_cargo_path: true, use_parent_of_cargo_path: false, use_default_path_order: true, path_order: vec![] }, directories: &WWWROOT_PATHS, files: &WWWROOT_FILES } };
 static WWWROOT_PROVIDER_CONTROLLER_OPTIONS: WwwRootProviderControllerOptions = WwwRootProviderControllerOptions {  };
 static LOGGING_OPTIONS: LoggingOptions = LoggingOptions { };
 
@@ -103,19 +105,14 @@ static LOGGING_OPTIONS: LoggingOptions = LoggingOptions { };
 pub fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) -> () {
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IHttpOptions>(), |_| vec![Box::new(Rc::new(HTTP_OPTIONS.clone()) as Rc<dyn IHttpOptions>)], ServiceScope::Singleton));
     
-    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<AppContentProviderServiceOptions>(), |_| vec![Box::new(Rc::new(APP_CONTENT_OPTIONS.clone()) as Rc<AppContentProviderServiceOptions>)], ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IAppContentProviderServiceOptions>(), |_| vec![Box::new(Rc::new(APP_CONTENT_OPTIONS.clone()) as Rc<dyn IAppContentProviderServiceOptions>)], ServiceScope::Singleton));
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IWwwRootProviderServiceOptions>(), |_| vec![Box::new(Rc::new(WWWROOT_OPTIONS.clone()) as Rc<dyn IWwwRootProviderServiceOptions>)], ServiceScope::Singleton));
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<AppContentBrowserMiddlewareOptions>(), |_| vec![Box::new(Rc::new(APP_CONTENT_OPTIONS.clone()) as Rc<AppContentProviderServiceOptions>)], ServiceScope::Singleton));
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<WwwRootBrowserMiddlewareOptions>(), |_| vec![Box::new(Rc::new(APP_CONTENT_OPTIONS.clone()) as Rc<AppContentProviderServiceOptions>)], ServiceScope::Singleton));
-    
 
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IWwwRootProviderControllerOptions>(), |_| vec![Box::new(Rc::new(WWWROOT_PROVIDER_CONTROLLER_OPTIONS.clone()) as Rc<dyn IWwwRootProviderControllerOptions>)], ServiceScope::Singleton));
-    // services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IWwwRootProviderControllerOptions>(), |_| vec![Box::new(Rc::new(FILE_PROVIDER_OPTIONS.clone()) as Rc<dyn IWwwRootProviderControllerOptions>)], ServiceScope::Singleton));
     
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILoggingOptions>(), |_| vec![Box::new(Rc::new(LOGGING_OPTIONS.clone()) as Rc<dyn ILoggingOptions>)], ServiceScope::Singleton));
-
-    // services.add_instance::<HttpOptions, dyn IHttpOptions>(TypeInfo::rc_of::<dyn IHttpOptions>(), &HTTP_OPTIONS);
-    // services.add_instance::<WwwRootProviderControllerOptions, dyn IWwwRootProviderControllerOptions>(TypeInfo::rc_of::<dyn IWwwRootProviderControllerOptions>(), &FILE_PROVIDER_OPTIONS);
 
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILogHttpRequestsOptions>(), |_| vec![Box::new(Rc::new(LogHttpRequestsOptions {
         // log_request: true,

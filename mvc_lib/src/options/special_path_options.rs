@@ -5,6 +5,7 @@ pub enum SpecialPathName {
     CWD,
     EXE,
     CargoPath,
+    ParentOfCargoPath,
 }
 
 
@@ -13,17 +14,19 @@ pub struct SpecialPathOptions {
     pub use_cwd: bool,
     pub use_exe_path: bool,
     pub use_cargo_path: bool,
+    pub use_parent_of_cargo_path: bool,
     pub use_default_path_order: bool,
     pub path_order: Vec<SpecialPathName>,
 }
 
 impl SpecialPathOptions {
-    pub const SPECIAL_PATH_NAMES: [SpecialPathName; 3] = [SpecialPathName::CargoPath, SpecialPathName::CWD, SpecialPathName::EXE];
+    pub const SPECIAL_PATH_NAMES: [SpecialPathName; 4] = [ SpecialPathName::CWD, SpecialPathName::EXE, SpecialPathName::CargoPath, SpecialPathName::ParentOfCargoPath ];
 
     pub fn new() -> Self {
         Self {
             use_cwd: true,
             use_exe_path: true,
+            use_parent_of_cargo_path: false,
             use_cargo_path: true,
             use_default_path_order: true,
             path_order: vec![],
@@ -40,6 +43,7 @@ impl SpecialPathOptions {
 
     pub fn get_special_paths(&self) -> Vec<String> {
         let crate_root = std::env::var("CARGO_MANIFEST_DIR").ok();
+        let crate_parent = crate_root.clone().map(|path| std::path::Path::new(&path).parent().map(|x| x.as_os_str().to_str().map(|s| s.to_string()))).flatten().flatten();
         let exe_path = std::env::current_exe().ok().map(|x| x.to_str().map(|x| x.to_string())).flatten();
         let cwd_path = std::env::current_dir().ok().map(|x| x.to_str().map(|x| x.to_string())).flatten();
         
@@ -49,12 +53,14 @@ impl SpecialPathOptions {
                 SpecialPathName::CWD => self.use_cwd,
                 SpecialPathName::EXE => self.use_exe_path,
                 SpecialPathName::CargoPath => self.use_cargo_path,
+                SpecialPathName::ParentOfCargoPath => self.use_parent_of_cargo_path,
             }
         ).filter_map(|x|
             match x {
                 SpecialPathName::CWD => cwd_path.clone(),
                 SpecialPathName::EXE => exe_path.clone(),
                 SpecialPathName::CargoPath => crate_root.clone(),
+                SpecialPathName::ParentOfCargoPath => crate_parent.clone(),
             }
         )
         .collect()

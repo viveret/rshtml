@@ -18,5 +18,5 @@ mvc_macro_lib::rusthtml_view_macro! {
     }
     </ul>
     
-    @mdfile_nocache "../docs/learn/README.md"
+    @mdfile_nocache "docs/learn/README.md"
 }

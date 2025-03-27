@@ -66,12 +66,12 @@ impl IRequestMiddlewareService for AppContentBrowserMiddleware {
                     let search_path = path_name;
                     match self.file_service.list(search_path) {
                         Ok(entries) => {
-                            println!("Listing entries in {}", search_path);
+                            println!("{} Listing entries in {}", request_context.get_uuid(), search_path);
                             response_context.set_action_result(Some(Rc::new(OkResult::new(entries.join("\n")))));
                             return Ok(MiddlewareResult::OkBreak); // short circuit middleware
                         },
                         Err(e) => {
-                            println!("File browser denied {}, error: {:?}", search_path, e);
+                            println!("{} File browser denied {}, error: {:?}", request_context.get_uuid(), search_path, e);
                             response_context.set_status_code(http::StatusCode::NOT_FOUND);
                             return Ok(MiddlewareResult::OkBreak); // short circuit middleware
                         },

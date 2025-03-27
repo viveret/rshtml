@@ -1,11 +1,14 @@
 use std::any::Any;
-use std::io::{Read, Write, Result};
+use std::io::Write;
+use std::io::Result;
+use std::io::Read;
 use std::rc::Rc;
 
-use crate::options::app_content_provider_service_options::AppContentProviderServiceOptions;
+use crate::options::app_content_provider_service_options::IAppContentProviderServiceOptions;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
-use super::service_collection::{IServiceCollection, ServiceCollection};
+use super::service_collection::ServiceCollection;
+use super::service_collection::IServiceCollection;
 use super::service_descriptor::ServiceDescriptor;
 use super::service_scope::ServiceScope;
 
@@ -23,14 +26,16 @@ pub trait IAppContentProviderService {
 
     // list entries in a directory
     fn list(&self, path: &str) -> Result<Vec<String>>;
+
+    fn resolve_path(&self, path: &str) -> Option<String>;
 }
 
 pub struct AppContentProviderService {
-    options: Rc<AppContentProviderServiceOptions>,
+    options: Rc<dyn IAppContentProviderServiceOptions>,
 }
 
 impl AppContentProviderService {
-    pub fn new(options: Rc<AppContentProviderServiceOptions>) -> Self {
+    pub fn new(options: Rc<dyn IAppContentProviderServiceOptions>) -> Self {
         Self {
             options
         }
@@ -38,7 +43,7 @@ impl AppContentProviderService {
 
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
-            ServiceCollectionExtensions::get_required_single::<AppContentProviderServiceOptions>(services)
+            ServiceCollectionExtensions::get_required_single::<dyn IAppContentProviderServiceOptions>(services)
         )) as Rc<dyn IAppContentProviderService>)]
     }
 
@@ -65,6 +70,10 @@ impl IAppContentProviderService for AppContentProviderService {
     }
 
     fn list(&self, path: &str) -> Result<Vec<String>> {
-        todo!()
+        self.options.list(path)
+    }
+    
+    fn resolve_path(&self, path: &str) -> Option<String> {
+        self.options.resolve_path(path)
     }
 }

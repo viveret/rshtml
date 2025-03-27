@@ -17,6 +17,7 @@ use mvc_lib::controllers::icontroller_extensions::IControllerExtensions;
 use mvc_lib::controller_action_features::controller_action_feature::IControllerActionFeature;
 use mvc_lib::controller_actions::controller_action::IControllerAction;
 use mvc_lib::controller_actions::closure::ControllerActionClosure;
+use mvc_lib::services::app_content_provider_service::IAppContentProviderService;
 use mvc_lib::services::service_collection::IServiceCollection;
 
 use mvc_lib::model_binder::imodel_attribute::IAttribute;
@@ -27,6 +28,7 @@ use mvc_lib::model_binder::imodel_property::IModelProperty;
 use mvc_lib::model_binder::reflected_attribute::ReflectedAttribute;
 use mvc_lib::model_binder::reflected_property::ReflectedProperty;
 use mvc_lib::model_binder::reflected_method::ReflectedMethod;
+use mvc_lib::services::service_collection::ServiceCollectionExtensions;
 
 use crate::view_models::learn::IndexViewModel;
 use crate::view_models::learn::DetailsViewModel;
@@ -37,21 +39,22 @@ use crate::view_models::learn::DetailsViewModel;
 #[reflect_properties]
 #[derive(Clone, IHazAttributes, IModel)]
 pub struct LearnController {
-
 }
 
 #[reflect_methods]
 impl LearnController {
     // create a new instance of the controller.
-    pub fn new() -> Self {
-        Self { }
+    pub fn new(
+    ) -> Self {
+        Self {  }
     }
 
     // create a new instance of the controller as a service for a service collection.
     // services: the collection of available services.
     // returns: a new instance of the controller as a service in a vector.
-    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
-        vec![Box::new(Rc::new(Self::new()) as Rc<dyn IController>)]
+    pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+        vec![Box::new(Rc::new(Self::new(
+        )) as Rc<dyn IController>)]
     }
 }
 
@@ -67,18 +70,23 @@ impl IController for LearnController {
     fn get_actions(&self) -> Vec<Rc<dyn IControllerAction>> {
         let controller_name = IControllerExtensions::get_name(self);
         vec![
-            Rc::new(ControllerActionClosure::new_default_area_not_validated(vec![], None, "/learn".into(), "index".into(), controller_name.clone().into(), &|_controller_ctx, _services| {
-                let learn_docs: Vec<String> = glob("docs/learn/**/*.md")
+            Rc::new(ControllerActionClosure::new_default_area_not_validated(vec![], None, "/learn".into(), "index".into(), controller_name.clone().into(), &|_controller_ctx, services| {
+                let app_content_service = ServiceCollectionExtensions::get_required_single::<dyn IAppContentProviderService>(services);
+                let learn_docs: Vec<String> = 
+                if let Some(root_docs_path) = app_content_service.resolve_path("docs/learn") {
+                    glob(&format!("{}/**/*.md", root_docs_path))
                     .expect("Failed to read glob pattern")
                     .map(|path_to_string| {
                         let p = path_to_string.expect("Failed to read path");
                         let path = p.as_path().to_str().expect("Failed to convert path to string");
-                        let s = &path["docs/learn/".len()..path.len() - 3];// remove extension ".md"
+                        let s = &path[root_docs_path.len() + 1..path.len() - 3];// remove extension ".md"
                         s.to_string()
                     })
                     .filter(|x| x.as_str() != "README")
-                    .collect();
-
+                    .collect()
+                } else {
+                    vec![]
+                };
                 let view_model = Rc::new(IndexViewModel::new(learn_docs));
                 Ok(Some(Rc::new(ViewResult::new("learn/index.rs".to_string(), view_model))))
             })),

@@ -1,8 +1,13 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::rc::Rc;
-use mvc_lib::middleware::file_browser_middleware::FileBrowserMiddleware;
+use mvc_lib::middleware::app_content_browser_middleware::AppContentBrowserMiddleware;
+use mvc_lib::middleware::wwwroot_browser_middleware::WwwRootBrowserMiddleware;
 use mvc_lib::options::app_content_provider_service_options::AppContentProviderServiceOptions;
+use mvc_lib::options::special_path_options::SpecialPathOptions;
+use mvc_lib::options::wwwroot_provider_controller_options::WwwRootProviderControllerOptions;
+use mvc_lib::options::wwwroot_provider_service_options::{IWwwRootProviderServiceOptions, WwwRootProviderServiceOptions};
+use mvc_lib::services::wwwroot_provider_service::IWwwRootProviderService;
 use phf::phf_map;
 
 use mvc_lib::error::error_view_middleware::ErrorViewMiddleware;
@@ -89,8 +94,9 @@ static SERVING_FILES: phf::Map<&'static str, &'static str> = phf_map! {
     "/stacks.min.css" => "ts/node_modules/@stackoverflow/stacks/dist/css/stacks.min.css",
     "/stacks.css" => "ts/node_modules/@stackoverflow/stacks/dist/css/stacks.css",
 };
-static APP_CONTENT_OPTIONS: AppContentProviderServiceOptions = AppContentProviderServiceOptions { use_cwd: false, use_exe_path: false, use_cargo_path: true, use_default_path_order: true, path_order: vec![] };
-static FILE_PROVIDER_OPTIONS: FileProviderControllerOptions = FileProviderControllerOptions { serving_directories: &SERVING_PATHS, serving_files: &SERVING_FILES };
+static APP_CONTENT_OPTIONS: AppContentProviderServiceOptions = AppContentProviderServiceOptions { special_path_options: SpecialPathOptions { use_cwd: false, use_exe_path: false, use_cargo_path: true, use_default_path_order: true, path_order: vec![] } };
+static WWWROOT_OPTIONS: WwwRootProviderServiceOptions = WwwRootProviderServiceOptions { special_path_options: SpecialPathOptions { use_cwd: false, use_exe_path: false, use_cargo_path: true, use_default_path_order: true, path_order: vec![] }, serving_directories: &SERVING_PATHS, serving_files: &SERVING_FILES };
+static WWWROOT_PROVIDER_CONTROLLER_OPTIONS: WwwRootProviderControllerOptions = WwwRootProviderControllerOptions {  };
 static LOGGING_OPTIONS: LoggingOptions = LoggingOptions { };
 
 // this is called when the program is configuring options (before it is started).
@@ -98,8 +104,9 @@ static LOGGING_OPTIONS: LoggingOptions = LoggingOptions { };
 // args: the command line arguments.
 pub fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) -> () {
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IHttpOptions>(), |_| vec![Box::new(Rc::new(HTTP_OPTIONS.clone()) as Rc<dyn IHttpOptions>)], ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IWwwRootProviderService>(), |_| vec![Box::new(Rc::new(WWWROOT_OPTIONS.clone()) as Rc<IWwwRootProviderServiceOptions>)], ServiceScope::Singleton));
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<AppContentProviderServiceOptions>(), |_| vec![Box::new(Rc::new(APP_CONTENT_OPTIONS.clone()) as Rc<AppContentProviderServiceOptions>)], ServiceScope::Singleton));
-    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), |_| vec![Box::new(Rc::new(FILE_PROVIDER_OPTIONS.clone()) as Rc<dyn IFileProviderControllerOptions>)], ServiceScope::Singleton));
+    // services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), |_| vec![Box::new(Rc::new(FILE_PROVIDER_OPTIONS.clone()) as Rc<dyn IFileProviderControllerOptions>)], ServiceScope::Singleton));
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILoggingOptions>(), |_| vec![Box::new(Rc::new(LOGGING_OPTIONS.clone()) as Rc<dyn ILoggingOptions>)], ServiceScope::Singleton));
 
     // services.add_instance::<HttpOptions, dyn IHttpOptions>(TypeInfo::rc_of::<dyn IHttpOptions>(), &HTTP_OPTIONS);
@@ -137,8 +144,8 @@ pub fn add_controllers(services: &mut ServiceCollection) {
 pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::add_logging(services);
     DefaultServices::add_performance_logging(services);
-    DefaultServices::add_app_content(services);
-    DefaultServices::add_file_provider(services);
+    DefaultServices::add_app_content_provider(services);
+    DefaultServices::add_wwwroot_provider(services);
 
     // add error handlers
     LogErrorHandler::add_to_services(services);
@@ -168,7 +175,8 @@ pub fn on_configure_services(services: &mut ServiceCollection) -> () {
     DefaultServices::use_response_encoders(services);
     DefaultServices::use_model_validation(services);
 
-    FileBrowserMiddleware::add_to_services(services);
+    AppContentBrowserMiddleware::add_to_services(services);
+    WwwRootBrowserMiddleware::add_to_services(services);
     AuthorizeControllerActionFeatureMiddleware::add_to_services(services);
     LocalHostOnlyControllerActionFeatureMiddleware::add_to_services(services);
 

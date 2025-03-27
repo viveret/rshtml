@@ -8,7 +8,6 @@ use crate::contexts::irequest_context::IRequestContext;
 use crate::contexts::iresponse_context::IResponseContext;
 use crate::core::type_info::TypeInfo;
 
-use crate::services::file_provider_service::IFileProviderService;
 use crate::services::request_middleware_service::IRequestMiddlewareService;
 use crate::services::request_middleware_service::MiddlewareResult;
 
@@ -17,19 +16,20 @@ use crate::services::service_collection::ServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
+use crate::services::wwwroot_provider_service::IWwwRootProviderService;
 
 
 // this middleware is used to authorize a controller action.
-pub struct FileBrowserMiddleware {
-    file_service: Rc<dyn IFileProviderService>,
+pub struct WwwRootBrowserMiddleware {
+    file_service: Rc<dyn IWwwRootProviderService>,
     next: RefCell<Option<Rc<dyn IRequestMiddlewareService>>>
 }
 
-impl FileBrowserMiddleware {
+impl WwwRootBrowserMiddleware {
     // create a new instance of the middleware.
     // file_service - the file list service. this is used to get the directories and files.
     // returns the new instance of the middleware.
-    pub fn new(file_service: Rc<dyn IFileProviderService>) -> Self {
+    pub fn new(file_service: Rc<dyn IWwwRootProviderService>) -> Self {
         Self { file_service: file_service, next: RefCell::new(None) }
     }
 
@@ -38,7 +38,7 @@ impl FileBrowserMiddleware {
     // returns a vector containing the new instance of the middleware.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
-            ServiceCollectionExtensions::get_required_single::<dyn IFileProviderService>(services)
+            ServiceCollectionExtensions::get_required_single::<dyn IWwwRootProviderService>(services)
         )) as Rc<dyn IRequestMiddlewareService>)]
     }
     
@@ -50,7 +50,7 @@ impl FileBrowserMiddleware {
     }
 }
 
-impl IRequestMiddlewareService for FileBrowserMiddleware {
+impl IRequestMiddlewareService for WwwRootBrowserMiddleware {
     fn set_next(&self, next: Option<Rc<dyn IRequestMiddlewareService>>) {
         self.next.replace(next);
     }
@@ -58,7 +58,7 @@ impl IRequestMiddlewareService for FileBrowserMiddleware {
     fn handle_request(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<MiddlewareResult, Rc<dyn Error>> {
         let url = request_context.get_url();
         let url = url.path();
-        let base_path = "/file-browser/";
+        let base_path = "/wwwroot-browser/";
         if url.starts_with(base_path) {
             let path_name = url.split_at(base_path.len()).1;
             if path_name.is_empty() || path_name.chars().all(|c| c.is_alphanumeric() || c == '/' || c == '.') {
@@ -95,6 +95,6 @@ impl IRequestMiddlewareService for FileBrowserMiddleware {
     }
 
     fn get_type_info(&self) -> Box<TypeInfo> {
-        Box::new(TypeInfo::of::<FileBrowserMiddleware>())
+        Box::new(TypeInfo::of::<WwwRootBrowserMiddleware>())
     }
 }

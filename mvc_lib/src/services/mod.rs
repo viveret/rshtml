@@ -2,7 +2,7 @@ pub mod app_content_provider_service;
 pub mod controller_action_execute_service;
 pub mod authorization_service;
 pub mod default_services;
-pub mod file_provider_service;
+pub mod wwwroot_provider_service;
 pub mod host_environment;
 pub mod request_middleware_service;
 pub mod routing_service;

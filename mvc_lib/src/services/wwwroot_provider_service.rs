@@ -7,13 +7,13 @@ use std::any::Any;
 
 use crate::core::type_info::TypeInfo;
 use crate::options::wwwroot_provider_service_options::IWwwRootProviderServiceOptions;
-use crate::services::service_collection::IServiceCollection;
+use crate::services::service_collection::{IServiceCollection, ServiceCollectionExtensions};
 
 use super::service_descriptor::ServiceDescriptor;
 use super::service_scope::ServiceScope;
 
 // this is a trait for a class that can provide file services.
-pub trait IFileProviderService {
+pub trait IWwwRootProviderService {
     // opens a file for reading.
     fn open_read(&self, path: &str) -> Result<Box<dyn Read>>;
     // opens a file for writing.
@@ -33,16 +33,16 @@ pub trait IFileProviderService {
 
     // get the mapped paths with the alias as the key and the path as the value.
     // recursive: whether to get the paths recursively.
-    fn get_mapped_paths(&self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>>;
+    fn get_mapped_paths(&self, recursive: bool) -> HashMap<String, String>;
 }
 
 // implementation of the file provider service.
-pub struct FileProviderService {
+pub struct WwwRootProviderService {
     options: Vec<Rc<dyn IWwwRootProviderServiceOptions>>,
 
 }
 
-impl FileProviderService {
+impl WwwRootProviderService {
     // creates a new instance of the file provider service.
     pub fn new(options: Vec<Rc<dyn IWwwRootProviderServiceOptions>>) -> Self {
         Self {
@@ -51,20 +51,28 @@ impl FileProviderService {
     }
 
     // creates the file provider service as a service.
-    pub fn new_service(_services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
-        vec![Box::new(Rc::new(Self::new()) as Rc<dyn IFileProviderService>)]
+    pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
+        vec![Box::new(Rc::new(Self::new(
+            ServiceCollectionExtensions::get_required_multiple::<dyn IWwwRootProviderServiceOptions>(services)
+        )) as Rc<dyn IWwwRootProviderService>)]
     }
 
     // adds the file provider service to the given service collection.
     pub fn add_to_services(services: &mut super::service_collection::ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IFileProviderService>(), FileProviderService::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IWwwRootProviderService>(), WwwRootProviderService::new_service, ServiceScope::Singleton));
     }
 }
 
-impl IFileProviderService for FileProviderService {
+impl IWwwRootProviderService for WwwRootProviderService {
     fn open_read(&self, path: &str) -> Result<Box<dyn Read>> {
-        let file = File::open(path)?;
-        Ok(Box::new(BufReader::new(file)))
+        let paths = self.get_mapped_paths(true);
+        let mapped_path = paths.get(&path.to_string());
+        if let Some(path) = mapped_path {
+            let file = File::open(path)?;
+            Ok(Box::new(BufReader::new(file)))
+        } else {
+            std::io::Result::Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("could not find {}", path)))
+        }
     }
 
     fn open_write(&self, path: &str) -> Result<Box<dyn Write>> {
@@ -83,18 +91,31 @@ impl IFileProviderService for FileProviderService {
     }
     
     fn list(&self, path: &str) -> Result<Vec<String>> {
-        Ok(std::fs::read_dir(path)?.into_iter()
-            .filter_map(|x| x.ok())
-            .filter_map(|x| x.path().to_str().map(|x| x.to_string()))
-            .collect()
+        Ok(
+            // self.options.iter()
+            //     .map(|x| x.list(path))
+            //     .filter_map(|x| x.ok())
+            //     .flatten()
+            //     .collect()
+            self.get_mapped_paths(true)
+            .keys().into_iter().cloned().collect()
         )
     }
     
     fn get_file(&self, path: String) -> Option<String> {
-        todo!()
+        for option in self.options.iter() {
+            if let Some(f) = option.get_file(path.clone()) {
+                return Some(f);
+            }
+        }
+
+        None
     }
     
-    fn get_mapped_paths(&self, recursive: bool) -> HashMap<Cow<'static, str>, Cow<'static, str>> {
-        todo!()
+    fn get_mapped_paths(&self, recursive: bool) -> HashMap<String, String> {
+        self.options.iter()
+            .map(|x| x.get_mapped_paths(recursive))
+            .flat_map(|x| x.iter().map(|x| (x.0.clone(), x.1.clone())).collect::<Vec<(String, String)>>())
+            .collect()
     }
 }

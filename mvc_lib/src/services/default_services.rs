@@ -19,7 +19,7 @@ use crate::model_binder::model_serializer_resolver::ModelEncoderResolver;
 use crate::model_binder::modelbinder_service::ModelBinderService;
 use crate::services::service_descriptor::ServiceDescriptor;
 use crate::services::service_scope::ServiceScope;
-use crate::services::file_provider_service::FileProviderService;
+use crate::services::wwwroot_provider_service::WwwRootProviderService;
 use crate::services::service_collection::ServiceCollection;
 use crate::services::request_middleware_service::IRequestMiddlewareService;
 use crate::services::routing_service::RoutingService;
@@ -66,13 +66,13 @@ impl DefaultServices {
         services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IPerformanceLoggerService>(), PerformanceLoggerService::new_service, ServiceScope::Singleton));
     }
 
-    pub fn add_app_content(services: &mut ServiceCollection) {
+    pub fn add_app_content_provider(services: &mut ServiceCollection) {
         AppContentProviderService::add_to_services(services);
     }
 
     // add the default file provider services to the service collection.
-    pub fn add_file_provider(services: &mut ServiceCollection) {
-        FileProviderService::add_to_services(services);
+    pub fn add_wwwroot_provider(services: &mut ServiceCollection) {
+        WwwRootProviderService::add_to_services(services);
     }
 
     // add the default controllers to the service collection.

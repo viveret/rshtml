@@ -150,6 +150,5 @@ dist
 .pnp.*
 
 
-
-# project specific
-rusthtml-tmp/
+# other project files
+rusthtml_cache.json

@@ -28,7 +28,7 @@ use crate::services::routemap_service::RouteMapService;
 use crate::view::view_renderer::ViewRenderer;
 
 use crate::controllers::icontroller::IController;
-use crate::controllers::file_provider_controller::FileProviderController;
+use crate::controllers::wwwroot_provider_controller::WwwRootProviderController;
 
 use super::app_content_provider_service::AppContentProviderService;
 use super::controller_action_execute_service::ControllerActionExecuteService;
@@ -77,7 +77,7 @@ impl DefaultServices {
 
     // add the default controllers to the service collection.
     pub fn add_controllers(services: &mut ServiceCollection) {
-        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), FileProviderController::new_service, ServiceScope::Singleton));
+        services.add(ServiceDescriptor::new(TypeInfo::rc_of::<dyn IController>(), WwwRootProviderController::new_service, ServiceScope::Singleton));
     }
 
     // add the default request middleware services to the service collection.

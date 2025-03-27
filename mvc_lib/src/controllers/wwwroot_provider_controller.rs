@@ -19,6 +19,7 @@ use crate::model_binder::imodel_method::IModelMethod;
 use crate::model_binder::reflected_attribute::ReflectedAttribute;
 use crate::model_binder::reflected_method::ReflectedMethod;
 use crate::model_binder::reflected_property::ReflectedProperty;
+use crate::options::wwwroot_provider_controller_options::IWwwRootProviderControllerOptions;
 use crate::services::service_collection::IServiceCollection;
 use crate::services::service_collection::ServiceCollectionExtensions;
 
@@ -26,8 +27,7 @@ use crate::controllers::icontroller::IController;
 use crate::controller_action_features::controller_action_feature::IControllerActionFeature;
 use crate::controller_actions::controller_action::IControllerAction;
 use crate::controller_actions::file::ControllerActionFileResult;
-
-use crate::options::file_provider_controller_options::IFileProviderControllerOptions;
+use crate::services::wwwroot_provider_service::IWwwRootProviderService;
 
 use super::icontroller_extensions::IControllerExtensions;
 
@@ -36,18 +36,23 @@ use super::icontroller_extensions::IControllerExtensions;
 #[reflect_attributes]
 #[reflect_properties]
 #[derive(Clone, IHazAttributes, IModel)]
-pub struct FileProviderController {
+pub struct WwwRootProviderController {
     // the options for the file provider controller.
-    options: Rc<dyn IFileProviderControllerOptions>,
+    options: Rc<dyn IWwwRootProviderControllerOptions>,
+    service: Rc<dyn IWwwRootProviderService>,
 }
 
 #[reflect_methods]
-impl FileProviderController {
+impl WwwRootProviderController {
     // create a new instance of the controller.
     // options: the options for the file provider controller.
-    pub fn new(options: Rc<dyn IFileProviderControllerOptions>) -> Self {
+    pub fn new(
+        options: Rc<dyn IWwwRootProviderControllerOptions>,
+        service: Rc<dyn IWwwRootProviderService>
+    ) -> Self {
         Self { 
-            options: options
+            options,
+            service
         }
     }
 
@@ -56,28 +61,29 @@ impl FileProviderController {
     // returns: a new instance of the controller in a vector as a service for a service collection.
     pub fn new_service(services: &dyn IServiceCollection) -> Vec<Box<dyn Any>> {
         vec![Box::new(Rc::new(Self::new(
-            ServiceCollectionExtensions::get_required_single::<dyn IFileProviderControllerOptions>(services)
+            ServiceCollectionExtensions::get_required_single::<dyn IWwwRootProviderControllerOptions>(services),
+            ServiceCollectionExtensions::get_required_single::<dyn IWwwRootProviderService>(services),
         )) as Rc<dyn IController>)]
     }
 }
 
-impl IController for FileProviderController {
+impl IController for WwwRootProviderController {
     fn get_route_area(&self) -> String {
         String::new()
     }
 
     fn get_type_name(&self) -> &'static str {
-        nameof::name_of_type!(FileProviderController)
+        nameof::name_of_type!(WwwRootProviderController)
     }
 
     fn get_actions(&self) -> Vec<Rc<dyn IControllerAction>> {
-        let mapped_paths = self.options.as_ref().get_mapped_paths(true);
+        let mapped_paths = self.service.as_ref().get_mapped_paths(true);
 
         mapped_paths
             .into_iter()
             .map(|x|
                 Rc::new(ControllerActionFileResult::new(
-                    x.1, x.0, Cow::Owned(String::default()), IControllerExtensions::get_name(self).into(), self.get_route_area(),
+                    x.1.into(), x.0.into(), String::default().into(), IControllerExtensions::get_name(self).into(), self.get_route_area(),
                 )) as Rc<dyn IControllerAction>
             )
             .collect()

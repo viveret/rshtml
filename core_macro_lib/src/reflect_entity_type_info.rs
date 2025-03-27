@@ -3,7 +3,7 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Data, Fields, Type, Meta, Lit};
 
 
-/// Attribute to mark a struct as an entity and its fields as columns
+// Attribute to mark a struct as an entity and its fields as columns
 pub fn entity(args: TokenStream, input: TokenStream) -> TokenStream {
     let table_name = if args.is_empty() {
         None
@@ -96,7 +96,7 @@ pub fn entity(args: TokenStream, input: TokenStream) -> TokenStream {
         #input
 
         impl #struct_name {
-            /// Returns the EntityTypeInfo for this entity
+            // Returns the EntityTypeInfo for this entity
             pub fn entity_type_info() -> EntityTypeInfo {
                 EntityTypeInfo {
                     type_info: TypeInfo::of::<Self>(),
@@ -106,7 +106,7 @@ pub fn entity(args: TokenStream, input: TokenStream) -> TokenStream {
                 }
             }
 
-            /// Returns a map of field names to their type information
+            // Returns a map of field names to their type information
             pub fn field_info() -> std::collections::HashMap<&'static str, TypeInfo> {
                 let mut map = std::collections::HashMap::new();
                 #(
@@ -120,7 +120,7 @@ pub fn entity(args: TokenStream, input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-/// Infer SQL type from Rust type
+// Infer SQL type from Rust type
 fn infer_sql_type(ty: &Type) -> String {
     let type_str = quote!(#ty).to_string();
     match type_str.as_str() {

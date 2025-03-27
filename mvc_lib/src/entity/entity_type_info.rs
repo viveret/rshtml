@@ -51,7 +51,7 @@ pub struct EntityIndexInfo {
 }
 
 impl EntityTypeInfo {
-    /// Creates a new EntityTypeInfo with the given type information
+    // Creates a new EntityTypeInfo with the given type information
     pub fn new<T: 'static>(table_name: &str) -> Self {
         Self {
             type_info: TypeInfo::of::<T>(),
@@ -61,7 +61,7 @@ impl EntityTypeInfo {
         }
     }
 
-    /// Adds a column to the entity definition
+    // Adds a column to the entity definition
     pub fn add_column(
         &mut self,
         name: &str,
@@ -82,7 +82,7 @@ impl EntityTypeInfo {
         self
     }
 
-    /// Adds an index to the entity definition
+    // Adds an index to the entity definition
     pub fn add_index(&mut self, name: &str, columns: &[&str], is_unique: bool) -> &mut Self {
         self.indexes.push(EntityIndexInfo {
             name: name.to_string(),
@@ -92,7 +92,7 @@ impl EntityTypeInfo {
         self
     }
 
-    /// Generates the SQL CREATE TABLE statement
+    // Generates the SQL CREATE TABLE statement
     pub fn generate_create_table_sql(&self) -> String {
         let mut sql = format!("CREATE TABLE IF NOT EXISTS {} (\n", self.sql_table_name);
 
@@ -128,7 +128,7 @@ impl EntityTypeInfo {
         sql
     }
 
-    /// Generates SQL for an index
+    // Generates SQL for an index
     pub fn generate_index_sql(&self, index: &EntityIndexInfo) -> String {
         let unique = if index.is_unique { "UNIQUE " } else { "" };
         let columns = index.columns.join(", ");
@@ -141,7 +141,7 @@ impl EntityTypeInfo {
         )
     }
 
-    /// Generates the SQL INSERT statement
+    // Generates the SQL INSERT statement
     pub fn generate_insert_sql(&self) -> String {
         let columns: Vec<String> = self.sql_columns
             .iter()
@@ -159,7 +159,7 @@ impl EntityTypeInfo {
         )
     }
 
-    /// Generates the SQL SELECT statement for all columns
+    // Generates the SQL SELECT statement for all columns
     pub fn generate_select_all_sql(&self) -> String {
         let columns: Vec<String> = self.sql_columns
             .iter()
@@ -173,7 +173,7 @@ impl EntityTypeInfo {
         )
     }
 
-    /// Generates the SQL UPDATE statement
+    // Generates the SQL UPDATE statement
     pub fn generate_update_sql(&self) -> String {
         let pk_column = self.sql_columns.iter()
             .find(|c| c.is_primary_key)
@@ -193,7 +193,7 @@ impl EntityTypeInfo {
         )
     }
 
-    /// Generates the SQL DELETE statement
+    // Generates the SQL DELETE statement
     pub fn generate_delete_sql(&self) -> String {
         let pk_column = self.sql_columns.iter()
             .find(|c| c.is_primary_key)
@@ -206,12 +206,12 @@ impl EntityTypeInfo {
         )
     }
 
-    /// Finds a column by name
+    // Finds a column by name
     pub fn find_column(&self, name: &str) -> Option<&EntityTypeInfoColumn> {
         self.sql_columns.iter().find(|c| c.name == name)
     }
 
-    /// Gets the primary key column
+    // Gets the primary key column
     pub fn get_primary_key_column(&self) -> Option<&EntityTypeInfoColumn> {
         self.sql_columns.iter().find(|c| c.is_primary_key)
     }

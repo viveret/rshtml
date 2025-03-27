@@ -64,14 +64,14 @@ impl HttpRequestPipeline {
         services.add(ServiceDescriptor::new_from::<dyn IHttpRequestPipeline, Self>(Self::new_service, ServiceScope::Request));
     }
 
-    /// Process the request using the middleware.
-    /// 
-    /// # Arguments
-    /// * `request_context` - The request context
-    /// * `services` - The service collection
-    /// 
-    /// # Returns
-    /// * The result of processing the request.
+    // Process the request using the middleware.
+    // 
+    // # Arguments
+    // * `request_context` - The request context
+    // * `services` - The service collection
+    // 
+    // # Returns
+    // * The result of processing the request.
     fn process_request_using_middleware(&self, response_context: &dyn IResponseContext, request_context: &dyn IRequestContext, services: &dyn IServiceCollection) -> Result<(), Rc<dyn Error>> {
         // Get the middleware services
         let middleware = ServiceCollectionExtensions::get_required_multiple::<dyn IRequestMiddlewareService>(services);

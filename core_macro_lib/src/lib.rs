@@ -286,7 +286,7 @@ pub fn callstack_tracker_scope_and_assert(input: proc_macro::TokenStream) -> pro
 
 
 
-/// Attribute to mark a struct as an entity and its fields as columns
+// Attribute to mark a struct as an entity and its fields as columns
 #[proc_macro_attribute]
 pub fn entity(args: proc_macro::TokenStream, input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     reflect_entity_type_info::entity(args, input)

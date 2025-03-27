@@ -3,11 +3,12 @@ use std::borrow::Cow;
 use std::rc::Rc;
 use mvc_lib::middleware::app_content_browser_middleware::AppContentBrowserMiddleware;
 use mvc_lib::middleware::wwwroot_browser_middleware::WwwRootBrowserMiddleware;
+use mvc_lib::options::app_content_browser_middleware_options::AppContentBrowserMiddlewareOptions;
 use mvc_lib::options::app_content_provider_service_options::AppContentProviderServiceOptions;
 use mvc_lib::options::special_path_options::SpecialPathOptions;
-use mvc_lib::options::wwwroot_provider_controller_options::WwwRootProviderControllerOptions;
+use mvc_lib::options::wwwroot_browser_middleware_options::WwwRootBrowserMiddlewareOptions;
+use mvc_lib::options::wwwroot_provider_controller_options::{IWwwRootProviderControllerOptions, WwwRootProviderControllerOptions};
 use mvc_lib::options::wwwroot_provider_service_options::{IWwwRootProviderServiceOptions, WwwRootProviderServiceOptions};
-use mvc_lib::services::wwwroot_provider_service::IWwwRootProviderService;
 use phf::phf_map;
 
 use mvc_lib::error::error_view_middleware::ErrorViewMiddleware;
@@ -30,10 +31,7 @@ use mvc_lib::services::default_services::{*};
 use mvc_lib::services::authorization_service::AuthorizationService;
 
 use mvc_lib::options::http_options::{IHttpOptions, HttpOptions};
-use mvc_lib::options::file_provider_controller_options::{IFileProviderControllerOptions, FileProviderControllerOptions};
 use mvc_lib::options::logging_services_options::{ ILogHttpRequestsOptions, ILoggingOptions, LogHttpRequestsOptions, LoggingOptions };
-
-use mvc_lib::view::iview::IView;
 
 use crate::view_models::dev::log_add::LogAddInputModelBinder;
 use crate::views::authroles::index::view_authroles_index;
@@ -104,13 +102,20 @@ static LOGGING_OPTIONS: LoggingOptions = LoggingOptions { };
 // args: the command line arguments.
 pub fn on_configure(services: &mut ServiceCollection, _args: Rc<Vec<String>>) -> () {
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IHttpOptions>(), |_| vec![Box::new(Rc::new(HTTP_OPTIONS.clone()) as Rc<dyn IHttpOptions>)], ServiceScope::Singleton));
-    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IWwwRootProviderService>(), |_| vec![Box::new(Rc::new(WWWROOT_OPTIONS.clone()) as Rc<IWwwRootProviderServiceOptions>)], ServiceScope::Singleton));
+    
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<AppContentProviderServiceOptions>(), |_| vec![Box::new(Rc::new(APP_CONTENT_OPTIONS.clone()) as Rc<AppContentProviderServiceOptions>)], ServiceScope::Singleton));
-    // services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), |_| vec![Box::new(Rc::new(FILE_PROVIDER_OPTIONS.clone()) as Rc<dyn IFileProviderControllerOptions>)], ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IWwwRootProviderServiceOptions>(), |_| vec![Box::new(Rc::new(WWWROOT_OPTIONS.clone()) as Rc<dyn IWwwRootProviderServiceOptions>)], ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<AppContentBrowserMiddlewareOptions>(), |_| vec![Box::new(Rc::new(APP_CONTENT_OPTIONS.clone()) as Rc<AppContentProviderServiceOptions>)], ServiceScope::Singleton));
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<WwwRootBrowserMiddlewareOptions>(), |_| vec![Box::new(Rc::new(APP_CONTENT_OPTIONS.clone()) as Rc<AppContentProviderServiceOptions>)], ServiceScope::Singleton));
+    
+
+    services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IWwwRootProviderControllerOptions>(), |_| vec![Box::new(Rc::new(WWWROOT_PROVIDER_CONTROLLER_OPTIONS.clone()) as Rc<dyn IWwwRootProviderControllerOptions>)], ServiceScope::Singleton));
+    // services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn IWwwRootProviderControllerOptions>(), |_| vec![Box::new(Rc::new(FILE_PROVIDER_OPTIONS.clone()) as Rc<dyn IWwwRootProviderControllerOptions>)], ServiceScope::Singleton));
+    
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILoggingOptions>(), |_| vec![Box::new(Rc::new(LOGGING_OPTIONS.clone()) as Rc<dyn ILoggingOptions>)], ServiceScope::Singleton));
 
     // services.add_instance::<HttpOptions, dyn IHttpOptions>(TypeInfo::rc_of::<dyn IHttpOptions>(), &HTTP_OPTIONS);
-    // services.add_instance::<FileProviderControllerOptions, dyn IFileProviderControllerOptions>(TypeInfo::rc_of::<dyn IFileProviderControllerOptions>(), &FILE_PROVIDER_OPTIONS);
+    // services.add_instance::<WwwRootProviderControllerOptions, dyn IWwwRootProviderControllerOptions>(TypeInfo::rc_of::<dyn IWwwRootProviderControllerOptions>(), &FILE_PROVIDER_OPTIONS);
 
     services.add(ServiceDescriptor::new_closure(TypeInfo::rc_of::<dyn ILogHttpRequestsOptions>(), |_| vec![Box::new(Rc::new(LogHttpRequestsOptions {
         // log_request: true,

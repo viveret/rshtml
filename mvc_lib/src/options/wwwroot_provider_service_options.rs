@@ -21,7 +21,7 @@ pub trait IWwwRootProviderServiceOptions {
     fn list(&self, path: &str) -> std::io::Result<Vec<String>>;
 }
 
-// this struct implements IFileProviderControllerOptions.
+// this struct implements IWwwRootProviderControllerOptions.
 #[derive(Debug, Clone)]
 pub struct WwwRootProviderServiceOptions {
     // the directories to serve files from.
@@ -48,16 +48,16 @@ impl WwwRootProviderServiceOptions {
         }
     }
 
-    // create a new FileProviderControllerOptions struct with default values.
+    // create a new WwwRootProviderControllerOptions struct with default values.
     pub fn new_defaults() -> Self {
         static _EMPTY: phf::Map<&'static str, &'static str> = phf::Map::new();
         Self { serving_directories: &["wwwroot/"], serving_files: &_EMPTY, special_path_options: SpecialPathOptions::new() }
     }
 
-    // create a new FileProviderControllerOptions struct as a service from a list of directories to serve files from and a list of files to serve mapped to their aliases.
+    // create a new WwwRootProviderControllerOptions struct as a service from a list of directories to serve files from and a list of files to serve mapped to their aliases.
     // serving_directories: the directories to serve files from.
     // serving_files: the files to serve mapped to their aliases.
-    // returns: a new FileProviderControllerOptions struct as a service.
+    // returns: a new WwwRootProviderControllerOptions struct as a service.
     pub fn new_service(
         serving_directories: &'static [&'static str],
         serving_files: &'static phf::Map<&'static str, &'static str>,
@@ -66,7 +66,7 @@ impl WwwRootProviderServiceOptions {
         Box::new(Rc::new(Self::new(serving_directories, serving_files, special_path_options)) as Rc<dyn IWwwRootProviderServiceOptions>)
     }
 
-    // create a new FileProviderControllerOptions struct as a service with default values.
+    // create a new WwwRootProviderControllerOptions struct as a service with default values.
     pub fn new_service_defaults() -> Box<dyn Any> {
         Box::new(Rc::new(Self::new_defaults()) as Rc<dyn IWwwRootProviderServiceOptions>)
     }

@@ -1,9 +1,12 @@
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::rc::Rc;
+use std::sync::{Arc, OnceLock};
 
 use core_lib::asyncly::timer_cancellation_token::TimerCancellationToken;
 use proc_macro2::TokenStream;
 
 use quote::quote;
+use syn::parse::Parse;
 
 use crate::view::parserv3::core::peekable::stream_peekable_tokentree::StreamPeekableTokenTree;
 use crate::view::rusthtml::rusthtml_error::RustHtmlError;
@@ -11,8 +14,62 @@ use crate::view::parserv3::parserv3::ParserV3;
 use crate::view::parserv3::contexts::rusthtml_parser_context::RustHtmlParserContext;
 use crate::view::parserv3::contexts::irusthtml_parser_context::IRustHtmlParserContext;
 
+use super::caching::icompiled_view::CompiledView;
+use super::caching::icompiled_view_cache::ICompiledViewCache;
+use super::caching::json_compiled_view_cache::JsonCompiledViewCache;
+use super::caching::layered_compiled_view_cache::LayeredCompiledViewCache;
+use super::caching::memory_compiled_view_cache::MemoryCompiledViewCache;
 
-pub fn rusthtml_macro_impl(input: TokenStream) -> TokenStream {
+
+// Static cache initialized once
+static RUSTHTML_MACRO_CACHE: OnceLock<LayeredCompiledViewCache> = OnceLock::new();
+
+
+fn initialize_cache() -> &'static LayeredCompiledViewCache {
+    RUSTHTML_MACRO_CACHE.get_or_init(|| {
+        let memory_cache = Arc::new(MemoryCompiledViewCache::new());
+        let json_cache = Arc::new(JsonCompiledViewCache::new("rusthtml_cache.json").unwrap());
+        LayeredCompiledViewCache::new(memory_cache, json_cache)
+    })
+}
+
+
+pub fn check_cache_rusthtml_macro_or_else(input: TokenStream, or_else: &dyn Fn(TokenStream) -> TokenStream) -> TokenStream {
+    // Initialize cache on first use
+    let cache = initialize_cache();
+        
+    // Convert TokenStream to String for hashing
+    let input_str = input.to_string();
+
+    // Create hash of input
+    let mut hasher = DefaultHasher::new();
+    input_str.hash(&mut hasher);
+    let hash = hasher.finish();
+
+    // Check cache
+    if let Some(cached) = cache.get_compiled_view_by_hash(hash) {
+        if let Some(output_string) = cached.try_get_output_code() {
+            return output_string.parse().unwrap();
+        }
+    }
+    
+    let output = or_else(input);
+
+    // Store in cache
+    let view = CompiledView::new(
+        "rusthtml_macro".to_string(),
+        0, // index
+        hash as u64,
+        Some(input_str),
+        Some(output.to_string())
+    );
+    
+    cache.add_compiled_view(Arc::new(view)).unwrap();
+    
+    output
+}
+
+pub fn rusthtml_macro_impl_nocache(input: TokenStream) -> TokenStream {
     let parser = ParserV3::new_default();
     let ct = Rc::new(TimerCancellationToken::new(std::time::Duration::from_secs(5)));
     let context = Rc::new(RustHtmlParserContext::new(false, false, "test".to_string()));
@@ -28,6 +85,10 @@ pub fn rusthtml_macro_impl(input: TokenStream) -> TokenStream {
             quote! { compile_error!(#err_str); }.into()
         },
     }
+}
+
+pub fn rusthtml_macro_impl(input: TokenStream) -> TokenStream {
+    check_cache_rusthtml_macro_or_else(input, &rusthtml_macro_impl_nocache)
 }
 
 fn call_parser_expand(
@@ -140,8 +201,6 @@ fn generate_view_code(parse_context: Rc<RustHtmlParserContext>, html_render_fn: 
         }
     };
 
-    log_final_view_to_external_file(&view_name, &view_code);
-
     view_code
 }
 
@@ -207,17 +266,15 @@ fn generate_view_start_tokens(parse_context: &Rc<RustHtmlParserContext>, view_na
     })
 }
 
-fn log_final_view_to_external_file(view_name: &str, view_code: &TokenStream) {
-    std::fs::create_dir_all("rusthtml-tmp/views/").expect("could not create tmp folder rusthtml-tmp");
-    let path = format!("rusthtml-tmp/views/{}.rs", view_name);
-    std::fs::write(path.as_str(), view_code.to_string()).expect("could not write contents to view in rusthtml-tmp");
-}
-
 fn generate_error_code(err: impl std::fmt::Debug) -> TokenStream {
     let err_str = format!("could not compile rust html: {:?}", err);
     quote! { compile_error!(#err_str); }
 }
 
-pub fn rusthtml_view_macro_impl(input: TokenStream) -> TokenStream {
+fn rusthtml_view_macro_impl_nocache(input: TokenStream) -> TokenStream {
     rusthtml_view_macro_with_context(input).1
+}
+
+pub fn rusthtml_view_macro_impl(input: TokenStream) -> TokenStream {
+    check_cache_rusthtml_macro_or_else(input, &rusthtml_view_macro_impl_nocache)
 }

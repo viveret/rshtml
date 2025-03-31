@@ -5,3 +5,4 @@ pub mod sql_dbset;
 pub mod sql_dbset_codegen;
 pub mod ihaz_id;
 pub mod entity_type_info;
+pub mod model;

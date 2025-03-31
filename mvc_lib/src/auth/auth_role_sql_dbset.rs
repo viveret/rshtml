@@ -1,7 +1,7 @@
 use std::any::Any;
 
-use rusqlite::types::FromSql;
-use rusqlite::ToSql;
+use core_macro_lib::SqlCrud;
+use sqlx::prelude::FromRow;
 
 use crate::auth::iauth_role::IAuthRole;
 
@@ -12,7 +12,7 @@ use crate::entity::ihaz_id::IHazSqlId;
 use crate::entity::sql_dbset::SqlFileDbSet;
 
 // this struct is used to store a single role in the authrole_dbset.json file
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, FromRow, SqlCrud)]
 pub struct SqlAuthRole {
     // the name of the role.
     pub name: String,
@@ -29,23 +29,31 @@ impl SqlAuthRole {
 
     // this is used to parse a string from the sql row.
     // returns a SqlAuthRole struct
-    pub fn parse_sql(v: &rusqlite::Row) -> Result<Self, rusqlite::Error> {
-        Ok(Self {
-            name: v.get::<usize, String>(0)?.to_string()
-        })
-    }
+    // pub fn parse_sql(v: &rusqlite::Row) -> Result<Self, rusqlite::Error> {
+    //     Ok(Self {
+    //         name: v.get::<usize, String>(0)?.to_string()
+    //     })
+    // }
 
     // this is used to convert a SqlAuthRole struct to a sql::Row.
     // v: the SqlAuthRole struct to convert.
     // returns a vec of sql::ToSql.
-    pub fn to_sql(&self) -> Vec<Box<dyn rusqlite::ToSql + '_>> {
-        vec![Box::new(self.name.to_sql().unwrap())]
-    }
+    // pub fn to_sql(&self) -> Vec<Box<dyn rusqlite::ToSql + '_>> {
+    //     vec![Box::new(self.name.to_sql().unwrap())]
+    // }
+
+    // For conversion to SQL parameters, sqlx uses query macros with bind parameters
+    // pub async fn insert(&self, pool: &sqlx::AnyPool) -> Result<(), sqlx::Error> {
+    //     sqlx::query!("INSERT INTO auth_roles (name) VALUES (?)", self.name)
+    //         .execute(pool)
+    //         .await?;
+    //     Ok(())
+    // }
 }
 
 impl IHazSqlId for SqlAuthRole {
-    fn get_sql_id(&self) -> Box<dyn rusqlite::ToSql + '_> {
-        Box::new(self.name.to_sql().unwrap())
+    fn get_sql_id(&self) -> Box<String> {
+        Box::new(self.name.clone())
     }
 }
 
@@ -71,7 +79,7 @@ impl AuthRoleSqlDbSet {
     // file_path: the path to the authrole_dbset.json file.
     // returns a AuthRoleSqlDbSet struct.
     pub fn open(file_path: String) -> std::io::Result<Self> {
-        match SqlFileDbSet::open(file_path, "auth_roles".to_string(), SqlAuthRole::new, SqlAuthRole::parse_sql, SqlAuthRole::to_sql) {
+        match SqlFileDbSet::open(file_path, "auth_roles".to_string(), SqlAuthRole::new, SqlAuthRole::select_sql, SqlAuthRole::insert_sql) {
             Ok(r) => Ok(Self {
                 json_dbset: r
             }),

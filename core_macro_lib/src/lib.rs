@@ -15,7 +15,7 @@ mod ihaz_attributes_macro;
 mod imodel_macro;
 mod iviewmodel_macro;
 mod sys;
-
+mod sql;
 
 
 #[proc_macro]
@@ -290,4 +290,20 @@ pub fn callstack_tracker_scope_and_assert(input: proc_macro::TokenStream) -> pro
 #[proc_macro_attribute]
 pub fn entity(args: proc_macro::TokenStream, input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     reflect_entity_type_info::entity(args, input)
+}
+
+
+
+#[proc_macro_derive(SqlCrud, attributes(table, column))]
+pub fn sql_crud(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    sql::crud::sql_crud_impl(input)
+}
+// #[proc_macro_derive(CreateTable)]
+// pub fn create_table(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+//     sql::crud::create_table_impl(input)
+// }
+
+#[proc_macro_derive(SqlModel, attributes(table, column))]
+pub fn sql_model(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    sql::crud::sql_model_impl(input)
 }
